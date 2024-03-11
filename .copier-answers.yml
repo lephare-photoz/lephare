@@ -1,0 +1,24 @@
+# Changes here will be overwritten by Copier
+_commit: v2.0.0
+_src_path: gh:lincc-frameworks/python-project-template
+author_email: johann.cohentanugi@gmail.com
+author_name: Johann Cohen-Tanugi
+create_example_module: false
+custom_install: true
+enforce_style:
+- ruff_lint
+- ruff_format
+failure_notification:
+- slack
+include_benchmarks: false
+include_docs: true
+include_notebooks: true
+mypy_type_checking: none
+package_name: lephare
+project_license: MIT
+project_name: lephare
+project_organization: lincc-frameworks
+python_versions:
+- '3.8'
+- '3.9'
+- '3.10'
