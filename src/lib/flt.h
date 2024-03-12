@@ -38,7 +38,16 @@ class flt
   int transtyp,calibtyp;
   double leff,lmean,dwidth,ab,tg,veg,msun,fcorr,tpeak;
 
-  flt() {;}
+  flt() {
+    leff=-999999.;
+    lmean=-999999.; 
+    dwidth=-999999.;
+    ab=-99.;
+    tg=-99.;
+    veg=-99.;
+    msun=-99.;
+    fcorr=-99.;
+  }
   
   /// \brief generic constructor, with all internals set to unphysical defaults
   ///
@@ -46,17 +55,9 @@ class flt
   /// @param cname filter filename
   /// @param transt configuration keyword TRANS_TYPE
   /// @param calibt configuration keyword FILTER_CALIB
-  flt(const int k, string cname, const int transt, const int calibt) 
+  flt(const int k, string cname, const int transt, const int calibt) : flt()
   {
    id=k;
-   leff=-999999.;
-   lmean=-999999.; 
-   dwidth=-999999.;
-   ab=-99.;
-   tg=-99.;
-   veg=-99.;
-   msun=-99.;
-   fcorr=-99.;
    transtyp=transt;
    calibtyp=calibt;
    //if cname is a path
@@ -77,17 +78,9 @@ class flt
   /// @param filestream filter file stream
   /// @param transt configuration keyword TRANS_TYPE
   /// @param calibt configuration keyword FILTER_CALIB
-  flt(const int k, ifstream& cname, const int transt, const int calibt) 
+  flt(const int k, ifstream& cname, const int transt, const int calibt) : flt()
   {
    id=k;
-   leff=-999999.;
-   lmean=-999999.; 
-   dwidth=-999999.;
-   ab=-99.;
-   tg=-99.;
-   veg=-99.;
-   msun=-99.;
-   fcorr=-99.;
    transtyp=transt;
    calibtyp=calibt;
    read(cname);
@@ -100,17 +93,9 @@ class flt
   /// @param lmin lower bound of the Heaviside function
   /// @param lmax upper bound of the Heaviside function
   /// @param nsteps number of steps in \f$\lambda\f$ from lmin to lmax 
-  flt(const double lmin, const double lmax, const int nsteps) 
+  flt(const double lmin, const double lmax, const int nsteps) : flt()
   {
    id=0;
-   leff=-999999.;
-   lmean=-999999.; 
-   dwidth=-999999.;
-   ab=-99.;
-   tg=-99.;
-   veg=-99.;
-   msun=-99.;
-   fcorr=-99.;
    name="Heavy";
    transtyp=0;
    calibtyp=0;
