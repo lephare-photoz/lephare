@@ -1367,10 +1367,6 @@ void onesource::interp_lib(vector<SED*> &fulllib,const int imagm, cosmo lcdm){
         kap.push_back( a*SEDb.kcorr[k] + (1.-a)*SEDa.kcorr[k]);
       }
 
-      // Interpolate the renormalisation dm
-      dmcor=pow(10.,(0.4*(lcdm.distMod(consiz)-lcdm.distMod(SEDa.red))));
-      dmmin[0]=dmmin[0]*dmcor;
-
     }else{
       // No interpolation is possible
       // Loop over the filters
@@ -1388,7 +1384,7 @@ void onesource::interp_lib(vector<SED*> &fulllib,const int imagm, cosmo lcdm){
     // Store the predicted magnitudes at z=0
     for (int k=0;  k<imagm; k++){magm0.push_back((*(fulllib[index0])).mag[k]);}
 
-    // Rescale the predicted magnitudes with the template scaling dm (after interpolation)
+    // Rescale the predicted magnitudes with the template scaling dm 
     for (int k=0; k<imagm; k++){
      magm[k]=magm[k]-2.5*log10(dmmin[0]);
      magm0[k]=magm0[k]-2.5*log10(dmmin[0]);
@@ -2054,7 +2050,7 @@ void onesource::writeSpec(vector<SED*> &fulllib, vector<SED*> &fulllibIR, cosmo 
    stospec <<  "GAL-STOCH 0 -1 -1 -1 -1. -1. -1. -1. -1. -1 -1. -1. -1. -1. -1. -1. " << endl;
  
    //QSO
-   if (zmin[1]>0){
+   if (indmin[1]>0){
      stospec <<   "QSO " <<  lQ.size()  << " " << imasmin[1] << " 2 " << nbused << " " << zmin[1] << " 0 0 " ;
      stospec <<   chimin[1]  << " 0. -1 -1. -1. -1. -1. -1. -1. " << endl;
 
@@ -2063,7 +2059,7 @@ void onesource::writeSpec(vector<SED*> &fulllib, vector<SED*> &fulllibIR, cosmo 
    }
 
    //STAR
-   if (chimin[2]>0){
+   if (indmin[2]>0){
      stospec <<   "STAR " <<  lS.size()  << " " << imasmin[2] << " 3 " << nbused << " 0 0 0 " ;
      stospec <<   chimin[2]  << " 0. -1 -1. -1. -1. -1. -1. -1. " << endl;
 
