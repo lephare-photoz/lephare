@@ -336,7 +336,7 @@ void onesource::rescale_flux_errors(const vector<double> min_err, const vector<d
   
   // check if the number of filters in min_err corresponds to the expected one
   if( (size_t)imagm== min_err.size() || min_err.size()==1){
-    for(int k=0; k<imagm; k++){ 
+    for(size_t k=0; k<imagm; k++){ 
       if(sab[k]>=0 && ab[k]!=0.){
 	sab[k] = 1.086 * sab[k] / ab[k];
 	if(min_err.size()>1){
@@ -356,7 +356,7 @@ void onesource::rescale_flux_errors(const vector<double> min_err, const vector<d
   // multiply all the errors in flux by a common factor
   // check if the number of filters in fac_err corresponds to the expected one
   if((size_t)imagm==fac_err.size() || fac_err.size()==1){
-    for(int k=0; k<imagm; k++){
+    for(size_t k=0; k<imagm; k++){
       if(fac_err.size()>1){
 	if(sab[k]>0) sab[k] = sab[k] * fac_err[k];
       }else{
