@@ -79,8 +79,8 @@ OBJECTS = \
 	photoz_lib.o\
 
 all: $(FILES)
-	if [ ! -d "../bin" ]; then mkdir ../bin; fi
-	cp $(FILES) ../bin/
+	if [ ! -d "../../bin" ]; then mkdir ../../bin; fi
+	cp $(FILES) ../../bin/
 
 %.o: %.cpp *h 
 	$(FC) $(CFLAGS) -c  $*.cpp  -o $*.o   
@@ -112,7 +112,7 @@ clean:
 	rm -f minuit/*.o
 	rm -f minuit/*.a
 	rm -f minuit/*~
-	rm -f ../bin/*
+	rm -f ../../bin/*
 
 #
 #

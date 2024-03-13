@@ -96,7 +96,6 @@ class flt
   flt(const double lmin, const double lmax, const int nsteps) : flt()
   {
    id=0;
-   name="Heavy";
    transtyp=0;
    calibtyp=0;
    // Generate a heavyside filter. Transmission at 1. Not renormalized. 
