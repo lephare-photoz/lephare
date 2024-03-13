@@ -40,7 +40,7 @@ add_compile_options("-Ofast" "-ffast-math" "-fno-finite-math-only" "-fsigned-zer
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 #    add_compile_options()
 else()
-    add_compile_options("-mno-vzeroupper" "-mavx2")
+    add_compile_options("-mno-vzeroupper" "-mavx2" "-floop-unroll-and-jam" )
 endif()
 
 
