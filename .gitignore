@@ -12,7 +12,7 @@ src/lib/filter_extinc
 src/lib/sedtolib
 src/lib/zphota
 src/lib/lephare_lib.a
-src/bin
+/bin
 
 # Distribution / packaging
 .Python
