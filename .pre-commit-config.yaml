@@ -10,6 +10,12 @@ repos:
         description: Compare current template version against latest
         verbose: true
     # Clear output from jupyter notebooks so that only the input cells are committed.
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v18.1.1
+    hooks:
+    - id: clang-format
+      name: clang-format
+      types_or: [c++, c]
   - repo: local
     hooks:
       - id: jupyter-nb-clear-output
