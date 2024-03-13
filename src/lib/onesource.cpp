@@ -393,9 +393,9 @@ void onesource::fit(vector<SED*> &fulllib,const vector<vector<double>> &flux, co
   // invsab = busnorma / sab
   // busnorma here ensures that all the precomputed values will be 0 if busnorma=0
   // (aka not to be used in fit)
-  vector<double>   s2n(imagm, 0.d), invsab(imagm, 0.d),invsabSq(imagm, 0.d), abinvsabSq(imagm, 0.d);
+  vector<double>   s2n(imagm, 0.0), invsab(imagm, 0.0),invsabSq(imagm, 0.0), abinvsabSq(imagm, 0.0);
   for(size_t i=0; i<imagm;i++){
-    invsab[i] = busnorma[i] * 1.d/sab[i];
+    invsab[i] = busnorma[i] * 1.0/sab[i];
   }
   for(size_t i=0; i<imagm;i++){
     invsabSq[i] = invsab[i] * invsab[i];
@@ -616,7 +616,7 @@ double onesource::nzprior(const double luv, const double lnir,const double reds,
   double rapp=ft[mod]*exp(-ktf[mod]*(mi-20.0));
 
   // Normalisation of the probability function
-  // pcal=exp(gammln(1.d0/alpt0(mod)+1.d0))
+  // pcal=exp(gammln(1.0/alpt0(mod)+1.0))
   double pcal;
   if(mod==0)pcal=  0.89744;  
   if(mod==1)pcal=  0.90868;  
@@ -718,7 +718,7 @@ void onesource::fitIR(vector<SED*> &fulllibIR,const vector<vector<double>> &flux
   
         // normalization
         // Measurement of scaling factor dm only with (fobs>flim), dchi2/ddm = 0
-        double avmago=0.d, avmagt=0.d, dmloc=-99.d;
+        double avmago=0.0, avmagt=0.0, dmloc=-99.0;
         int nbusIR=0;
 	nbusIR = accumulate(bscfir.begin(), bscfir.end(), 0);
         for (int k=0; k<imagm; k++){
@@ -815,17 +815,37 @@ void onesource::generatePDF(vector<SED*> &fulllib, const vector<size_t> &va, con
   double prob;
   // need to convert into 1 dimension array for openMP reduction
   // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] / 5:["AGE"] / 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] / 10:["MIN_ZQ"] / 11:["BAY_ZG"] / 12:["BAY_ZQ"]
-  double PDFzloc[pdfmap[11].size()]={0.};
-  double PDFzqloc[pdfmap[12].size()]={0.};
-  double PDFmassloc[pdfmap[0].size()]={0.};
-  double PDFSFRloc[pdfmap[1].size()]={0.};
-  double PDFsSFRloc[pdfmap[2].size()]={0.};
-  double PDFAgeloc[pdfmap[5].size()]={0.};
-  double PDFLdustloc[pdfmap[3].size()]={0.};
-  double PDFcol1loc[ pdfmap[6].size() ]={0.};
-  double PDFcol2loc[ pdfmap[7].size() ]={0.};
-  double PDFmrefloc[ pdfmap[8].size() ]={0.};
-    
+  double PDFzloc[pdfmap[11].size()];
+  for (int i=0; i<pdfmap[11].size(); ++i) PDFzloc[i] = 0.0;
+
+  double PDFzqloc[pdfmap[12].size()];
+  for (int i=0; i<pdfmap[12].size(); ++i) PDFzqloc[i] = 0.0;
+
+  double PDFmassloc[pdfmap[0].size()];
+  for (int i=0; i<pdfmap[0].size(); ++i) PDFmassloc[i] = 0.0;
+
+  double PDFSFRloc[pdfmap[1].size()];
+  for (int i=0; i<pdfmap[1].size(); ++i) PDFSFRloc[i] = 0.0;
+  
+  double PDFsSFRloc[pdfmap[2].size()];
+  for (int i=0; i<pdfmap[2].size(); ++i) PDFsSFRloc[i] = 0.0;
+  
+  double PDFAgeloc[pdfmap[5].size()];
+  for (int i=0; i<pdfmap[5].size(); ++i) PDFAgeloc[i] = 0.0;
+  
+  double PDFLdustloc[pdfmap[3].size()];
+  for (int i=0; i<pdfmap[3].size(); ++i) PDFLdustloc[i] = 0.0;
+  
+  double PDFcol1loc[ pdfmap[6].size() ];
+  for (int i=0; i<pdfmap[6].size(); ++i) PDFcol1loc[i] = 0.0;
+  
+  double PDFcol2loc[ pdfmap[7].size() ];
+  for (int i=0; i<pdfmap[7].size(); ++i) PDFcol2loc[i] = 0.0;
+  
+  double PDFmrefloc[ pdfmap[8].size() ];
+  for (int i=0; i<pdfmap[8].size(); ++i) PDFmrefloc[i] = 0.0;
+
+
   // Decide if the uncertainties on the rest-frame colors should be analysed
   bool colAnalysis;
   colAnalysis = ((fltColRF[0]>=0) && (fltColRF[1]>=0) && (fltColRF[2]>=0) && (fltColRF[3]>=0) && (fltREF>=0));
@@ -1010,7 +1030,8 @@ void onesource::generatePDF(vector<SED*> &fulllib, const vector<size_t> &va, con
 void onesource::generatePDF_IR(vector<SED*>& fulllib){
 
   //4:["LIR"] 
-  double PDFlirloc[pdfmap[4].size()]={0.};
+  double PDFlirloc[pdfmap[4].size()];
+  for (int i = 0; i < pdfmap[4].size(); ++i) PDFlirloc[i] = 0.0;
 
   // parrallellize over each SED
   #ifdef _OPENMP

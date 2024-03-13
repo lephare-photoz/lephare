@@ -36,7 +36,7 @@ set(SOURCES
 )
 
 # Remove flags that break mac compilation with g++-13
-add_compile_options("-Ofast" "-ffast-math" "-fno-finite-math-only" "-fsigned-zeros" "-fno-associative-math" "-fno-inline" "-march=native" "-mtune=native" "-funroll-loops" "-floop-unroll-and-jam" "-fomit-frame-pointer" "-finline" "-ftree-vectorize")
+add_compile_options("-Ofast" "-ffast-math" "-fno-finite-math-only" "-fsigned-zeros" "-fno-associative-math" "-fno-inline" "-march=native" "-mtune=native" "-funroll-loops" "-fomit-frame-pointer" "-finline" "-ftree-vectorize")
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 #    add_compile_options()
 else()

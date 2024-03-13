@@ -120,7 +120,7 @@ public:
     }
     else {
       // find the smallest interval in the grid provided by the user
-      vector<double> diff(gridz.size(),1.d);
+      vector<double> diff(gridz.size(),1.0);
       adjacent_difference(gridz.begin(), gridz.end(), diff.begin());
       zgmax = gridz.back();
       //the first and last element of adjacent_diff need to be removed from this difference
