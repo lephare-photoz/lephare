@@ -353,7 +353,7 @@ vector<double> SED::integrateSED(const flt& filter) {
 // Integral of lamb_flux with the trapezoidal method
 double SED::trapzd() {
 
-  double s=0.D;
+  double s=0.0;
   for(size_t k=0; k<lamb_flux.size()-1; k++){
     s += (lamb_flux[k+1].val + lamb_flux[k].val) * 0.5 * (lamb_flux[k+1].lamb - lamb_flux[k].lamb);
   }
@@ -575,7 +575,7 @@ void SED::generate_spectra(double zin, double dmin, vector<opa> opaAll)
     SEDz0_Em.lamb_flux.clear();
     SEDz0_Em.generateEmSpectra(40);
     // Add them to the continuum
-    sumSpectra(SEDz0_Em,1.D);   
+    sumSpectra(SEDz0_Em,1.0);   
     // Opacity applied in rest-frame, depending on the redshift of the source
     applyOpa(opaAll);
     // Redshift the SED at the redshift extracted from the minimum chi2
@@ -1294,7 +1294,7 @@ pair<vector<double>, vector<double> > SED::get_data_vector(double minl, double m
     lambs.push_back(lamb) ;
     
     if( mag ) {
-      val = val<=0.d ? HIGH_MAG : flux2mag(val*lamb*lamb/c, offset);
+      val = val<=0.0 ? HIGH_MAG : flux2mag(val*lamb*lamb/c, offset);
     }
     
     vals.push_back(val);
@@ -1829,7 +1829,7 @@ void SED::compute_magnitudes(const vector<flt>& filters) {
     // Derive the AB magnitudes in each filter
     vector<double> intFlux = integrateSED(filter);
     if(intFlux[3] != INVALID_VAL){ 
-      if(intFlux[3]>0.d){
+      if(intFlux[3]>0.0){
 	val = -2.5*LOG10D(intFlux[3]/intFlux[1] * filter.fcorr) - 48.6 + distMod;
       }else val = HIGH_MAG;
     }else val = INVALID_MAG;

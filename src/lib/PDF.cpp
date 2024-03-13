@@ -29,17 +29,17 @@ PDF::PDF(const double min, const double max, const size_t size){
   scaleMin = min;
   scaleMax = max;
   vsize = size;
-  xaxis.assign(size,0.d);
+  xaxis.assign(size,0.0);
   scaleStep = (max-min)/(vsize-1);
   for(size_t k=0; k<vsize; k++) {
     xaxis[k] = min + double(k)*scaleStep;
   }
-  vPDF.assign(vsize, 0.d);
+  vPDF.assign(vsize, 0.0);
   chi2.assign(vsize, HIGH_CHI2);
   // Index of the SED corresponding to the minima or mode
-  ind.assign(vsize, 0.d);
+  ind.assign(vsize, 0.0);
   // Store the inverse of scale step for computational time
-  invScaleStep = 1.d/scaleStep;
+  invScaleStep = 1.0/scaleStep;
   
   return;
 }
@@ -217,7 +217,7 @@ pair<double, double> PDF::credible_interval(float level,double val){
   // Compute the full cumulant
   vector<double> cumulant;
   double tmp=0;
-  cumulant.push_back(0.d);
+  cumulant.push_back(0.0);
   for(size_t k=0; k<xaxis.size()-1;k++){
     tmp += (xaxis[k+1]-xaxis[k])*(vPDF[k+1]+vPDF[k])/2.;
     cumulant.push_back(tmp);
@@ -295,7 +295,7 @@ double PDF::levelCumu2x(float level){
   // Compute the full cumulant
   vector<double> cumulant;
   double tmp=0;
-  cumulant.push_back(0.d);
+  cumulant.push_back(0.0);
   for(size_t k=0; k<xaxis.size()-1;k++){
     tmp += (xaxis[k+1]-xaxis[k])*(vPDF[k+1]+vPDF[k])/2.;
     cumulant.push_back(tmp);

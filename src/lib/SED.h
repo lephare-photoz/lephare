@@ -161,14 +161,14 @@ public:
    */
   virtual void calc_ph(){}; // Number of inoizing photons
   virtual void SEDproperties(){};
-  void generate_spectra(double zin=0.d, double dmin=1.d, vector<opa> opaAll={});
+  void generate_spectra(double zin=0.0, double dmin=1.0, vector<opa> opaAll={});
   
   //in read_lib for zphota
   virtual void clean(){lamb_flux.clear();mag.clear();kcorr.clear();fac_line.clear();};
   virtual void setOthers(){};
   void fit_normalization(const onesource& source, const int imagm);
   inline bool is_same_model(const SED& other) {return ((*this).nummod == other.nummod && (*this).ebv == other.ebv && (*this).age == other.age) ;}
-  pair<vector<double>, vector<double> > get_data_vector(double, double, bool, double offset=0.d);
+  pair<vector<double>, vector<double> > get_data_vector(double, double, bool, double offset=0.0);
   
   void redshift();
   void applyExt(const double ebv, const ext& oneext);
