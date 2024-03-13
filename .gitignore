@@ -14,7 +14,6 @@ src/lib/zphota
 src/lib/lephare_lib.a
 /bin
 
-
 # Distribution / packaging
 .Python
 build/
