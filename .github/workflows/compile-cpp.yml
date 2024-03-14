@@ -17,6 +17,13 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
+    - name: Update gcc
+      if : matrix.os == 'macos-14'
+      run: |
+        brew install gcc
+        brew link --overwrite gcc
+
     - name: make
       run: |
         cd src/lib
