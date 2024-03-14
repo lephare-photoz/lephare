@@ -1,0 +1,30 @@
+name: C/C++ CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    name: Build C++
+    runs-on: ${{ matrix.os }}
+    strategy: 
+      matrix:
+        os: [ubuntu-latest, macos-latest, macos-14]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - uses: maxim-lobanov/setup-xcode@v1
+      if: matrix.os == 'macos-14'
+      with:
+        xcode-version: '15.1'
+
+    - name: make
+      run: |
+        cd src/lib
+        make
+
