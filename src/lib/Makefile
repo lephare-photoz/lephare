@@ -28,7 +28,7 @@ OS := $(shell uname -s)
 ifeq ($(OS), Darwin)
     # For macOS, brew install gcc
     FC         =   g++-13
-    CFLAGS     = -g -std=c++17 -fopenmp -Wall -fno-inline -Wno-psabi
+    CFLAGS     = -g -std=c++11 -fopenmp -Wall -fno-inline -Wno-psabi
 endif
 ifeq ($(OS), Linux)
     # For Linux
