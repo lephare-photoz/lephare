@@ -1,5 +1,5 @@
 # Changes here will be overwritten by Copier
-_commit: v2.0.0
+_commit: v2.0.1
 _src_path: gh:lincc-frameworks/python-project-template
 author_email: johann.cohentanugi@gmail.com
 author_name: Johann Cohen-Tanugi
@@ -19,6 +19,7 @@ project_license: MIT
 project_name: lephare
 project_organization: lincc-frameworks
 python_versions:
-- '3.8'
 - '3.9'
 - '3.10'
+- '3.11'
+- '3.12'
