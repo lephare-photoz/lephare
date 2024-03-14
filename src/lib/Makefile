@@ -54,16 +54,10 @@ FILES  = \
         sedtolib\
         mag_gal\
         zphota
-        #fit_schechter
-        #fit_parameters
 
 OBJECTS = \
         globals.o\
         keyword.o\
-        find_keyword.o\
-        split_double.o\
-        strtodouble.o\
-        option_demultipliate.o\
         flt.o\
         SED.o\
 	SEDLib.o\
@@ -74,8 +68,6 @@ OBJECTS = \
         cosmology.o\
         onesource.o\
         PDF.o\
-        read_LFdata.o\
-        write_output_fit.o\
 	photoz_lib.o\
 
 all: $(FILES)
