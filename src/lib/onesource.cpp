@@ -1437,8 +1437,6 @@ void onesource::write_pdz(vector<string> pdztype,
 */
 void onesource::interp_lib(vector<SED *> &fulllib, const int imagm,
                            cosmo lcdm) {
-  double dmcor = 1.;
-
   magm.clear();
 
   // Take the value of zs to interpolate in the library
