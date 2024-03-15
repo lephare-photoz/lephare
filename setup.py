@@ -93,7 +93,6 @@ setup(
     description="LEPHARE photometric redshift estimator",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    packages=find_packages(where=".", exclude=("tests",)),
     # add extension module
     ext_modules=[CMakeExtension("lephare._lephare")],
     include_package_data=True,
