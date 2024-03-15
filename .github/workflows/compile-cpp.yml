@@ -16,7 +16,9 @@ jobs:
         os: [ubuntu-latest, macos-latest, macos-14]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+      with:
+        submodules: resursive
 
     - uses: maxim-lobanov/setup-xcode@v1
       if: matrix.os == 'macos-14'
