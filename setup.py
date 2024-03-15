@@ -6,7 +6,7 @@ import subprocess
 import sys
 from distutils.version import LooseVersion
 
-from setuptools import Command, Extension, find_packages, setup
+from setuptools import Command, Extension, setup
 from setuptools.command.build_ext import build_ext
 
 here = pathlib.Path(__file__).parent.resolve()

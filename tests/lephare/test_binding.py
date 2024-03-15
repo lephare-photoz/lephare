@@ -5,5 +5,6 @@ os.environ["LEPHAREWORK"] = "."
 
 from lephare import zphota
 
+
 def test_zphota():
-    pass
+    _ = zphota.time.CLOCK_MONOTONIC

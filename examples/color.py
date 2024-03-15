@@ -2,7 +2,7 @@ from sys import*
 from matplotlib.pyplot import *
 from math import *
 import numpy as np
-from matplotlib.backends.backend_pdf import PdfPages 
+from matplotlib.backends.backend_pdf import PdfPages
 
 
 ############################
@@ -17,7 +17,7 @@ def errorZ(fl,mess,ax):
    medpVec=[]
    mednVec=[]
    zVec=[]
-   
+
    #set the axis
    ax.axis([0,6,0,4])
 
@@ -28,19 +28,19 @@ def errorZ(fl,mess,ax):
       zlimi=zstart+zstep*rm
       zlims=zstart+zstep*(rm+1)
 
-      #new condition with the magnitude range 
+      #new condition with the magnitude range
       condA = (zp>zlimi) & (zp<=zlims) & (eval("filt"+str(fl))>0) & (eval("eabsmag"+str(fl))>-0.01) & (eval("eabsmag"+str(fl))<4)
- 
+
       # be sure to have galaxies in a sufficient number
       if len( zp[condA]) > 3 :
-       
+
        #compute the median value
        medp=np.median(eval("eabsmag"+str(fl))[condA])
-       
+
        # Add the result to the vector
        medpVec.append(medp)
        zVec.append(zstart+zstep*(rm+0.5))
-      
+
    #plot the error versus z
    ax.plot(zVec,medpVec, color='b',linestyle='-')
 
@@ -49,7 +49,7 @@ def errorZ(fl,mess,ax):
 
 
 ############################
-# Compare rest-frame colors 
+# Compare rest-frame colors
 def colcol(zmin,zmax,flt1,flt2,flt3,mess,ax):
 
     #set the axis
@@ -63,14 +63,14 @@ def colcol(zmin,zmax,flt1,flt2,flt3,mess,ax):
    condA = (zp>zmin) & (zp<=zmax)
    ax.scatter(col1[condA],colAbsmag1[condA], s=1, color='b',alpha=0.5,marker='s')
    ax.scatter(col2[condA],colAbsmag2[condA], s=1, color='r',alpha=0.5,marker='s')
- 
+
    #droite
    xy=np.array([-10,10])
    ax.plot(xy,xy)
 
 
 ############################
-# Compare rest-frame colors 
+# Compare rest-frame colors
 def william(zlimi,flt1,flt2,flt3,mess,ax):
 
     #set the axis
@@ -79,7 +79,7 @@ def william(zlimi,flt1,flt2,flt3,mess,ax):
    # Color computed from the absolute magnitude
    colAbsmagX=eval("absmag"+str(flt2) + " -  absmag"+str(flt3))
    colAbsmagY=eval("absmag"+str(flt1) + " -  absmag"+str(flt2))
- 
+
    #plot color versus color
    condA = (zp>zlimi) & (zp<=zlimi+1)
    ax.scatter(colAbsmagX[condA],colAbsmagY[condA], s=1, color='b',alpha=0.5,marker='s')
@@ -137,29 +137,29 @@ def chiOldNew(zlimi,mess,ax):
 ############################
 # FILTER USED FOR THE ABSOLUTE MAGNITUDE VERSUS REDSHIFT
 def fltZ(fl,mess,ax):
-   
+
    #set the axis
    ax.axis([-2,30,0,5.])
    flhist=np.arange(300)*0.25-3
 
-   #new condition with the magnitude range 
+   #new condition with the magnitude range
    condA = (zp>2) & (zp<=3)
    # be sure to have galaxies in a sufficient number
-   if len( zp[condA]) > 3 :              
+   if len( zp[condA]) > 3 :
      #plot the error versus z
      ax.hist((eval("filt"+str(fl))[condA])-0.25, bins=flhist, histtype='stepfilled', normed=True, color='b', label=mess)
 
-   #new condition with the magnitude range 
+   #new condition with the magnitude range
    condA = (zp>3) & (zp<=4)
    # be sure to have galaxies in a sufficient number
-   if len( zp[condA]) > 3 :              
+   if len( zp[condA]) > 3 :
      #plot the error versus z
      ax.hist((eval("filt"+str(fl))[condA]), bins=flhist, histtype='stepfilled', normed=True, color='g', label=mess)
 
-   #new condition with the magnitude range 
+   #new condition with the magnitude range
    condA = (zp>4) & (zp<=5)
    # be sure to have galaxies in a sufficient number
-   if len( zp[condA]) > 3 :              
+   if len( zp[condA]) > 3 :
      #plot the error versus z
      ax.hist((eval("filt"+str(fl))[condA])+0.25, bins=flhist, histtype='stepfilled', normed=True, color='r')
      # labels
@@ -235,7 +235,7 @@ exec(commandstOld)
 ######### ERRORS VERSUS Z
 
 
-# All the figures will be collected in a single pdf file 
+# All the figures will be collected in a single pdf file
 pdfOut = PdfPages('figures.pdf')
 
 
@@ -247,13 +247,13 @@ subplots_adjust( hspace=0,wspace=0)
 
 # label of the figure
 f.text(0.5, 0.04, '$z$', ha='center')
-f.text(0.04, 0.5, '$absolute \; magnitude \; uncertainties$', va='center', rotation='vertical')
+f.text(0.04, 0.5, r'$absolute \; magnitude \; uncertainties$', va='center', rotation='vertical')
 
 # Define the subplots and pass the panel
-errorZ(31,"NUV",axarr[0,0])  
-errorZ(3,"R",axarr[0,1])   
-errorZ(8,"J",axarr[1,0])  
-errorZ(10,"K",axarr[1,1]) 
+errorZ(31,"NUV",axarr[0,0])
+errorZ(3,"R",axarr[0,1])
+errorZ(8,"J",axarr[1,0])
+errorZ(10,"K",axarr[1,1])
 
 # store the figure in a PDF
 savefig(pdfOut,format='pdf')
@@ -265,14 +265,14 @@ f, axarr = subplots(2,2,sharex=True,sharey=True)
 subplots_adjust( hspace=0,wspace=0)
 
 # label of the figure
-f.text(0.5, 0.04, '$absolute \; magnitude \; filters$', ha='center')
+f.text(0.5, 0.04, r'$absolute \; magnitude \; filters$', ha='center')
 f.text(0.04, 0.5, '$N$', va='center', rotation='vertical')
 
 # Define the subplots and pass the panel
-fltZ(31,"NUV",axarr[0,0])  
-fltZ(3,"R",axarr[0,1])   
-fltZ(8,"J",axarr[1,0])  
-fltZ(10,"K",axarr[1,1]) 
+fltZ(31,"NUV",axarr[0,0])
+fltZ(3,"R",axarr[0,1])
+fltZ(8,"J",axarr[1,0])
+fltZ(10,"K",axarr[1,1])
 
 # store the figure in a PDF
 savefig(pdfOut,format='pdf')
@@ -289,10 +289,10 @@ f.text(0.5, 0.04, '$color new$', ha='center')
 f.text(0.04, 0.5, '$color old$', va='center', rotation='vertical')
 
 # Define the subplots and pass the panel
-colcol(0,1,31,3,10,"0<z<1",axarr[0,0])  
-colcol(1,2,31,3,10,"1<z<2",axarr[0,1])  
-colcol(2,3,31,3,10,"2<z<3",axarr[1,0])  
-colcol(0,4,31,3,10,"0<z<4",axarr[1,1])  
+colcol(0,1,31,3,10,"0<z<1",axarr[0,0])
+colcol(1,2,31,3,10,"1<z<2",axarr[0,1])
+colcol(2,3,31,3,10,"2<z<3",axarr[1,0])
+colcol(0,4,31,3,10,"0<z<4",axarr[1,1])
 
 
 # store the figure in a PDF
@@ -311,10 +311,10 @@ f.text(0.5, 0.04, '$R-K$', ha='center')
 f.text(0.04, 0.5, '$NUV-R$', va='center', rotation='vertical')
 
 # Define the subplots and pass the panel
-william(0,31,3,10,"0<z<1",axarr[0,0])  
-william(1,31,3,10,"1<z<2",axarr[0,1])  
-william(2,31,3,10,"2<z<3",axarr[1,0])  
-william(3,31,3,10,"3<z<4",axarr[1,1])  
+william(0,31,3,10,"0<z<1",axarr[0,0])
+william(1,31,3,10,"1<z<2",axarr[0,1])
+william(2,31,3,10,"2<z<3",axarr[1,0])
+william(3,31,3,10,"3<z<4",axarr[1,1])
 
 
 ##########
@@ -330,14 +330,14 @@ subplots_adjust( hspace=0,wspace=0)
 # label of the figure
 f.text(0.5, 0.04, '$M old$', ha='center')
 f.text(0.04, 0.5, '$M new$', va='center', rotation='vertical')
-   
+
 xy=np.array([-100,10])
 
 # Define the subplots and pass the panel
-absOld(0,31,3,10,"0<z<1",axarr[0,0])  
-absOld(1,31,3,10,"1<z<2",axarr[0,1])  
-absOld(2,31,3,10,"2<z<3",axarr[1,0])  
-absOld(3,31,3,10,"3<z<4",axarr[1,1])  
+absOld(0,31,3,10,"0<z<1",axarr[0,0])
+absOld(1,31,3,10,"1<z<2",axarr[0,1])
+absOld(2,31,3,10,"2<z<3",axarr[1,0])
+absOld(3,31,3,10,"3<z<4",axarr[1,1])
 
 
 # store the figure in a PDF
@@ -356,14 +356,14 @@ subplots_adjust( hspace=0,wspace=0)
 # label of the figure
 f.text(0.5, 0.04, '$chi2 old$', ha='center')
 f.text(0.04, 0.5, '$chi2 new$', va='center', rotation='vertical')
-   
+
 xy=np.array([-100,10000])
 
 # Define the subplots and pass the panel
-chiOldNew(0,"0<z<1",axarr[0,0])  
-chiOldNew(1,"1<z<2",axarr[0,1])  
-chiOldNew(2,"2<z<3",axarr[1,0])  
-chiOldNew(3,"3<z<4",axarr[1,1])  
+chiOldNew(0,"0<z<1",axarr[0,0])
+chiOldNew(1,"1<z<2",axarr[0,1])
+chiOldNew(2,"2<z<3",axarr[1,0])
+chiOldNew(3,"3<z<4",axarr[1,1])
 
 
 # store the figure in a PDF
