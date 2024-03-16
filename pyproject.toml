@@ -16,6 +16,10 @@ classifiers = [
 dynamic = ["version"]
 requires-python = ">=3.9"
 dependencies = [
+    "matplotlib",
+    "numpy",
+    "astropy",
+    "scipy",
 ]
 
 [project.urls]
@@ -37,6 +41,9 @@ requires = [
     "setuptools_scm>=6.2", # Gets release version from git. Makes it available programmatically
 ]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.setuptools_scm]
 write_to = "src/lephare/_version.py"
