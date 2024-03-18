@@ -4,6 +4,7 @@
 
 Welcome to lephare's documentation!
 ========================================================================================
+**WARNING: This is a work in progress, and should ne be used by anyone at this stage. The current LePHARE code is to be found at https://gitlab.lam.fr/Galaxies/LEPHARE .**
 
 Dev Guide - Getting Started
 ---------------------------
