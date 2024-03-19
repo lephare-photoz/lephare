@@ -7,6 +7,8 @@
 [![Codecov](https://codecov.io/gh/lincc-frameworks/lephare/branch/main/graph/badge.svg)](https://codecov.io/gh/lincc-frameworks/lephare)
 [![Read The Docs](https://img.shields.io/readthedocs/lephare)](https://lephare.readthedocs.io/)
 
+This project is in an early development stage. If you wish to use and run LePHARE please download it from the [official repository](https://gitlab.lam.fr/Galaxies/LEPHARE/).
+
 This project was automatically generated using the LINCC-Frameworks 
 [python-project-template](https://github.com/lincc-frameworks/python-project-template).
 
