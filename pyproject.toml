@@ -99,6 +99,8 @@ select = [
 ]
 
 ignore = [
+    "D101", # Allow public classes without docstrings
+    "D102", # Allow public functions without docstrings
     "UP006", # Allow non standard library generics in type hints
     "UP007", # Allow Union in type hints
     "SIM114", # Allow if with same arms
