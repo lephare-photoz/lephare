@@ -1,12 +1,12 @@
 import numpy as np
-from lephare import *
+from lephare import cosmo, indexz, zgrid
 
 
 def test_cosmology():
     # test default arguments
-    cosmo_test = cosmo()
+    _ = cosmo()
     # test setting arguments
-    cosmo_test = cosmo(h0=67, om0=0.27, l0=0.73)
+    _ = cosmo(h0=67, om0=0.27, l0=0.73)
 
 
 def test_cosmology_zgrid():

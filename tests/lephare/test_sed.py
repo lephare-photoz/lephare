@@ -32,7 +32,6 @@ def test_sed_fromfile():
     sed.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
     assert sed.size() == 4860
     d = sed.data()
-    x = d[0]
     y = d[1]
     sed.rescale(2.0)
     y2 = sed.data()[1]
@@ -74,5 +73,4 @@ def test_integration():
     ]
     print(result)
     print(true_res)
-    relative_error = (np.array(result) - np.array(true_res)) / np.array(true_res)
     assert np.allclose(np.array(result), np.array(true_res), 1.1e-2)

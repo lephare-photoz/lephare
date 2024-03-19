@@ -53,29 +53,29 @@ class MagGal(Runner):
         self.keymap["c"] = keyword("c", self.config)
 
         if self.typ[0] == "G":
-            Mag = GalMag(self.keymap)
+            mag = GalMag(self.keymap)
         elif self.typ[0] == "Q":
-            Mag = QSOMag(self.keymap)
+            mag = QSOMag(self.keymap)
         elif self.typ[0] == "S":
-            Mag = StarMag(self.keymap)
+            mag = StarMag(self.keymap)
         else:
             raise KeyError("-t arg must start with G/g Q/q or S/s for Galaxy QSO and Star respectively.")
-        Mag.open_files()
-        Mag.print_info()
+        mag.open_files()
+        mag.print_info()
         # Read dust extinction laws
-        Mag.read_ext()
+        mag.read_ext()
         # Define the redshift grid
-        Mag.def_zgrid()
+        mag.def_zgrid()
         # Read B12 templates to add dust emission to BC03
-        Mag.read_B12()
+        mag.read_B12()
         # Read sed, apply extinction and IGM opacity
-        Mag.read_SED()
-        Mag.write_doc()
+        mag.read_SED()
+        mag.write_doc()
         # we need to call the close method here because run can
         # be called within a python session that stays alive afterwards
-        Mag.close_files()
+        mag.close_files()
 
-        self.Mag = Mag
+        self.Mag = mag
         return
 
 
