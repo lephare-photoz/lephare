@@ -1,8 +1,8 @@
-import numpy as np
 import os
 import tempfile
 
-from lephare import LEPHAREDIR, SED, StarSED, QSOSED, GalSED, flt
+import numpy as np
+from lephare import QSOSED, SED, GalSED, StarSED, flt
 
 TESTDIR = os.path.abspath(os.path.dirname(__file__))
 TESTDATADIR = os.path.join(TESTDIR, "../data")

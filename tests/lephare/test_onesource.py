@@ -1,6 +1,5 @@
 import numpy as np
-import os
-from lephare import LEPHAREDIR, onesource
+from lephare import onesource
 
 
 def test_onesource_creation():
