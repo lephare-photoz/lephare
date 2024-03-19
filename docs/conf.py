@@ -5,8 +5,15 @@
 
 
 import os
+import subprocess
 import sys
 from importlib.metadata import version
+
+read_the_docs_build = os.environ.get("READTHEDOCS", None) == "True"
+
+# If building on read the docs, build the doxygen documentation
+if read_the_docs_build:
+    subprocess.call("cd doxygen; doxygen ./Doxyfile", shell=True)
 
 # Define path to the code to be documented **relative to where conf.py (this file) is kept**
 sys.path.insert(0, os.path.abspath("../src/"))
@@ -24,7 +31,7 @@ version = ".".join(release.split(".")[:2])
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ["sphinx.ext.mathjax", "sphinx.ext.napoleon", "sphinx.ext.viewcode"]
+extensions = ["breathe", "exhale", "sphinx.ext.mathjax", "sphinx.ext.napoleon", "sphinx.ext.viewcode"]
 
 extensions.append("autoapi.extension")
 extensions.append("nbsphinx")
@@ -56,3 +63,18 @@ autoapi_add_toc_tree_entry = False
 autoapi_member_order = "bysource"
 
 html_theme = "sphinx_rtd_theme"
+
+breathe_projects = {"lephare": "./doxygen_output/xml"}
+breathe_default_project = "lephare"
+
+# Setup the exhale extension
+exhale_args = {
+    # These arguments are required
+    "containmentFolder": "./doxygen_output/c_lib",
+    "rootFileName": "library_root.rst",
+    "doxygenStripFromPath": "..",
+    "rootFileTitle": "C Library API",
+    "createTreeView": True,
+    "exhaleExecutesDoxygen": True,
+    "exhaleDoxygenStdin": "INPUT = ../src/lib",
+}

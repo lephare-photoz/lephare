@@ -8,3 +8,5 @@ sphinx
 sphinx-autoapi
 sphinx-copybutton
 sphinx-rtd-theme
+breathe
+exhale
