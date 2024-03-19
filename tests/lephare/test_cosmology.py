@@ -1,7 +1,8 @@
 import os
 import unittest
-from lephare import *
+
 import numpy as np
+from lephare import *
 
 TESTDIR = os.path.abspath(os.path.dirname(__file__))
 LEPHAREDIR = os.path.join(TESTDIR, "..")

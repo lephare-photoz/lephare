@@ -56,14 +56,17 @@ testpaths = [
 [tool.black]
 line-length = 110
 target-version = ["py39"]
+extend-exclude = '''examples/.*'''
 
 [tool.isort]
 profile = "black"
 line_length = 110
+skip_glob = ["examples/*"]
 
 [tool.ruff]
 line-length = 110
 target-version = "py39"
+exclude = ["examples/*", "setup.py"]
 
 [tool.ruff.lint]
 select = [
@@ -93,7 +96,6 @@ select = [
     "D300",
     "D417",
     "D419",
-
 ]
 
 ignore = [
@@ -105,6 +107,7 @@ ignore = [
     "UP015", # Allow redundant open parameters
     "UP028", # Allow yield in for loop
 ]
+exclude = ["examples/*", "setup.py"]
 
 [tool.coverage.run]
 omit=["src/lephare/_version.py"]

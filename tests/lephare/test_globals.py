@@ -1,6 +1,7 @@
 import os
 import unittest
-from lephare._lephare import get_lephare_env, test_first_char, blackbody
+
+from lephare._lephare import blackbody, test_first_char
 
 TESTDIR = os.path.abspath(os.path.dirname(__file__))
 LEPHAREDIR = os.path.join(TESTDIR, "..")

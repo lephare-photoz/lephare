@@ -1,14 +1,12 @@
-import os
 import unittest
-import numpy as np
-from lephare import LEPHAREDIR, onesource
+
+from lephare import onesource
 
 # TESTDIR = os.path.abspath(os.path.dirname(__file__))
 # LEPHAREDIR = os.path.join(TESTDIR,"..")
 
 
 class onesource_tests(unittest.TestCase):
-
     def test_creation(self):
         src = onesource()
         self.assertEqual(src.spec, "1")

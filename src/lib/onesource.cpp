@@ -403,7 +403,7 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
   // double start = omp_get_wtime();
 #pragma omp parallel shared(fulllib)                                    \
     firstprivate(s2n, invsab, invsabSq, abinvsabSq, imagm, nbul, busul, \
-                 priorLib, number_threads, thread_id) private(il)
+                     priorLib, number_threads, thread_id) private(il)
   {
     // Catch the name of the local thread in the parrallelisation
     thread_id = omp_get_thread_num();
@@ -881,7 +881,7 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
 #ifdef _OPENMP
   // double start = omp_get_wtime();
 #pragma omp parallel private(pos, col1, col2, rfSED, prob) firstprivate( \
-    thread_id, dimzg, number_threads) shared(locChi2, locInd, fulllib)
+        thread_id, dimzg, number_threads) shared(locChi2, locInd, fulllib)
   {
     // Catch the name of the local thread in the parallelisation
     thread_id = omp_get_thread_num();
@@ -2159,12 +2159,10 @@ void onesource::writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
   if (indmin[0] > 0) {
     stospec << "GAL-1 " << lG.size() << " " << imasmin[0] << " 1 " << nbused
             << " " << consiz << " " << zgmin[0] << " " << zgmin[1] << " ";
-    stospec << chimin[0] << " "
-            << " -1"
-            << " " << results["EXTLAW_BEST"] << " " << results["EBV_BEST"]
-            << " " << results["LDUST_BEST"] << " " << results["AGE_BEST"] << " "
-            << results["MASS_BEST"] << " " << results["SFR_BEST"] << " "
-            << results["SSFR_BEST"] << endl;
+    stospec << chimin[0] << " " << " -1" << " " << results["EXTLAW_BEST"] << " "
+            << results["EBV_BEST"] << " " << results["LDUST_BEST"] << " "
+            << results["AGE_BEST"] << " " << results["MASS_BEST"] << " "
+            << results["SFR_BEST"] << " " << results["SSFR_BEST"] << endl;
 
   } else {
     stospec
@@ -2181,8 +2179,8 @@ void onesource::writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
   if (indminIR > 0) {
     stospec << "GAL-FIR " << lIR.size() << " " << imasminIR << " 1 " << nbused
             << " " << zminIR << " -1 -1 ";
-    stospec << chiminIR << " "
-            << " 0 -1 -1 " << -999. << " -1 -1 -1 -1 " << endl;
+    stospec << chiminIR << " " << " 0 -1 -1 " << -999. << " -1 -1 -1 -1 "
+            << endl;
   } else {
     stospec
         << "GAL-FIR 0 -1 -1 -1 -1. -1. -1. -1. -1. -1 -1. -1. -1. -1. -1. -1. "

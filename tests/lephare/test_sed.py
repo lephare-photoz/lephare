@@ -1,15 +1,15 @@
 import os
 import tempfile
 import unittest
+
 import numpy as np
-from lephare import LEPHAREDIR, SED, StarSED, QSOSED, GalSED, flt
+from lephare import QSOSED, SED, GalSED, StarSED, flt
 
 TESTDIR = os.path.abspath(os.path.dirname(__file__))
 TESTDATADIR = os.path.join(TESTDIR, "../data")
 
 
 class sed_tests(unittest.TestCase):
-
     def test_sed_constructors(self):
         sed = SED("toto", 10, "GAL")
         self.assertEqual(sed.name, "toto")

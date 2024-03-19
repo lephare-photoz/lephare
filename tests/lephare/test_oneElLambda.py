@@ -1,5 +1,6 @@
 import os
 import unittest
+
 from lephare import _lephare
 
 TESTDIR = os.path.abspath(os.path.dirname(__file__))

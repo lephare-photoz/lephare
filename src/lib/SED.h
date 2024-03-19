@@ -148,7 +148,7 @@ class SED {
     writeSED(sbinOut, sphysOut, sdocOut);
   };
   virtual void writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
-                        vector<flt> allFilters, string magtyp){};
+                        vector<flt> allFilters, string magtyp) {};
 
   inline void readSEDBin(const string &fname) {
     ifstream sbinIn;
@@ -160,11 +160,11 @@ class SED {
   }
   /// read the SED library when it is in binary format
   virtual void readSEDBin(ifstream &ins);
-  virtual void readMagBin(ifstream &ins){};
-  virtual void sumEmLines(){};
+  virtual void readMagBin(ifstream &ins) {};
+  virtual void sumEmLines() {};
   /// for each magnitude \a #mag[k] compute kcorr = mag[k] - mag_z0[k] - distMod
-  virtual void kcorrec(const vector<double> &magz0){};
-  virtual void add_neb_cont(){};  // Add continuum
+  virtual void kcorrec(const vector<double> &magz0) {};
+  virtual void add_neb_cont() {};  // Add continuum
   /*!
    * Compute the number flux of photons able to ionize HeII, HeI, H, and H2
    * For a given SED, this amounts to compute the integral
@@ -178,8 +178,8 @@ class SED {
    *
    * Results are stored in the q_i array member of size 4 of the SED instance.
    */
-  virtual void calc_ph(){};  // Number of inoizing photons
-  virtual void SEDproperties(){};
+  virtual void calc_ph() {};  // Number of inoizing photons
+  virtual void SEDproperties() {};
   void generate_spectra(double zin = 0.0, double dmin = 1.0,
                         vector<opa> opaAll = {});
 
@@ -190,7 +190,7 @@ class SED {
     kcorr.clear();
     fac_line.clear();
   };
-  virtual void setOthers(){};
+  virtual void setOthers() {};
   void fit_normalization(const onesource &source, const int imagm);
   inline bool is_same_model(const SED &other) {
     return ((*this).nummod == other.nummod && (*this).ebv == other.ebv &&
