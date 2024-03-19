@@ -75,9 +75,9 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readwrite("lamb_ext", &ext::lamb_ext)
       .def_readwrite("name", &ext::name)
       .def_readwrite("numext", &ext::numext)
+      .def_readonly("lmin", &ext::lmin, "return smallest wavelength stored")
+      .def_readonly("lmax", &ext::lmax, "return largest wavelength stored")
       .def("read", &ext::read, py::arg("extFile"), "read an extinction file")
-      //   .def("lmin", &ext::lmin, "return smallest wavelength stored")
-      //   .def("lmax", &ext::lmax, "return largest wavelength stored")
       ;
 
   /******** CLASS KEYWORD *********/
