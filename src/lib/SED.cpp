@@ -953,7 +953,7 @@ void GalSED::calc_ph() {
     } else {
       iedge++;  // next qi
     }
-    i++;  // next wavelength
+    i++;                                    // next wavelength
   } while (lamb_flux[i].lamb <= wedge[3]);  // limite
 
   // cout << "nombre de photons ionisants : \n pour HeII : "  << qi[0] << "\n
