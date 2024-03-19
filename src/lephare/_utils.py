@@ -21,7 +21,7 @@ INTRINSIC_SPECIAL_ATTRIBUTES = frozenset(
 
 
 # code copied from https://github.com/lsst/utils/blob/main/python/lsst/utils/wrappers.py
-def isAttributeSafeToTransfer(name, value):
+def isAttributeSafeToTransfer(name, value):  # noqa: N802
     """Return True if an attribute is safe to monkeypatch-transfer to another
     class.
     This rejects special methods that are defined automatically for all
@@ -36,7 +36,7 @@ def isAttributeSafeToTransfer(name, value):
 
 
 # code copied from https://github.com/lsst/utils/blob/main/python/lsst/utils/wrappers.py
-def continueClass(cls):
+def continueClass(cls):  # noqa: N802
     orig = getattr(sys.modules[cls.__module__], cls.__name__)
     for name in dir(cls):
         # Common descriptors like classmethod and staticmethod can only be

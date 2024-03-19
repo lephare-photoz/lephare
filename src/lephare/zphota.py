@@ -91,7 +91,7 @@ class Zphota(Runner):
             if k == "config":
                 self.config = config_file
                 continue
-            if k.upper() in self.keymap.keys():
+            if k.upper() in self.keymap:
                 self.keymap[k.upper()] = keyword(k.upper(), str(v))
         self.keymap["c"] = keyword("c", self.config)
 
@@ -102,25 +102,25 @@ class Zphota(Runner):
         photoz = PhotoZ(self.keymap)
         autoadapt = (self.keymap["AUTO_ADAPT"]).split_string("YES", 1)[0]
         if autoadapt == "YES":
-            adaptSrcs = photoz.read_autoadapt_sources()
-            photoz.prep_data(adaptSrcs)
-            a0, a1 = photoz.run_autoadapt(adaptSrcs)
+            adapt_srcs = photoz.read_autoadapt_sources()
+            photoz.prep_data(adapt_srcs)
+            a0, a1 = photoz.run_autoadapt(adapt_srcs)
             offsets = ",".join(np.array(a0).astype(str))
             offsets = "# Offsets from auto-adapt: " + offsets + "\n"
             photoz.outputHeader += offsets
         else:
             a0 = []
             a1 = []
-            for k in range(photoz.imagm):
+            for _ in range(photoz.imagm):
                 a0.append(0.0)
                 a1.append(0.0)
 
-        opaOut = GalMag.read_opa()
+        opa_out = GalMag.read_opa()  # noqa: F841
 
-        fitSrcs = photoz.read_photoz_sources()
-        photoz.prep_data(fitSrcs)
-        photoz.run_photoz(fitSrcs, a0, a1)
-        photoz.write_outputs(fitSrcs, int(time.time()))
+        fit_srcs = photoz.read_photoz_sources()
+        photoz.prep_data(fit_srcs)
+        photoz.run_photoz(fit_srcs, a0, a1)
+        photoz.write_outputs(fit_srcs, int(time.time()))
 
     def end(self):
         super().end()

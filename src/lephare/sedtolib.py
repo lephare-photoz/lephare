@@ -44,27 +44,27 @@ class Sedtolib(Runner):
                 self.config = config_file
                 continue
             # if the key in argument is in the keymap, update the keymap with the argument
-            if k.upper() in self.keymap.keys():
+            if k.upper() in self.keymap:
                 self.keymap[k.upper()] = keyword(k.upper(), str(v))
 
         if self.typ[0] == "G":
-            SEDLibrary = GalSEDLib(self.keymap, self.config, self.typ)
+            sed_library = GalSEDLib(self.keymap, self.config, self.typ)
         elif self.typ[0] == "Q":
-            SEDLibrary = QSOSEDLib(self.keymap, self.config, self.typ)
+            sed_library = QSOSEDLib(self.keymap, self.config, self.typ)
         elif self.typ[0] == "S":
-            SEDLibrary = StarSEDLib(self.keymap, self.config, self.typ)
+            sed_library = StarSEDLib(self.keymap, self.config, self.typ)
         else:
             raise KeyError("-t arg must start with G/g Q/q or S/s for Galaxy QSO and Star respectively.")
 
-        SEDLibrary.print_info()
-        SEDLibrary.read_model_list()
-        SEDLibrary.write_SED_lib()
-        SEDLibrary.print_time_tofile(int(time.time()))
+        sed_library.print_info()
+        sed_library.read_model_list()
+        sed_library.write_SED_lib()
+        sed_library.print_time_tofile(int(time.time()))
         # we need to call the close method here because run can
         # be called within a python session that stays alive afterwards
-        SEDLibrary.close_output_files()
+        sed_library.close_output_files()
 
-        self.SEDLib = SEDLibrary
+        self.SEDLib = sed_library
         return
 
 

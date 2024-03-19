@@ -43,7 +43,7 @@ class MagGal(Runner):
             if k == "config":
                 self.config = config_file
                 continue
-            if k.upper() in self.keymap.keys():
+            if k.upper() in self.keymap:
                 self.keymap[k.upper()] = keyword(k.upper(), str(v))
 
         # needed to comply with the C++ interface

@@ -1,3 +1,6 @@
+# ruff: noqa: E402
+# ruff: noqa: F403
+
 import os
 
 global LEPHAREDIR
@@ -5,7 +8,7 @@ global LEPHAREDIR
 try:
     LEPHAREDIR = os.environ["LEPHAREDIR"]
 except KeyError:
-    raise RuntimeError("Environment variable LEPHAREDIR has not been set")
+    raise RuntimeError("Environment variable LEPHAREDIR has not been set")  # noqa: B904
 
 try:
     os.mkdir(os.environ["LEPHAREWORK"])
@@ -16,14 +19,14 @@ try:
 except FileExistsError:
     pass
 except KeyError:
-    raise RuntimeError("Environment variable LEPHAREWORK has not been set")
+    raise RuntimeError("Environment variable LEPHAREWORK has not been set")  # noqa: B904
 
 
 from ._lephare import *
 
 # from lephare._lephare import  get_lephare_env
 # make LEPHAREDIR and LEPHAREWORK avaliable to the C++ codes
-get_lephare_env()
+get_lephare_env()  # noqa: F405
 
 from ._flt import *
 from ._pdf import *
