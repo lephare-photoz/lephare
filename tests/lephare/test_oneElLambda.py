@@ -1,5 +1,5 @@
 import os
-import pytest
+
 from lephare import _lephare
 
 

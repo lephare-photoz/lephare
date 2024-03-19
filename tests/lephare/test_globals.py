@@ -1,8 +1,5 @@
 import numpy as np
-import os
-import pytest
-
-from lephare._lephare import test_first_char, blackbody
+from lephare._lephare import blackbody, test_first_char
 
 
 def test_globals_first_char():

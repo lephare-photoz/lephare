@@ -1,8 +1,7 @@
-import numpy as np
 import os
-import pytest
 import tempfile
 
+import numpy as np
 from lephare import keyword, read_command, read_config
 
 TESTDIR = os.path.abspath(os.path.dirname(__file__))

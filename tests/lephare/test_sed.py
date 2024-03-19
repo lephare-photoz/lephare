@@ -1,8 +1,7 @@
-import numpy as np
 import os
 import tempfile
-import unittest
 
+import numpy as np
 from lephare import QSOSED, SED, GalSED, StarSED, flt
 
 TESTDIR = os.path.abspath(os.path.dirname(__file__))
