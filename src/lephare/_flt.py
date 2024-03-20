@@ -9,7 +9,7 @@ __all__ = [
 
 
 @continueClass
-class flt:
+class flt:  # noqa
     def plot_filter_curve(self, normed=False):
         filter_name = self.name
         plt.title(filter_name)

@@ -58,7 +58,7 @@ def test_keyword_expand_path():
 def test_keyword_read_config(test_data_dir):
     config_file = os.path.join(test_data_dir, "examples/COSMOS.para")
     km = read_config(config_file)
-    for k in km.keys():
+    for k in km:
         assert k[0] != "#"
         assert k[0] != " "
         assert k[0] != "\t"
@@ -66,7 +66,7 @@ def test_keyword_read_config(test_data_dir):
 
 def test_keyword_read_command():
     km = read_command(["exec", "-c", "config", "--arg1", "val1", "-arg2", "val2"])
-    for k in km.keys():
+    for k in km:
         if k == "c":
             assert km[k].value == "config"
         if k == "arg1":

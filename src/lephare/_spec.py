@@ -4,15 +4,15 @@ import numpy as np
 
 def plotspec(filename):
     ### Open .spec file[s] and read the parameters
-    fsp = open(filename, "r")
+    fsp = open(filename, "r")  # noqa: SIM115
     print("File:", filename)
 
     bid = fsp.readline()  # header1
     line = fsp.readline()
     line = line.split()
     id = line[0]
-    zspec = line[1]
-    zphot = float(line[2])
+    # zspec = line[1]
+    # zphot = float(line[2])
     # z68low=float(line[3]); z68hig=float(line[4])
 
     bid = fsp.readline()  # header2
@@ -26,9 +26,10 @@ def plotspec(filename):
     npdf = int(line[1])
 
     bid = fsp.readline()
-    # header4:  Type Nline Model Library Nband    Zphot Zinf Zsup Chi2  PDF     Extlaw EB-V Lir Age  Mass SFR SSFR
+    # header4:  Type Nline Model Library Nband    Zphot Zinf Zsup Chi2  PDF
+    #     Extlaw EB-V Lir Age  Mass SFR SSFR
     models_info = []
-    for i in range(6):
+    for _ in range(6):
         line = fsp.readline()
         model = line.split()
         models_info.append(model)

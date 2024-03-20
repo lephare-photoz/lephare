@@ -1,3 +1,5 @@
+# ruff: noqa: N999
+
 import os
 import xml.dom.minidom
 
@@ -15,34 +17,29 @@ SVO_URL = "http://svo2.cab.inta-csic.es/theory/fps"
 
 class FilterSvc:
     @classmethod
-    def from_yaml(self, yaml_file):
-        config = yaml.load(open(yaml_file), Loader=yaml.BaseLoader)["filters"]
-        if "calib" in config.keys():
+    def from_yaml(cls, yaml_file):
+        config = yaml.load(open(yaml_file), Loader=yaml.BaseLoader)["filters"]  # noqa: SIM115
+        if "calib" in config:
             default_calib = config["calib"]
-        if "trans" in config.keys():
+        if "trans" in config:
             default_trans = config["trans"]
         flt_array = []
         counter = 0
         for entry in config["list"]:
             name = entry["name"]
-            counter += 1  # filters are ordered starting from one (FORTRAN legacy)
-            if "calib" in entry.keys():
-                calib = entry["calib"]
-            else:
-                calib = default_calib
-            if "trans" in entry.keys():
-                trans = entry["trans"]
-            else:
-                trans = default_trans
+            # filters are ordered starting from one (FORTRAN legacy)
+            counter += 1  # noqa: SIM113
+            calib = entry.get("calib", default_calib)
+            trans = entry.get("trans", default_trans)
             if name[:4] == "svo:":
-                flt_obj = self.from_svo(counter, name[4:], "AB", calib)
+                flt_obj = cls.from_svo(counter, name[4:], "AB", calib)
             else:
-                flt_obj = self.from_file(name, counter, trans, calib)
+                flt_obj = cls.from_file(name, counter, trans, calib)
             flt_array.append(flt_obj)
         return flt_array
 
     @classmethod
-    def from_config(self, config_file):
+    def from_config(cls, config_file):
         keywords = ["FILTER_REP", "FILTER_LIST", "TRANS_TYPE", "FILTER_CALIB", "FILTER_FILE"]
         keymap = {}
         with open(config_file) as fstream:
@@ -74,18 +71,18 @@ class FilterSvc:
         return flt_array
 
     @classmethod
-    def from_svo(self, counter, filter_id, system="AB", calib=0):
+    def from_svo(cls, counter, filter_id, system="AB", calib=0):
         res = FilterSvc.svo_request(counter, filter_id, system)
         return res
 
     @classmethod
-    def from_file(self, filename, counter=-1, trans=0, calib=0):
+    def from_file(cls, filename, counter=-1, trans=0, calib=0):
         name = filename.replace("$LEPHAREDIR", LEPHAREDIR)
         f = flt(counter, name, trans, calib)
         return f
 
     @classmethod
-    def svo_request(self, counter, filter_id, system):
+    def svo_request(cls, counter, filter_id, system):
         try:
             query = f"{SVO_URL}/fps.php?PhotCalID={filter_id}/{system}"
             r = requests.get(query)
@@ -101,7 +98,8 @@ class FilterSvc:
         for info in dd.getElementsByTagName("INFO"):
             if info.getAttribute("name") == "QUERY_STATUS" and info.getAttribute("value") != "OK":
                 raise AssertionError(
-                    f"QUERY_STATUS did not return OK; check the filter_id input: {SVO_URL}. For a list of valid filters, see {filter_id}"
+                    f"QUERY_STATUS did not return OK; check the filter_id input: {SVO_URL}. "
+                    f"For a list of valid filters, see {filter_id}"
                 )
         # filter params: not used (yet?)
         params = dd.getElementsByTagName("PARAM")
@@ -122,13 +120,13 @@ class FilterSvc:
         assert f2.getAttribute("datatype") == "double"
         table = dd.getElementsByTagName("TABLEDATA")[0]
         data = table.getElementsByTagName("TR")
-        stream = open("./" + name, "w")
-        for i, d in enumerate(data):
-            dd = d.getElementsByTagName("TD")
-            l = float(dd[0].childNodes[0].data)
-            t = float(dd[1].childNodes[0].data)
-            stream.write(f"{l} {t}\n")
-        stream.close()
+        with open("./" + name, "w") as stream:
+            for _, d in enumerate(data):
+                dd = d.getElementsByTagName("TD")
+                l_val = float(dd[0].childNodes[0].data)
+                t_val = float(dd[1].childNodes[0].data)
+                stream.write(f"{l_val} {t_val}\n")
+
         # not super nice, but the only quick solution found to
         # avoid exposing trans and clean methods.
         flt_obj = flt(counter, "./" + name, trans_type, 0)

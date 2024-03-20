@@ -18,11 +18,11 @@ class Runner:
             raise RuntimeError("Runner is a base class and cannot be initialized")
         self.config_keys = config_keys
 
-        if config_file != None:
+        if config_file is not None:
             # this only happens if the code is called from python
             # Read the config file and creates a keyword map
             self.parse_config_file(config_file)
-        if config_keymap != None:
+        if config_keymap is not None:
             # merge the config_file and config_keymap, keeping the config_keymap in case of duplicate
             self.keymap = self.keymap | config_keymap
         if config_keymap is None and config_file is None:
@@ -31,11 +31,9 @@ class Runner:
             self.args = self.config_parser(config_keys)
             if self.timer:
                 self.start = time.time()
-        # set verbosity
-        if not self.verbose:
-            # verbose not set at the command line, so check keymap
-            if "VERBOSE" in self.keymap.keys():
-                self.verbose = self.keymap["VERBOSE"].split_bool("NO", 1)[0]
+        # set verbosity. check keymap is not set on the commandline.
+        if not self.verbose and "VERBOSE" in self.keymap:
+            self.verbose = self.keymap["VERBOSE"].split_bool("NO", 1)[0]
 
     # This function take the config file, read it line per linem and output a keyword map
     def parse_config_file(self, filename):
@@ -45,7 +43,7 @@ class Runner:
         keymap = {}
 
         def config_reader(filename):
-            for row in open(filename, "r"):
+            for row in open(filename, "r"):  # noqa: SIM115
                 yield row
 
         config = config_reader(filename)
@@ -56,7 +54,7 @@ class Runner:
                 if splits[0] != "#":
                     try:
                         keymap[splits[0]] = keyword(splits[0], splits[1])
-                    except:
+                    except:  # noqa: E722
                         keymap[splits[0]] = keyword(splits[0], "")
 
                     if splits[0] in self.config_keys and hasattr(self, "parser"):
@@ -102,10 +100,10 @@ class Runner:
             self.keymap = {}
         args = self.parser.parse_args()
 
-        try:
+        try:  # noqa: SIM105
             # capture the type if it is passed as script argument
             self.typ = args.typ
-        except:
+        except:  # noqa: E722
             pass
 
         self.verbose = args.verbose
@@ -115,7 +113,7 @@ class Runner:
         for key in self.config_keys:
             try:
                 self.keymap[key] = keyword(key, getattr(args, key))
-            except:
+            except:  # noqa: E722
                 self.keymap[key] = keyword(key, "")
 
         return args

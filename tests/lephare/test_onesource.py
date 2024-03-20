@@ -26,7 +26,7 @@ def test_onesource_creation():
     assert np.array_equal(src.imasmin, [-99, -99, -99])
 
 
-def test_onesource_setPriors():
+def test_onesource_set_priors():
     src = onesource()
     src.setPriors([0.0, 1000.0], [0, 1000])
     assert np.array_equal(src.priorLib, [0.0, 0.0, 1000.0, 1000.0])

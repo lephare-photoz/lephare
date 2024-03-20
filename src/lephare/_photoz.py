@@ -12,7 +12,7 @@ __all__ = [
 
 
 @continueClass
-class PhotoZ:
+class PhotoZ:  # noqa: F811
     pdfdict = {
         "MASS": 0,
         "SFR": 1,
@@ -35,10 +35,7 @@ class PhotoZ:
         allkeys = {}
         for count, label in enumerate(d[:, 0]):
             allkeys[label] = (d[count, 1], d[count, 2])
-        if para_out is None:
-            outkeys = readOutKeywords(self.outpara)
-        else:
-            outkeys = readOutKeywords(para_out)
+        outkeys = readOutKeywords(self.outpara) if para_out is None else readOutKeywords(para_out)
         outputs = {}
         t = Table()
         for key in outkeys:

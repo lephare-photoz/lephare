@@ -1,3 +1,5 @@
+# ruff: noqa: N999
+
 from lephare import GalMag, QSOMag, StarMag, keyword, read_config
 
 __all__ = [
@@ -7,7 +9,7 @@ __all__ = [
 
 class MagSvc:
     @classmethod
-    def from_config(self, objtype, config_file):
+    def from_config(cls, objtype, config_file):
         keywords = [
             "COSMOLOGY",
             "FILTER_FILE",
