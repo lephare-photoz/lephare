@@ -88,9 +88,9 @@ class Zphota(Runner):
             if k == "typ":
                 self.typ = v.upper()
                 continue
-            if k == "config":
-                self.config = config_file
-                continue
+            # if k == "config":
+            #     self.config = config_file
+            #     continue
             if k.upper() in self.keymap:
                 self.keymap[k.upper()] = keyword(k.upper(), str(v))
         self.keymap["c"] = keyword("c", self.config)
