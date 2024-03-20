@@ -11,6 +11,7 @@ if "LEPHAREWORK" not in os.environ:
     test_dir = os.path.abspath(os.path.dirname(__file__))
     os.environ["LEPHAREWORK"] = os.path.join(test_dir, "tmp")
 
+
 @pytest.fixture
 def test_data_dir():
     test_dir = os.path.abspath(os.path.dirname(__file__))
