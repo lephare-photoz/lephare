@@ -1,4 +1,5 @@
 import os
+
 import pytest
 
 # Set "LEPHAREDIR" locally for tests if it is not already set.
