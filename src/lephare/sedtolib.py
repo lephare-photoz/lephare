@@ -25,12 +25,29 @@ sedtolib_config_keys = [
 
 
 class Sedtolib(Runner):
+    """Read a configurable set of SED, compute extinction corrections, and store the
+    results into a binary library for later use.
+
+    The run method is equivalent to the terminal sedtolib command.
+
+    Parameters
+    ----------
+    config_file : `string` or `None`, optional
+        Path to config file in LePHARE .para format
+    config_keymap : `dict` or `None`, optional
+        Dictionary of all config values as alternative to config file.
+    """
+
     # Initalisation
     def __init__(self, config_file=None, config_keymap=None):
         # Class heritates from runner. So, __init__ in runner.py
         super().__init__(sedtolib_config_keys, config_file, config_keymap)
 
     def run(self, **kwargs):
+        """Take keymap and set SED library as class variable.
+
+        Must be run independently for stars, galaxies, and QSO.
+        """
         # update keymap and verbosity based on call arguments
         # this is only when the code is called from python session
         self.verbose = kwargs.pop("verbose", self.verbose)

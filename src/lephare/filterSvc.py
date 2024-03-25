@@ -16,8 +16,25 @@ SVO_URL = "http://svo2.cab.inta-csic.es/theory/fps"
 
 
 class FilterSvc:
+    """Filter service for retrieving filters from various sources.
+
+    This class defines a number of methods for loading and manipulating filters.
+    """
+
     @classmethod
     def from_yaml(cls, yaml_file):
+        """Load filter from a yaml file
+
+        Parameters
+        ----------
+        yaml_file : `str`
+            Path to yaml file
+
+        Returns
+        -------
+        flt_array :  list of `lephare.flt`
+            Array of wavelengths in Angstrom and filter transmissivity.
+        """
         config = yaml.load(open(yaml_file), Loader=yaml.BaseLoader)["filters"]  # noqa: SIM115
         if "calib" in config:
             default_calib = config["calib"]
@@ -40,6 +57,18 @@ class FilterSvc:
 
     @classmethod
     def from_config(cls, config_file):
+        """Load filter from a .para config file
+
+        Parameters
+        ----------
+        config_file : `str`
+            Path to config file
+
+        Returns
+        -------
+        flt_array : list of `lephare.flt`
+            List of filters.
+        """
         keywords = ["FILTER_REP", "FILTER_LIST", "TRANS_TYPE", "FILTER_CALIB", "FILTER_FILE"]
         keymap = {}
         with open(config_file) as fstream:
@@ -72,17 +101,69 @@ class FilterSvc:
 
     @classmethod
     def from_svo(cls, counter, filter_id, system="AB", calib=0):
+        """Return filter from SVO
+
+        Parameters
+        ----------
+        counter : `int`
+            Filter number
+        filter_id : `str`
+            Id of filter in SVO format.
+        system : `str`, optional
+            Photometric system
+        calib : `float`, optional
+            Calibration value. Not currently used.
+
+        Returns
+        -------
+        res : `lephare.flt`
+            Filter in native lephare format.
+        """
         res = FilterSvc.svo_request(counter, filter_id, system)
         return res
 
     @classmethod
     def from_file(cls, filename, counter=-1, trans=0, calib=0):
+        """Return filter from SVO
+
+        Parameters
+        ----------
+        filename : `str`
+            Path to filter file.
+        counter : `int`
+            Filter number
+        trans : `int`, optional
+            Photometric system.
+        calib : `int`, optional
+            Calibration value.
+
+        Returns
+        -------
+        f : `lephare.flt`
+            Filter in native lephare format.
+        """
         name = filename.replace("$LEPHAREDIR", LEPHAREDIR)
         f = flt(counter, name, trans, calib)
         return f
 
     @classmethod
     def svo_request(cls, counter, filter_id, system):
+        """Retrieve a filter from the SVO
+
+        Parameters
+        ----------
+        counter : `int`
+            Filter number
+        filter_id : `str`
+            Id of filter in SVO format.
+        system : `str`, optional
+            Photometric system
+
+        Returns
+        -------
+        res : `lephare.flt`
+            Filter in native lephare format.
+        """
         try:
             query = f"{SVO_URL}/fps.php?PhotCalID={filter_id}/{system}"
             r = requests.get(query)

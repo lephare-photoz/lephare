@@ -8,8 +8,20 @@ __all__ = [
 
 
 class MagSvc:
+    """Magnitude service to return magnitudes of a single SED."""
+
     @classmethod
     def from_config(cls, objtype, config_file):
+        """Load config and return magnitudes
+
+        Parameters
+        ----------
+        objtype : `str`
+            The type of object galaxy, star, or qso based on case insensitive first
+            letter of string.
+        config_file : `str`
+            Path to config file.
+        """
         keywords = [
             "COSMOLOGY",
             "FILTER_FILE",
