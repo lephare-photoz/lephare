@@ -23,15 +23,15 @@ jobs:
     strategy:
       matrix:
         # macos-13 is an intel runner, macos-14 is apple silicon
-        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-14]
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.17.0
-        env:
-          CIBW_ARCHS_MACOS: auto universal2
+        # env:
+        #   CIBW_ARCHS_MACOS: auto universal2
         # with:
         #   package-dir: .
         #   output-dir: wheelhouse
