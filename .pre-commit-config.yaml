@@ -17,15 +17,15 @@ repos:
       name: clang-format
       types_or: [c++, c]
     # Clear output from jupyter notebooks so that only the input cells are committed.
-  - repo: local
-    hooks:
-      - id: jupyter-nb-clear-output
-        name: Clear output from Jupyter notebooks
-        description: Clear output from Jupyter notebooks.
-        files: \.ipynb$
-        stages: [commit]
-        language: system
-        entry: jupyter nbconvert --clear-output
+  # - repo: local
+  #   hooks:
+  #     - id: jupyter-nb-clear-output
+  #       name: Clear output from Jupyter notebooks
+  #       description: Clear output from Jupyter notebooks.
+  #       files: \.ipynb$
+  #       stages: [commit]
+  #       language: system
+  #       entry: jupyter nbconvert --clear-output
     # Prevents committing directly branches named 'main' and 'master'.
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
