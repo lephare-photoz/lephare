@@ -23,20 +23,79 @@ jobs:
     strategy:
       matrix:
         # os: [ubuntu-latest, windows-latest, macos-latest, macos-14]
-        os: [ubuntu-latest]
+        include:
+          # - os: windows-latest
+          #   python: 39
+          #   platform_id: win_amd64
+          - os: windows-latest
+            python: 310
+            platform_id: win_amd64
+          # - os: windows-latest
+          #   python: 311
+          #   platform_id: win_amd64
+          # - os: windows-latest
+          #   python: 312
+          #   platform_id: win_amd64
+
+          # Linux 64 bit manylinux2014
+          # - os: ubuntu-latest
+          #   python: 39
+          #   platform_id: manylinux_x86_64
+          #   manylinux_image: manylinux2014
+          - os: ubuntu-latest
+            python: 310
+            platform_id: manylinux_x86_64
+            manylinux_image: manylinux2014
+          # - os: ubuntu-latest
+          #   python: 311
+          #   platform_id: manylinux_x86_64
+          #   manylinux_image: manylinux2014
+          # - os: ubuntu-latest
+          #   python: 312
+          #   platform_id: manylinux_x86_64
+          #   manylinux_image: manylinux2014
+
+          # MacOS x86_64
+          # - os: macos-latest
+          #   python: 39
+          #   platform_id: macosx_x86_64
+          - os: macos-latest
+            python: 310
+            platform_id: macosx_x86_64
+          # - os: macos-latest
+          #   python: 311
+          #   platform_id: macosx_x86_64
+          # - os: macos-latest
+          #   python: 312
+          #   platform_id: macosx_x86_64
+
+          # MacOS arm64
+          # - os: macos-14
+          #   python: 39
+          #   platform_id: macosx_arm64
+          - os: macos-14
+            python: 310
+            platform_id: macosx_arm64
+          # - os: macos-14
+          #   python: 311
+          #   platform_id: macosx_arm64
+          # - os: macos-14
+          #   python: 312
+          #   platform_id: macosx_arm64
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout LePhare
+        uses: actions/checkout@v4
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.17.0
         env:
-          CIBW_BUILD_VERBOSITY: 3
           # CIBW_ARCHS_MACOS: auto universal2
           CIBW_BEFORE_BUILD: git submodule update --init --recursive
-        # with:
-        #   package-dir: .
-        #   output-dir: wheelhouse
-        #   config-file: "{package}/pyproject.toml"
+          CIBW_BUILD: cp${{ matrix.python }}-${{ matrix.platform_id }}
+          CIBW_ARCHS: all
+          CIBW_MANYLINUX_X86_64_IMAGE: ${{ matrix.manylinux_image }}
+          CIBW_MANYLINUX_I686_IMAGE: ${{ matrix.manylinux_image }}
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
