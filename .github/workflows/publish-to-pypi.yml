@@ -87,6 +87,12 @@ jobs:
       - name: Checkout LePhare
         uses: actions/checkout@v4
 
+      - name: Attempt to install XCode version
+        uses: maxim-lobanov/setup-xcode@v1
+        if: matrix.os == 'macos-14'
+        with:
+          xcode-version: '15.1'
+
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.17.0
         env:
