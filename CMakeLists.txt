@@ -5,8 +5,8 @@ project(lephare VERSION 1.0)
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_CPP_COMPILER "clang++")
-set(CMAKE_C_COMPILER "clang")
+set(CMAKE_CPP_COMPILER "g++")
+set(CMAKE_C_COMPILER "gcc")
 
 message(STATUS "CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
 message(STATUS "CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
