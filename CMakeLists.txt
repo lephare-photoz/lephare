@@ -36,7 +36,11 @@ set(SOURCES
 # Remove flags that break mac compilation with g++-13
 add_compile_options("-Ofast" "-ffast-math" "-fno-finite-math-only" "-fsigned-zeros" "-fno-associative-math" "-fno-inline" "-march=native" "-mtune=native" "-funroll-loops" "-fomit-frame-pointer" "-finline" "-ftree-vectorize")
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-#    add_compile_options()
+    message(STATUS "Set Mac env vars")
+    set(ENV{CC} "/usr/local/opt/llvm/bin/clang")
+    set(ENV{CXX} "/usr/local/opt/llvm/bin/clang++")
+    set(ENV{LDFLAGS} "-L/usr/local/opt/llvm/lib")
+    set(ENV{CPPFLAGS} "-I/usr/local/opt/llvm/include")
 else()
     add_compile_options("-mno-vzeroupper" "-mavx2" "-floop-unroll-and-jam" )
 endif()
