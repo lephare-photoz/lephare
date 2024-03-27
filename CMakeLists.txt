@@ -6,25 +6,6 @@ project(lephare VERSION 1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-set(PATH "$(brew --prefix llvm)/bin:$PATH")
-set(COMPILER "/usr/local/opt/llvm/bin/clang++")
-set(CFLAGS "-I /usr/local/include -I/usr/local/opt/llvm/include")
-set(CXXFLAGS "-I /usr/local/include -I/usr/local/opt/llvm/include")
-set(LDFLAGS "-L /usr/local/lib -L/usr/local/opt/llvm/lib")
-set(CXX "${COMPILER}")
-
-# Bugfix for https://github.com/Homebrew/homebrew-core/issues/52461-mlinker-version=450
-# Otherwise, we get "ld: unknown option: -platform_version"
-# Not needed for all MacOS versions, apparently.
-# See if that works for you, and otherwise, leave out these two lines.
-set(CXXFLAGS "${CXXFLAGS} -mlinker-version=450")
-set(LDFLAGS "${LDFLAGS} -mlinker-version=450")
-
-
-
-message(STATUS "CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
-message(STATUS "CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
-
 set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}")
 set(CMAKE_BINARY_DIR "${CMAKE_SOURCE_DIR}/bin")
 set(CMAKE_BUILD_TYPE "RelWithDebInfo")
