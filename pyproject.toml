@@ -1,5 +1,5 @@
 [project]
-name = "lephare"
+name = "lephare-dev"
 license = {file = "LICENSE"}
 readme = "README.md"
 authors = [
@@ -39,6 +39,8 @@ dev = [
 requires = [
     "setuptools>=62", # Used to build and package the Python project
     "setuptools_scm>=6.2", # Gets release version from git. Makes it available programmatically
+    "pybind11>=2.11", # Used to create Python bindings for C++ code
+    "cmake", # Used to build C++ code
 ]
 build-backend = "setuptools.build_meta"
 
