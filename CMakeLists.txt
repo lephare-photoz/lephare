@@ -28,103 +28,104 @@ message(STATUS "Python executable: ${Python3_EXECUTABLE}")
 message(STATUS "Python included_dir: ${Python3_INCLUDE_DIR}")
 
 
-# # Set source directory
-# set(SOURCE_DIR "./src/lib")
-# # Tell CMake that headers are also in SOURCE_DIR
-# include_directories(${SOURCE_DIR})
-# #provide exhaustive list of source files, as recommended by
-# #CMake developers
-# set(SOURCES
-#   "${SOURCE_DIR}/cosmology.cpp"
-#   "${SOURCE_DIR}/ext.cpp"
-#   "${SOURCE_DIR}/flt.cpp"
-#   "${SOURCE_DIR}/globals.cpp"
-#   "${SOURCE_DIR}/keyword.cpp"
-#   "${SOURCE_DIR}/mag.cpp"
-#   "${SOURCE_DIR}/onesource.cpp"
-#   "${SOURCE_DIR}/oneElLambda.cpp"
-#   "${SOURCE_DIR}/opa.cpp"
-#   "${SOURCE_DIR}/PDF.cpp"
-#   "${SOURCE_DIR}/photoz_lib.cpp"
-#   "${SOURCE_DIR}/SED.cpp"
-#   "${SOURCE_DIR}/SEDLib.cpp"
-# )
+# Set source directory
+set(SOURCE_DIR "./src/lib")
+# Tell CMake that headers are also in SOURCE_DIR
+include_directories(${SOURCE_DIR})
+#provide exhaustive list of source files, as recommended by
+#CMake developers
+set(SOURCES
+  "${SOURCE_DIR}/cosmology.cpp"
+  "${SOURCE_DIR}/ext.cpp"
+  "${SOURCE_DIR}/flt.cpp"
+  "${SOURCE_DIR}/globals.cpp"
+  "${SOURCE_DIR}/keyword.cpp"
+  "${SOURCE_DIR}/mag.cpp"
+  "${SOURCE_DIR}/onesource.cpp"
+  "${SOURCE_DIR}/oneElLambda.cpp"
+  "${SOURCE_DIR}/opa.cpp"
+  "${SOURCE_DIR}/PDF.cpp"
+  "${SOURCE_DIR}/photoz_lib.cpp"
+  "${SOURCE_DIR}/SED.cpp"
+  "${SOURCE_DIR}/SEDLib.cpp"
+)
 
-# # Remove flags that break mac compilation with g++-13
-# add_compile_options("-Ofast" "-ffast-math" "-fno-finite-math-only" "-fsigned-zeros" "-fno-associative-math" "-fno-inline" "-march=native" "-mtune=native" "-funroll-loops" "-fomit-frame-pointer" "-finline" "-ftree-vectorize")
-# if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-#     message(STATUS "Set Mac env vars")
-#     message(STATUS "Before setting CC: $ENV{CC}")
-#     message(STATUS "CXX: $ENV{CXX}")
-#     message(STATUS "Before CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
-#     message(STATUS "CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
+#! May need to remove the -march=native, this may cause problems in the compiled, pip installable, version.
+# Remove flags that break mac compilation with g++-13
+add_compile_options("-Ofast" "-ffast-math" "-fno-finite-math-only" "-fsigned-zeros" "-fno-associative-math" "-fno-inline" "-march=native" "-mtune=native" "-funroll-loops" "-fomit-frame-pointer" "-finline" "-ftree-vectorize")
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    message(STATUS "Set Mac env vars")
+    message(STATUS "Before setting CC: $ENV{CC}")
+    message(STATUS "CXX: $ENV{CXX}")
+    message(STATUS "Before CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
+    message(STATUS "CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
 
-#     set(ENV{CC} "/usr/local/opt/llvm/bin/clang")
-#     set(ENV{CXX} "/usr/local/opt/llvm/bin/clang++")
-#     set(ENV{LDFLAGS} "-L/usr/local/opt/llvm/lib")
-#     set(ENV{CPPFLAGS} "-I/usr/local/opt/llvm/include")
-#     set(CMAKE_CPP_COMPILER "clang++")
-#     set(CMAKE_C_COMPILER "clang")
+    set(ENV{CC} "/usr/local/opt/llvm/bin/clang")
+    set(ENV{CXX} "/usr/local/opt/llvm/bin/clang++")
+    set(ENV{LDFLAGS} "-L/usr/local/opt/llvm/lib")
+    set(ENV{CPPFLAGS} "-I/usr/local/opt/llvm/include")
+    set(CMAKE_CPP_COMPILER "clang++")
+    set(CMAKE_C_COMPILER "clang")
 
-#     message(STATUS "After setting CC: $ENV{CC}")
-#     message(STATUS "CXX: $ENV{CXX}")
-#     message(STATUS "LDFLAGS: $ENV{LDFLAGS}")
-#     message(STATUS "CPPFLAGS: $ENV{CPPFLAGS}")
-#     message(STATUS "After CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
-#     message(STATUS "CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
+    message(STATUS "After setting CC: $ENV{CC}")
+    message(STATUS "CXX: $ENV{CXX}")
+    message(STATUS "LDFLAGS: $ENV{LDFLAGS}")
+    message(STATUS "CPPFLAGS: $ENV{CPPFLAGS}")
+    message(STATUS "After CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
+    message(STATUS "CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
 
-#     set(Python_ROOT_DIR "/Library/Frameworks/Python.framework/Versions/")
+    # set(Python_ROOT_DIR "/Library/Frameworks/Python.framework/Versions/")
     
-# else()
-#     add_compile_options("-mno-vzeroupper" "-mavx2" "-floop-unroll-and-jam" )
-# endif()
+else()
+    add_compile_options("-mno-vzeroupper" "-mavx2" "-floop-unroll-and-jam" )
+endif()
 
 
-# add_library(lepharelib STATIC ${SOURCES})
-# find_package(OpenMP)
-# if(OpenMP_CXX_FOUND)
-#     target_link_libraries(lepharelib PUBLIC OpenMP::OpenMP_CXX)
-# endif()
+add_library(lepharelib STATIC ${SOURCES})
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(lepharelib PUBLIC OpenMP::OpenMP_CXX)
+endif()
 
-# # Build the LePhare executables
-# add_executable(filter
-#   "${SOURCE_DIR}/filter.cpp"
-#   )
-# target_link_libraries(filter lepharelib)
+# Build the LePhare executables
+add_executable(filter
+  "${SOURCE_DIR}/filter.cpp"
+  )
+target_link_libraries(filter lepharelib)
 
-# add_executable(sedtolib
-#   "${SOURCE_DIR}/sedtolib.cpp"  
-#   )
-# target_link_libraries(sedtolib lepharelib)
+add_executable(sedtolib
+  "${SOURCE_DIR}/sedtolib.cpp"  
+  )
+target_link_libraries(sedtolib lepharelib)
 
-# add_executable(mag_gal
-#   "${SOURCE_DIR}/mag_gal.cpp"  
-#   )
-# target_link_libraries(mag_gal lepharelib)
+add_executable(mag_gal
+  "${SOURCE_DIR}/mag_gal.cpp"  
+  )
+target_link_libraries(mag_gal lepharelib)
 
-# add_executable(zphota
-#   "${SOURCE_DIR}/zphota.cpp"  
-#   )
-# target_link_libraries(zphota lepharelib)
+add_executable(zphota
+  "${SOURCE_DIR}/zphota.cpp"  
+  )
+target_link_libraries(zphota lepharelib)
 
-# add_executable(filter_extinc
-#   "${SOURCE_DIR}/filter_extinc.cpp"
-#   )
-# target_link_libraries(filter_extinc lepharelib)
+add_executable(filter_extinc
+  "${SOURCE_DIR}/filter_extinc.cpp"
+  )
+target_link_libraries(filter_extinc lepharelib)
 
-# # Build the python module
-# add_subdirectory(extern/pybind11/)
-# pybind11_add_module(_lephare ${SOURCES} "${SOURCE_DIR}/_bindings.cc")
-# # target_compile_definitions(_lephare
-# #                            PRIVATE VERSION_INFO=${EXAMPLE_VERSION_INFO})
+# Build the python module
+add_subdirectory(extern/pybind11/)
+pybind11_add_module(_lephare ${SOURCES} "${SOURCE_DIR}/_bindings.cc")
+# target_compile_definitions(_lephare
+#                            PRIVATE VERSION_INFO=${EXAMPLE_VERSION_INFO})
 
-# #find_package(OpenMP)
-# if(OpenMP_CXX_FOUND)
-#     target_link_libraries(_lephare PUBLIC OpenMP::OpenMP_CXX)
-# endif()
+#find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(_lephare PUBLIC OpenMP::OpenMP_CXX)
+endif()
 
-# install(TARGETS filter RUNTIME DESTINATION bin)
-# install(TARGETS sedtolib RUNTIME DESTINATION bin)
-# install(TARGETS mag_gal RUNTIME DESTINATION bin)
-# install(TARGETS zphota RUNTIME DESTINATION bin)
-# install(TARGETS filter_extinc RUNTIME DESTINATION bin)
+install(TARGETS filter RUNTIME DESTINATION bin)
+install(TARGETS sedtolib RUNTIME DESTINATION bin)
+install(TARGETS mag_gal RUNTIME DESTINATION bin)
+install(TARGETS zphota RUNTIME DESTINATION bin)
+install(TARGETS filter_extinc RUNTIME DESTINATION bin)
