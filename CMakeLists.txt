@@ -57,7 +57,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     message(STATUS "CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
 
     set(Python_ROOT_DIR "/Library/Frameworks/Python.framework/Versions/")
-    find_package(Python3 3.10 COMPONENTS Interpreter Development)
+    find_package(Python3 3.10 EXACT COMPONENTS Interpreter Development)
     if(Python_FOUND)
         message(STATUS "Python found: ${Python_EXECUTABLE}")
     else()
