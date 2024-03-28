@@ -11,6 +11,13 @@ set(CMAKE_BINARY_DIR "${CMAKE_SOURCE_DIR}/bin")
 set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
+set(Python_ROOT_DIR "/Library/Frameworks/Python.framework/Versions/")
+find_package(Python3 COMPONENTS Interpreter Development)
+if(Python_FOUND)
+    message(STATUS "Python found: ${Python_VERSION}")
+else()
+    message(FATAL_ERROR "Python not found")
+
 # Set source directory
 set(SOURCE_DIR "./src/lib")
 # Tell CMake that headers are also in SOURCE_DIR
