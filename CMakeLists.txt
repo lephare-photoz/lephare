@@ -15,6 +15,8 @@ set(CMAKE_BINARY_DIR "${CMAKE_SOURCE_DIR}/bin")
 set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
+set(Python3_ROOT_DIR "/Library/Frameworks/Python.framework/Versions/")
+set(Python3_FIND_STRATEGY LOCATION)
 find_package(Python3 3.10 COMPONENTS Development.Module Interpreter REQUIRED)
 if(Python3_FOUND)
     message(STATUS "Python found: ${Python3_EXECUTABLE}")
@@ -75,8 +77,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     message(STATUS "After CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
     message(STATUS "CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
 
-    # set(Python_ROOT_DIR "/Library/Frameworks/Python.framework/Versions/")
-    
+
 else()
     add_compile_options("-mno-vzeroupper" "-mavx2" "-floop-unroll-and-jam" )
 endif()
