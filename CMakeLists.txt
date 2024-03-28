@@ -15,12 +15,13 @@ set(CMAKE_BINARY_DIR "${CMAKE_SOURCE_DIR}/bin")
 set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
-find_package(Python3 3.10)
+find_package(Python3 3.10 COMPONENTS Development Interpreter REQUIRED)
 if(Python3_FOUND)
     message(STATUS "Python found: ${Python3_EXECUTABLE}")
 else()
     message(STATUS "Super sad bears, no python found???")
 endif()
+add_subdirectory(extern/pybind11/)
 
 message(STATUS "Python version: ${Python3_VERSION}")
 message(STATUS "Python libraries: ${Python3_LIBRARY}")
@@ -114,7 +115,6 @@ add_executable(filter_extinc
 target_link_libraries(filter_extinc lepharelib)
 
 # Build the python module
-add_subdirectory(extern/pybind11/)
 pybind11_add_module(_lephare ${SOURCES} "${SOURCE_DIR}/_bindings.cc")
 # target_compile_definitions(_lephare
 #                            PRIVATE VERSION_INFO=${EXAMPLE_VERSION_INFO})
