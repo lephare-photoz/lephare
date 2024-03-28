@@ -91,6 +91,9 @@ jobs:
       #   with:
       #     xcode-version: '15.1'
 
+      - name: Python test
+        run: python --version
+
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.17.0
         env:
@@ -102,6 +105,9 @@ jobs:
           CIBW_MANYLINUX_X86_64_IMAGE: ${{ matrix.manylinux_image }}
           CIBW_MANYLINUX_I686_IMAGE: ${{ matrix.manylinux_image }}
           CIBW_BUILD_VERBOSITY: 3
+
+      - name: Python test later
+        run: python --version
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
