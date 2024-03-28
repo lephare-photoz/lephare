@@ -20,9 +20,9 @@ execute_process(
 )
 message(STATUS "Python found at: ${WHICH_PYTHON}")
 
-set(Python3_ROOT_DIR "/Library/Frameworks/Python.framework/Versions/")
+set(Python3_ROOT_DIR "${WHICH_PYTHON}")
 set(Python3_FIND_STRATEGY LOCATION)
-set(Python_ROOT_DIR "/Library/Frameworks/Python.framework/Versions/")
+set(Python_ROOT_DIR "${WHICH_PYTHON}")
 set(Python_FIND_STRATEGY LOCATION)
 find_package(Python3 3.10 COMPONENTS Development.Module Interpreter REQUIRED)
 if(Python3_FOUND)
