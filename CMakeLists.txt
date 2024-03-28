@@ -15,7 +15,7 @@ set(CMAKE_BINARY_DIR "${CMAKE_SOURCE_DIR}/bin")
 set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
-find_package(Python3 3.10.13 COMPONENTS Development Interpreter REQUIRED)
+find_package(Python3 3.10 COMPONENTS Development.Module Interpreter REQUIRED)
 if(Python3_FOUND)
     message(STATUS "Python found: ${Python3_EXECUTABLE}")
 else()
