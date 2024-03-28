@@ -43,7 +43,8 @@ class CMakeBuild(build_ext):
         cmake_args = [
             "-DCMAKE_INSTALL_PREFIX=${CMAKE_SOURCE_DIR}",
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + extdir,
-            "-DPYTHON_EXECUTABLE=" + sys.executable,
+            # "-DPYTHON_EXECUTABLE=" + sys.executable,
+            "DPYBIND11_FINDPYTHON=ON",
         ]
 
         cfg = "Debug" if self.debug else "Release"
