@@ -50,7 +50,6 @@ where = ["src"]
 
 [tool.setuptools_scm]
 write_to = "src/lephare/_version.py"
-local_scheme = "no-local"
 
 [tool.pytest.ini_options]
 testpaths = [
