@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 if(${CMAKE_VERSION} VERSION_GREATER 3.10)
     cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
 endif()
-
+message(STATUS "CMake version: ${CMAKE_MAJOR_VERSION}")
+message(STATUS "CMake minor: ${CMAKE_MINOR_VERSION}")
 project(lephare VERSION 1.0)
 
 # specify the C++ standard
@@ -14,7 +15,7 @@ set(CMAKE_BINARY_DIR "${CMAKE_SOURCE_DIR}/bin")
 set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
-find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+find_package(Python3 3.10 COMPONENTS Interpreter Development REQUIRED)
 if(Python3_FOUND)
     message(STATUS "Python found: ${Python3_EXECUTABLE}")
 else()
