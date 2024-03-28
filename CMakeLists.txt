@@ -17,6 +17,7 @@ if(Python_FOUND)
     message(STATUS "Python found: ${Python_VERSION}")
 else()
     message(FATAL_ERROR "Python not found")
+endif()
 
 # Set source directory
 set(SOURCE_DIR "./src/lib")
