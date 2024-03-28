@@ -2,6 +2,7 @@
 name = "lephare-dev"
 license = {file = "LICENSE"}
 readme = "README.md"
+description = "LEPHARE photometric redshift estimator"
 authors = [
     { name = "Johann Cohen-Tanugi", email = "johann.cohentanugi@gmail.com" }
 ]
