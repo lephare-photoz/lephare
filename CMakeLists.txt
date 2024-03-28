@@ -11,14 +11,6 @@ set(CMAKE_BINARY_DIR "${CMAKE_SOURCE_DIR}/bin")
 set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
-set(Python_ROOT_DIR "/Library/Frameworks/Python.framework/Versions/")
-find_package(Python3 COMPONENTS Interpreter Development)
-if(Python_FOUND)
-    message(STATUS "Python found: ${Python_VERSION}")
-else()
-    message(FATAL_ERROR "Python not found")
-endif()
-
 # Set source directory
 set(SOURCE_DIR "./src/lib")
 # Tell CMake that headers are also in SOURCE_DIR
@@ -63,6 +55,12 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     message(STATUS "CPPFLAGS: $ENV{CPPFLAGS}")
     message(STATUS "After CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
     message(STATUS "CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
+
+    set(Python_ROOT_DIR "/Library/Frameworks/Python.framework/Versions/")
+    find_package(Python3 COMPONENTS Interpreter Development)
+    if(Python_FOUND)
+        message(STATUS "Python found: ${Python_EXECUTABLE}")
+    endif()
 else()
     add_compile_options("-mno-vzeroupper" "-mavx2" "-floop-unroll-and-jam" )
 endif()
