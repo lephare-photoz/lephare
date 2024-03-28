@@ -14,6 +14,11 @@ set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}")
 set(CMAKE_BINARY_DIR "${CMAKE_SOURCE_DIR}/bin")
 set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 set(CMAKE_VERBOSE_MAKEFILE ON)
+execute_process(
+    COMMAND bash -c "which python"
+    OUTPUT_VARIABLE WHICH_PYTHON
+)
+message(STATUS "Python found at: ${WHICH_PYTHON}")
 
 set(Python3_ROOT_DIR "/Library/Frameworks/Python.framework/Versions/")
 set(Python3_FIND_STRATEGY LOCATION)
