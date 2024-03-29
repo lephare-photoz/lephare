@@ -16,7 +16,7 @@ set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 if (DEFINED ENV{PYTHON_VERSION_REQUIRED})
-  find_package(Python3 ENV{PYTHON_VERSION_REQUIRED} EXACT COMPONENTS Development.Module Interpreter REQUIRED)
+  find_package(Python3 $ENV{PYTHON_VERSION_REQUIRED} EXACT COMPONENTS Development.Module Interpreter REQUIRED)
 else()
   find_package(Python3 COMPONENTS Development.Module Interpreter REQUIRED)
 endif()
