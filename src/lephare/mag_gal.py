@@ -29,10 +29,28 @@ mag_gal_config_keys = [
 
 
 class MagGal(Runner):
+    """Use the galaxy templates and filters to derive a library of predicted magnitudes.
+
+    The run method of this class is equivalent to the mag_gal command line.
+
+    Parameters
+    ----------
+    config_file : `string` or `None`, optional
+        Path to config file in LePHARE .para format
+    config_keymap : `dict` or `None`, optional
+        Dictionary of all config values as alternative to config file.
+    """
+
     def __init__(self, config_file=None, config_keymap=None):
         super().__init__(mag_gal_config_keys, config_file, config_keymap)
 
     def run(self, **kwargs):
+        """Compute the model magnitudes across the redshift grid.
+
+        Returns
+        -------
+        None
+        """
         # update keymap and verbosity based on call arguments
         # this is only when the code is called from python session
         self.verbose = kwargs.pop("verbose", self.verbose)

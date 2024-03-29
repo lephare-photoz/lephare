@@ -6,6 +6,18 @@ from lephare._lephare import get_lephare_env, keyword
 
 
 class Runner:
+    """Base class holding config values for running all stages.
+
+    Parameters
+    ----------
+    config_keys : `list` or `None`, optional
+        List of all config keys
+    config_file : `string` or `None`, optional
+        Path to config file in LePHARE .para format
+    config_keymap : `dict` or `None`, optional
+        Dictionary of all config values as alternative to config file.
+    """
+
     def __init__(self, config_keys=None, config_file=None, config_keymap=None):
         # set the LEPHAREDIR and LEPHAREWORK env variable
         get_lephare_env()
@@ -37,6 +49,13 @@ class Runner:
 
     # This function take the config file, read it line per linem and output a keyword map
     def parse_config_file(self, filename):
+        """Load config file and set config values.
+
+        Parameters
+        ----------
+        filename : `string`
+            Path to config file
+        """
         if not os.path.exists(filename):
             raise RuntimeError("File %s not found" % filename)
         self.config = filename
@@ -67,6 +86,13 @@ class Runner:
         self.keymap = keymap
 
     def config_parser(self, config_keys):
+        """Create command line config parser from list of keys
+
+        Parameters
+        ----------
+        config_keys : `list`
+            List of all config keys
+        """
         parser = argparse.ArgumentParser(add_help=False)
         # No required positional argument as in the C++ code, though in there
         # absence of the config file results in exiting. Need to understand whether

@@ -12,12 +12,21 @@ filter_config_keys = ["FILTER_REP", "FILTER_LIST", "TRANS_TYPE", "FILTER_CALIB",
 
 
 class Filter(Runner):
+    """Build the filter files based on config
+
+    Parameters
+    ----------
+    config_file : `string`
+    """
+
     def __init__(self, config_file=None, config_keymap=None):
         super().__init__(filter_config_keys, config_file, config_keymap)
 
     def run(self, **kwargs):
-        # update keymap and verbosity based on call arguments
-        # this is only when the code is called from python session
+        """Update keymap and verbosity based on call arguments.
+
+        This is only when the code is called from python session.
+        """
         self.verbose = kwargs.pop("verbose", self.verbose)
         for k, v in kwargs.items():
             if k.upper() in self.keymap:
