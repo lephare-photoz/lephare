@@ -22,13 +22,6 @@ else()
   find_package(Python3 COMPONENTS Development.Module Interpreter REQUIRED)
 endif()
 
-if(Python3_FOUND)
-    message(STATUS "Python found: ${Python3_EXECUTABLE}")
-else()
-    message(STATUS "Super sad bears, no python found???")
-endif()
-add_subdirectory(extern/pybind11/)
-
 message(STATUS "Python version: ${Python3_VERSION}")
 message(STATUS "Python libraries: ${Python3_LIBRARY}")
 message(STATUS "Python executable: ${Python3_EXECUTABLE}")
@@ -61,27 +54,12 @@ set(SOURCES
 # Remove flags that break mac compilation with g++-13
 add_compile_options("-Ofast" "-ffast-math" "-fno-finite-math-only" "-fsigned-zeros" "-fno-associative-math" "-fno-inline" "-march=native" "-mtune=native" "-funroll-loops" "-fomit-frame-pointer" "-finline" "-ftree-vectorize")
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    message(STATUS "Set Mac env vars")
-    message(STATUS "Before setting CC: $ENV{CC}")
-    message(STATUS "CXX: $ENV{CXX}")
-    message(STATUS "Before CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
-    message(STATUS "CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
-
     set(ENV{CC} "/usr/local/opt/llvm/bin/clang")
     set(ENV{CXX} "/usr/local/opt/llvm/bin/clang++")
     set(ENV{LDFLAGS} "-L/usr/local/opt/llvm/lib")
     set(ENV{CPPFLAGS} "-I/usr/local/opt/llvm/include")
     set(CMAKE_CPP_COMPILER "clang++")
     set(CMAKE_C_COMPILER "clang")
-
-    message(STATUS "After setting CC: $ENV{CC}")
-    message(STATUS "CXX: $ENV{CXX}")
-    message(STATUS "LDFLAGS: $ENV{LDFLAGS}")
-    message(STATUS "CPPFLAGS: $ENV{CPPFLAGS}")
-    message(STATUS "After CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
-    message(STATUS "CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
-
-
 else()
     add_compile_options("-mno-vzeroupper" "-mavx2" "-floop-unroll-and-jam" )
 endif()
@@ -120,6 +98,7 @@ add_executable(filter_extinc
 target_link_libraries(filter_extinc lepharelib)
 
 # Build the python module
+add_subdirectory(extern/pybind11/)
 pybind11_add_module(_lephare ${SOURCES} "${SOURCE_DIR}/_bindings.cc")
 # target_compile_definitions(_lephare
 #                            PRIVATE VERSION_INFO=${EXAMPLE_VERSION_INFO})

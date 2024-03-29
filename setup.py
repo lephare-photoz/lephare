@@ -43,7 +43,7 @@ class CMakeBuild(build_ext):
         cmake_args = [
             "-DCMAKE_INSTALL_PREFIX=${CMAKE_SOURCE_DIR}",
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + extdir,
-            "-DPYTHON_EXECUTABLE=${which python}",
+            "-DPYTHON_EXECUTABLE=" + sys.executable,
         ]
 
         cfg = "Debug" if self.debug else "Release"
@@ -86,6 +86,7 @@ class MakeDoc(Command):
 
 setup(
     name="lephare-dev",
+    version="2.0.0",
     author="Johann Cohen-Tanugi",
     author_email="johann.cohentanugi@gmail.com",
     url="https://gitlab.lam.fr/Galaxies/LEPHARE",
