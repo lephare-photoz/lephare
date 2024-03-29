@@ -55,14 +55,14 @@ inline double POW10DSLOW(double x) { return pow(10.0, x); }
 inline double log2f_approx(double X) {
   double Y, F;
   int E;
-  F = frexpf(fabsf(X), &E);
-  Y = 1.23149591368684f;
+  F = frexp(fabs(X), &E);
+  Y = 1.23149591368684;
   Y *= F;
-  Y += -4.11852516267426f;
+  Y += -4.11852516267426;
   Y *= F;
-  Y += 6.02197014179219f;
+  Y += 6.02197014179219;
   Y *= F;
-  Y += -3.13396450166353f;
+  Y += -3.13396450166353;
   Y += E;
   return (Y);
 }
