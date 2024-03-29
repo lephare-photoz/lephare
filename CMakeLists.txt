@@ -1,5 +1,9 @@
-Cmake_minimum_required(VERSION 3.10)
-
+cmake_minimum_required(VERSION 3.10)
+if(${CMAKE_VERSION} VERSION_GREATER 3.10)
+    cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
+endif()
+message(STATUS "CMake version: ${CMAKE_MAJOR_VERSION}")
+message(STATUS "CMake minor: ${CMAKE_MINOR_VERSION}")
 project(lephare VERSION 1.0)
 
 # specify the C++ standard
@@ -10,6 +14,19 @@ set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}")
 set(CMAKE_BINARY_DIR "${CMAKE_SOURCE_DIR}/bin")
 set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 set(CMAKE_VERBOSE_MAKEFILE ON)
+
+if (DEFINED ENV{PYTHON_VERSION_REQUIRED})
+  message(STATUS "Python version required: $ENV{PYTHON_VERSION_REQUIRED}")
+  find_package(Python3 $ENV{PYTHON_VERSION_REQUIRED} EXACT COMPONENTS Development.Module Interpreter REQUIRED)
+else()
+  find_package(Python3 COMPONENTS Development.Module Interpreter REQUIRED)
+endif()
+
+message(STATUS "Python version: ${Python3_VERSION}")
+message(STATUS "Python libraries: ${Python3_LIBRARY}")
+message(STATUS "Python executable: ${Python3_EXECUTABLE}")
+message(STATUS "Python included_dir: ${Python3_INCLUDE_DIR}")
+
 
 # Set source directory
 set(SOURCE_DIR "./src/lib")
@@ -33,10 +50,16 @@ set(SOURCES
   "${SOURCE_DIR}/SEDLib.cpp"
 )
 
+#! May need to remove the -march=native, this may cause problems in the compiled, pip installable, version.
 # Remove flags that break mac compilation with g++-13
 add_compile_options("-Ofast" "-ffast-math" "-fno-finite-math-only" "-fsigned-zeros" "-fno-associative-math" "-fno-inline" "-march=native" "-mtune=native" "-funroll-loops" "-fomit-frame-pointer" "-finline" "-ftree-vectorize")
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-#    add_compile_options()
+    set(ENV{CC} "/usr/local/opt/llvm/bin/clang")
+    set(ENV{CXX} "/usr/local/opt/llvm/bin/clang++")
+    set(ENV{LDFLAGS} "-L/usr/local/opt/llvm/lib")
+    set(ENV{CPPFLAGS} "-I/usr/local/opt/llvm/include")
+    set(CMAKE_CPP_COMPILER "clang++")
+    set(CMAKE_C_COMPILER "clang")
 else()
     add_compile_options("-mno-vzeroupper" "-mavx2" "-floop-unroll-and-jam" )
 endif()
