@@ -22,7 +22,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # os: [ubuntu-latest, windows-latest, macos-latest, macos-14]
         include:
 
           # Linux 64 bit manylinux2014
@@ -127,15 +126,14 @@ jobs:
         path: dist/*.tar.gz
 
   upload_pypi:
-    name: Upload to test-pypi
+    name: Upload to pypi
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
-    environment: test-pypi
+    environment:
+      name: pypi
     permissions:
       id-token: write
-    # if: github.event_name == 'release' && github.event.action == 'published'
-    # # or, alternatively, urpload to PyPI on evey tag starting with 'v' (remove on: release above to use this)
-    # # if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+
     steps:
       - name: Download distribution files
         uses: actions/download-artifact@v4
@@ -147,5 +145,3 @@ jobs:
 
       - name: Upload to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
