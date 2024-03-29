@@ -34,6 +34,7 @@ jobs:
             python: 310
             platform_id: manylinux_x86_64
             manylinux_image: manylinux2014
+            python_version: 3.10
           # - os: ubuntu-latest
           #   python: 311
           #   platform_id: manylinux_x86_64
@@ -50,6 +51,7 @@ jobs:
           - os: macos-latest
             python: 310
             platform_id: macosx_x86_64
+            python_version: 3.10
           # - os: macos-latest
           #   python: 311
           #   platform_id: macosx_x86_64
@@ -64,6 +66,7 @@ jobs:
           - os: macos-14
             python: 310
             platform_id: macosx_arm64
+            python_version: 3.10
           # - os: macos-14
           #   python: 311
           #   platform_id: macosx_arm64
@@ -92,6 +95,7 @@ jobs:
           # CIBW_ARCHS_MACOS: auto universal2
           CIBW_BEFORE_ALL_MACOS: brew install llvm libomp
           CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET="10.15" PATH="$(brew --prefix llvm)/bin:$PATH" CFLAGS="-I /usr/local/include -I/usr/local/opt/llvm/include" CXXFLAGS="-I /usr/local/include -I/usr/local/opt/llvm/include -I/opt/homebrew/opt/libomp/include -I/opt/homebrew/opt/llvm/include -I/usr/local/opt/libomp/include" LDFLAGS="-L/usr/local/opt/libomp/lib -L/opt/homebrew/opt/libomp/lib -L /usr/local/lib -L/usr/local/opt/llvm/lib"
+          CIBW_ENVIRONMENT: REQUIRED_PYTHON_VERSION=${{ matrix.python_version}}
           CIBW_BUILD: cp${{ matrix.python }}-${{ matrix.platform_id }}
           CIBW_ARCHS: all
           CIBW_MANYLINUX_X86_64_IMAGE: ${{ matrix.manylinux_image }}
