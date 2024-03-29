@@ -34,7 +34,7 @@ jobs:
             python: 310
             platform_id: manylinux_x86_64
             manylinux_image: manylinux2014
-            python_version: 3.10
+            python_version: "3.10"
           # - os: ubuntu-latest
           #   python: 311
           #   platform_id: manylinux_x86_64
@@ -51,7 +51,7 @@ jobs:
           - os: macos-latest
             python: 310
             platform_id: macosx_x86_64
-            python_version: 3.10
+            python_version: "3.10"
           # - os: macos-latest
           #   python: 311
           #   platform_id: macosx_x86_64
@@ -66,7 +66,7 @@ jobs:
           - os: macos-14
             python: 310
             platform_id: macosx_arm64
-            python_version: 3.10
+            python_version: "3.10"
           # - os: macos-14
           #   python: 311
           #   platform_id: macosx_arm64
