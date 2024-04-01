@@ -2,7 +2,6 @@
 # ruff: noqa: F403
 
 import datetime
-import logging
 import os
 
 # Why is this global?
@@ -24,13 +23,13 @@ if LEPHAREDIR is None:
     if os.path.isdir(LEPHAREDIR):
         pass
     else:
-        logging.warning(
+        print(
             f"""Lephare default cache directory being created at
             {LEPHAREDIR}. More than 1Gb may be written there."""
         )
-        os.mkdir(LEPHAREDIR)
+        os.makedirs(LEPHAREDIR)
 else:
-    logging.warning(
+    print(
         f"""User defined LEPHAREDIR is set. Code runs depend on all required
         auxilliary data being present at {LEPHAREDIR}."""
     )
@@ -43,23 +42,26 @@ if LEPHAREWORK is None:
     # Set environment variable to default
     os.environ["LEPHAREWORK"] = LEPHAREWORK
     if os.path.isdir(LEPHAREWORK):
-        pass
+        print(
+            f"""Lephare default working directory already exists at
+            {LEPHAREWORK}."""
+        )
     else:
         # Make a timestamped 'run' directory which is symlinked from default
         now = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
-        RUNDIR = f"{LEPHAREWORK}/runs/{now}"
-        logging.warning(
+        RUNDIR = f"{this_os_cache}/lephare/runs/{now}"
+        print(
             f"""Lephare default working directory being created at
             {LEPHAREWORK}."""
         )
-        os.mkdir(RUNDIR)
+        os.makedirs(RUNDIR)
         os.symlink(RUNDIR, LEPHAREWORK)
-        os.mkdir(os.path.join(os.environ["LEPHAREWORK"], "filt"))
-        os.mkdir(os.path.join(os.environ["LEPHAREWORK"], "lib_bin"))
-        os.mkdir(os.path.join(os.environ["LEPHAREWORK"], "lib_mag"))
-        os.mkdir(os.path.join(os.environ["LEPHAREWORK"], "zphota"))
+        os.makedirs(os.path.join(os.environ["LEPHAREWORK"], "filt"))
+        os.makedirs(os.path.join(os.environ["LEPHAREWORK"], "lib_bin"))
+        os.makedirs(os.path.join(os.environ["LEPHAREWORK"], "lib_mag"))
+        os.makedirs(os.path.join(os.environ["LEPHAREWORK"], "zphota"))
 else:
-    logging.warning(
+    print(
         f"""User defined LEPHAREWORK is set. All intermediate files will
          be written to {LEPHAREWORK}."""
     )
