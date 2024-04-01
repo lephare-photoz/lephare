@@ -22,6 +22,7 @@ dependencies = [
     "astropy",
     "scipy",
     "requests",
+    "platformdirs",
 ]
 
 [project.urls]
