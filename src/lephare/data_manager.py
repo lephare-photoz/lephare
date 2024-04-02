@@ -73,3 +73,26 @@ class DataManager:
                 f"""User defined LEPHAREWORK is set. All intermediate files will
                 be written to {self.lephare_work_dir}."""
             )
+
+    # To be deprecated by pooch. For now just get all auxilliary data.
+    @classmethod
+    def get_auxiliary_data(cls, lephare_dir):
+        """Get all auxiliary data required to run lephare.
+
+        Function to be deprected by lephare internal pooch based retriever.
+
+        This gets all the filters, seds, and other data files.
+
+        Parameters
+        ==========
+        lephare_dir : `str`
+            The path to the lephare directory for auxiliary files.
+        """
+        # Assume if filt is present assume everything is.
+        if os.path.isdir(f"{lephare_dir}/filt"):
+            print("Data appears present")
+        else:
+            # Get the full repository
+            print("Getting data from https://github.com/OliviaLynn/LEPHARE-data.git")
+            os.system("git clone https://github.com/OliviaLynn/LEPHARE-data.git")
+            os.system(f"mv LEPHARE-data/* {lephare_dir}")
