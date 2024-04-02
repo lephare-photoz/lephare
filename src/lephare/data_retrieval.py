@@ -262,9 +262,7 @@ def download_all_files(retriever, file_names, ignore_registry=False):
         print(f"{len(completed_futures)} completed.")
 
     # Finish with some checks on our downloaded files
-    absolute_file_names = [
-        os.path.join(retriever.path, file_name) for file_name in file_names
-    ]
+    absolute_file_names = [os.path.join(retriever.path, file_name) for file_name in file_names]
     _check_downloaded_files(absolute_file_names, completed_futures)
 
 
@@ -275,7 +273,7 @@ def _check_downloaded_files(file_names, completed_futures):
     ----------
     file_names : list of str
         List of expected file names.
-    completed_futures_relative : list of str
+    completed_futures : list of str
         List of file names that were downloaded.
 
     Returns

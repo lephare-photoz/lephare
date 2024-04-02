@@ -78,11 +78,7 @@ def test_make_retriever(data_registry_file):
     base_url = "http://example.com/"
     data_path = "/tmp"
     registry_file = data_registry_file
-    retriever = make_retriever(
-        base_url=base_url,
-        data_path=data_path,
-        registry_file=registry_file
-    )
+    retriever = make_retriever(base_url=base_url, data_path=data_path, registry_file=registry_file)
     assert retriever.base_url == base_url
     assert retriever.path == Path(data_path)
     assert retriever.registry["file1.txt"] == "hash1"
