@@ -21,6 +21,7 @@ from ._flt import *
 from ._pdf import *
 from ._photoz import *
 from ._spec import *
+from .data_retrieval import *
 from .filter import *
 from .filterSvc import *
 from .mag_gal import *
