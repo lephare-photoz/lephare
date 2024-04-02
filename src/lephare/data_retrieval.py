@@ -140,9 +140,7 @@ def read_list_file(list_file, prefix=""):
 def make_default_retriever():
     """Create a retriever with the default settings."""
     return make_retriever(
-        base_url=DEFAULT_BASE_DATA_URL,
-        registry_file=DEFAULT_REGISTRY_FILE,
-        data_path=DEFAULT_LOCAL_DATA_PATH
+        base_url=DEFAULT_BASE_DATA_URL, registry_file=DEFAULT_REGISTRY_FILE, data_path=DEFAULT_LOCAL_DATA_PATH
     )
 
 
@@ -170,7 +168,7 @@ def make_retriever(
     retriever = pooch.create(
         base_url=base_url,
         path=data_path,
-        registry=None, # We're using a registry file instead (set below)
+        registry=None,  # We're using a registry file instead (set below)
     )
     retriever.load_registry(registry_file)
     return retriever
@@ -255,7 +253,7 @@ def download_all_files(retriever, file_names, ignore_registry=False):
         completed_futures = []
         for future in concurrent.futures.as_completed(futures):
             try:
-                completed_futures.append(future.result(timeout=60)) # timeout is in seconds
+                completed_futures.append(future.result(timeout=60))  # timeout is in seconds
             except TimeoutError as e:
                 print(f"Future completed with a timeout exception: {e}")
             except Exception as e:
