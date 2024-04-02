@@ -1,4 +1,4 @@
-""" TODO write this docstring"""
+"""This module provides functionality for downloading and managing data files using pooch."""
 
 import concurrent.futures
 import os
@@ -8,15 +8,14 @@ from urllib.parse import urljoin, urlparse
 import pooch
 import requests
 
-
 DEFAULT_BASE_DATA_URL = "https://raw.githubusercontent.com/OliviaLynn/LEPHARE-data/main/"
 DEFAULT_REGISTRY_FILE = "data_registry.txt"
 
 #! Replace DEFAULT_LOCAL_DATA_PATH with the following:
 # from lephare import data_marshaller
-# DEFAULT_LOCAL_DATA_PATH = data_marshaller.get_data_path() 
+# DEFAULT_LOCAL_DATA_PATH = data_marshaller.get_data_path()
 #  likely something like: ~/Library/Caches/lephare/data/
-#  Note that we can use pooch.os_cache("lephare") to create a directory in the 
+#  Note that we can use pooch.os_cache("lephare") to create a directory in the
 #  default cache location and return its path
 DEFAULT_LOCAL_DATA_PATH = "./data"
 
@@ -48,7 +47,7 @@ def filter_files_by_prefix(file_path, target_prefixes):
         A list of lines that contain one of the target prefixes.
     """
     matching_lines = []
-    with open(file_path, "r") as file:
+    with open(file_path, "r", encoding="utf-8") as file:
         for line in file:
             if any(line.startswith(prefix) for prefix in target_prefixes):
                 matching_lines.append(line.split(" ")[0].strip())
@@ -61,7 +60,8 @@ def download_registry_from_github(url="", outfile=""):
     Parameters
     ----------
     url : str
-        The URL of the registry file. Defaults to a "data-registry.txt" file at DEFAULT_BASE_DATA_URL.
+        The URL of the registry file. Defaults to a "data-registry.txt" file at
+        DEFAULT_BASE_DATA_URL.
     outfile : str
         The path where the file will be saved. Defaults to DEFAULT_REGISTRY_FILE.
 
@@ -74,14 +74,14 @@ def download_registry_from_github(url="", outfile=""):
         url = urljoin(DEFAULT_BASE_DATA_URL, "data-registry.txt")
     if outfile == "":
         outfile = DEFAULT_REGISTRY_FILE
-    
-    response = requests.get(url)
+
+    response = requests.get(url, timeout=60)
     if response.status_code == 200:
-        with open(outfile, "w") as file:
+        with open(outfile, "w", encoding="utf-8") as file:
             file.write(response.text)
         print(f"File downloaded and saved as {outfile}")
     else:
-        raise Exception(f"Failed to fetch file: {response.status_code}")
+        raise requests.exceptions.HTTPError(f"Failed to fetch file: {response.status_code}")
 
 
 def read_list_file(list_file, prefix=""):
@@ -109,16 +109,16 @@ def read_list_file(list_file, prefix=""):
 
     # Check if the list_file is a URL
     if urlparse(list_file).scheme in ("http", "https"):
-        response = requests.get(list_file)
+        response = requests.get(list_file, timeout=60)
         response.raise_for_status()
         content = response.text
     else:
-        with open(list_file, "r") as file:
+        with open(list_file, "r", encoding="utf-8") as file:
             content = file.read()
 
     # Infer the prefix if not provided
     # Note: pooch docs specify that registry files use Unix separators
-    # Note as well: this may be phased out, if we decide to specify list 
+    # Note as well: this may be phased out, if we decide to specify list
     #   files as containing paths relative to the root dir
     if prefix == "":
         if "sed" in list_file:
@@ -140,20 +140,26 @@ def read_list_file(list_file, prefix=""):
 def make_default_retriever():
     """Create a retriever with the default settings."""
     return make_retriever(
-        base_url=DEFAULT_BASE_DATA_URL, registry_file=DEFAULT_REGISTRY_FILE, data_path=DEFAULT_LOCAL_DATA_PATH
+        base_url=DEFAULT_BASE_DATA_URL,
+        registry_file=DEFAULT_REGISTRY_FILE,
+        data_path=DEFAULT_LOCAL_DATA_PATH
     )
 
 
-def make_retriever(base_url=DEFAULT_BASE_DATA_URL, registry_file=DEFAULT_REGISTRY_FILE, data_path=DEFAULT_LOCAL_DATA_PATH):
-    """Create a retriever for downloading files with specified base URL, registry file, and data path.
+def make_retriever(
+    base_url=DEFAULT_BASE_DATA_URL,
+    registry_file=DEFAULT_REGISTRY_FILE,
+    data_path=DEFAULT_LOCAL_DATA_PATH,
+):
+    """Create a retriever for downloading files.
 
     Parameters
     ----------
-    base_url : str
+    base_url : str, optional
         The base URL for the data files.
-    registry_file : str
+    registry_file : str, optional
         The path to the registry file that lists the files and their hashes.
-    data_path : str
+    data_path : str, optional
         The local path where the files will be downloaded.
 
     Returns
@@ -171,8 +177,15 @@ def make_retriever(base_url=DEFAULT_BASE_DATA_URL, registry_file=DEFAULT_REGISTR
 
 
 def _create_directories_from_files(file_names):
-    """TODO docstring. Basically, we need this for thread safety it seems.
-    private potentially"""
+    """Create directories for the given file names if they do not already exist.
+
+    This function is for thread safety when downloading files in parallel.
+
+    Parameters
+    ----------
+    file_names : list of str
+        List of file names with relative paths.
+    """
     unique_directories = set(
         os.path.dirname(file_name) for file_name in file_names if os.path.dirname(file_name)
     )
@@ -236,25 +249,24 @@ def download_all_files(retriever, file_names, ignore_registry=False):
     with concurrent.futures.ThreadPoolExecutor() as executor:
         download_fn = partial(download_file, retriever, ignore_registry=ignore_registry)
         futures = [executor.submit(download_fn, file_name) for file_name in file_names]
-        
+
         # We're gathering the completed futures here to make sure we aren't skipping any files,
         # which seemed to be happening earlier, when using an executor mapping function instead
         completed_futures = []
         for future in concurrent.futures.as_completed(futures):
             try:
                 completed_futures.append(future.result(timeout=60)) # timeout is in seconds
+            except TimeoutError as e:
+                print(f"Future completed with a timeout exception: {e}")
             except Exception as e:
                 print(f"Future completed with an exception: {e}")
-        # For a time improvement, we could consider replacing the above with the following
-        # (but the former will be much easier to work with when debugging):
-        # completed_futures = [future for future in concurrent.futures.as_completed(futures)] #! look into timeout
 
         print(f"{len(completed_futures)} completed.")
 
     # Finish with some checks on our downloaded files
     _check_downloaded_files(file_names, completed_futures)
-    
-    
+
+
 def _check_downloaded_files(file_names, completed_futures):
     """Check if all files have been downloaded successfully and are not empty.
 
@@ -271,7 +283,9 @@ def _check_downloaded_files(file_names, completed_futures):
         True if all files are downloaded and non-empty, False otherwise.
     """
     # Convert absolute paths to relative paths
-    completed_futures_relative = [os.path.relpath(path, DEFAULT_LOCAL_DATA_PATH) for path in completed_futures]
+    completed_futures_relative = [
+        os.path.relpath(path, DEFAULT_LOCAL_DATA_PATH) for path in completed_futures
+    ]
 
     # Check if all files were downloaded
     missing_files = set(file_names) - set(completed_futures_relative)
