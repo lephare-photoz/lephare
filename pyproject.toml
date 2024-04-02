@@ -23,6 +23,7 @@ dependencies = [
     "scipy",
     "requests",
     "pooch",
+    "platformdirs",
 ]
 
 [project.urls]
