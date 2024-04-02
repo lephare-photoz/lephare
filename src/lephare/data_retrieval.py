@@ -264,7 +264,10 @@ def download_all_files(retriever, file_names, ignore_registry=False):
         print(f"{len(completed_futures)} completed.")
 
     # Finish with some checks on our downloaded files
-    _check_downloaded_files(file_names, completed_futures)
+    absolute_file_names = [
+        os.path.join(retriever.path, file_name) for file_name in file_names
+    ]
+    _check_downloaded_files(absolute_file_names, completed_futures)
 
 
 def _check_downloaded_files(file_names, completed_futures):
@@ -273,24 +276,23 @@ def _check_downloaded_files(file_names, completed_futures):
     Parameters
     ----------
     file_names : list of str
-        List of expected file names (relative paths).
-    completed_futures : list of str
-        List of file names that were downloaded (absolute paths).
+        List of expected file names.
+    completed_futures_relative : list of str
+        List of file names that were downloaded.
 
     Returns
     -------
     bool
         True if all files are downloaded and non-empty, False otherwise.
     """
-    # Convert absolute paths to relative paths
-    completed_futures_relative = [
-        os.path.relpath(path, DEFAULT_LOCAL_DATA_PATH) for path in completed_futures
-    ]
-
     # Check if all files were downloaded
-    missing_files = set(file_names) - set(completed_futures_relative)
+    missing_files = False
+    potentially_missing_files = set(file_names) - set(completed_futures)
+    for file in potentially_missing_files:
+        if not os.path.exists(file):
+            print("The following file was not downloaded:", file)
+            missing_files = True
     if missing_files:
-        print("The following files were not downloaded:", missing_files)
         return False
 
     # Check if any downloaded file is empty

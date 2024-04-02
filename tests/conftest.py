@@ -17,3 +17,8 @@ if "LEPHAREWORK" not in os.environ:
 def test_data_dir():
     test_dir = os.path.abspath(os.path.dirname(__file__))
     return os.path.join(test_dir, "data")
+
+
+@pytest.fixture
+def data_registry_file(test_data_dir):
+    return os.path.join(test_data_dir, "test_data_registry.txt")
