@@ -1,33 +1,34 @@
 """ TODO write this docstring"""
 
-"""
-thoughts after talking to Sandro - loading data-registry as data frame
-"""
-
-# TODO isort at the end
 import concurrent.futures
 import os
-from urllib.parse import urlparse
+from functools import partial
+from urllib.parse import urljoin, urlparse
 
 import pooch
 import requests
+
 
 DEFAULT_BASE_DATA_URL = "https://raw.githubusercontent.com/OliviaLynn/LEPHARE-data/main/"
 DEFAULT_REGISTRY_FILE = "data_registry.txt"
 
 #! Replace DEFAULT_LOCAL_DATA_PATH with the following:
 # from lephare import data_marshaller
-# DEFAULT_LOCAL_DATA_PATH = data_marshaller.get_data_path() # likely something like: ~/Library/Caches/lephare/data/
+# DEFAULT_LOCAL_DATA_PATH = data_marshaller.get_data_path() 
+#  likely something like: ~/Library/Caches/lephare/data/
+#  Note that we can use pooch.os_cache("lephare") to create a directory in the 
+#  default cache location and return its path
 DEFAULT_LOCAL_DATA_PATH = "./data"
 
 
-__all__ = [  # TODO alphabetical maybe. also at the end, prune this to be sure it's all used
-    "read_list_file",
-    "filter_files_by_prefix",
-    "download_registry_from_github",
-    "make_retriever",
-    "download_file",
+__all__ = [
     "download_all_files",
+    "download_file",
+    "download_registry_from_github",
+    "filter_files_by_prefix",
+    "make_default_retriever",
+    "make_retriever",
+    "read_list_file",
 ]
 
 
@@ -54,19 +55,26 @@ def filter_files_by_prefix(file_path, target_prefixes):
     return matching_lines
 
 
-def download_registry_from_github(url, outfile):
+def download_registry_from_github(url="", outfile=""):
     """Fetch the contents of a file from a GitHub repository.
 
     Parameters
     ----------
     url : str
-        The URL of the file in the GitHub repository.
+        The URL of the registry file. Defaults to a "data-registry.txt" file at DEFAULT_BASE_DATA_URL.
+    outfile : str
+        The path where the file will be saved. Defaults to DEFAULT_REGISTRY_FILE.
 
-    Returns
-    -------
-    str
-        The contents of the file.
+    Raises
+    ------
+    Exception
+        If the file cannot be fetched from the URL.
     """
+    if url == "":
+        url = urljoin(DEFAULT_BASE_DATA_URL, "data-registry.txt")
+    if outfile == "":
+        outfile = DEFAULT_REGISTRY_FILE
+    
     response = requests.get(url)
     if response.status_code == 200:
         with open(outfile, "w") as file:
@@ -77,13 +85,12 @@ def download_registry_from_github(url, outfile):
 
 
 def read_list_file(list_file, prefix=""):
-    """Reads file names from a list file, returns list of file paths.
+    """Reads file names from a list file and returns a list of file paths.
 
     Parameters
     ----------
     list_file : str
-        The name of the file containing the list of filenames.
-        Can be local or a url
+        The name of the file containing the list of filenames. Can be local or a URL.
 
     prefix : str
         Optional prefix to add to all file names. When downloaded, file paths
@@ -110,6 +117,9 @@ def read_list_file(list_file, prefix=""):
             content = file.read()
 
     # Infer the prefix if not provided
+    # Note: pooch docs specify that registry files use Unix separators
+    # Note as well: this may be phased out, if we decide to specify list 
+    #   files as containing paths relative to the root dir
     if prefix == "":
         if "sed" in list_file:
             start_index = list_file.find("sed/")
@@ -120,19 +130,10 @@ def read_list_file(list_file, prefix=""):
             end_index = list_file.rfind("/")
             prefix = list_file[start_index:end_index]
 
-    # Avoid ending up with double seperators after prefix
-    # TODO : add consideration about using '/'. Pooch uses this separator in
-    # registries, and we've discussed not targetting windows for our builds,
-    # but it could be nice to say something about this somewhere.
-    # Also, pooch says it will handle conversions when checking registry,
-    # so we actually could go ahead and add this
-    if len(prefix) > 0 and prefix[-1] == "/":
-        prefix = prefix[:-1]
-
     # Read in file
     for line in content.splitlines():
         file_name = line.split()[0].strip()
-        file_names.append(f"{prefix}/{file_name}")
+        file_names.append(os.path.join(prefix, file_name))
     return file_names
 
 
@@ -143,29 +144,35 @@ def make_default_retriever():
     )
 
 
-def make_retriever(base_url, registry_file, data_path=None):
-    """TODO docstring"""
-    if not data_path:
-        data_path = pooch.os_cache("lephare")
+def make_retriever(base_url=DEFAULT_BASE_DATA_URL, registry_file=DEFAULT_REGISTRY_FILE, data_path=DEFAULT_LOCAL_DATA_PATH):
+    """Create a retriever for downloading files with specified base URL, registry file, and data path.
 
+    Parameters
+    ----------
+    base_url : str
+        The base URL for the data files.
+    registry_file : str
+        The path to the registry file that lists the files and their hashes.
+    data_path : str
+        The local path where the files will be downloaded.
+
+    Returns
+    -------
+    pooch.Pooch
+        The retriever object for downloading files.
+    """
     retriever = pooch.create(
-        path=data_path,  # TODO does the default work
         base_url=base_url,
-        registry=None,  # We're using a registry file instead
+        path=data_path,
+        registry=None, # We're using a registry file instead (set below)
     )
     retriever.load_registry(registry_file)
     return retriever
 
 
-def download_file(retriever, file):
-    """TODO docstring"""
-    # TODO would be nice to have a part here that will let someone proceed
-    # with download even if hashes don't match up
-    return retriever.fetch(file)
-
-
-def create_directories_from_files(file_names):
-    """TODO docstring. Basically, we need this for thread safety it seems."""
+def _create_directories_from_files(file_names):
+    """TODO docstring. Basically, we need this for thread safety it seems.
+    private potentially"""
     unique_directories = set(
         os.path.dirname(file_name) for file_name in file_names if os.path.dirname(file_name)
     )
@@ -175,54 +182,108 @@ def create_directories_from_files(file_names):
             print(f"Created directory: {directory}")
 
 
-def download_all_files(retriever, file_names, ignore_registry=False):
-    """TODO docstring"""
-    # First make directories, for thread safety
-    create_directories_from_files(file_names)
+def download_file(retriever, file_name, ignore_registry=False):
+    """Download a file using the retriever, optionally ignoring the registry.
 
-    # Create an unregistered retriever if needed
+    Parameters
+    ----------
+    retriever : pooch.Pooch
+        The retriever object for downloading files.
+    file_name : str
+        The name of the file to download.
+    ignore_registry : bool
+        If True, download the file without checking its hash against the registry.
+
+    Returns
+    -------
+    str
+        The path to the downloaded file.
+    """
     if ignore_registry:
-        """
-        unregistered_retriever = pooch.create(
-            path=retriever.abspath,
-            base_url=retriever.base_url,
-            registry=None,  # No registry
-            urls={file_name: urljoin(retriever.base_url, file_name) for file_name in file_names}  # Construct URLs manually
+        print(f"Downloading without registry: {file_name}...")
+        return pooch.retrieve(
+            url=urljoin(retriever.base_url, file_name),
+            known_hash=None,
+            fname=file_name,
+            path=retriever.path,
         )
-        """
+    else:
+        return retriever.fetch(file_name)
 
-        def unregistered_retrieve(file_name):
-            print(f"unregistered_retrieve({file_name})...")
-            return pooch.retrieve(
-                url=retriever.base_url + file_name,
-                known_hash=None,
-                fname=file_name,
-                path=retriever.abspath,
-            )
+
+def download_all_files(retriever, file_names, ignore_registry=False):
+    """Download all files in the given list using the retriever.
+
+    Parameters
+    ----------
+    retriever : pooch.Pooch
+        The retriever object for downloading files.
+    file_names : list of str
+        List of file names to download.
+    ignore_registry : bool
+        If True, download the files without checking their hashes against the registry.
+
+    Returns
+    -------
+    list of str
+        List of paths to the downloaded files.
+    """
+    # First make directories, for thread safety
+    _create_directories_from_files(file_names)
 
     # Now the downloading
     print(f"Checking/downloading {len(file_names)} files...")
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        #! talk to Drew
-        # executor.map(retriever.fetch, file_names, timeout=0.1) # timeout in seconds. Doesn't seem to make a difference?
-        # executor.map(fetch_partial, file_names) # doesn't seem to work at all? is there something wrong with the partial? is this blocking somehow?
+        download_fn = partial(download_file, retriever, ignore_registry=ignore_registry)
+        futures = [executor.submit(download_fn, file_name) for file_name in file_names]
+        
+        # We're gathering the completed futures here to make sure we aren't skipping any files,
+        # which seemed to be happening earlier, when using an executor mapping function instead
+        completed_futures = []
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                completed_futures.append(future.result(timeout=60)) # timeout is in seconds
+            except Exception as e:
+                print(f"Future completed with an exception: {e}")
+        # For a time improvement, we could consider replacing the above with the following
+        # (but the former will be much easier to work with when debugging):
+        # completed_futures = [future for future in concurrent.futures.as_completed(futures)] #! look into timeout
 
-        # TODO might be better to move this branching into our single file download_file. actually yes I like that a lot.
-        if ignore_registry:
-            # futures = [executor.submit(unregistered_retriever.fetch, file_name) for file_name in file_names]
-            futures = [executor.submit(unregistered_retrieve, file_name) for file_name in file_names]
-            results = [future.result() for future in concurrent.futures.as_completed(futures)]
-            print(f"{len(results)} completed.")
-            for result in results:
-                print(result)
-        else:
-            futures = [executor.submit(retriever.fetch, file_name) for file_name in file_names]
+        print(f"{len(completed_futures)} completed.")
 
-            results = [future.result(timeout=10) for future in concurrent.futures.as_completed(futures)] #! look into timeout
-            print(f"{len(results)} completed.")
+    # Finish with some checks on our downloaded files
+    _check_downloaded_files(file_names, completed_futures)
+    
+    
+def _check_downloaded_files(file_names, completed_futures):
+    """Check if all files have been downloaded successfully and are not empty.
 
-    #! talk to Drew
-    # TODO perhaps programmatically check that they all downloaded correctly?
-    # or just compare len file_names and len results? raise exception if not same?
-    # ideas: could diff against diff of file_names and files in dir (but could go bad with files of size 0)
-    # and could be ok to raise exception
+    Parameters
+    ----------
+    file_names : list of str
+        List of expected file names (relative paths).
+    completed_futures : list of str
+        List of file names that were downloaded (absolute paths).
+
+    Returns
+    -------
+    bool
+        True if all files are downloaded and non-empty, False otherwise.
+    """
+    # Convert absolute paths to relative paths
+    completed_futures_relative = [os.path.relpath(path, DEFAULT_LOCAL_DATA_PATH) for path in completed_futures]
+
+    # Check if all files were downloaded
+    missing_files = set(file_names) - set(completed_futures_relative)
+    if missing_files:
+        print("The following files were not downloaded:", missing_files)
+        return False
+
+    # Check if any downloaded file is empty
+    for file_name in completed_futures:
+        if os.path.getsize(file_name) == 0:
+            print(f"The file {file_name} is empty.")
+            return False
+
+    print("All files downloaded successfully and are non-empty.")
+    return True
