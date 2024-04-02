@@ -161,13 +161,6 @@ def create_directories_from_files(file_names):
 
 def download_all_files(retriever, file_names, ignore_registry=False):
     """TODO docstring"""
-    #! talk to Drew
-    # maybe TODO, check if we need to first? but doesn't pooch do this for us already?
-    # based on sorcha's: determine if we should attempt to download or create any files.
-    # perhaps it's mostly there because of the force-refresh functionality they have
-    # should we have that too? I'm leaning probably not, as I don't see us changing template
-    #     files all that often. when/if we add versioning, that should handle the rare case we do
-    
     # First make directories, for thread safety
     create_directories_from_files(file_names)
     
@@ -208,9 +201,11 @@ def download_all_files(retriever, file_names, ignore_registry=False):
         else:
             futures = [executor.submit(retriever.fetch, file_name) for file_name in file_names]
 
-            results = [future.result() for future in concurrent.futures.as_completed(futures)]
+            results = [future.result(timeout=10) for future in concurrent.futures.as_completed(futures)] #! look into timeout
             print(f"{len(results)} completed.")
 
     #! talk to Drew
     # TODO perhaps programmatically check that they all downloaded correctly? 
     # or just compare len file_names and len results? raise exception if not same?
+    # ideas: could diff against diff of file_names and files in dir (but could go bad with files of size 0)
+    # and could be ok to raise exception
