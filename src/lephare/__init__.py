@@ -1,25 +1,14 @@
 # ruff: noqa: E402
 # ruff: noqa: F403
 
-import os
-
+# Why is this global?
 global LEPHAREDIR
 
-try:
-    LEPHAREDIR = os.environ["LEPHAREDIR"]
-except KeyError:
-    raise RuntimeError("Environment variable LEPHAREDIR has not been set")  # noqa: B904
+from .data_manager import DataManager
 
-try:
-    os.mkdir(os.environ["LEPHAREWORK"])
-    os.mkdir(os.path.join(os.environ["LEPHAREWORK"], "filt"))
-    os.mkdir(os.path.join(os.environ["LEPHAREWORK"], "lib_bin"))
-    os.mkdir(os.path.join(os.environ["LEPHAREWORK"], "lib_mag"))
-    os.mkdir(os.path.join(os.environ["LEPHAREWORK"], "zphota"))
-except FileExistsError:
-    pass
-except KeyError:
-    raise RuntimeError("Environment variable LEPHAREWORK has not been set")  # noqa: B904
+dm = DataManager()
+dm.configure_directories()  # noqa: F405
+LEPHAREDIR = dm.LEPHAREDIR
 
 
 from ._lephare import *
