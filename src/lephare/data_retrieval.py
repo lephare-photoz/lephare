@@ -2,11 +2,17 @@
 
 import concurrent.futures
 import os
+<<<<<<< HEAD
 import warnings
 from functools import partial
 from urllib.parse import urljoin, urlparse
 
 import numpy as np
+=======
+from functools import partial
+from urllib.parse import urljoin, urlparse
+
+>>>>>>> 7f9e239 (Data retrieval (#49))
 import pooch
 import requests
 
@@ -185,8 +191,11 @@ def _create_directories_from_files(file_names):
     ----------
     file_names : list of str
         List of file names with relative paths.
+<<<<<<< HEAD
     base_path : str
         Path to LEPHAREDIR if not current working directory.
+=======
+>>>>>>> 7f9e239 (Data retrieval (#49))
     """
     unique_directories = set(
         os.path.dirname(file_name) for file_name in file_names if os.path.dirname(file_name)
@@ -304,7 +313,6 @@ def _check_downloaded_files(file_names, completed_futures):
     print("All files downloaded successfully and are non-empty.")
     return True
 
-
 def config_to_required_files(keymap, base_url=None):
     """Take a lephare config and return list of auxiliary files required for run.
 
@@ -355,3 +363,4 @@ def config_to_required_files(keymap, base_url=None):
     ext_list = keymap["EXTINC_LAW"].value.split(",")
     required_files += ext_list
     return required_files
+
