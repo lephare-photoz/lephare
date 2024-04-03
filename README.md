@@ -4,7 +4,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/lephare?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/lephare/)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/lincc-frameworks/lephare/smoke-test.yml)](https://github.com/lephare-photoz/lephare/actions/workflows/smoke-test.yml)
-[![Codecov](https://codecov.io/gh/lincc-frameworks/lephare/branch/main/graph/badge.svg)](https://codecov.io/gh/lephare-photoz/lephare)
+[![Codecov](https://codecov.io/gh/lephare-photoz/lephare/branch/main/graph/badge.svg)](https://codecov.io/gh/lephare-photoz/lephare)
 [![Read The Docs](https://img.shields.io/readthedocs/lephare)](https://lephare.readthedocs.io/)
 
 This project is in an early development stage. If you wish to use and run LePHARE please download it from the [official repository](https://gitlab.lam.fr/Galaxies/LEPHARE/).
