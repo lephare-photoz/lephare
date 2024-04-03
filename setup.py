@@ -85,7 +85,7 @@ class MakeDoc(Command):
 
 
 setup(
-    name="lephare-dev",
+    name="lephare",
     author="Johann Cohen-Tanugi",
     author_email="johann.cohentanugi@gmail.com",
     url="https://gitlab.lam.fr/Galaxies/LEPHARE",
