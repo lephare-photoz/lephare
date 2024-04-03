@@ -92,11 +92,6 @@ int main(int argc, char *argv[]) {
     // Compute the offsets
     std::tie(a0, a1) = photoz.run_autoadapt(adaptSrcs);
     cout << " Done " << endl;
-    string offsets;
-    for (int k = 0; k < photoz.imagm; k++)
-      offsets = offsets + to_string(a0[k]) + ",";
-    offsets = "# Offsets from auto-adapt: " + offsets + '\n';
-    photoz.outputHeader += offsets;
     // Clean the vector
     for (auto &src : adaptSrcs) delete src;
     adaptSrcs.shrink_to_fit();

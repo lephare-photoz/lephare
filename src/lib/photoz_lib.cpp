@@ -340,6 +340,8 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
     outputHeader += to_string(bapp[k]) + ' ';
   };
   outputHeader += '\n';
+  // AUTO-ADAPT
+  outputHeader +=   "# AUTO_ADAPT             : " + bool2string(keys["AUTO_ADAPT"].split_bool("NO",1)[0]) +'\n';
 
   // ADAPT_BAND selection in one band
   fl_auto = ((key_analysed["ADAPT_BAND"]).split_int("1", 1))[0];
@@ -1561,6 +1563,21 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
   double funz0 = lcdm.distMod(gridz[1] / 20.);
   vector<opa> opaOut = Mag::read_opa();
 
+  // Specify the offsets in the header
+  string offsets;
+  if(autoadapt){
+    for(int k=0;k< imagm; k++) offsets=offsets + to_string(a0[k]) + "," ;
+    offsets = "# Offsets from auto-adapt: " + offsets + '\n';
+    outputHeader += offsets ;
+  }
+  if(shifts0.size()==(size_t)imagm){
+    offsets="";
+    for(int k=0;k< imagm; k++) offsets=offsets + to_string(shifts0[k]) + "," ;
+    offsets = "# Offsets applied directly from keyword: " + offsets + '\n';
+    outputHeader += offsets ;
+
+  }
+  
   unsigned int nobj = 0;
   for (auto &oneObj : sources) {
     if (verbose)
