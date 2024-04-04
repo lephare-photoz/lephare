@@ -11,7 +11,7 @@ The C++ part of LePhare has no external dependency beyond OpenMP and standard co
 In order to run make you will need an appropriate compiler for instance gcc on a Mac which can be installed with ``brew install gcc``.
 
 Legacy installation methods
-------------
+---------------------------
 
 Build only the C++ executables with make (historical method)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
