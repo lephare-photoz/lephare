@@ -6,6 +6,20 @@ Welcome to lephare's documentation!
 ========================================================================================
 **WARNING: This is a work in progress, and should ne be used by anyone at this stage. The current LePHARE code is to be found at https://gitlab.lam.fr/Galaxies/LEPHARE .**
 
+LePHARE (PHotometric Analysis for Redshift Estimation) is a Python package built on a complete rewrite in C++ of the `Fortran code <https://www.cfht.hawaii.edu/~arnouts/LEPHARE/acknowledgement.html>`_ LePhare.
+LePHARE computes photometric redshifts and physical parameters by fitting spectral energy distributions (SED) to a dataset of photometric fluxes or apparent magnitudes.
+
+Installation
+------------
+
+The simplest way to install lephare for most users is with pip:
+
+.. code-block:: console
+
+   >> pip install lephare
+
+If you prefer to use binary executables from the command line you may wish to conduct a `legacy installation <https://gitlab.lam.fr/Galaxies/LEPHARE/>`_.  
+
 Dev Guide - Getting Started
 ---------------------------
 
@@ -47,6 +61,9 @@ Notes:
    :hidden:
 
    Home page <self>
+   Notebooks <notebooks>
+   Legacy installation <legacy_install>
+   Keywords <keywords>
    C API Reference <doxygen_output/c_lib/library_root>
    Python API Reference <autoapi/index>
-   Notebooks <notebooks>
+
