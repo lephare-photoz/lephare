@@ -1,5 +1,6 @@
-import os
 import datetime
+import os
+
 from platformdirs import user_cache_dir
 
 
@@ -8,16 +9,13 @@ class DataManager:
         self.lephare_dir = lephare_dir
         self.lephare_work_dir = lephare_work_dir
 
-
     @property
     def LEPHAREDIR(self):
         return self.lephare_dir
 
-
     @property
     def LEPHAREWORK(self):
         return self.lephare_work_dir
-
 
     def configure_directories(self):
         this_os_cache = user_cache_dir("lephare", ensure_exists=True)

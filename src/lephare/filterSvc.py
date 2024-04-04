@@ -166,9 +166,12 @@ class FilterSvc:
         """
         try:
             query = f"{SVO_URL}/fps.php?PhotCalID={filter_id}/{system}"
-            r = requests.get(query)
+            r = requests.get(query, timeout=5)
         except ConnectionRefusedError:
             print(f"request {query} failed due to failure to connect to the server.")
+            return None
+        except requests.ConnectTimeout:
+            print("Timeout on SVO server")
             return None
         try:
             dd = xml.dom.minidom.parseString(r.content)

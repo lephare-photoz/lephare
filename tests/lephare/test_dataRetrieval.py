@@ -5,6 +5,7 @@ from unittest.mock import mock_open, patch
 
 import pytest
 import requests
+
 from lephare.data_retrieval import (
     _check_downloaded_files,
     _create_directories_from_files,
