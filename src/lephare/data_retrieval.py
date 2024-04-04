@@ -318,7 +318,7 @@ def config_to_required_files(keymap, base_url=None):
 
     Parameters
     ==========
-    keymap : dict
+    keymap : dict of lephare.keyvalue
         The dictionary of config keys containing filters etc required.
     base_url : str
         Url to overwrite default base.
