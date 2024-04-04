@@ -176,7 +176,7 @@ def make_retriever(
     return retriever
 
 
-def _create_directories_from_files(file_names, base_path="./"):
+def _create_directories_from_files(file_names):
     """Create directories for the given file names if they do not already exist.
 
     This function is for thread safety when downloading files in parallel.
@@ -192,9 +192,9 @@ def _create_directories_from_files(file_names, base_path="./"):
         os.path.dirname(file_name) for file_name in file_names if os.path.dirname(file_name)
     )
     for directory in unique_directories:
-        if not os.path.exists(f"{base_path}{directory}"):
-            os.makedirs(f"{base_path}{directory}")
-            print(f"Created directory: {base_path}{directory}")
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+            print(f"Created directory: {directory}")
 
 
 def download_file(retriever, file_name, ignore_registry=False):
