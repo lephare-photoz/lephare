@@ -7,16 +7,25 @@
 [![Codecov](https://codecov.io/gh/lincc-frameworks/lephare/branch/main/graph/badge.svg)](https://codecov.io/gh/lephare-photoz/lephare)
 [![Read The Docs](https://img.shields.io/readthedocs/lephare)](https://lephare.readthedocs.io/)
 
-This project is in an early development stage. If you wish to use and run LePHARE please download it from the [official repository](https://gitlab.lam.fr/Galaxies/LEPHARE/).
+IMPORTANT! This project is in an early development stage. If you wish to use and run LePHARE please download it from the [official repository](https://gitlab.lam.fr/Galaxies/LEPHARE/).
 
-This project was automatically generated using the LINCC-Frameworks 
-[python-project-template](https://github.com/lincc-frameworks/python-project-template).
+LePHARE (PHotometric Analysis for Redshift Estimation) is a Python package built on a complete rewrite in C++ of the [Fortran code](https://www.cfht.hawaii.edu/~arnouts/LEPHARE/acknowledgement.html) LePhare.
+LePHARE computes photometric redshifts and physical parameters by fitting spectral energy distributions (SED) to a dataset of photometric fluxes or apparent magnitudes.
 
-A repository badge was added to show that this project uses the python-project-template, however it's up to
-you whether or not you'd like to display it!
+## Installation
 
-For more information about the project template see the 
-[documentation](https://lincc-ppt.readthedocs.io/en/latest/).
+The simplest way to install lephare is using pip:
+
+```
+pip install lephare
+```
+
+
+If you prefer to use binary executables from the command line you may wish to conduct a [legacy installation](https://gitlab.lam.fr/Galaxies/LEPHARE/).  
+
+## Example usage
+
+We provide a number of [Jupyter notebooks](docs/notebooks/) demonstrating various aspects of the Python code.
 
 ## Dev Guide - Getting Started
 
@@ -49,3 +58,13 @@ Notes:
    into documentation for ReadTheDocs works as expected. For more information, see
    the Python Project Template documentation on
    [Sphinx and Python Notebooks](https://lincc-ppt.readthedocs.io/en/latest/practices/sphinx.html#python-notebooks)
+
+## Citation
+
+If using this code in scientific research please cite the following papers:
+
+
+This project was automatically generated using the LINCC-Frameworks 
+[python-project-template](https://github.com/lincc-frameworks/python-project-template).
+For more information about the project template see the 
+[documentation](https://lincc-ppt.readthedocs.io/en/latest/).
