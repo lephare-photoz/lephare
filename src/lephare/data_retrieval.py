@@ -2,9 +2,11 @@
 
 import concurrent.futures
 import os
+import warnings
 from functools import partial
 from urllib.parse import urljoin, urlparse
 
+import numpy as np
 import pooch
 import requests
 
@@ -174,7 +176,7 @@ def make_retriever(
     return retriever
 
 
-def _create_directories_from_files(file_names):
+def _create_directories_from_files(file_names, base_path="./"):
     """Create directories for the given file names if they do not already exist.
 
     This function is for thread safety when downloading files in parallel.
@@ -183,14 +185,16 @@ def _create_directories_from_files(file_names):
     ----------
     file_names : list of str
         List of file names with relative paths.
+    base_path : str
+        Path to LEPHAREDIR if not current working directory.
     """
     unique_directories = set(
         os.path.dirname(file_name) for file_name in file_names if os.path.dirname(file_name)
     )
     for directory in unique_directories:
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-            print(f"Created directory: {directory}")
+        if not os.path.exists(f"{base_path}{directory}"):
+            os.makedirs(f"{base_path}{directory}")
+            print(f"Created directory: {base_path}{directory}")
 
 
 def download_file(retriever, file_name, ignore_registry=False):
@@ -299,3 +303,53 @@ def _check_downloaded_files(file_names, completed_futures):
 
     print("All files downloaded successfully and are non-empty.")
     return True
+
+
+def config_to_required_files(keymap, base_url=None):
+    """Take a lephare config and return list of auxiliary files required for run.
+
+    For the sed lists these must be present in the auxiliary files directory. If
+    local full paths set the code will only retrieve opa, vega, and filters.
+
+    In addition to the specified files we also add opa and vega files. These
+    are always required.
+
+    We use the tau opacities by default.
+
+    Parameters
+    ==========
+    keymap : dict
+        The dictionary of config keys containing filters etc required.
+    base_url : str
+        Url to overwrite default base.
+    """
+    if base_url is None:
+        base_url = DEFAULT_BASE_DATA_URL
+    required_files = []
+    # Opacity always required
+    opa_list = ["opa/OPACITY.dat"] + [f"opa/tau{i:02d}.out" for i in np.arange(81)]
+    required_files += opa_list
+    # vega always required
+    vega_list = [
+        "vega/BD+17.sed",
+        "vega/BD+17o4708.sed",
+        "vega/SunLCB.sed",
+        "vega/VegaLCB.sed",
+        "vega/a0v.sed",
+        "vega/a0v_n.sed",
+    ]
+    required_files += vega_list
+    required_files += [f"filt/{f}" for f in keymap["FILTER_LIST"].value.split(",")]
+    # Get user specified sed lists
+    sed_keys = ["STAR_SED", "GAL_SED", "QSO_SED"]
+    for key in sed_keys:
+        try:
+            list_file = base_url + keymap[key].value
+            file_names = read_list_file(list_file, prefix=f"sed/{key.split('_')[0]}/")
+            required_files += file_names
+        except KeyError:
+            warnings.warn(f"{key} keyword not set or not present in auxiliary files directory.")
+    # Get extinction law files
+    ext_list = keymap["EXTINC_LAW"].value.split(",")
+    required_files += ext_list
+    return required_files
