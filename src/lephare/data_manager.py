@@ -91,6 +91,8 @@ class DataManager:
             The path to the lephare directory for auxiliary files.
         keymap : dict
             The config dictionary.
+        additional_files : list or str
+            Any additional files to be downloaded from the auxiliary file repo.
         """
         if keymap is None:
             # Assume if filt is present assume everything is.
