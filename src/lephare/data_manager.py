@@ -3,8 +3,6 @@ import datetime
 from platformdirs import user_cache_dir
 import warnings
 
-from lephare import data_retrieval, LEPHAREDIR
-
 
 class DataManager:
     def __init__(self, lephare_dir=None, lephare_work_dir=None):
@@ -75,48 +73,3 @@ class DataManager:
                 f"""User defined LEPHAREWORK is set. All intermediate files will
                 be written to {self.lephare_work_dir}."""
             )
-
-    # To be deprecated by pooch. For now just get all auxilliary data.
-    @classmethod
-    def get_auxiliary_data(cls, lephare_dir=LEPHAREDIR, keymap=None, additional_files=None):
-        """Get all auxiliary data required to run lephare.
-
-        Function to be deprected by lephare internal pooch based retriever.
-
-        This gets all the filters, seds, and other data files.
-
-        Parameters
-        ==========
-        lephare_dir : str
-            The path to the lephare directory for auxiliary files.
-        keymap : dict
-            The config dictionary.
-        additional_files : list or str
-            Any additional files to be downloaded from the auxiliary file repo.
-        """
-        if keymap is None:
-            # Assume if filt is present assume everything is.
-            if os.path.isdir(f"{lephare_dir}/filt"):
-                warnings.warn(
-                    "Some data appears present. Not downloading."
-                    "Consider setting a keymap to download a subset."
-                )
-            else:
-                # Get the full repository
-                data_loc = data_retrieval.DEFAULT_BASE_DATA_URL
-                print("Downloading all auxiliary data (~1.5Gb) to {lephare_dir}.")
-                print(f"Getting data from {data_loc}.")
-                os.system(f"git clone {data_loc}")
-                os.system(f"mv LEPHARE-data/* {lephare_dir}")
-        else:
-            base_url = data_retrieval.DEFAULT_BASE_DATA_URL
-            registry_file = data_retrieval.DEFAULT_REGISTRY_FILE
-            data_path = lephare_dir
-
-            retriever = data_retrieval.make_retriever(
-                base_url=base_url, registry_file=registry_file, data_path=data_path
-            )
-            file_list = data_retrieval.config_to_required_files(keymap)
-            if additional_files is not None:
-                file_list += list(additional_files)
-            data_retrieval.download_all_files(retriever, file_list, ignore_registry=False)
