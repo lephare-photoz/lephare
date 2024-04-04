@@ -10,6 +10,8 @@ import numpy as np
 import pooch
 import requests
 
+from lephare import LEPHAREDIR
+
 DEFAULT_BASE_DATA_URL = "https://raw.githubusercontent.com/OliviaLynn/LEPHARE-data/main/"
 DEFAULT_REGISTRY_FILE = "data_registry.txt"
 
@@ -327,7 +329,7 @@ def config_to_required_files(keymap, base_url=None):
         base_url = DEFAULT_BASE_DATA_URL
     required_files = []
     # We always need alloutputkeys.txt
-    required_files += ["alloutputkeys.txt"]
+    # required_files += ["alloutputkeys.txt"]
     # Opacity always required
     opa_list = ["opa/OPACITY.dat"] + [f"opa/tau{i:02d}.out" for i in np.arange(81)]
     required_files += opa_list
@@ -352,6 +354,49 @@ def config_to_required_files(keymap, base_url=None):
         except KeyError:
             warnings.warn(f"{key} keyword not set or not present in auxiliary files directory.")
     # Get extinction law files
-    ext_list = keymap["EXTINC_LAW"].value.split(",")
+    ext_list = [f"ext/{f}" for f in keymap["EXTINC_LAW"].value.split(",")]
     required_files += ext_list
     return required_files
+
+
+def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=None):
+    """Get all auxiliary data required to run lephare.
+
+    Function to be deprected by lephare internal pooch based retriever.
+
+    This gets all the filters, seds, and other data files.
+
+    Parameters
+    ==========
+    lephare_dir : str
+        The path to the lephare directory for auxiliary files.
+    keymap : dict
+        The config dictionary.
+    additional_files : list
+        Any additional files to be downloaded from the auxiliary file repo.
+    """
+    if keymap is None:
+        # Assume if filt is present assume everything is.
+        if os.path.isdir(f"{lephare_dir}/filt"):
+            warnings.warn(
+                "Some data appears present. Not downloading."
+                "Consider setting a keymap to download a subset."
+            )
+        else:
+            # Get the full repository
+            data_loc = DEFAULT_BASE_DATA_URL
+            print("Downloading all auxiliary data (~1.5Gb) to {lephare_dir}.")
+            print(f"Getting data from {data_loc}.")
+            os.system(f"git clone {data_loc}")
+            os.system(f"mv LEPHARE-data/* {lephare_dir}")
+    else:
+        base_url = DEFAULT_BASE_DATA_URL
+        registry_file = DEFAULT_REGISTRY_FILE
+        data_path = lephare_dir
+
+        retriever = make_retriever(base_url=base_url, registry_file=registry_file, data_path=data_path)
+        file_list = config_to_required_files(keymap)
+        if additional_files is not None:
+            file_list += additional_files
+        download_all_files(retriever, file_list, ignore_registry=False)
+
