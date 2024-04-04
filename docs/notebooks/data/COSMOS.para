@@ -4,17 +4,17 @@
 ##############################################################################################
 #
 #-------------------    STELLAR LIBRARY (ASCII SEDs)        ---------------------------       
-STAR_SED        STAR_SWIRE.list         # STAR list (full path)
+STAR_SED        sed/STAR/STAR_MOD_ALL.list         # STAR list (full path)
 STAR_LIB	LIB_STAR		# Binary STAR LIBRARY (-> $ZPHOTWORK/lib_bin/*)
 STAR_FSCALE	3.432E-09		# Arbitrary Flux Scale 
 #
 #-------------------    QSO LIBRARY (ASCII SEDs)            ---------------------------  
-QSO_SED		AGN_LONSDALE.list       # QSO list (full path)
+QSO_SED		sed/QSO/SALVATO09/AGN_MOD.list       # QSO list (full path)
 QSO_LIB		LIB_QSO			# Binary QSO LIBRARY (-> $ZPHOTWORK/lib_bin/*)
 QSO_FSCALE	1.			# Arbitrary Flux Scale 
 #
 #-------------------  GALAXY LIBRARY (ASCII or BINARY SEDs) ---------------------------
-GAL_SED		 CE_MOD.list            # GALAXMuzzin09_SEDY list (full path)
+GAL_SED		 examples/COSMOS_MOD.list            # GALAXMuzzin09_SEDY list (full path)
 GAL_LIB	         LIB_CE	                # Binary GAL LIBRARY (-> $ZPHOTWORK/lib_bin/*)
 GAL_FSCALE      1.                      # Arbitrary Flux Scale
 #SEL_AGE 	/data/zphot_vers25_03_03/sed/GAL/HYPERZ/AGE_GISSEL_HZ.dat	# List of Age for GISSEL(full path)
@@ -64,7 +64,7 @@ ZGRID_TYPE      0               # Define the kind of redshift grid (0: linear ; 
 Z_STEP 		0.01,0.,7. 	# dz, zmin, zmax 
 COSMOLOGY	70,0.3,0.7	# H0,om0,lbd0    (if lb0>0->om0+lbd0=1)
 MOD_EXTINC 	0,0		# model range for extinction 
-EXTINC_LAW	SB_calzetti.dat	# ext. law (in  $ZPHOTDIR/ext/*)
+EXTINC_LAW	SMC_prevot.dat,SB_calzetti.dat,SB_calzetti_bump1.dat,SB_calzetti_bump2.dat	# ext. law (in  $ZPHOTDIR/ext/*)
 EB_V            0.,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.5 # E(B-V) (<50 values)
 EM_LINES        EMP_UV          # [NO/EMP_UV/EMP_SFR/PHYS] choice between emission line prescription  
 EM_DISPERSION   0.5,0.75,1.,1.5,2. # Dispersion allowed in the emission line flux factor
