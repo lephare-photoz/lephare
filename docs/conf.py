@@ -76,5 +76,6 @@ exhale_args = {
     "rootFileTitle": "C Library API",
     "createTreeView": True,
     "exhaleExecutesDoxygen": True,
-    "exhaleDoxygenStdin": "INPUT = ../src/lib",
+    # "exhaleDoxygenStdin": "INPUT = ../src/lib",
+    "exhaleUseDoxyfile": True,
 }
