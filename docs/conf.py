@@ -67,6 +67,8 @@ html_theme = "sphinx_rtd_theme"
 breathe_projects = {"lephare": "./doxygen_output/xml"}
 breathe_default_project = "lephare"
 
+nbsphinx_kernel_name = "python3"
+
 # Setup the exhale extension
 exhale_args = {
     # These arguments are required
