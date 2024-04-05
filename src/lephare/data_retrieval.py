@@ -137,7 +137,8 @@ def read_list_file(list_file, prefix=""):
     # Read in file
     for line in content.splitlines():
         file_name = line.split()[0].strip()
-        file_names.append(os.path.join(prefix, file_name))
+        if filename[0] != "#":
+            file_names.append(os.path.join(prefix, file_name))
     return file_names
 
 
