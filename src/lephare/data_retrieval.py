@@ -399,4 +399,3 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
         if additional_files is not None:
             file_list += additional_files
         download_all_files(retriever, file_list, ignore_registry=False)
-
