@@ -349,12 +349,18 @@ def config_to_required_files(keymap, base_url=None):
     for key in sed_keys:
         try:
             list_file = base_url + keymap[key].value
+            required_files += [keymap[key].value]
             file_names = read_list_file(list_file, prefix=f"sed/{key.split('_')[0]}/")
             required_files += file_names
         except KeyError:
             warnings.warn(f"{key} keyword not set or not present in auxiliary files directory.")
+    # Bethermin12 always required
+    bet_list = "sed/GAL/BETHERMIN12/BETHERMIN12_MOD.list"
+    required_files += [bet_list]
+    required_files += read_list_file(base_url + bet_list, prefix="sed/GAL/")
     # Get extinction law files
     ext_list = [f"ext/{f}" for f in keymap["EXTINC_LAW"].value.split(",")]
+    ext_list += ["ext/MW_seaton.dat"]  # Appears to be always required
     required_files += ext_list
     return required_files
 
