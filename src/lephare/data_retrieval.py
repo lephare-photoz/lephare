@@ -12,7 +12,7 @@ import requests
 
 from lephare import LEPHAREDIR
 
-DEFAULT_BASE_DATA_URL = "https://raw.githubusercontent.com/OliviaLynn/LEPHARE-data/main/"
+DEFAULT_BASE_DATA_URL = "https://raw.githubusercontent.com/lephare-photoz/lephare-data/main/"
 DEFAULT_REGISTRY_FILE = "data_registry.txt"
 
 #! Replace DEFAULT_LOCAL_DATA_PATH with the following:
