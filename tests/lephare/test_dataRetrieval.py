@@ -19,7 +19,7 @@ from lephare.data_retrieval import (
 
 # TODO: this will be bundled into a module in the future,
 # so replace the hardcoding when that happens
-DEFAULT_BASE_DATA_URL = "https://raw.githubusercontent.com/OliviaLynn/LEPHARE-data/main/"
+DEFAULT_BASE_DATA_URL = "https://raw.githubusercontent.com/lephare-photoz/lephare-data/main/"
 DEFAULT_REGISTRY_FILE = "data_registry.txt"
 DEFAULT_LOCAL_DATA_PATH = "./data"
 
