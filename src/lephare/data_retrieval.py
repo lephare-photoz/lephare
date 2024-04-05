@@ -377,6 +377,9 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
     """
     # Get the registry file
     download_registry_from_github()
+    base_url = DEFAULT_BASE_DATA_URL
+    registry_file = DEFAULT_REGISTRY_FILE
+    data_path = lephare_dir
     if keymap is None:
         # Assume if filt is present assume everything is.
         if os.path.isdir(f"{lephare_dir}/filt"):
@@ -386,16 +389,11 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
             )
         else:
             # Get the full repository
-            data_loc = DEFAULT_BASE_DATA_URL
             print("Downloading all auxiliary data (~1.5Gb) to {lephare_dir}.")
-            print(f"Getting data from {data_loc}.")
-            os.system(f"git clone {data_loc}")
+            print(f"Getting data from {base_url}.")
+            os.system(f"git clone {base_url}")
             os.system(f"mv LEPHARE-data/* {lephare_dir}")
     else:
-        base_url = DEFAULT_BASE_DATA_URL
-        registry_file = DEFAULT_REGISTRY_FILE
-        data_path = lephare_dir
-
         retriever = make_retriever(base_url=base_url, registry_file=registry_file, data_path=data_path)
         file_list = config_to_required_files(keymap)
         download_all_files(retriever, file_list, ignore_registry=False)
