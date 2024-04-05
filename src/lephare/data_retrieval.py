@@ -362,9 +362,9 @@ def config_to_required_files(keymap, base_url=None):
 def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=None):
     """Get all auxiliary data required to run lephare.
 
-    Function to be deprected by lephare internal pooch based retriever.
-
     This gets all the filters, seds, and other data files.
+
+    If no keymap is set this will git clone the full repository.
 
     Parameters
     ==========
@@ -375,6 +375,8 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
     additional_files : list
         Any additional files to be downloaded from the auxiliary file repo.
     """
+    # Get the registry file
+    download_registry_from_github()
     if keymap is None:
         # Assume if filt is present assume everything is.
         if os.path.isdir(f"{lephare_dir}/filt"):
@@ -396,6 +398,4 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
 
         retriever = make_retriever(base_url=base_url, registry_file=registry_file, data_path=data_path)
         file_list = config_to_required_files(keymap)
-        if additional_files is not None:
-            file_list += additional_files
         download_all_files(retriever, file_list, ignore_registry=False)
