@@ -22,3 +22,9 @@ def test_data_dir():
 @pytest.fixture
 def data_registry_file(test_data_dir):
     return os.path.join(test_data_dir, "test_data_registry.txt")
+
+
+@pytest.fixture
+def unset_env_vars():
+    os.environ.pop("LEPHAREDIR", None)
+    os.environ.pop("LEPHAREWORK", None)
