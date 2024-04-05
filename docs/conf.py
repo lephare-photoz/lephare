@@ -12,8 +12,8 @@ from importlib.metadata import version
 read_the_docs_build = os.environ.get("READTHEDOCS", None) == "True"
 
 # If building on read the docs, build the doxygen documentation
-if read_the_docs_build:
-    subprocess.call("cd doxygen; doxygen ./Doxyfile", shell=True)
+# if read_the_docs_build:
+subprocess.call("cd doxygen; doxygen ./Doxyfile", shell=True)
 
 # Define path to the code to be documented **relative to where conf.py (this file) is kept**
 sys.path.insert(0, os.path.abspath("../src/"))
@@ -76,6 +76,5 @@ exhale_args = {
     "rootFileTitle": "C Library API",
     "createTreeView": True,
     "exhaleExecutesDoxygen": True,
-    # "exhaleDoxygenStdin": "INPUT = ../src/lib",
-    "exhaleUseDoxyfile": True,
+    "exhaleDoxygenStdin": "INPUT = ../src/lib",
 }
