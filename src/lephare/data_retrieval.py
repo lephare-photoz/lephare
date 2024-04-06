@@ -137,7 +137,8 @@ def read_list_file(list_file, prefix=""):
     # Read in file
     for line in content.splitlines():
         file_name = line.split()[0].strip()
-        file_names.append(os.path.join(prefix, file_name))
+        if file_name[0] != "#":
+            file_names.append(os.path.join(prefix, file_name))
     return file_names
 
 
@@ -349,12 +350,18 @@ def config_to_required_files(keymap, base_url=None):
     for key in sed_keys:
         try:
             list_file = base_url + keymap[key].value
+            required_files += [keymap[key].value]
             file_names = read_list_file(list_file, prefix=f"sed/{key.split('_')[0]}/")
             required_files += file_names
         except KeyError:
             warnings.warn(f"{key} keyword not set or not present in auxiliary files directory.")
+    # Bethermin12 always required
+    bet_list = "sed/GAL/BETHERMIN12/BETHERMIN12_MOD.list"
+    required_files += [bet_list]
+    required_files += read_list_file(base_url + bet_list, prefix="sed/GAL/")
     # Get extinction law files
     ext_list = [f"ext/{f}" for f in keymap["EXTINC_LAW"].value.split(",")]
+    ext_list += ["ext/MW_seaton.dat"]  # Appears to be always required
     required_files += ext_list
     return required_files
 
@@ -362,9 +369,9 @@ def config_to_required_files(keymap, base_url=None):
 def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=None):
     """Get all auxiliary data required to run lephare.
 
-    Function to be deprected by lephare internal pooch based retriever.
-
     This gets all the filters, seds, and other data files.
+
+    If no keymap is set this will git clone the full repository.
 
     Parameters
     ==========
@@ -375,6 +382,11 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
     additional_files : list
         Any additional files to be downloaded from the auxiliary file repo.
     """
+    # Get the registry file
+    download_registry_from_github()
+    base_url = DEFAULT_BASE_DATA_URL
+    registry_file = DEFAULT_REGISTRY_FILE
+    data_path = lephare_dir
     if keymap is None:
         # Assume if filt is present assume everything is.
         if os.path.isdir(f"{lephare_dir}/filt"):
@@ -384,18 +396,15 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
             )
         else:
             # Get the full repository
-            data_loc = DEFAULT_BASE_DATA_URL
             print("Downloading all auxiliary data (~1.5Gb) to {lephare_dir}.")
-            print(f"Getting data from {data_loc}.")
-            os.system(f"git clone {data_loc}")
+            print(f"Getting data from {base_url}.")
+            os.system(f"git clone {base_url}")
             os.system(f"mv LEPHARE-data/* {lephare_dir}")
     else:
-        base_url = DEFAULT_BASE_DATA_URL
-        registry_file = DEFAULT_REGISTRY_FILE
-        data_path = lephare_dir
-
         retriever = make_retriever(base_url=base_url, registry_file=registry_file, data_path=data_path)
         file_list = config_to_required_files(keymap)
-        if additional_files is not None:
-            file_list += additional_files
         download_all_files(retriever, file_list, ignore_registry=False)
+        # TODO! This will be deprecated when alloutputkeys.txt is added to the registry:
+        download_file(retriever, "alloutputkeys.txt", ignore_registry=True)
+    if additional_files is not None:
+        download_all_files(retriever, additional_files, ignore_registry=False)
