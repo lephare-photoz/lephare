@@ -14,6 +14,7 @@ from lephare.data_retrieval import (
     make_default_retriever,
     make_retriever,
     read_list_file,
+    MAX_RETRY_ATTEMPTS,
 )
 
 # TODO: this will be bundled into a module in the future,
@@ -122,11 +123,26 @@ def test_check_downloaded_files_empty(mock_getsize):
 
 @patch("lephare.data_retrieval.download_file")
 def test_download_all_files(mock_download_file, data_registry_file):
+    """This test checks to make sure that we're calling download_file for each file in the list.
+    and also accounts for the fact that we retry downloading each file MAX_RETRY_ATTEMPTS times."""
     retriever = make_retriever(registry_file=data_registry_file)
     file_names = ["file1.txt", "file2.txt"]
     download_all_files(retriever, file_names)
     mock_download_file.assert_any_call(retriever, "file1.txt", ignore_registry=False)
     mock_download_file.assert_any_call(retriever, "file2.txt", ignore_registry=False)
-    assert mock_download_file.call_count == len(file_names)
+
+    # `1 + MAX_RETRY_ATTEMPTS` because we try once, then retry MAX_RETRY_ATTEMPTS more times
+    assert mock_download_file.call_count == len(file_names) * (1 + MAX_RETRY_ATTEMPTS)
     # TODO could stand to expand this test
     # Additionally, would be nice to explicitly test single file download
+
+@patch("lephare.data_retrieval.download_file")
+def test_download_all_files_non_default_retry(mock_download_file, data_registry_file):
+    """This test checks to make sure that we're calling download_file for each file in the list.
+    and sets the retries to 0. This should only try to download each file once."""
+    retriever = make_retriever(registry_file=data_registry_file)
+    file_names = ["file1.txt", "file2.txt"]
+    download_all_files(retriever, file_names, retry=0)
+    mock_download_file.assert_any_call(retriever, "file1.txt", ignore_registry=False)
+    mock_download_file.assert_any_call(retriever, "file2.txt", ignore_registry=False)
+    assert mock_download_file.call_count == len(file_names)

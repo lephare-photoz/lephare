@@ -23,6 +23,8 @@ DEFAULT_REGISTRY_FILE = "data_registry.txt"
 #  default cache location and return its path
 DEFAULT_LOCAL_DATA_PATH = "./data"
 
+# If a file is not downloaded the first time, retry this many times
+MAX_RETRY_ATTEMPTS = 2
 
 __all__ = [
     "download_all_files",
@@ -229,7 +231,7 @@ def download_file(retriever, file_name, ignore_registry=False):
         return retriever.fetch(file_name)
 
 
-def download_all_files(retriever, file_names, ignore_registry=False):
+def download_all_files(retriever, file_names, ignore_registry=False, retry=MAX_RETRY_ATTEMPTS):
     """Download all files in the given list using the retriever.
 
     Parameters
@@ -240,6 +242,8 @@ def download_all_files(retriever, file_names, ignore_registry=False):
         List of file names to download.
     ignore_registry : bool
         If True, download the files without checking their hashes against the registry.
+    retry : int
+        Number of times to retry downloading a file if first attempt fails.
 
     Returns
     -------
@@ -270,7 +274,12 @@ def download_all_files(retriever, file_names, ignore_registry=False):
 
     # Finish with some checks on our downloaded files
     absolute_file_names = [os.path.join(retriever.path, file_name) for file_name in file_names]
-    _check_downloaded_files(absolute_file_names, completed_futures)
+    all_files_present = _check_downloaded_files(absolute_file_names, completed_futures)
+
+    if not all_files_present and retry > 0:
+        print("Retrying download for missing files...")
+        download_all_files(retriever, file_names, ignore_registry=ignore_registry, retry=retry - 1)
+
 
 
 def _check_downloaded_files(file_names, completed_futures):
