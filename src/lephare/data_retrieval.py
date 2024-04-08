@@ -23,6 +23,8 @@ DEFAULT_REGISTRY_FILE = "data_registry.txt"
 #  default cache location and return its path
 DEFAULT_LOCAL_DATA_PATH = "./data"
 
+# If a file is not downloaded the first time, retry this many times
+MAX_RETRY_ATTEMPTS = 2
 
 __all__ = [
     "download_all_files",
@@ -137,7 +139,8 @@ def read_list_file(list_file, prefix=""):
     # Read in file
     for line in content.splitlines():
         file_name = line.split()[0].strip()
-        file_names.append(os.path.join(prefix, file_name))
+        if file_name[0] != "#":
+            file_names.append(os.path.join(prefix, file_name))
     return file_names
 
 
@@ -228,7 +231,7 @@ def download_file(retriever, file_name, ignore_registry=False):
         return retriever.fetch(file_name)
 
 
-def download_all_files(retriever, file_names, ignore_registry=False):
+def download_all_files(retriever, file_names, ignore_registry=False, retry=MAX_RETRY_ATTEMPTS):
     """Download all files in the given list using the retriever.
 
     Parameters
@@ -239,6 +242,8 @@ def download_all_files(retriever, file_names, ignore_registry=False):
         List of file names to download.
     ignore_registry : bool
         If True, download the files without checking their hashes against the registry.
+    retry : int
+        Number of times to retry downloading a file if first attempt fails.
 
     Returns
     -------
@@ -269,7 +274,12 @@ def download_all_files(retriever, file_names, ignore_registry=False):
 
     # Finish with some checks on our downloaded files
     absolute_file_names = [os.path.join(retriever.path, file_name) for file_name in file_names]
-    _check_downloaded_files(absolute_file_names, completed_futures)
+    all_files_present = _check_downloaded_files(absolute_file_names, completed_futures)
+
+    if not all_files_present and retry > 0:
+        print("Retrying download for missing files...")
+        download_all_files(retriever, file_names, ignore_registry=ignore_registry, retry=retry - 1)
+
 
 
 def _check_downloaded_files(file_names, completed_futures):
@@ -349,12 +359,18 @@ def config_to_required_files(keymap, base_url=None):
     for key in sed_keys:
         try:
             list_file = base_url + keymap[key].value
+            required_files += [keymap[key].value]
             file_names = read_list_file(list_file, prefix=f"sed/{key.split('_')[0]}/")
             required_files += file_names
         except KeyError:
             warnings.warn(f"{key} keyword not set or not present in auxiliary files directory.")
+    # Bethermin12 always required
+    bet_list = "sed/GAL/BETHERMIN12/BETHERMIN12_MOD.list"
+    required_files += [bet_list]
+    required_files += read_list_file(base_url + bet_list, prefix="sed/GAL/")
     # Get extinction law files
     ext_list = [f"ext/{f}" for f in keymap["EXTINC_LAW"].value.split(",")]
+    ext_list += ["ext/MW_seaton.dat"]  # Appears to be always required
     required_files += ext_list
     return required_files
 
@@ -362,9 +378,9 @@ def config_to_required_files(keymap, base_url=None):
 def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=None):
     """Get all auxiliary data required to run lephare.
 
-    Function to be deprected by lephare internal pooch based retriever.
-
     This gets all the filters, seds, and other data files.
+
+    If no keymap is set this will git clone the full repository.
 
     Parameters
     ==========
@@ -375,6 +391,11 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
     additional_files : list
         Any additional files to be downloaded from the auxiliary file repo.
     """
+    # Get the registry file
+    download_registry_from_github()
+    base_url = DEFAULT_BASE_DATA_URL
+    registry_file = DEFAULT_REGISTRY_FILE
+    data_path = lephare_dir
     if keymap is None:
         # Assume if filt is present assume everything is.
         if os.path.isdir(f"{lephare_dir}/filt"):
@@ -384,19 +405,15 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
             )
         else:
             # Get the full repository
-            data_loc = DEFAULT_BASE_DATA_URL
             print("Downloading all auxiliary data (~1.5Gb) to {lephare_dir}.")
-            print(f"Getting data from {data_loc}.")
-            os.system(f"git clone {data_loc}")
+            print(f"Getting data from {base_url}.")
+            os.system(f"git clone {base_url}")
             os.system(f"mv LEPHARE-data/* {lephare_dir}")
     else:
-        base_url = DEFAULT_BASE_DATA_URL
-        registry_file = DEFAULT_REGISTRY_FILE
-        data_path = lephare_dir
-
         retriever = make_retriever(base_url=base_url, registry_file=registry_file, data_path=data_path)
         file_list = config_to_required_files(keymap)
-        if additional_files is not None:
-            file_list += additional_files
         download_all_files(retriever, file_list, ignore_registry=False)
-
+        # TODO! This will be deprecated when alloutputkeys.txt is added to the registry:
+        download_file(retriever, "alloutputkeys.txt", ignore_registry=True)
+    if additional_files is not None:
+        download_all_files(retriever, additional_files, ignore_registry=False)

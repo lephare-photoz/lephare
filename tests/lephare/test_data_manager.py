@@ -3,9 +3,8 @@ import tempfile
 import time
 
 import pytest
-from platformdirs import user_cache_dir
-
 from lephare import data_manager as dm
+from platformdirs import user_cache_dir
 
 
 def test_data_manager_default_directories(unset_env_vars):
