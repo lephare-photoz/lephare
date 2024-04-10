@@ -133,10 +133,7 @@ def test_download_single_file_ignore_registry(data_registry_file):
     with patch("pooch.retrieve", return_value="/path/to/downloaded/file1.txt") as mock_retrieve:
         download_file(retriever, file_name, ignore_registry=True)
         mock_retrieve.assert_any_call(
-            url=f"{retriever.base_url}{file_name}",
-            known_hash=None,
-            fname=file_name,
-            path=retriever.path
+            url=f"{retriever.base_url}{file_name}", known_hash=None, fname=file_name, path=retriever.path
         )
 
 
