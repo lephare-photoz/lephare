@@ -6,15 +6,16 @@ from unittest.mock import mock_open, patch
 import pytest
 import requests
 from lephare.data_retrieval import (
+    MAX_RETRY_ATTEMPTS,
     _check_downloaded_files,
     _create_directories_from_files,
     download_all_files,
+    download_file,
     download_registry_from_github,
     filter_files_by_prefix,
     make_default_retriever,
     make_retriever,
     read_list_file,
-    MAX_RETRY_ATTEMPTS,
 )
 
 # TODO: this will be bundled into a module in the future,
@@ -121,20 +122,45 @@ def test_check_downloaded_files_empty(mock_getsize):
     assert not _check_downloaded_files(file_names, downloaded_files)
 
 
+def test_download_single_file(data_registry_file):
+    retriever = make_retriever(registry_file=data_registry_file)
+    file_name = "file1.txt"
+    with patch.object(retriever, "fetch", return_value="/path/to/downloaded/file1.txt") as mock_fetch:
+        download_file(retriever, file_name)
+        mock_fetch.assert_called_once_with(file_name)
+
+
+def test_download_single_file_ignore_registry(data_registry_file):
+    retriever = make_retriever(registry_file=data_registry_file)
+    file_name = "file1.txt"
+    with patch("pooch.retrieve", return_value="/path/to/downloaded/file1.txt") as mock_retrieve:
+        download_file(retriever, file_name, ignore_registry=True)
+        mock_retrieve.assert_any_call(
+            url=f"{retriever.base_url}{file_name}",
+            known_hash=None,
+            fname=file_name,
+            path=retriever.path
+        )
+
+
 @patch("lephare.data_retrieval.download_file")
 def test_download_all_files(mock_download_file, data_registry_file):
     """This test checks to make sure that we're calling download_file for each file in the list.
     and also accounts for the fact that we retry downloading each file MAX_RETRY_ATTEMPTS times."""
     retriever = make_retriever(registry_file=data_registry_file)
+
+    # Test with an empty list of files
+    download_all_files(retriever, [])
+    assert mock_download_file.call_count == 0
+
+    # Test with list of 2 files
     file_names = ["file1.txt", "file2.txt"]
     download_all_files(retriever, file_names)
     mock_download_file.assert_any_call(retriever, "file1.txt", ignore_registry=False)
     mock_download_file.assert_any_call(retriever, "file2.txt", ignore_registry=False)
-
     # `1 + MAX_RETRY_ATTEMPTS` because we try once, then retry MAX_RETRY_ATTEMPTS more times
     assert mock_download_file.call_count == len(file_names) * (1 + MAX_RETRY_ATTEMPTS)
-    # TODO could stand to expand this test
-    # Additionally, would be nice to explicitly test single file download
+
 
 @patch("lephare.data_retrieval.download_file")
 def test_download_all_files_non_default_retry(mock_download_file, data_registry_file):
