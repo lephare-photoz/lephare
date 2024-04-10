@@ -9,7 +9,6 @@ import requests
 from lephare.data_retrieval import (
     DEFAULT_BASE_DATA_URL,
     DEFAULT_LOCAL_DATA_PATH,
-    DEFAULT_REGISTRY_FILE,
     MAX_RETRY_ATTEMPTS,
     _check_downloaded_files,
     _create_directories_from_files,
