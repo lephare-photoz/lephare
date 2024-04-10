@@ -281,7 +281,6 @@ def download_all_files(retriever, file_names, ignore_registry=False, retry=MAX_R
         download_all_files(retriever, file_names, ignore_registry=ignore_registry, retry=retry - 1)
 
 
-
 def _check_downloaded_files(file_names, completed_futures):
     """Check if all files have been downloaded successfully and are not empty.
 
