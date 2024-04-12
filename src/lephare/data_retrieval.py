@@ -412,3 +412,7 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
         retriever = make_retriever(base_url=base_url, registry_file=registry_file, data_path=data_path)
         file_list = config_to_required_files(keymap)
         download_all_files(retriever, file_list, ignore_registry=False)
+        # TODO! This will be deprecated when alloutputkeys.txt is added to the registry:
+        download_file(retriever, "alloutputkeys.txt", ignore_registry=True)
+    if additional_files is not None:
+        download_all_files(retriever, additional_files, ignore_registry=False)
