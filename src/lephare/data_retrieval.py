@@ -328,7 +328,7 @@ def config_to_required_files(keymap, base_url=None):
         base_url = DEFAULT_BASE_DATA_URL
     required_files = []
     # We always need alloutputkeys.txt
-    # required_files += ["alloutputkeys.txt"]
+    required_files += ["alloutputkeys.txt"]
     # Opacity always required
     opa_list = ["opa/OPACITY.dat"] + [f"opa/tau{i:02d}.out" for i in np.arange(81)]
     required_files += opa_list
