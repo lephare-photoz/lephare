@@ -14,14 +14,7 @@ from lephare import LEPHAREDIR
 
 DEFAULT_BASE_DATA_URL = "https://raw.githubusercontent.com/lephare-photoz/lephare-data/main/"
 DEFAULT_REGISTRY_FILE = "data_registry.txt"
-
-#! Replace DEFAULT_LOCAL_DATA_PATH with the following:
-# from lephare import data_marshaller
-# DEFAULT_LOCAL_DATA_PATH = data_marshaller.get_data_path()
-#  likely something like: ~/Library/Caches/lephare/data/
-#  Note that we can use pooch.os_cache("lephare") to create a directory in the
-#  default cache location and return its path
-DEFAULT_LOCAL_DATA_PATH = "./data"
+DEFAULT_LOCAL_DATA_PATH = LEPHAREDIR
 
 # If a file is not downloaded the first time, retry this many times
 MAX_RETRY_ATTEMPTS = 2
@@ -85,7 +78,7 @@ def download_registry_from_github(url="", outfile=""):
     if response.status_code == 200:
         with open(outfile, "w", encoding="utf-8") as file:
             file.write(response.text)
-        print(f"File downloaded and saved as {outfile}")
+        print(f"Registry file downloaded and saved as {outfile}.")
     else:
         raise requests.exceptions.HTTPError(f"Failed to fetch file: {response.status_code}")
 
@@ -189,9 +182,7 @@ def _create_directories_from_files(file_names):
     Parameters
     ----------
     file_names : list of str
-        List of file names with relative paths.
-    base_path : str
-        Path to LEPHAREDIR if not current working directory.
+        List of file names with absolute paths.
     """
     unique_directories = set(
         os.path.dirname(file_name) for file_name in file_names if os.path.dirname(file_name)
@@ -244,14 +235,14 @@ def download_all_files(retriever, file_names, ignore_registry=False, retry=MAX_R
         If True, download the files without checking their hashes against the registry.
     retry : int
         Number of times to retry downloading a file if first attempt fails.
-
-    Returns
-    -------
-    list of str
-        List of paths to the downloaded files.
     """
+    if len(file_names) == 0:
+        print("Download all files called for list of 0 files; done.")
+        return
+
     # First make directories, for thread safety
-    _create_directories_from_files(file_names)
+    absolute_file_names = [os.path.join(retriever.path, file_name) for file_name in file_names]
+    _create_directories_from_files(absolute_file_names)
 
     # Now the downloading
     print(f"Checking/downloading {len(file_names)} files...")
@@ -273,13 +264,11 @@ def download_all_files(retriever, file_names, ignore_registry=False, retry=MAX_R
         print(f"{len(completed_futures)} completed.")
 
     # Finish with some checks on our downloaded files
-    absolute_file_names = [os.path.join(retriever.path, file_name) for file_name in file_names]
     all_files_present = _check_downloaded_files(absolute_file_names, completed_futures)
 
     if not all_files_present and retry > 0:
         print("Retrying download for missing files...")
         download_all_files(retriever, file_names, ignore_registry=ignore_registry, retry=retry - 1)
-
 
 
 def _check_downloaded_files(file_names, completed_futures):
@@ -339,7 +328,7 @@ def config_to_required_files(keymap, base_url=None):
         base_url = DEFAULT_BASE_DATA_URL
     required_files = []
     # We always need alloutputkeys.txt
-    # required_files += ["alloutputkeys.txt"]
+    required_files += ["alloutputkeys.txt"]
     # Opacity always required
     opa_list = ["opa/OPACITY.dat"] + [f"opa/tau{i:02d}.out" for i in np.arange(81)]
     required_files += opa_list
@@ -394,6 +383,8 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
     # Get the registry file
     download_registry_from_github()
     base_url = DEFAULT_BASE_DATA_URL
+    repo_name = "lephare-data"
+    repo_url = f"https://github.com/lephare-photoz/{repo_name}"
     registry_file = DEFAULT_REGISTRY_FILE
     data_path = lephare_dir
     if keymap is None:
@@ -405,15 +396,12 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
             )
         else:
             # Get the full repository
-            print("Downloading all auxiliary data (~1.5Gb) to {lephare_dir}.")
-            print(f"Getting data from {base_url}.")
-            os.system(f"git clone {base_url}")
-            os.system(f"mv LEPHARE-data/* {lephare_dir}")
+            print(f"Downloading all auxiliary data (~1.5Gb) to {lephare_dir}.")
+            print(f"Getting data from {repo_url}.")
+            os.system(f"git clone {repo_url} {lephare_dir}")
     else:
         retriever = make_retriever(base_url=base_url, registry_file=registry_file, data_path=data_path)
         file_list = config_to_required_files(keymap)
         download_all_files(retriever, file_list, ignore_registry=False)
-        # TODO! This will be deprecated when alloutputkeys.txt is added to the registry:
-        download_file(retriever, "alloutputkeys.txt", ignore_registry=True)
     if additional_files is not None:
         download_all_files(retriever, additional_files, ignore_registry=False)
