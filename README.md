@@ -43,6 +43,7 @@ Once you have created a new environment, you can install this project for local
 development using the following commands:
 
 ```
+>> git submodule update --init --recursive
 >> pip install -e .'[dev]'
 >> pre-commit install
 >> conda install pandoc
