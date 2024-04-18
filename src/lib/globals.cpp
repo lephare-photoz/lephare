@@ -72,7 +72,7 @@ If the string has a length of 0, return also false
 input: string to analyse
 output: boolean
 */
-bool test_first_char(string maligne) {
+bool check_first_char(string maligne) {
   for (string::const_iterator it = maligne.begin(); it != maligne.end(); it++) {
     if (*it == ' ' || *it == '\t') {
       continue;

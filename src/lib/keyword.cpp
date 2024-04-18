@@ -248,7 +248,7 @@ keymap read_config(const string &configfile) {
   unsigned int nb_keywords(0);
   while (getline(configst, lit)) {
     // If the first character of the line is not #
-    bool test = test_first_char(lit);
+    bool test = check_first_char(lit);
     if (test) {
       // put the line into the stream ss again
       stringstream ss(lit);
@@ -260,7 +260,7 @@ keymap read_config(const string &configfile) {
         string value2;
         while (!ss.eof()) {
           ss >> value2;
-          if (test_first_char(value2)) {
+          if (check_first_char(value2)) {
             value += value2;
           } else {
             break;

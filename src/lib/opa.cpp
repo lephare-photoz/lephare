@@ -34,7 +34,7 @@ void opa::read() {
   // Take the stream line by line
   while (getline(sopa, lit)) {
     // If the first character of the line is not #
-    if (test_first_char(lit)) {
+    if (check_first_char(lit)) {
       // put the line into the stream ss again
       stringstream ss(lit);
 

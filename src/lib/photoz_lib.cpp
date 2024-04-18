@@ -659,7 +659,7 @@ vector<string> readOutKeywords(const string outpara) {
     // Take the stream line by line
     while (getline(stoutpara, lit)) {
       // If the first character of the line is not #
-      if (test_first_char(lit)) {
+      if (check_first_char(lit)) {
         // put the line into the stream ss again
         stringstream ss(lit);
 
@@ -956,7 +956,7 @@ vector<onesource *> PhotoZ::read_autoadapt_sources() {
   int nobj = 0;
   while (getline(sin, line)) {
     // If the first character of the line is not #
-    if (test_first_char(line)) {
+    if (check_first_char(line)) {
       // Construct one objet
       onesource *oneObj = yield(nobj, line);
 
@@ -1371,7 +1371,7 @@ vector<onesource *> PhotoZ::read_photoz_sources() {
     string linezex;
     // Ignore the comments
     int nbcomments = 0;
-    while (!(test_first_char(linezex))) {
+    while (!(check_first_char(linezex))) {
       getline(szex, linezex);
       nbcomments++;
     }
@@ -1405,7 +1405,7 @@ vector<onesource *> PhotoZ::read_photoz_sources() {
   sin.seekg(0, sin.beg);
   while (getline(sin, line)) {
     // If the first character of the line is not #
-    if (test_first_char(line)) {
+    if (check_first_char(line)) {
       nobj++;
       if ((nobj < rowmin && rowmin > 0) || (nobj > rowmax && rowmax > 0)) {
         continue;
