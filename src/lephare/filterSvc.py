@@ -6,7 +6,7 @@ import xml.dom.minidom
 import requests
 import yaml
 
-from . import LEPHAREDIR, flt
+from . import LEPHAREDIR, flt, test_first_char
 
 __all__ = [
     "FilterSvc",
@@ -76,7 +76,7 @@ class FilterSvc:
             while count < len(keywords):
                 line = fstream.readline()
                 for key in keywords:
-                    if key in line:
+                    if key in line and test_first_char(line):
                         keymap[key] = line.split()[1]
                         count += 1
         keymap["FILTER_REP"] = keymap["FILTER_REP"].replace("$LEPHAREDIR", LEPHAREDIR)
