@@ -61,7 +61,7 @@ GAL_LIB_OUT	CE_COSMOS	# Output GALAXY LIBRARY  (-> $ZPHOTWORK/lib_mag/*)
 #------------------   MAG + Z_STEP + COSMO + EXTINCTION   -----------------------------
 MAGTYPE         AB		# Magnitude type (AB or VEGA)
 ZGRID_TYPE      0               # Define the kind of redshift grid (0: linear ; 1: dz*(1+z)) 
-Z_STEP 		0.01,0.,7. 	# dz, zmin, zmax 
+Z_STEP 		0.1,0.,5. 	# dz, zmin, zmax VERY SPARSE FOR EXAMPLE ONLY
 COSMOLOGY	70,0.3,0.7	# H0,om0,lbd0    (if lb0>0->om0+lbd0=1)
 MOD_EXTINC 	0,0		# model range for extinction 
 EXTINC_LAW	SMC_prevot.dat,SB_calzetti.dat,SB_calzetti_bump1.dat,SB_calzetti_bump2.dat	# ext. law (in  $ZPHOTDIR/ext/*)
