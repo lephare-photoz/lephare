@@ -40,6 +40,23 @@ def test_download_registry_from_github_success(mock_get):
             assert file.read() == "file1\nfile2\nfile3"
 
 
+@patch("os.path.isfile")
+@patch("pooch.file_hash")
+@patch("requests.get")
+def test_download_registry_hash_already_matches(mock_get, mock_file_hash, mock_isfile):
+    mock_isfile.return_value = True
+    mock_file_hash.return_value = "registryhash123"
+    mock_get.return_value.status_code = 200
+    mock_get.return_value.text = "registryhash123"
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        outfile = os.path.join(tmpdir, "registry.txt")
+        download_registry_from_github(url="http://example.com/data_registry.txt", outfile=outfile)
+
+        assert mock_get.call_count == 1
+        assert mock_get.call_args[0][0] == "http://example.com/data_registry_hash.sha256"
+
+
 @patch("requests.get")
 def test_download_registry_from_github_failure(mock_get):
     mock_get.return_value.status_code = 404

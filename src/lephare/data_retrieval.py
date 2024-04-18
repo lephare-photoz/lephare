@@ -83,11 +83,11 @@ def download_registry_from_github(url="", outfile=""):
     if outfile == "":
         outfile = DEFAULT_REGISTRY_FILE
 
-    # Try to download the registry hash file, to see if we can skip downloading 
+    # Try to download the registry hash file, to see if we can skip downloading
     # the actual registry file
-    if os.file_exists(outfile):
+    if os.path.isfile(outfile):
         local_registry_hash = pooch.file_hash(outfile, alg="sha256")
-        registry_hash_url = os.splitext(url)[0] + "_hash.sha256"
+        registry_hash_url = os.path.splitext(url)[0] + "_hash.sha256"
         try:
             response = requests.get(registry_hash_url, timeout=60)
             if response.status_code == 200:
