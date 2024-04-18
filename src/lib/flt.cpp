@@ -5,6 +5,8 @@
 
 */
 
+#include <unistd.h>  //posix interface, prooviding path access method
+
 #include <algorithm>  // sort
 #include <cmath>      // for the log
 #include <fstream>    // print output file
@@ -255,6 +257,9 @@ double flt::lambdaEff() {
   // create an SED object based on the Vega spectra
   SED vegSED("Vega");
   string vegaFile = lepharedir + "/vega/VegaLCB.sed";
+  if (access(vegaFile.c_str(), F_OK) == -1) {
+    return leff;
+  }
   vegSED.read(vegaFile);
   // integrate the vega spectrum over the filter considered in this instance of
   // the object Various information on the integral is stored within magVeg
