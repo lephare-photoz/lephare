@@ -3,11 +3,12 @@ import os
 import numpy as np
 import pytest
 
-from lephare import flt
-from lephare.filterSvc import FilterSvc
-
 test_dir = os.path.abspath(os.path.dirname(__file__))
 test_data_dir = os.path.join(test_dir, "../data")
+os.environ["LEPHAREDIR"] = test_data_dir
+
+from lephare import flt  # noqa: E402
+from lephare.filterSvc import FilterSvc  # noqa: E402
 
 filter_file = os.path.join(test_data_dir, "filt/subaru/IB527.pb")
 
@@ -33,6 +34,6 @@ def test_filtersvc():
         assert np.allclose(f.data()[1], g.data()[1])
     else:
         print("SVO not tested due to exception raised : server not reachable?")
-    #
+    # filters in COSMOS.para not available to the unit tests
     fltvec = FilterSvc.from_config(os.path.join(test_data_dir, "examples/COSMOS.para"))
-    assert len(fltvec) == 30
+    assert len(fltvec) == 1
