@@ -249,7 +249,7 @@ PYBIND11_MODULE(_lephare, mod) {
 
   /******** FUNCTIONS IN GLOBALS.H *********/
   mod.def("get_lephare_env", &get_lephare_env);
-  mod.def("test_first_char", &test_first_char);
+  mod.def("check_first_char", &check_first_char);
   mod.def("blackbody", &blackbody);
   mod.def("CHECK_CONTEXT_BIT", &CHECK_CONTEXT_BIT);
   mod.def("POW10D", &POW10D);

@@ -40,7 +40,7 @@ void flt::read(const string &fltFile) {
   // Take the stream line by line
   while (getline(sflt, lit)) {
     // If the first character of the line is not #
-    if (test_first_char(lit)) {
+    if (check_first_char(lit)) {
       // put the line into the stream ss again
       stringstream ss(lit);
 
@@ -574,7 +574,7 @@ vector<flt> read_doc_filters(const string filtFile) {
   // Read each line of the doc file
   while (getline(stfltdoc, line)) {
     // If the first character of the line is not #
-    if (test_first_char(line)) {
+    if (check_first_char(line)) {
       // Transfer the line content to line_stream.
       stringstream line_stream(line);
 

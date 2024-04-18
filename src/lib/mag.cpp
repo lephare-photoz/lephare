@@ -276,7 +276,7 @@ void Mag::read_B12() {
   size_t gr = 0;
   while (getline(b12mod, lit)) {
     // If the first character of the line is not #
-    if (test_first_char(lit)) {
+    if (check_first_char(lit)) {
       // Read the SED name + information
       stringstream ss(lit);
       ss >> nameSED >> bid >> b12z;

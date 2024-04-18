@@ -4,7 +4,10 @@ license = {file = "LICENSE"}
 readme = "README.md"
 description = "LEPHARE photometric redshift estimator"
 authors = [
-    { name = "Johann Cohen-Tanugi", email = "johann.cohentanugi@gmail.com" }
+    { name = "Stéphane Arnouts", email = "stephane.arnouts@lam.fr" },
+    { name = "Olivier Ilbert", email = "olivier.ilbert@lam.fr" },
+    { name = "Johann Cohen-Tanugi", email = "johann.cohen-tanugi@in2p3.fr" },
+    { name = "Raphael Shirley", email = "rshirley@mpe.mpg.de" }
 ]
 classifiers = [
     "Development Status :: 4 - Beta",

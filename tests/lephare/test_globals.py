@@ -1,16 +1,15 @@
 import numpy as np
-
-from lephare._lephare import blackbody, test_first_char
+from lephare._lephare import blackbody, check_first_char
 
 
 def test_globals_first_char():
-    assert test_first_char("test")
-    assert test_first_char("   test")
-    assert not test_first_char("")
-    assert not test_first_char(" ")
-    assert not test_first_char("!test")
-    assert not test_first_char("#test")
-    assert not test_first_char("\t#")
+    assert check_first_char("test")
+    assert check_first_char("   test")
+    assert not check_first_char("")
+    assert not check_first_char(" ")
+    assert not check_first_char("!test")
+    assert not check_first_char("#test")
+    assert not check_first_char("\t#")
 
 
 def test_globals_blackbody():

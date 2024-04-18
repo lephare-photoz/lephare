@@ -245,7 +245,7 @@ void SEDLib<T>::read_model_list() {
   // Take the template list line by line
   while (getline(smod, lit)) {
     // If the first character of the line is not #
-    if (test_first_char(lit)) {
+    if (check_first_char(lit)) {
       // put the line into the stream ss again
       stringstream ss(lit);
 
@@ -297,7 +297,7 @@ void SEDLib<T>::read_age(string ageFich) {
 
     while (getline(sage, lit)) {
       // If the first character of the line is not #
-      if (test_first_char(lit)) {
+      if (check_first_char(lit)) {
         // put the line into the stream ss again
         stringstream ss(lit);
         ss >> dage;
