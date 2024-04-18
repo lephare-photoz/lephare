@@ -2,18 +2,18 @@ import os
 
 import numpy as np
 import pytest
-
-test_dir = os.path.abspath(os.path.dirname(__file__))
-test_data_dir = os.path.join(test_dir, "../data")
-os.environ["LEPHAREDIR"] = test_data_dir
-
-from lephare import flt  # noqa: E402
+from lephare import (
+    flt,  # noqa: E402
+)
 from lephare.filterSvc import FilterSvc  # noqa: E402
 
-filter_file = os.path.join(test_data_dir, "filt/subaru/IB527.pb")
+
+@pytest.fixture
+def filter_file(test_data_dir):
+    return os.path.join(test_data_dir, "filt/subaru/IB527.pb")
 
 
-def test_flt_class():
+def test_flt_class(filter_file):
     tophat = flt(100.0, 200.0, 50)
     assert tophat.name == ""
     # this is wrong but an effect of improper C++ code
@@ -24,7 +24,7 @@ def test_flt_class():
     assert f.lambdaMean() == pytest.approx(5262.2831, 1.0e-4)
 
 
-def test_filtersvc():
+def test_filtersvc(test_data_dir, filter_file):
     f = FilterSvc.from_file(filter_file, trans=1, calib=0)
     assert f.width() == pytest.approx(241.9479, 1.0e-4)
     assert f.lambdaMean() == pytest.approx(5262.2831, 1.0e-4)
