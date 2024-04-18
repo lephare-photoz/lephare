@@ -1,4 +1,5 @@
 import numpy as np
+
 from lephare._lephare import blackbody, test_first_char
 
 

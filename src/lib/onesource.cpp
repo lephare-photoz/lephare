@@ -439,7 +439,8 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
       // applying the condition
       if (nbul > 0) {
         for (size_t k = 0; k < imagm; k++) {
-          if ((dmloc[il] * busul[k] * flux[il][k]) > ab[k]) chi2loc[il] = 1.e9;
+          if ((dmloc[il] * busul[k] * flux[il][k]) > ab[k] && busnorma[k] == 1)
+            chi2loc[il] = 1.e9;
         }
       }
 

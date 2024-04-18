@@ -5,6 +5,7 @@ from unittest.mock import mock_open, patch
 
 import pytest
 import requests
+
 from lephare.data_retrieval import (
     DEFAULT_BASE_DATA_URL,
     DEFAULT_LOCAL_DATA_PATH,

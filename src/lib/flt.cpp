@@ -5,6 +5,8 @@
 
 */
 
+#include <unistd.h>  //posix interface, prooviding path access method
+
 #include <algorithm>  // sort
 #include <cmath>      // for the log
 #include <fstream>    // print output file
