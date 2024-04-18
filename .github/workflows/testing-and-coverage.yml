@@ -31,7 +31,7 @@ jobs:
       run: |
         sudo apt-get update
         python -m pip install --upgrade pip
-        python -m pip install -v .[dev] --no-build-isolation
+        python -m pip install .[dev]
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
     - name: Run unit tests with pytest
