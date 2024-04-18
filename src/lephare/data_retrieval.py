@@ -59,21 +59,46 @@ def download_registry_from_github(url="", outfile=""):
     Parameters
     ----------
     url : str
-        The URL of the registry file. Defaults to a "data-registry.txt" file at
+        The URL of the registry file. Defaults to a "data_registry.txt" file at
         DEFAULT_BASE_DATA_URL.
     outfile : str
         The path where the file will be saved. Defaults to DEFAULT_REGISTRY_FILE.
+
+    Notes
+    -----
+    We make the assumption that the hash file for the registry will be stored in
+    the same directory as the registry file, with the same name (sans extension)
+    plus "_hash.sha256".
 
     Raises
     ------
     Exception
         If the file cannot be fetched from the URL.
     """
+    remote_registry_name = "data_registry.txt"
+
+    # Assign defaults if keywords left blank
     if url == "":
-        url = urljoin(DEFAULT_BASE_DATA_URL, "data-registry.txt")
+        url = urljoin(DEFAULT_BASE_DATA_URL, remote_registry_name)
     if outfile == "":
         outfile = DEFAULT_REGISTRY_FILE
 
+    # Try to download the registry hash file, to see if we can skip downloading 
+    # the actual registry file
+    if os.file_exists(outfile):
+        local_registry_hash = pooch.file_hash(outfile, alg="sha256")
+        registry_hash_url = os.splitext(url)[0] + "_hash.sha256"
+        try:
+            response = requests.get(registry_hash_url, timeout=60)
+            if response.status_code == 200:
+                remote_registry_hash = response.text.strip()
+                if local_registry_hash == remote_registry_hash:
+                    print(f"Local registry file is up to date: {outfile}")
+                    return
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to fetch registry hash file: {e}")
+
+    # Download the registry file
     response = requests.get(url, timeout=60)
     if response.status_code == 200:
         with open(outfile, "w", encoding="utf-8") as file:
