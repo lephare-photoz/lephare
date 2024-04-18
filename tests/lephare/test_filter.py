@@ -2,16 +2,16 @@ import os
 
 import numpy as np
 import pytest
-
-from lephare import flt  # noqa: E402
+from lephare import (
+    flt,  # noqa: E402
+)
 from lephare.filterSvc import FilterSvc  # noqa: E402
 
-
-from lephare import LEPHAREDIR
 
 @pytest.fixture
 def filter_file(test_data_dir):
     return os.path.join(test_data_dir, "filt/subaru/IB527.pb")
+
 
 def test_flt_class(filter_file):
     tophat = flt(100.0, 200.0, 50)
