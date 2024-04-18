@@ -5,7 +5,7 @@ import pytest
 # Set "LEPHAREDIR" locally for tests if it is not already set.
 if "LEPHAREDIR" not in os.environ:
     test_dir = os.path.abspath(os.path.dirname(__file__))
-    os.environ["LEPHAREDIR"] = os.path.join(test_dir, "..")
+    os.environ["LEPHAREDIR"] = os.path.join(test_dir, "data")
 
 # Set "LEPHAREWORK" locally for tests if it is not already set.
 if "LEPHAREWORK" not in os.environ:

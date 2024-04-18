@@ -6,7 +6,8 @@ import xml.dom.minidom
 import requests
 import yaml
 
-from . import LEPHAREDIR, check_first_char, flt
+from lephare import LEPHAREDIR #ADD
+from lephare._lephare import flt, check_first_char
 
 __all__ = [
     "FilterSvc",
