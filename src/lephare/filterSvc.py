@@ -6,7 +6,7 @@ import xml.dom.minidom
 import requests
 import yaml
 
-from lephare import LEPHAREDIR  # ADD
+from lephare import LEPHAREDIR
 from lephare._lephare import check_first_char, flt
 
 __all__ = [
