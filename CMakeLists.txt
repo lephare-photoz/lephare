@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}")
 set(CMAKE_BINARY_DIR "${CMAKE_SOURCE_DIR}/bin")
-set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+# set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 if (DEFINED ENV{PYTHON_VERSION_REQUIRED})
@@ -64,10 +64,15 @@ else()
     add_compile_options("-mno-vzeroupper" "-mavx2" "-floop-unroll-and-jam" )
 endif()
 
-SET(GCC_COVERAGE_COMPILE_FLAGS "-g -O0 -coverage -fprofile-arcs -ftest-coverage")
-SET(GCC_COVERAGE_LINK_FLAGS    "-coverage -lgcov")
-SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}" )
-SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}" )
+# only set these flags if in debug mode
+message(STATUS "Cmake build type : ${CMAKE_BUILD_TYPE}")
+if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
+  message(STATUS "Cmake build type - coverage: ${CMAKE_BUILD_TYPE}")
+  SET(GCC_COVERAGE_COMPILE_FLAGS "-g -O0 -coverage -fprofile-arcs -ftest-coverage")
+  SET(GCC_COVERAGE_LINK_FLAGS    "-coverage -lgcov")
+  SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}" )
+  SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}" )
+endif()
 
 add_library(lepharelib STATIC ${SOURCES})
 find_package(OpenMP)
