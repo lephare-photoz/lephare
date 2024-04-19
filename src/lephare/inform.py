@@ -89,6 +89,6 @@ def write_yaml_config(keymap, yaml_file_path):
     """
     config_dict = {}
     for k in keymap:
-        config_dict[k.name] = k.value
+        config_dict[keymap[k].name] = keymap[k].value
     with open(yaml_file_path, "w") as yaml_file:
         yaml.dump(config_dict, yaml_file)
