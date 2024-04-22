@@ -5,10 +5,15 @@ import yaml
 import lephare as lp
 
 
-def inform(config, star_config=None, gal_config=None, qso_config=None):
-    """Run the inform stages of LePHARE
+def prepare(config, star_config=None, gal_config=None, qso_config=None):
+    """Run the prepare stages of LePHARE
 
-    We overide the config for each type if distinct config set.
+    In order to run "zphota" we must create the filter files, run sedtolib to
+    create the SED libraries, and finally run mag_gal, to create the
+    magnitude libararies. We abract these tasks into a single prepare stage.
+
+    We overide the config for each type if distinct config set. If no overide
+    configs are set we use the same for each type.
 
     Parameters
     ==========
