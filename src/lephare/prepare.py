@@ -4,6 +4,8 @@ import yaml
 
 import lephare as lp
 
+__all__ = ["prepare", "overwrite_config", "read_yaml_config", "write_yaml_config"]
+
 
 def prepare(config, star_config=None, gal_config=None, qso_config=None):
     """Run the prepare stages of LePHARE
