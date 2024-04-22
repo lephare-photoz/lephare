@@ -30,6 +30,7 @@ def test_filter_file_by_prefix(test_data_dir):
 
 @patch("requests.get")
 def test_download_registry_from_github_success(mock_get):
+    """Case: there's no local registry file, so we must download one."""
     mock_get.return_value.status_code = 200
     mock_get.return_value.text = "file1\nfile2\nfile3"
 
@@ -44,6 +45,7 @@ def test_download_registry_from_github_success(mock_get):
 @patch("pooch.file_hash")
 @patch("requests.get")
 def test_download_registry_hash_already_matches(mock_get, mock_file_hash, mock_isfile):
+    """Case: we have a local registry file whose hash matches the remote hash."""
     mock_isfile.return_value = True
     mock_file_hash.return_value = "registryhash123"
     mock_get.return_value.status_code = 200
@@ -55,6 +57,32 @@ def test_download_registry_hash_already_matches(mock_get, mock_file_hash, mock_i
 
         assert mock_get.call_count == 1
         assert mock_get.call_args[0][0] == "http://example.com/data_registry_hash.sha256"
+
+
+@patch("os.path.isfile")
+@patch("pooch.file_hash")
+@patch("requests.get")
+def test_download_registry_no_matching_hash(mock_get, mock_file_hash, mock_isfile):
+    """Case: we mock the existence of a local registry file, but its hash does
+    not match the hash of the remote registry file, so we must redownload the
+    registry file."""
+    mock_isfile.return_value = True
+    mock_file_hash.return_value = "registryhash123"
+    mock_get.return_value.status_code = 200
+    mock_get.return_value.text = "hash_doesn't_match123"
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        outfile = os.path.join(tmpdir, "registry.txt")
+        download_registry_from_github(url="http://example.com/data_registry.txt", outfile=outfile)
+
+        # One call to download the hash file, one call to download the full registry file:
+        assert mock_get.call_count == 2
+        # The following set of [0][0][0] and such is because the call args list is
+        #     [call('http://example.com/data_registry_hash.sha256', timeout=60),
+        #      call('http://example.com/data_registry.txt', timeout=60)]
+        # and we're only interested in checking the urls:
+        assert mock_get.call_args_list[0][0][0] == "http://example.com/data_registry_hash.sha256"
+        assert mock_get.call_args_list[1][0][0] == "http://example.com/data_registry.txt"
 
 
 @patch("requests.get")

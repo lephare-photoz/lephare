@@ -89,23 +89,22 @@ def download_registry_from_github(url="", outfile=""):
         local_registry_hash = pooch.file_hash(outfile, alg="sha256")
         registry_hash_url = os.path.splitext(url)[0] + "_hash.sha256"
         try:
-            response = requests.get(registry_hash_url, timeout=60)
-            if response.status_code == 200:
-                remote_registry_hash = response.text.strip()
-                if local_registry_hash == remote_registry_hash:
-                    print(f"Local registry file is up to date: {outfile}")
-                    return
+            hash_response = requests.get(registry_hash_url, timeout=60)
+            if hash_response.status_code == 200 and hash_response.text.strip() == local_registry_hash:
+                print(f"Local registry file is up to date: {outfile}")
+                return
         except requests.exceptions.RequestException as e:
             print(f"Failed to fetch registry hash file: {e}")
 
     # Download the registry file
-    response = requests.get(url, timeout=60)
-    if response.status_code == 200:
+    registry_response = requests.get(url, timeout=60)
+    if registry_response.status_code == 200:
         with open(outfile, "w", encoding="utf-8") as file:
-            file.write(response.text)
+            file.write(registry_response.text)
         print(f"Registry file downloaded and saved as {outfile}.")
+        return
     else:
-        raise requests.exceptions.HTTPError(f"Failed to fetch file: {response.status_code}")
+        raise requests.exceptions.HTTPError(f"Failed to fetch file: {registry_response.status_code}")
 
 
 def read_list_file(list_file, prefix=""):
