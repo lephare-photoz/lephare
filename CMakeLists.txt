@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}")
 set(CMAKE_BINARY_DIR "${CMAKE_SOURCE_DIR}/bin")
-# set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 if (DEFINED ENV{PYTHON_VERSION_REQUIRED})
@@ -64,10 +64,9 @@ else()
     add_compile_options("-mno-vzeroupper" "-mavx2" "-floop-unroll-and-jam" )
 endif()
 
-# only set these flags if in debug mode
-message(STATUS "Cmake build type : ${CMAKE_BUILD_TYPE}")
-if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
-  message(STATUS "Cmake build type - coverage: ${CMAKE_BUILD_TYPE}")
+# only set these flags if in `INCLUDE_COVERAGE` env var is set (to any value)
+if(DEFINED ENV{INCLUDE_COVERAGE})
+  message(STATUS "Building with code coverage enabled.")
   SET(GCC_COVERAGE_COMPILE_FLAGS "-g -O0 -coverage -fprofile-arcs -ftest-coverage")
   SET(GCC_COVERAGE_LINK_FLAGS    "-coverage -lgcov")
   SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}" )

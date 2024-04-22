@@ -13,6 +13,8 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    env:
+      INCLUDE_COVERAGE: TRUE
     strategy:
       matrix:
         python-version: ['3.9', '3.10', '3.11', '3.12']
