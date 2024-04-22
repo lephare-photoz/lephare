@@ -24,8 +24,8 @@ from ._spec import *
 from .data_retrieval import *
 from .filter import *
 from .filterSvc import *
-from .inform import *
 from .mag_gal import *
 from .magSvc import *
+from .prepare import *
 from .sedtolib import *
 from .zphota import *
