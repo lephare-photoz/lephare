@@ -97,14 +97,15 @@ def download_registry_from_github(url="", outfile=""):
             print(f"Failed to fetch registry hash file: {e}")
 
     # Download the registry file
-    registry_response = requests.get(url, timeout=60)
+    registry_response = requests.get(url, timeout=120)
     if registry_response.status_code == 200:
         with open(outfile, "w", encoding="utf-8") as file:
             file.write(registry_response.text)
         print(f"Registry file downloaded and saved as {outfile}.")
         return
     else:
-        raise requests.exceptions.HTTPError(f"Failed to fetch file: {registry_response.status_code}")
+        print(f"Fetching file from {url}...")
+        raise requests.exceptions.HTTPError(f"Failed to fetch file ({registry_response.status_code})")
 
 
 def read_list_file(list_file, prefix=""):
