@@ -1,10 +1,11 @@
+import datetime
 import os
 
 import yaml
 
 import lephare as lp
 
-__all__ = ["prepare", "overwrite_config", "read_yaml_config", "write_yaml_config"]
+__all__ = ["prepare", "overwrite_config", "read_yaml_config", "write_yaml_config", "write_para_config"]
 
 
 def prepare(config, star_config=None, gal_config=None, qso_config=None):
@@ -30,8 +31,8 @@ def prepare(config, star_config=None, gal_config=None, qso_config=None):
     """
     object_types = {"STAR": star_config, "GAL": gal_config, "QSO": qso_config}
     # Run the filter command
-    # load filters from config file
-    filter_lib = lp.FilterSvc.from_config(config)
+    # load filters from config
+    filter_lib = lp.FilterSvc.from_keymap(config)
     # Get location to store filter files
     filter_output = os.path.join(os.environ["LEPHAREWORK"], "filt", config["FILTER_FILE"].value)
     # Write filter files
@@ -40,32 +41,36 @@ def prepare(config, star_config=None, gal_config=None, qso_config=None):
     write_yaml_config(config, f"{filter_output}_config.yaml")
 
     for object_type in object_types:
+        print("start", object_type)
         updated_config = overwrite_config(config, object_types[object_type])
+        # Write the updated config
+        sed_out_name = f"{updated_config[f'{object_type}_LIB'].value}_{object_type.lower()}_config.yaml"
+        sed_output = os.path.join(os.environ["LEPHAREWORK"], "lib_bin", sed_out_name)
+        mag_out_name = f"{updated_config[f'{object_type}_LIB_OUT'].value}_{object_type.lower()}_config.yaml"
+        mag_output = os.path.join(os.environ["LEPHAREWORK"], "lib_mag", mag_out_name)
+        write_yaml_config(updated_config, sed_output)
+        write_yaml_config(updated_config, mag_output)
         # Run sedtolib
         sedlib = lp.Sedtolib(config_keymap=updated_config)
-        sedlib.run(typ=object_type)
-        # Write config
-        sed_output = os.environ["LEPHAREWORK"] + "sedtolib"
-        write_yaml_config(updated_config, f"{sed_output}_config.yaml")
+        list_loc = os.path.join(lp.LEPHAREDIR, updated_config[f"{object_type}_SED"].value)
+        sedtolib_kwargs = {f"{object_type.lower()}_sed": list_loc}
+        sedlib.run(typ=object_type, **sedtolib_kwargs)
         # Run mag_gal
         maglib = lp.MagGal(config_keymap=updated_config)
         maglib.run(typ=object_type)
-        # Write config
-        mag_output = os.environ["LEPHAREWORK"] + "mag_gal"
-        write_yaml_config(updated_config, f"{mag_output}_config.yaml")
 
 
-def overwrite_config(c1, c2):
+def overwrite_config(config1, config2):
     """Check that two config can be safely broadcast for a joint run"""
-    if c2 is None:
-        return c1
-    config = c1
+    if config2 is None:
+        return config1
+    config = config1
     # Redshift grid must be idenitical
     # assert True
     # filters must be indentical
     # assert True
-    for k in c2:
-        config[k] = config[k]
+    for k in config2:
+        config[k] = config2[k]
     return config
 
 
@@ -99,3 +104,22 @@ def write_yaml_config(keymap, yaml_file_path):
         config_dict[keymap[k].name] = keymap[k].value
     with open(yaml_file_path, "w") as yaml_file:
         yaml.dump(config_dict, yaml_file)
+
+
+def write_para_config(keymap, para_file_path):
+    """Write a dictionary of keywords to a para file
+
+    Parameters
+    ==========
+    keymap : dict of lephare.keyword
+        The dictionary of keywords to be written to yaml.
+    para_file_path : str
+        Path to output para file.
+    """
+    now = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
+    para_contents = f"# File written automatically at {now}\n"
+    for k in keymap:
+        para_contents += f"{k} {keymap[k].value}\n"
+    with open(para_file_path, "w") as file_handle:
+        file_handle.write(para_contents)
+        file_handle.close()
