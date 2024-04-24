@@ -76,26 +76,22 @@ def _check_registry_is_latest_version(remote_registry_url, local_registry_file):
 
     Raises
     ------
-    requests.exceptions.RequestException
-        If the registry hash file cannot be fetched from the URL.
+    Exception
+        If there is any problem fetching the registry hash file, including network issues,
+        server errors, or other HTTP errors.
     """
     local_registry_hash = pooch.file_hash(local_registry_file, alg="sha256")
     remote_hash_url = os.path.splitext(remote_registry_url)[0] + "_hash.sha256"
 
-    try:
-        remote_hash_response = requests.get(remote_hash_url, timeout=60)
-        if (
-            remote_hash_response.status_code == 200
-            and remote_hash_response.text.strip() == local_registry_hash
-        ):
-            print(f"Local registry file is up to date: {local_registry_file}")
-            return True
-        else:
-            print("Local registry file is not up to date.")
-    except requests.exceptions.RequestException as e:
-        print(f"Failed to fetch registry hash file: {e}")
+    remote_hash_response = requests.get(remote_hash_url, timeout=60)
+    remote_hash_response.raise_for_status()  # Raise exceptions for non-200 status codes
 
-    return False
+    if remote_hash_response.text.strip() == local_registry_hash:
+        print(f"Local registry file is up to date: {local_registry_file}")
+        return True
+    else:
+        print(f"Local registry file is not up to date: {local_registry_file}")
+        return False
 
 
 def download_registry_from_github(url="", outfile=""):
@@ -111,8 +107,9 @@ def download_registry_from_github(url="", outfile=""):
 
     Raises
     ------
-    HTTPError
-        If the registry file cannot be fetched from the URL.
+    Exception
+        If there is any problem fetching the registry hash file or full registry file,
+        including network issues, server errors, or other HTTP errors.
     """
     remote_registry_name = "data_registry.txt"
 
@@ -128,14 +125,12 @@ def download_registry_from_github(url="", outfile=""):
 
     # Download the registry file
     response = requests.get(url, timeout=120)
-    if response.status_code == 200:
-        with open(outfile, "w", encoding="utf-8") as file:
-            file.write(response.text)
-        print(f"Registry file downloaded and saved as {outfile}.")
-        return
-    else:
-        print(f"Fetching file from {url}...")
-        raise requests.exceptions.HTTPError(f"Failed to fetch file ({response.status_code})")
+    response.raise_for_status()  # Raise exceptions for non-200 status codes
+
+    with open(outfile, "w", encoding="utf-8") as file:
+        file.write(response.text)
+
+    print(f"Registry file downloaded and saved as {outfile}.")
 
 
 def read_list_file(list_file, prefix=""):

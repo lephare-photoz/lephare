@@ -52,7 +52,9 @@ def test_download_registry_failure():
 
     # Mock failed registry file download
     mock_response = Mock()
-    mock_response.status_code = 404
+    mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
+        "404 Client Error: Not Found for url"
+    )
     with patch("requests.get", return_value=mock_response) as mock_get_remote_registry:  # noqa: F841
         with pytest.raises(requests.exceptions.HTTPError):
             download_registry_from_github()
@@ -149,7 +151,9 @@ def test_update_registry_hash_mismatches_and_download_fails():
             mock_hash_response.text = "hash_doesn't_match123"
 
             mock_registry_response = Mock()
-            mock_registry_response.status_code = 404
+            mock_registry_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
+                "404 Client Error: Not Found for url"
+            )
 
             def which_mock_get(*args, **kwargs):
                 url = args[0]
@@ -174,8 +178,11 @@ def test_update_registry_hash_download_fails():
         with patch("pooch.file_hash", return_value="registryhash123") as mock_local_registry_hash:  # noqa: F841
             # Mock getting the remote hash/registry files
             mock_hash_response = Mock()
-            mock_hash_response.status_code = 404
+            mock_hash_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
+                "404 Client Error: Not Found for url"
+            )
+
             with patch("requests.get", return_value=mock_hash_response) as mock_get_remote_hash_file:  # noqa: F841
                 # Check that we get the expected exception
-                with pytest.raises(requests.exceptions.RequestException):
+                with pytest.raises(requests.exceptions.HTTPError):
                     download_registry_from_github()
