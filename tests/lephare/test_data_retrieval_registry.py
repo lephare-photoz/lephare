@@ -104,6 +104,8 @@ def test_update_registry_hash_mismatches_and_download_fails(mock_get, mock_isfil
     #     2. _check_registry_is_latest_version == False
     #       2. Fail to download registry file
     mock_isfile.return_value = True
+    mock_get.return_value.text = "file1\nfile2\nfile3"
+
     mock_get.return_value.status_code = 404
     with pytest.raises(requests.exceptions.HTTPError):
         download_registry_from_github()
