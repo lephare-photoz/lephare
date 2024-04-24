@@ -77,7 +77,7 @@ def test_update_registry_hash_matches(mock_get, mock_file_hash, mock_isfile):
 def test_update_registry_hash_mismatches(mock_get, mock_file_hash, mock_isfile):
     # 2. Local registry exists
     #     2. _check_registry_is_latest_version == False
-    #       2. Successfully downloaded registry file
+    #         1. Successfully downloaded registry file
     mock_isfile.return_value = True
     mock_file_hash.return_value = "registryhash123"
     mock_get.return_value.status_code = 200
@@ -103,7 +103,7 @@ def test_update_registry_hash_mismatches(mock_get, mock_file_hash, mock_isfile):
 def test_update_registry_hash_mismatches_and_download_fails(mock_get, mock_file_hash, mock_isfile):
     # 2. Local registry exists
     #     2. _check_registry_is_latest_version == False
-    #       2. Fail to download registry file
+    #         2. Fail to download registry file
     mock_isfile.return_value = True
     mock_file_hash.return_value = "registryhash123"
     mock_get.return_value.status_code = 200
@@ -111,4 +111,18 @@ def test_update_registry_hash_mismatches_and_download_fails(mock_get, mock_file_
 
     mock_get.return_value.status_code = 404
     with pytest.raises(requests.exceptions.HTTPError):
+        download_registry_from_github()
+
+
+@patch("os.path.isfile")
+@patch("pooch.file_hash")
+@patch("requests.get")
+def test_update_registry_hash_download_fails(mock_get, mock_file_hash, mock_isfile):
+    # 2. Local registry exists
+    #     3. Fail to download registry hash file
+    mock_isfile.return_value = True
+    mock_file_hash.return_value = "registryhash123"
+
+    mock_get.return_value.status_code = 404
+    with pytest.raises(requests.exceptions.RequestException):
         download_registry_from_github()
