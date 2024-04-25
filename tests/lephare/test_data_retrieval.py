@@ -3,6 +3,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+
 from lephare.data_retrieval import (
     MAX_RETRY_ATTEMPTS,
     _check_downloaded_files,

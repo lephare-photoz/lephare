@@ -24,6 +24,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 import requests
+
 from lephare.data_retrieval import (
     download_registry_from_github,
 )

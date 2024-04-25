@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 import pytest
+
 from lephare import (
     flt,  # noqa: E402
 )

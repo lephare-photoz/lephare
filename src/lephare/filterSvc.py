@@ -7,7 +7,7 @@ import requests
 import yaml
 
 from lephare._lephare import check_first_char, flt
-from lephare.data_manager import DataManager
+from lephare.data_manager import check_lephare_directories
 
 __all__ = [
     "FilterSvc",
@@ -21,10 +21,6 @@ class FilterSvc:
 
     This class defines a number of methods for loading and manipulating filters.
     """
-
-    dm = DataManager()
-    dm.configure_directories()
-    LEPHAREDIR = dm.LEPHAREDIR
 
     @classmethod
     def from_yaml(cls, yaml_file):
@@ -74,6 +70,7 @@ class FilterSvc:
         flt_array : list of `lephare.flt`
             List of filters.
         """
+        lephare_dir, _ = check_lephare_directories()
         keywords = ["FILTER_REP", "FILTER_LIST", "TRANS_TYPE", "FILTER_CALIB", "FILTER_FILE"]
         keymap = {}
         with open(config_file) as fstream:
@@ -84,7 +81,7 @@ class FilterSvc:
                     if key in line and check_first_char(line):
                         keymap[key] = line.split()[1]
                         count += 1
-        keymap["FILTER_REP"] = keymap["FILTER_REP"].replace("$LEPHAREDIR", cls.LEPHAREDIR)
+        keymap["FILTER_REP"] = keymap["FILTER_REP"].replace("$LEPHAREDIR", lephare_dir)
 
         filter_list = keymap["FILTER_LIST"].split(",")
         filter_calib = keymap["FILTER_CALIB"].split(",")
@@ -147,7 +144,8 @@ class FilterSvc:
         f : `lephare.flt`
             Filter in native lephare format.
         """
-        name = filename.replace("$LEPHAREDIR", cls.LEPHAREDIR)
+        lephare_dir, _ = check_lephare_directories()
+        name = filename.replace("$LEPHAREDIR", lephare_dir)
         f = flt(counter, name, trans, calib)
         return f
 

@@ -3,6 +3,8 @@ import os
 
 from platformdirs import user_cache_dir
 
+from lephare._lephare import get_lephare_env
+
 
 class DataManager:
     def __init__(self):
@@ -122,3 +124,11 @@ class DataManager:
         work_sub_directories = ["filt", "lib_bin", "lib_mag", "zphota"]
         for sub_dir in work_sub_directories:
             os.makedirs(os.path.join(parent_dir, sub_dir), exist_ok=True)
+
+
+def check_lephare_directories():
+    dm = DataManager()
+    if dm.LEPHAREDIR is None or dm.LEPHAREWORK is None:
+        dm.configure_directories()
+    get_lephare_env()
+    return dm.LEPHAREDIR, dm.LEPHAREWORK

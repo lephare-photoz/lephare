@@ -2,9 +2,9 @@ import argparse
 import os
 import time
 
-from lephare._lephare import get_lephare_env, keyword
+from lephare._lephare import keyword
 
-from .data_manager import DataManager
+from .data_manager import check_lephare_directories
 
 
 class Runner:
@@ -22,9 +22,7 @@ class Runner:
 
     def __init__(self, config_keys=None, config_file=None, config_keymap=None):
         # confirm required directories are present, or create them if needed.
-        self._check_directories()
-        # set the LEPHAREDIR and LEPHAREWORK env variable
-        get_lephare_env()
+        check_lephare_directories()
         self.keymap = {}
         self.config = ""
         self.verbose = False
@@ -50,11 +48,6 @@ class Runner:
         # set verbosity. check keymap is not set on the commandline.
         if not self.verbose and "VERBOSE" in self.keymap:
             self.verbose = self.keymap["VERBOSE"].split_bool("NO", 1)[0]
-
-    def _check_directories(self):
-        dm = DataManager()
-        if dm.LEPHAREDIR is None or dm.LEPHAREWORK is None:
-            dm.configure_directories()
 
     # This function take the config file, read it line per linem and output a keyword map
     def parse_config_file(self, filename):

@@ -1,4 +1,5 @@
 import numpy as np
+
 from lephare._lephare import blackbody, check_first_char
 
 
