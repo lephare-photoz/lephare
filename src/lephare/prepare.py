@@ -13,7 +13,7 @@ def prepare(config, star_config=None, gal_config=None, qso_config=None):
 
     In order to run "zphota" we must create the filter files, run sedtolib to
     create the SED libraries, and finally run mag_gal, to create the
-    magnitude libararies. We abract these tasks into a single prepare stage.
+    magnitude libararies. We abstract these tasks into a single prepare stage.
 
     We overide the config for each type if distinct config set. If no overide
     configs are set we use the same for each type.
@@ -41,7 +41,6 @@ def prepare(config, star_config=None, gal_config=None, qso_config=None):
     write_yaml_config(config, f"{filter_output}_config.yaml")
 
     for object_type in object_types:
-        print("start", object_type)
         updated_config = overwrite_config(config, object_types[object_type])
         # Write the updated config
         sed_out_name = f"{updated_config[f'{object_type}_LIB'].value}_{object_type.lower()}_config.yaml"
