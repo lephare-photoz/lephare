@@ -86,12 +86,7 @@ def _check_registry_is_latest_version(remote_registry_url, local_registry_file):
     remote_hash_response = requests.get(remote_hash_url, timeout=60)
     remote_hash_response.raise_for_status()  # Raise exceptions for non-200 status codes
 
-    if remote_hash_response.text.strip() == local_registry_hash:
-        print(f"Local registry file is up to date: {local_registry_file}")
-        return True
-    else:
-        print(f"Local registry file is not up to date: {local_registry_file}")
-        return False
+    return remote_hash_response.text.strip() == local_registry_hash
 
 
 def download_registry_from_github(url="", outfile=""):
@@ -121,6 +116,7 @@ def download_registry_from_github(url="", outfile=""):
 
     # If local registry hash matches remote hash, our registry is already up-to-date:
     if os.path.isfile(outfile) and _check_registry_is_latest_version(url, outfile):
+        print(f"Local registry file is up to date: {local_registry_file}")
         return
 
     # Download the registry file
