@@ -5,6 +5,7 @@ import pytest
 from lephare import (
     flt,  # noqa: E402
 )
+from lephare._lephare import get_lephare_env
 from lephare.filterSvc import FilterSvc  # noqa: E402
 
 
@@ -13,7 +14,8 @@ def filter_file(test_data_dir):
     return os.path.join(test_data_dir, "filt/subaru/IB527.pb")
 
 
-def test_flt_class(filter_file):
+def test_flt_class(filter_file, set_env_vars):
+    get_lephare_env()
     tophat = flt(100.0, 200.0, 50)
     assert tophat.name == ""
     # this is wrong but an effect of improper C++ code
@@ -24,7 +26,8 @@ def test_flt_class(filter_file):
     assert f.lambdaMean() == pytest.approx(5262.2831, 1.0e-4)
 
 
-def test_filtersvc(test_data_dir, filter_file):
+def test_filtersvc(test_data_dir, filter_file, set_env_vars):
+    get_lephare_env()
     f = FilterSvc.from_file(filter_file, trans=1, calib=0)
     assert f.width() == pytest.approx(241.9479, 1.0e-4)
     assert f.lambdaMean() == pytest.approx(5262.2831, 1.0e-4)
