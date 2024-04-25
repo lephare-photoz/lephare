@@ -53,13 +53,49 @@ def filter_files_by_prefix(file_path, target_prefixes):
     return matching_lines
 
 
+def _check_registry_is_latest_version(remote_registry_url, local_registry_file):
+    """Checks whether the local registry file is the latest version compared to a remote registry.
+
+    Parameters
+    ----------
+    remote_registry_url : str
+        The URL to the remote registry file, used to construct the URL to fetch the remote hash.
+    local_registry_file : str
+        The path to the local registry file whose up-to-date status is to be checked.
+
+    Returns
+    -------
+    bool
+        Returns True if the local registry file is up to date, otherwise False.
+
+    Notes
+    -----
+    We make the assumption that the hash file for the registry will be stored in
+    the same directory as the registry file, with the same name (sans extension)
+    plus "_hash.sha256".
+
+    Raises
+    ------
+    Exception
+        If there is any problem fetching the registry hash file, including network issues,
+        server errors, or other HTTP errors.
+    """
+    local_registry_hash = pooch.file_hash(local_registry_file, alg="sha256")
+    remote_hash_url = os.path.splitext(remote_registry_url)[0] + "_hash.sha256"
+
+    remote_hash_response = requests.get(remote_hash_url, timeout=60)
+    remote_hash_response.raise_for_status()  # Raise exceptions for non-200 status codes
+
+    return remote_hash_response.text.strip() == local_registry_hash
+
+
 def download_registry_from_github(url="", outfile=""):
     """Fetch the contents of a file from a GitHub repository.
 
     Parameters
     ----------
     url : str
-        The URL of the registry file. Defaults to a "data-registry.txt" file at
+        The URL of the registry file. Defaults to a "data_registry.txt" file at
         DEFAULT_BASE_DATA_URL.
     outfile : str
         The path where the file will be saved. Defaults to DEFAULT_REGISTRY_FILE.
@@ -67,20 +103,30 @@ def download_registry_from_github(url="", outfile=""):
     Raises
     ------
     Exception
-        If the file cannot be fetched from the URL.
+        If there is any problem fetching the registry hash file or full registry file,
+        including network issues, server errors, or other HTTP errors.
     """
+    remote_registry_name = "data_registry.txt"
+
+    # Assign defaults if keywords left blank
     if url == "":
-        url = urljoin(DEFAULT_BASE_DATA_URL, "data-registry.txt")
+        url = urljoin(DEFAULT_BASE_DATA_URL, remote_registry_name)
     if outfile == "":
         outfile = DEFAULT_REGISTRY_FILE
 
-    response = requests.get(url, timeout=60)
-    if response.status_code == 200:
-        with open(outfile, "w", encoding="utf-8") as file:
-            file.write(response.text)
-        print(f"Registry file downloaded and saved as {outfile}.")
-    else:
-        raise requests.exceptions.HTTPError(f"Failed to fetch file: {response.status_code}")
+    # If local registry hash matches remote hash, our registry is already up-to-date:
+    if os.path.isfile(outfile) and _check_registry_is_latest_version(url, outfile):
+        print(f"Local registry file is up to date: {outfile}")
+        return
+
+    # Download the registry file
+    response = requests.get(url, timeout=120)
+    response.raise_for_status()  # Raise exceptions for non-200 status codes
+
+    with open(outfile, "w", encoding="utf-8") as file:
+        file.write(response.text)
+
+    print(f"Registry file downloaded and saved as {outfile}.")
 
 
 def read_list_file(list_file, prefix=""):

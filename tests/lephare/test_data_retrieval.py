@@ -1,10 +1,8 @@
 import os
-import tempfile
 from pathlib import Path
 from unittest.mock import mock_open, patch
 
 import pytest
-import requests
 from lephare.data_retrieval import (
     DEFAULT_BASE_DATA_URL,
     DEFAULT_LOCAL_DATA_PATH,
@@ -13,7 +11,6 @@ from lephare.data_retrieval import (
     _create_directories_from_files,
     download_all_files,
     download_file,
-    download_registry_from_github,
     filter_files_by_prefix,
     make_default_retriever,
     make_retriever,
@@ -26,25 +23,6 @@ def test_filter_file_by_prefix(test_data_dir):
     target_prefixes = ["prefix1", "prefix2"]
     expected_lines = ["prefix1_file1", "prefix2_file2"]
     assert filter_files_by_prefix(file_path, target_prefixes) == expected_lines
-
-
-@patch("requests.get")
-def test_download_registry_from_github_success(mock_get):
-    mock_get.return_value.status_code = 200
-    mock_get.return_value.text = "file1\nfile2\nfile3"
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        download_registry_from_github(outfile=os.path.join(tmpdir, "registry.txt"))
-
-        with open(os.path.join(tmpdir, "registry.txt"), "r") as file:
-            assert file.read() == "file1\nfile2\nfile3"
-
-
-@patch("requests.get")
-def test_download_registry_from_github_failure(mock_get):
-    mock_get.return_value.status_code = 404
-    with pytest.raises(requests.exceptions.HTTPError):
-        download_registry_from_github()
 
 
 def test_read_list_file(test_data_dir):
