@@ -1,6 +1,7 @@
 import argparse
 import os
 import time
+from .data_manager import DataManager
 
 from lephare._lephare import get_lephare_env, keyword
 
@@ -19,6 +20,9 @@ class Runner:
     """
 
     def __init__(self, config_keys=None, config_file=None, config_keymap=None):
+        dm = DataManager()
+        dm.configure_directories()  # noqa: F405
+
         # set the LEPHAREDIR and LEPHAREWORK env variable
         get_lephare_env()
         self.keymap = {}

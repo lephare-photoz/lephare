@@ -6,7 +6,7 @@ import xml.dom.minidom
 import requests
 import yaml
 
-from lephare import LEPHAREDIR
+from lephare.data_manager import DataManager
 from lephare._lephare import check_first_char, flt
 
 __all__ = [
@@ -21,6 +21,10 @@ class FilterSvc:
 
     This class defines a number of methods for loading and manipulating filters.
     """
+
+    dm=DataManager()
+    dm.configure_directories()
+    LEPHAREDIR = dm.LEPHAREDIR
 
     @classmethod
     def from_yaml(cls, yaml_file):
@@ -80,7 +84,7 @@ class FilterSvc:
                     if key in line and check_first_char(line):
                         keymap[key] = line.split()[1]
                         count += 1
-        keymap["FILTER_REP"] = keymap["FILTER_REP"].replace("$LEPHAREDIR", LEPHAREDIR)
+        keymap["FILTER_REP"] = keymap["FILTER_REP"].replace("$LEPHAREDIR", cls.LEPHAREDIR)
 
         filter_list = keymap["FILTER_LIST"].split(",")
         filter_calib = keymap["FILTER_CALIB"].split(",")
@@ -143,7 +147,7 @@ class FilterSvc:
         f : `lephare.flt`
             Filter in native lephare format.
         """
-        name = filename.replace("$LEPHAREDIR", LEPHAREDIR)
+        name = filename.replace("$LEPHAREDIR", cls.LEPHAREDIR)
         f = flt(counter, name, trans, calib)
         return f
 

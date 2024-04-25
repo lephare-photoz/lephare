@@ -15,7 +15,6 @@ from lephare.data_retrieval import (
     download_file,
     download_registry_from_github,
     filter_files_by_prefix,
-    make_default_retriever,
     make_retriever,
     read_list_file,
 )
@@ -60,16 +59,6 @@ def test_read_list_file_remote(mock_get):
 
     expected_files = ["file1", "file2", "file3"]
     assert read_list_file("http://example.com") == expected_files
-
-
-def test_make_default_retriever(data_registry_file):
-    mock_registry_content = "file1.txt hash1\nfile2.txt hash2"
-    with patch("builtins.open", mock_open(read_data=mock_registry_content)):
-        retriever = make_default_retriever()
-        assert retriever.base_url == DEFAULT_BASE_DATA_URL
-        assert retriever.path == Path(DEFAULT_LOCAL_DATA_PATH)
-        assert retriever.registry["file1.txt"] == "hash1"
-        assert retriever.registry["file2.txt"] == "hash2"
 
 
 def test_make_retriever(data_registry_file):

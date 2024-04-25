@@ -2,20 +2,16 @@
 # ruff: noqa: F403
 
 # Why is this global?
-global LEPHAREDIR
 
-from .data_manager import DataManager
 
-dm = DataManager()
-dm.configure_directories()  # noqa: F405
-LEPHAREDIR = dm.LEPHAREDIR
+
 
 
 from ._lephare import *
 
 # from lephare._lephare import  get_lephare_env
 # make LEPHAREDIR and LEPHAREWORK avaliable to the C++ codes
-get_lephare_env()  # noqa: F405
+# get_lephare_env()  # noqa: F405
 
 from ._flt import *
 from ._pdf import *

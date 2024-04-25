@@ -9,12 +9,10 @@ from urllib.parse import urljoin, urlparse
 import numpy as np
 import pooch
 import requests
-
-from lephare import LEPHAREDIR
+from lephare.data_manager import DataManager
 
 DEFAULT_BASE_DATA_URL = "https://raw.githubusercontent.com/lephare-photoz/lephare-data/main/"
 DEFAULT_REGISTRY_FILE = "data_registry.txt"
-DEFAULT_LOCAL_DATA_PATH = LEPHAREDIR
 
 # If a file is not downloaded the first time, retry this many times
 MAX_RETRY_ATTEMPTS = 2
@@ -24,7 +22,6 @@ __all__ = [
     "download_file",
     "download_registry_from_github",
     "filter_files_by_prefix",
-    "make_default_retriever",
     "make_retriever",
     "read_list_file",
 ]
@@ -70,7 +67,7 @@ def download_registry_from_github(url="", outfile=""):
         If the file cannot be fetched from the URL.
     """
     if url == "":
-        url = urljoin(DEFAULT_BASE_DATA_URL, "data-registry.txt")
+        url = urljoin(DEFAULT_BASE_DATA_URL, "data_registry.txt")
     if outfile == "":
         outfile = DEFAULT_REGISTRY_FILE
 
@@ -137,17 +134,10 @@ def read_list_file(list_file, prefix=""):
     return file_names
 
 
-def make_default_retriever():
-    """Create a retriever with the default settings."""
-    return make_retriever(
-        base_url=DEFAULT_BASE_DATA_URL, registry_file=DEFAULT_REGISTRY_FILE, data_path=DEFAULT_LOCAL_DATA_PATH
-    )
-
-
 def make_retriever(
     base_url=DEFAULT_BASE_DATA_URL,
     registry_file=DEFAULT_REGISTRY_FILE,
-    data_path=DEFAULT_LOCAL_DATA_PATH,
+    data_path=None,
 ):
     """Create a retriever for downloading files.
 
@@ -165,6 +155,11 @@ def make_retriever(
     pooch.Pooch
         The retriever object for downloading files.
     """
+    if data_path is None:
+        dm = DataManager()
+        dm.configure_directories()
+        data_path = dm.LEPHAREDIR
+
     retriever = pooch.create(
         base_url=base_url,
         path=data_path,
@@ -364,7 +359,7 @@ def config_to_required_files(keymap, base_url=None):
     return required_files
 
 
-def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=None):
+def get_auxiliary_data(lephare_dir=None, keymap=None, additional_files=None):
     """Get all auxiliary data required to run lephare.
 
     This gets all the filters, seds, and other data files.
@@ -386,6 +381,11 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
     repo_name = "lephare-data"
     repo_url = f"https://github.com/lephare-photoz/{repo_name}"
     registry_file = DEFAULT_REGISTRY_FILE
+
+    if lephare_dir is None:
+        dm = DataManager()
+        dm.configure_directories()
+        lephare_dir = dm.LEPHAREDIR
     data_path = lephare_dir
     if keymap is None:
         # Assume if filt is present assume everything is.
