@@ -9,6 +9,7 @@ from urllib.parse import urljoin, urlparse
 import numpy as np
 import pooch
 import requests
+
 from lephare.data_manager import DataManager
 
 DEFAULT_BASE_DATA_URL = "https://raw.githubusercontent.com/lephare-photoz/lephare-data/main/"

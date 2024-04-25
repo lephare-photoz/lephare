@@ -6,8 +6,8 @@ import xml.dom.minidom
 import requests
 import yaml
 
-from lephare.data_manager import DataManager
 from lephare._lephare import check_first_char, flt
+from lephare.data_manager import DataManager
 
 __all__ = [
     "FilterSvc",
@@ -22,7 +22,7 @@ class FilterSvc:
     This class defines a number of methods for loading and manipulating filters.
     """
 
-    dm=DataManager()
+    dm = DataManager()
     dm.configure_directories()
     LEPHAREDIR = dm.LEPHAREDIR
 

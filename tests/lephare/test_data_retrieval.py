@@ -1,13 +1,11 @@
 import os
 import tempfile
 from pathlib import Path
-from unittest.mock import mock_open, patch
+from unittest.mock import patch
 
 import pytest
 import requests
 from lephare.data_retrieval import (
-    DEFAULT_BASE_DATA_URL,
-    DEFAULT_LOCAL_DATA_PATH,
     MAX_RETRY_ATTEMPTS,
     _check_downloaded_files,
     _create_directories_from_files,
