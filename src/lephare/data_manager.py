@@ -47,23 +47,29 @@ class DataManager:
             # get <default_cache> locations
             default_os_cache = user_cache_dir("lephare", ensure_exists=True)
 
-            # create a runs directory in the default cache locations
-            os.makedirs(f"{default_os_cache}/runs", exist_ok=True)
-
-            # create a timestamped directory under runs
-            now = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
-            run_directory = f"{default_os_cache}/runs/{now}"
-            os.makedirs(run_directory, exist_ok=True)
-
-            # create the subdirectories in the new run directory
-            self.create_work_subdirectories(run_directory)
-
-            # create a symlink between <default_cache>/work and the timestamped directory
+            # Location of work linked dir <default_cache>/work and the timestamped directory
             symlink_work_directory = f"{default_os_cache}/work"
+
             # first remove the symlink if it already exists
             if os.path.islink(symlink_work_directory):
-                os.unlink(symlink_work_directory)
-            os.symlink(run_directory, symlink_work_directory)
+                # os.unlink(symlink_work_directory) #We no longer make a new link
+                print(
+                    f"""Default work cache at {symlink_work_directory}
+                    is already linked. This is linked to the run directory:
+                    {os.readlink(symlink_work_directory)}"""
+                )
+            else:
+                # create a runs directory in the default cache locations
+                os.makedirs(f"{default_os_cache}/runs", exist_ok=True)
+
+                # create a timestamped directory under runs
+                now = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
+                run_directory = f"{default_os_cache}/runs/{now}"
+                os.makedirs(run_directory, exist_ok=True)
+
+                # create the subdirectories in the new run directory
+                self.create_work_subdirectories(run_directory)
+                os.symlink(run_directory, symlink_work_directory)
 
             # set the LEPHAREWORK environment variable to the <default_cache>/work symlink
             os.environ["LEPHAREWORK"] = symlink_work_directory
