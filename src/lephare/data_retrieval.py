@@ -116,7 +116,7 @@ def download_registry_from_github(url="", outfile=""):
 
     # If local registry hash matches remote hash, our registry is already up-to-date:
     if os.path.isfile(outfile) and _check_registry_is_latest_version(url, outfile):
-        print(f"Local registry file is up to date: {local_registry_file}")
+        print(f"Local registry file is up to date: {outfile}")
         return
 
     # Download the registry file
