@@ -15,7 +15,8 @@ def process(config, input, col_names=None, standard_names=False, filename=None):
     config : dict of lephare.keyword
         The configuration for the run
     input : astropy.table.Table
-        The input table which must satisfy
+        The input table which must satisfy column name requirements depending
+        on other optional inputs.
     col_names : list
         Input catalogue column names. We will use ordering to determine meaning
     standard_names : bool
