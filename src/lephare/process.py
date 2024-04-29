@@ -1,5 +1,3 @@
-import datetime
-
 import numpy as np
 
 import lephare as lp
@@ -74,9 +72,6 @@ def process(config, input, col_names=None, standard_names=False, filename=None):
         pdfs.append(pdf)
 
     # Loop over objects to compute photoz
-    if filename is None:
-        now = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
-        filename = f"lephare_output_{now}.fits"
     output = photz.build_output_tables(photozlist, para_out=None, filename=filename)
     return output, np.array(pdfs), np.array(zgrid)
 
