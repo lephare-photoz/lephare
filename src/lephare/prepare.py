@@ -37,7 +37,7 @@ def prepare(config, star_config=None, gal_config=None, qso_config=None):
     filter_output = os.path.join(os.environ["LEPHAREWORK"], "filt", config["FILTER_FILE"].value)
     # Write filter files
     lp.write_output_filter(filter_output + ".dat", filter_output + ".doc", filter_lib)
-    # Write config to work directory
+    # # Write config to work directory
     write_yaml_config(config, f"{filter_output}_config.yaml")
 
     for object_type in object_types:
@@ -47,16 +47,17 @@ def prepare(config, star_config=None, gal_config=None, qso_config=None):
         sed_output = os.path.join(os.environ["LEPHAREWORK"], "lib_bin", sed_out_name)
         mag_out_name = f"{updated_config[f'{object_type}_LIB_OUT'].value}_{object_type.lower()}_config.yaml"
         mag_output = os.path.join(os.environ["LEPHAREWORK"], "lib_mag", mag_out_name)
-        write_yaml_config(updated_config, sed_output)
-        write_yaml_config(updated_config, mag_output)
         # Run sedtolib
         sedlib = lp.Sedtolib(config_keymap=updated_config)
         list_loc = os.path.join(lp.LEPHAREDIR, updated_config[f"{object_type}_SED"].value)
         sedtolib_kwargs = {f"{object_type.lower()}_sed": list_loc}
+        print(sedtolib_kwargs)
         sedlib.run(typ=object_type, **sedtolib_kwargs)
+        write_yaml_config(updated_config, sed_output)
         # Run mag_gal
         maglib = lp.MagGal(config_keymap=updated_config)
         maglib.run(typ=object_type)
+        write_yaml_config(updated_config, mag_output)
 
 
 def overwrite_config(config1, config2):
