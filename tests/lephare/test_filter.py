@@ -22,6 +22,16 @@ def test_flt_class(filter_file):
     f = flt(-1, filter_file, trans=1, calib=1)
     assert f.width() == pytest.approx(241.9479, 1.0e-4)
     assert f.lambdaMean() == pytest.approx(5262.2831, 1.0e-4)
+    # testing relative path
+    tests_dir = os.path.abspath(os.path.curdir)
+    flt_dir = os.path.dirname(filter_file)
+    os.chdir(flt_dir)
+    print(os.path.abspath(os.path.curdir))
+    f2 = flt(-1, "./IB527.pb", trans=1, calib=1)
+    assert f2.width != 0.0
+    f3 = flt(-1, "IB527.pb", trans=1, calib=1)
+    assert f3.width != 0.0
+    os.chdir(tests_dir)
 
 
 def test_filtersvc(test_data_dir, filter_file):

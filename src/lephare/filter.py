@@ -60,8 +60,7 @@ class Filter(Runner):
         vec_flt = []
         for k, (f, t, c) in enumerate(zip(flt_files, transtyp, calibtyp)):
             flt_file = os.path.join(flt_rep, f)
-            one_filt = flt(k, f, t, c)
-            one_filt.read(flt_file)
+            one_filt = flt(k, flt_file, t, c)
             vec_flt.append(one_filt)
 
         write_output_filter(filtfile, filtdoc, vec_flt)
