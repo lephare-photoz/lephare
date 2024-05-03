@@ -14,7 +14,7 @@ def test_process(test_data_dir: str):
     # Run preparation tasks.
     lp.prepare(config)
     # Test on standard table format
-    input = Table.read("../data/examples/COSMOS.fits")
+    input = Table.read("../data/examples/COSMOS_first100specz.fits")
     output, pdfs = lp.process(input, config)
     # Check one fo the outputs
     assert np.isclose(output["ZBEST"][0], 4.6945872848190575)
