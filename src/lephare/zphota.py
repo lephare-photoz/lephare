@@ -137,7 +137,11 @@ class Zphota(Runner):
         super().end()
 
 
-if __name__ == "__main__":
+def main():
     runner = Zphota()
     runner.run()
     runner.end()
+
+
+if __name__ == "__main__":
+    main()

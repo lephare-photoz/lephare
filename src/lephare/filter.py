@@ -67,7 +67,11 @@ class Filter(Runner):
         write_output_filter(filtfile, filtdoc, vec_flt)
 
 
-if __name__ == "__main__":
+def main():
     runner = Filter()
     runner.run()
     runner.end()
+
+
+if __name__ == "__main__":
+    main()

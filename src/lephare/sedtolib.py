@@ -21,6 +21,7 @@ sedtolib_config_keys = [
     "STAR_SED",
     "STAR_LIB",
     "STAR_FSCALE",
+    "LIB_ASCII",
 ]
 
 
@@ -85,7 +86,11 @@ class Sedtolib(Runner):
         return
 
 
-if __name__ == "__main__":
+def main():
     runner = Sedtolib()
     runner.run()
     runner.end()
+
+
+if __name__ == "__main__":
+    main()
