@@ -27,5 +27,6 @@ from .filterSvc import *
 from .mag_gal import *
 from .magSvc import *
 from .prepare import *
+from .process import *
 from .sedtolib import *
 from .zphota import *
