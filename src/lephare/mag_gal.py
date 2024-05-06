@@ -97,7 +97,11 @@ class MagGal(Runner):
         return
 
 
-if __name__ == "__main__":
+def main():
     runner = MagGal()
     runner.run()
     runner.end()
+
+
+if __name__ == "__main__":
+    main()

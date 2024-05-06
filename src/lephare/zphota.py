@@ -23,6 +23,7 @@ zphota_config_keys = [
     "ZPHOTLIB",
     "PARA_OUT",
     "CAT_OUT",
+    "VERBOSE",
     "CAT_TYPE",
     "ERR_SCALE",
     "ERR_FACTOR",
@@ -70,7 +71,6 @@ zphota_config_keys = [
     "LIMITS_MAPP_SEL",
     "LIMITS_MAPP_CUT",
     "Z_STEP",
-    "VERBOSE",
 ]
 
 nonestring = "NONE"
@@ -106,15 +106,10 @@ class Zphota(Runner):
                 self.keymap[k.upper()] = keyword(k.upper(), str(v))
         self.keymap["c"] = keyword("c", self.config)
 
-        print(self.keymap["Z_STEP"])
-        print(self.keymap["COSMOLOGY"])
-        print(self.keymap["Z_STEP"].split_double("0.1", 3))
-
         photoz = PhotoZ(self.keymap)
-        autoadapt = (self.keymap["AUTO_ADAPT"]).split_string("YES", 1)[0]
-        if autoadapt == "YES":
+        autoadapt = (self.keymap["AUTO_ADAPT"]).split_bool("NO", 1)[0]
+        if autoadapt:
             adapt_srcs = photoz.read_autoadapt_sources()
-            photoz.prep_data(adapt_srcs)
             a0, a1 = photoz.run_autoadapt(adapt_srcs)
             offsets = ",".join(np.array(a0).astype(str))
             offsets = "# Offsets from auto-adapt: " + offsets + "\n"
@@ -129,7 +124,6 @@ class Zphota(Runner):
         opa_out = GalMag.read_opa()  # noqa: F841
 
         fit_srcs = photoz.read_photoz_sources()
-        photoz.prep_data(fit_srcs)
         photoz.run_photoz(fit_srcs, a0, a1)
         photoz.write_outputs(fit_srcs, int(time.time()))
 
@@ -137,7 +131,11 @@ class Zphota(Runner):
         super().end()
 
 
-if __name__ == "__main__":
+def main():
     runner = Zphota()
     runner.run()
     runner.end()
+
+
+if __name__ == "__main__":
+    main()

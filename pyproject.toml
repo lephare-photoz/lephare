@@ -29,6 +29,12 @@ dependencies = [
     "platformdirs",
 ]
 
+[project.scripts]
+filter = "lephare.filter:main"
+sedtolib = "lephare.sedtolib:main"
+mag_gal = "lephare.mag_gal:main"
+zphota = "lephare.zphota:main"
+
 [project.urls]
 "Source Code" = "https://github.com/lincc-frameworks/lephare"
 
