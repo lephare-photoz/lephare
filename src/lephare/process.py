@@ -49,11 +49,11 @@ def process(config, input, col_names=None, standard_names=False, filename=None, 
     # If AUTO_ADAPT set compute offsets
     if offsets is not None:
         print("Using user supplied offsets")
-        a1 = offsets[0]
-        a0 = offsets[1]
+        a0 = offsets[0]
+        a1 = offsets[1]
         try:
-            assert len(a1) == n_filters
             assert len(a0) == n_filters
+            assert len(a1) == n_filters
         except AssertionError as e:
             raise Exception("Length of offset overrides not equal to the number of filters.") from e
     elif config["AUTO_ADAPT"].value == "YES":
@@ -62,7 +62,7 @@ def process(config, input, col_names=None, standard_names=False, filename=None, 
         offsets = "Offsets from auto-adapt: " + offsets + "\n"
         print(offsets)
     else:
-        a1, a0 = np.full(n_filters, 0), np.full(n_filters, 0)  # Do we need to set values?
+        a0, a1 = np.full(n_filters, 0), np.full(n_filters, 0)  # Do we need to set values?
         print("AUTO_ADAPT set to NO and no user supplied offsets. Using zero offsets.")
 
     # create the onesource objects
