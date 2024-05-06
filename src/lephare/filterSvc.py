@@ -220,3 +220,37 @@ class FilterSvc:
         # save the SVO additional info in an instance property
         flt_obj.svo_params = param_dict
         return flt_obj
+
+    @classmethod
+    def from_keymap(cls, keymap):
+        """Load filter from a config keymap.
+
+        Parameters
+        ----------
+        keymap : dict of lephare.keyword
+            The config keymap
+
+        Returns
+        -------
+        flt_array : list of `lephare.flt`
+            List of filters.
+        """
+        keymap["FILTER_REP"].value = keymap["FILTER_REP"].value.replace("$LEPHAREDIR", LEPHAREDIR)
+
+        filter_list = keymap["FILTER_LIST"].value.split(",")
+        filter_calib = keymap["FILTER_CALIB"].value.split(",")
+        filter_trans = keymap["TRANS_TYPE"].value.split(",")
+        if len(filter_trans) == 1:
+            filter_trans = len(filter_list) * filter_trans
+        elif len(filter_trans) != len(filter_list):
+            raise RuntimeError("FILTER_LIST and FILTER_TRANS do not have the same size")
+        if len(filter_calib) == 1:
+            filter_calib = len(filter_list) * filter_calib
+        elif len(filter_calib) != len(filter_list):
+            raise RuntimeError("FILTER_LIST and FILTER_CALIB do not have the same size")
+        flt_array = []
+        for i in range(len(filter_list)):
+            name = os.path.join(keymap["FILTER_REP"].value, filter_list[i])
+            oneflt = flt(i, name, int(filter_trans[i]), int(filter_calib[i]))
+            flt_array.append(oneflt)
+        return flt_array
