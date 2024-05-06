@@ -3,6 +3,7 @@ Notebooks
 
 .. toctree::
 
+    Minimal full run <notebooks/Minimal_photoz_run>
     Example full run <notebooks/Example_full_run>
     Building a list of onesources <notebooks/Building_list_of_onesources>
     Example of usage of magSvc <notebooks/Example_of_usage_of_magSvc>
