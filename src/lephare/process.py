@@ -184,6 +184,9 @@ def table_to_data(config, input, col_names=None, standard_names=False):
         for f in config["FILTER_LIST"].value.split(","):
             col_names += [f"f_{f}"]
             col_names += [f"ferr_{f}"]
+        col_names += ["context"]
+        col_names += ["zspec"]
+        col_names += ["string_data"]
     else:
         print("Using user columns from input table assuming they are in the standard order.")
         assert len(input.colnames) == 2 * n_filters + 4
