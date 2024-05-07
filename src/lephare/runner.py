@@ -4,6 +4,10 @@ import time
 
 from lephare._lephare import get_lephare_env, keyword
 
+__all__ = [
+    "Runner",
+]
+
 
 class Runner:
     """Base class holding config values for running all stages.
