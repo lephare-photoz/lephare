@@ -3,6 +3,10 @@ import os
 
 from platformdirs import user_cache_dir
 
+__all__ = [
+    "DataManager",
+]
+
 
 class DataManager:
     def __init__(self):

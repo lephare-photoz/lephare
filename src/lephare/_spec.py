@@ -1,6 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+__all__ = [
+    "plotspec",
+]
+
 
 def plotspec(filename):
     ### Open .spec file[s] and read the parameters
