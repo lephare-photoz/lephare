@@ -1,7 +1,9 @@
 import os
 
-import lephare as lp
 import pytest
+
+import lephare as lp
+from lephare._lephare import keyword
 
 TESTDIR = os.path.abspath(os.path.dirname(__file__))
 TESTDATADIR = os.path.join(TESTDIR, "../data")
@@ -35,12 +37,15 @@ def test_runner_config_keymap_updates():
     to the Runner class."""
     test_keys = ["key1", "key2", "key3"]
     config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
-    config_keymap = {"STAR_SED": "foo", "LIMITS_MAPP_CUT": 42}
+    config_keymap = {
+        "STAR_SED": keyword("STAR_SED", "foo"),
+        "LIMITS_MAPP_CUT": keyword("LIMITS_MAPP_CUT", "42"),
+    }
     runner = lp.Runner(config_keys=test_keys, config_file=config_file_path, config_keymap=config_keymap)
 
     resulting_keymap = runner.keymap
-    assert resulting_keymap["STAR_SED"] == "foo"
-    assert resulting_keymap["LIMITS_MAPP_CUT"] == 42
+    assert resulting_keymap["STAR_SED"].value == "foo"
+    assert resulting_keymap["LIMITS_MAPP_CUT"].value == "42"
 
 
 def test_runner_cannot_run():
@@ -54,3 +59,34 @@ def test_runner_cannot_run():
     with pytest.raises(Exception) as excinfo:
         runner.run()
         assert excinfo.value == "runner.py is an abstract class"
+
+
+def test_runner_verbosity():
+    """Check to make sure that verbosity is set correctly via the config_keymap"""
+    test_keys = ["key1", "key2", "key3"]
+    config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
+    config_keymap = {}
+    runner = lp.Runner(config_keys=test_keys, config_file=config_file_path, config_keymap=config_keymap)
+
+    assert not runner.verbose
+
+    config_keymap = {"VERBOSE": keyword("VERBOSE", "NO")}
+    runner = lp.Runner(config_keys=test_keys, config_file=config_file_path, config_keymap=config_keymap)
+
+    assert not runner.verbose
+
+    config_keymap = {"VERBOSE": keyword("VERBOSE", "YES")}
+    runner = lp.Runner(config_keys=test_keys, config_file=config_file_path, config_keymap=config_keymap)
+
+    assert runner.verbose
+
+
+def test_runner_config_file_not_found():
+    """Pass in a config file that does not exist and expect a RuntimeError."""
+
+    test_keys = ["key1", "key2", "key3"]
+    config_file_path = os.path.join(TESTDATADIR, "foo/bar.para")
+
+    with pytest.raises(RuntimeError) as excinfo:
+        _ = lp.Runner(config_keys=test_keys, config_file=config_file_path)
+        assert excinfo.value == f"File {config_file_path} not found"
