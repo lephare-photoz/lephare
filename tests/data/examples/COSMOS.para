@@ -4,22 +4,26 @@
 ##############################################################################################
 #
 #-------------------    STELLAR LIBRARY (ASCII SEDs)        ---------------------------       
-STAR_SED        STAR_SWIRE.list         # STAR list (full path)
+STAR_SED        sed/STAR/ONE_SED.list         # STAR list (full path)
+#STAR_SED        sed/STAR/STAR_MOD_ALL.list         # STAR list (full path)
 STAR_LIB	LIB_STAR		# Binary STAR LIBRARY (-> $ZPHOTWORK/lib_bin/*)
 STAR_FSCALE	3.432E-09		# Arbitrary Flux Scale 
 #
 #-------------------    QSO LIBRARY (ASCII SEDs)            ---------------------------  
-QSO_SED		AGN_LONSDALE.list       # QSO list (full path)
+QSO_SED		sed/QSO/ONE_SED.list       # QSO list (full path)
+#QSO_SED		sed/QSO/SALVATO09/AGN_MOD.list       # QSO list (full path)
 QSO_LIB		LIB_QSO			# Binary QSO LIBRARY (-> $ZPHOTWORK/lib_bin/*)
 QSO_FSCALE	1.			# Arbitrary Flux Scale 
 #
 #-------------------  GALAXY LIBRARY (ASCII or BINARY SEDs) ---------------------------
-GAL_SED		 CE_MOD.list            # GALAXMuzzin09_SEDY list (full path)
+GAL_SED		 sed/GAL/ONE_SED.list            # GALAXMuzzin09_SEDY list (full path)
+#GAL_SED		 examples/COSMOS_MOD.list            # GALAXMuzzin09_SEDY list (full path)
 GAL_LIB	         LIB_CE	                # Binary GAL LIBRARY (-> $ZPHOTWORK/lib_bin/*)
 GAL_FSCALE      1.                      # Arbitrary Flux Scale
 #SEL_AGE 	/data/zphot_vers25_03_03/sed/GAL/HYPERZ/AGE_GISSEL_HZ.dat	# List of Age for GISSEL(full path)
 AGE_RANGE  0.,15.e9                                     # Age Min-Max in yr
 
+                       
 
 #
 ##############################################################################################
@@ -29,7 +33,7 @@ AGE_RANGE  0.,15.e9                                     # Age Min-Max in yr
 
 # 
 FILTER_REP   $LEPHAREDIR/filt           # Repository in which the filters are stored
-FILTER_LIST   subaru/IB527.pb
+FILTER_LIST   subaru/IB527.pb 
 # FILTER_LIST   cosmos/u_cfht.lowres,cosmos/u_new.pb,hsc/gHSC.pb,hsc/rHSC.pb,hsc/iHSC.pb,hsc/zHSC.pb,hsc/yHSC.pb,vista/Y.lowres,vista/J.lowres,vista/H.lowres,vista/K.lowres,cosmos/IB427.lowres,cosmos/IB464.lowres,cosmos/IB484.lowres,cosmos/IB505.lowres,cosmos/IB527.lowres,cosmos/IB574.lowres,cosmos/IB624.lowres,cosmos/IB679.lowres,cosmos/IB709.lowres,cosmos/IB738.lowres,cosmos/IB767.lowres,cosmos/IB827.lowres,cosmos/NB711.lowres,cosmos/NB816.lowres,vista/NB118.lowres,cosmos/irac_ch1.lowres,cosmos/irac_ch2.lowres,cosmos/irac_ch3.lowres,cosmos/irac_ch4.lowres 
 TRANS_TYPE	 1			# TRANSMISSION TYPE
                                         # 0[-def]: Energy, 1: Nb of photons
@@ -63,7 +67,7 @@ GAL_LIB_OUT	CE_COSMOS	# Output GALAXY LIBRARY  (-> $ZPHOTWORK/lib_mag/*)
 #------------------   MAG + Z_STEP + COSMO + EXTINCTION   -----------------------------
 MAGTYPE         AB		# Magnitude type (AB or VEGA)
 ZGRID_TYPE      0               # Define the kind of redshift grid (0: linear ; 1: dz*(1+z)) 
-Z_STEP 		0.01,0.,7. 	# dz, zmin, zmax 
+Z_STEP 		0.1,0.,5. 	# dz, zmin, zmax 
 COSMOLOGY	70,0.3,0.7	# H0,om0,lbd0    (if lb0>0->om0+lbd0=1)
 MOD_EXTINC 	0,0		# model range for extinction 
 EXTINC_LAW	SB_calzetti.dat	# ext. law (in  $ZPHOTDIR/ext/*)
@@ -92,7 +96,7 @@ CAT_LINES       0,1000000000     #  MIN and MAX RANGE of ROWS used in input cat 
 CAT_TYPE	LONG	  	 # Input Format    (LONG,SHORT-def)
 GLB_CONTEXT	0		 # Overwrite Context (Sum 2^n; n=0->nbd-1, 0->all bands, -1[-def] used context per object) 
 FORB_CONTEXT	-1		 # Not consider these filters in the fit  (Sum 2^n; n=0->nbd-1) 
-ERR_SCALE       0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.05,0.05,0.05,0.05,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.05,0.05,0.05,0.05,0.1,0.2,0.3  # Systematic errors per band
+ERR_SCALE       0.02 # Systematic errors per band
 ERR_FACTOR      1.5              # Multiply all the flux uncertainties by this factor
 ADD_EMLINES     0,10000          # Range of template in which we add emission lines
 
@@ -119,7 +123,7 @@ RM_DISCREPANT_BD 500             # Threshold in chi2 to consider. Remove <3 band
 #------------------      Priors                       --------------------------------- 
 MAG_ABS 	-24,-5  	# Mabs_min , Mabs_max [0,0-def]
 MAG_ABS_QSO 	-30,-10  	# Mabs_min , Mabs_max for QSO library [0,0-def]
-MAG_REF 	3		# Reference number for band used by Mag_abs
+MAG_REF 	1		# Reference number for band used by Mag_abs
 Z_RANGE        0.,99.99          # Z min-max used for the Galaxy library 
 EBV_RANGE      0,9               # E(B-V) MIN-MAX RANGE of E(B-V) used  
 #NZ_PRIOR       4,5                # I Band for prior on N(z), the second number is the band to be used if the first is missing.
@@ -162,7 +166,7 @@ CHI2_OUT        NO               # output file with all values : z,mod,chi2,E(B-
 #-------------------   ADAPTIVE METHOD using Z spectro sample -----------------
 #
 AUTO_ADAPT	NO		 # Adapting method with spectro [NO-def]
-ADAPT_BAND 	5		 # Reference band, band1, band2 for color 
+ADAPT_BAND 	1		 # Reference band, band1, band2 for color 
 ADAPT_LIM       1.5,23.0         # Mag limits for spectro in Ref band [18,21.5-def]
 ADAPT_CONTEXT  -1                # Context for bands used for training
                                  # If -1[-def] the ones given by the normal context

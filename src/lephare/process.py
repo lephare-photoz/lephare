@@ -2,10 +2,10 @@ import numpy as np
 
 import lephare as lp
 
-__all__ = ["process", "table_to_data"]
+__all__ = ["process", "table_to_data", "calculate_offsets"]
 
 
-def process(config, input, col_names=None, standard_names=False, filename=None):
+def process(config, input, col_names=None, standard_names=False, filename=None, offsets=None):
     """Run all required steps to produce photometric redshift estimates
 
     Parameters
@@ -21,6 +21,8 @@ def process(config, input, col_names=None, standard_names=False, filename=None):
         If true we assume standard names.
     filename : str
         Output file name for the output catalogue.
+    offsets : list
+        If offsets are set autoadapt is not run but the set values are used.
 
     Returns
     =======
@@ -45,14 +47,23 @@ def process(config, input, col_names=None, standard_names=False, filename=None):
         srclist.append(one_obj)
 
     # If AUTO_ADAPT set compute offsets
-    if config["AUTO_ADAPT"].value == "YES":
+    if offsets is not None:
+        print("Using user supplied offsets")
+        a0 = offsets[0]
+        a1 = offsets[1]
+        try:
+            assert len(a0) == n_filters
+            assert len(a1) == n_filters
+        except AssertionError as e:
+            raise Exception("Length of offset overrides not equal to the number of filters.") from e
+    elif config["AUTO_ADAPT"].value == "YES":
         a0, a1 = photz.run_autoadapt(srclist)
         offsets = ",".join(np.array(a0).astype(str))
-        offsets = "# Offsets from auto-adapt: " + offsets + "\n"
+        offsets = "Offsets from auto-adapt: " + offsets + "\n"
         print(offsets)
     else:
-        a1, a0 = np.full(n_filters, 0), np.full(n_filters, 0)  # Do we need to set values?
-        print("AUTO_ADAPT set to NO. Using zero offsets.")
+        a0, a1 = np.full(n_filters, 0), np.full(n_filters, 0)  # Do we need to set values?
+        print("AUTO_ADAPT set to NO and no user supplied offsets. Using zero offsets.")
 
     # create the onesource objects
     photozlist = []
@@ -74,6 +85,53 @@ def process(config, input, col_names=None, standard_names=False, filename=None):
     # Loop over objects to compute photoz
     output = photz.build_output_tables(photozlist, para_out=None, filename=filename)
     return output, np.array(pdfs), np.array(zgrid)
+
+
+def calculate_offsets(config, input, col_names=None, standard_names=False):
+    """Calculate the zero point offsets for objects with spectroscopic redshifts
+
+    We want to have this available as an independent method so that it can be
+    called as a training stage prior to running at scale.
+
+    Parameters
+    ==========
+    config : dict of lephare.keyword
+        The configuration for the run
+    input : astropy.table.Table
+        The input table which must satisfy column name requirements depending
+        on other optional inputs.
+    col_names : list
+        Input catalogue column names. We will use ordering to determine meaning
+    standard_names : bool
+        If true we assume standard names.
+
+    Returns
+    =======
+    a1 : np.array
+        Offsets a1
+    a0 : np.array
+        Offsets a0
+    """
+    id, flux, flux_err, context, zspec, string_data = table_to_data(
+        config, input, col_names=col_names, standard_names=standard_names
+    )
+    ng = len(id)
+    n_filters = len(config["FILTER_LIST"].value.split(","))
+    print(f"Processing {ng} objects with {n_filters} bands")
+    photz = lp.PhotoZ(config)
+    # Loop over all ng galaxies!
+    srclist = []
+    for i in range(ng):
+        one_obj = lp.onesource(i, photz.gridz)
+        one_obj.readsource(str(i), flux[i], flux_err[i], context[i], zspec[i], string_data[i])
+        photz.prep_data(one_obj)
+        srclist.append(one_obj)
+
+    a0, a1 = photz.run_autoadapt(srclist)
+    offsets = ",".join(np.array(a0).astype(str))
+    offsets = "Offsets from auto-adapt: " + offsets + "\n"
+    print(offsets)
+    return a0, a1
 
 
 def table_to_data(config, input, col_names=None, standard_names=False):
@@ -126,6 +184,9 @@ def table_to_data(config, input, col_names=None, standard_names=False):
         for f in config["FILTER_LIST"].value.split(","):
             col_names += [f"f_{f}"]
             col_names += [f"ferr_{f}"]
+        col_names += ["context"]
+        col_names += ["zspec"]
+        col_names += ["string_data"]
     else:
         print("Using user columns from input table assuming they are in the standard order.")
         assert len(input.colnames) == 2 * n_filters + 4
