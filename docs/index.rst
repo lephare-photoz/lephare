@@ -34,3 +34,4 @@ a complete rewrite in C++ of the `Fortran code <https://www.cfht.hawaii.edu/~arn
    C API Reference <doxygen_output/c_lib/library_root>
    Python API Reference <autoapi/index>
    Known issues <known_issues>
+
