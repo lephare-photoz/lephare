@@ -1,8 +1,7 @@
 import os
 
-import pytest
-
 import lephare as lp
+import pytest
 from lephare._lephare import keyword
 
 TESTDIR = os.path.abspath(os.path.dirname(__file__))
