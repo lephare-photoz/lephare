@@ -126,3 +126,35 @@ class DataManager:
         work_sub_directories = ["filt", "lib_bin", "lib_mag", "zphota"]
         for sub_dir in work_sub_directories:
             os.makedirs(os.path.join(parent_dir, sub_dir), exist_ok=True)
+
+    def remove_empty_run_directories(self):
+        """Remove any empty run directories from the cache. If any file exists in
+        any of the subdirectories, the run directory is not considered empty.
+        Note that we generate a new run directory if the work directory is no longer
+        a symlink."""
+        default_os_cache = user_cache_dir("lephare", ensure_exists=True)
+        work_sub_directories = ["filt", "lib_bin", "lib_mag", "zphota"]
+        runs_dir = os.path.join(default_os_cache, "runs")
+        work_dir = os.path.join(default_os_cache, "work")
+        symlink_target = os.readlink(work_dir)
+
+        # Remove empty directories (only if all subdirs are empty)
+        for run_name in os.listdir(runs_dir):
+            # print(run_name)
+            run_dir = os.path.join(runs_dir, run_name)
+            empty = True
+            for sub_dir in work_sub_directories:
+                # print(os.listdir(os.path.join(run_dir, sub_dir)))
+                if len(os.listdir(os.path.join(run_dir, sub_dir))) > 0:
+                    empty = False
+                    break
+            if empty:
+                print(f"-> Removing empty run directory: {run_dir}")
+                for sub_dir in work_sub_directories:
+                    os.rmdir(os.path.join(run_dir, sub_dir))
+                os.rmdir(run_dir)
+
+        # If we removed the work dir's symlink target, replace with new run dir:
+        if symlink_target not in os.listdir(runs_dir):
+            print("Work directory is no longer a symlink. Creating new run.")
+            self.create_new_run()
