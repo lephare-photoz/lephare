@@ -71,7 +71,7 @@ class Runner:
 
         config = config_reader(filename)
         for line in config:
-            if line[0] != "#" and line != "\n":
+            if line[0] != "#" and line != "\n" and not line.isspace():
                 splits = line.split()
                 splits[0].lstrip()  # remove leading spaces
                 if splits[0] != "#":
