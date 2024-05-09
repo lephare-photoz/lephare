@@ -88,10 +88,22 @@ class DataManager:
                 be written to {self.lephare_work_dir}."""
             )
 
-    def create_new_run(self):
+    def create_new_run(self, descriptive_directory_name=None):
         """Create a timestamped directory to contain the output from the current run.
         The newly created timestamped directory is symlinked to the path defined
-        by the LEPHAREWORK environment variable."""
+        by the LEPHAREWORK environment variable.
+
+        Parameters
+        ----------
+        descriptive_directory_name: str
+            A descriptive name for the new run directory. If None, the directory
+            will be named with the current timestamp.
+
+        Returns
+        -------
+        run_directory : str
+            The path to the newly created run directory.
+        """
 
         lephare_work_dir = os.getenv("LEPHAREWORK", None)
 
@@ -106,9 +118,14 @@ class DataManager:
                                information on how to set up the directory structure."""
             )
 
-        # given that LEPHAREWORK is a symlink, create a new timestamped run directory
-        now = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
-        run_directory = os.path.realpath(f"{lephare_work_dir}/../{now}")
+        # given that LEPHAREWORK is a symlink, create a new descriptive or
+        # timestamped run directory.
+        if descriptive_directory_name is not None:
+            run_directory = os.path.realpath(f"{lephare_work_dir}/../{descriptive_directory_name}")
+        else:
+            now = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
+            run_directory = os.path.realpath(f"{lephare_work_dir}/../{now}")
+
         print(f"Creating new run directory at {run_directory}.")
         os.makedirs(run_directory, exist_ok=True)
 
@@ -119,6 +136,8 @@ class DataManager:
 
         # create the subdirectories in the new run directory
         self.create_work_subdirectories(run_directory)
+
+        return run_directory
 
     def create_work_subdirectories(self, parent_dir):
         """Creates the required work subdirectories in the parent directory if they
