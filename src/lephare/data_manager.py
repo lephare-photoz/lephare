@@ -163,11 +163,9 @@ class DataManager:
 
         # Remove empty directories (only if all subdirs are empty)
         for run_name in os.listdir(runs_dir):
-            # print(run_name)
             run_dir = os.path.join(runs_dir, run_name)
             empty = True
             for sub_dir in work_sub_directories:
-                # print(os.listdir(os.path.join(run_dir, sub_dir)))
                 if len(os.listdir(os.path.join(run_dir, sub_dir))) > 0:
                     empty = False
                     break
