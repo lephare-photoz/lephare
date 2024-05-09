@@ -122,6 +122,10 @@ class DataManager:
         # timestamped run directory.
         if descriptive_directory_name is not None:
             run_directory = os.path.realpath(f"{lephare_work_dir}/../{descriptive_directory_name}")
+            if os.path.isdir(run_directory):
+                raise FileExistsError(
+                    f"The directory {run_directory} already exists. Please choose another name."
+                )
         else:
             now = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
             run_directory = os.path.realpath(f"{lephare_work_dir}/../{now}")
