@@ -1,8 +1,7 @@
 import os
 
-import pytest
-
 import lephare as lp
+import pytest
 from lephare._lephare import keyword
 
 TESTDIR = os.path.abspath(os.path.dirname(__file__))
@@ -90,3 +89,77 @@ def test_runner_config_file_not_found():
     with pytest.raises(RuntimeError) as excinfo:
         _ = lp.Runner(config_keys=test_keys, config_file=config_file_path)
         assert excinfo.value == f"File {config_file_path} not found"
+
+
+def test_command_line_argument_parsing_basic(monkeypatch):
+    """Check to make sure that command line arguments are parsed correctly."""
+    test_keys = ["key1", "key2", "key3"]
+    monkeypatch.setattr("sys.argv", ["runner.py", "--key1", "foo", "--key2", "42"])
+    runner = lp.Runner(config_keys=test_keys)
+
+    assert runner.keymap["key1"].value == "foo"
+    assert runner.keymap["key2"].value == "42"
+    assert runner.keymap["key3"].value == ""
+    assert len(runner.keymap) == 3
+    assert runner.args.config == ""
+    assert runner.args.timer is False
+    assert runner.args.verbose is False
+
+
+def test_command_line_argument_parsing_with_known_args(monkeypatch):
+    """Check to make sure that command line arguments are parsed correctly when
+    including known arguments."""
+    test_keys = ["key1", "key2", "key3"]
+    config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
+    monkeypatch.setattr(
+        "sys.argv", ["runner.py", "--key1", "foo", "--key2", "42", "--config", config_file_path, "--timer"]
+    )
+    runner = lp.Runner(config_keys=test_keys)
+
+    assert runner.keymap["key1"].value == "foo"
+    assert runner.keymap["key2"].value == "42"
+    assert runner.keymap["key3"].value == ""
+    assert runner.keymap["QSO_FSCALE"].value == "1."
+    assert len(runner.keymap) > 3
+    assert runner.args.config == config_file_path
+    assert runner.args.timer is True
+    assert runner.args.verbose is False
+
+
+def test_command_line_argument_parsing_with_subclass(monkeypatch):
+    """Want to cover the case where the `typ` argument is passed to the runner."""
+
+    class Sedtolib(lp.Runner):
+        @property
+        def __class__(self):
+            return type("Sedtolib", (object,), {})
+
+    test_keys = ["key1", "key2", "key3"]
+    config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "runner.py",
+            "--typ",
+            "BAR",
+            "--key1",
+            "foo",
+            "--key2",
+            "42",
+            "--config",
+            config_file_path,
+            "--timer",
+        ],
+    )
+    runner = Sedtolib(config_keys=test_keys)
+
+    assert runner.keymap["key1"].value == "foo"
+    assert runner.keymap["key2"].value == "42"
+    assert runner.keymap["key3"].value == ""
+    assert runner.keymap["QSO_FSCALE"].value == "1."
+    assert len(runner.keymap) > 3
+    assert runner.args.config == config_file_path
+    assert runner.args.timer is True
+    assert runner.args.verbose is False
+    assert runner.args.typ == "BAR"
+    assert runner.typ == "BAR"
