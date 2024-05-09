@@ -172,7 +172,6 @@ class DataManager:
                     empty = False
                     break
             if empty:
-                print(f"-> Removing empty run directory: {run_dir}")
                 for sub_dir in work_sub_directories:
                     os.rmdir(os.path.join(run_dir, sub_dir))
                 os.rmdir(run_dir)
