@@ -124,6 +124,9 @@ def test_command_line_argument_parsing_with_known_args(monkeypatch):
     assert runner.args.config == config_file_path
     assert runner.args.timer is True
     assert runner.args.verbose is False
+    with pytest.raises(AttributeError) as excinfo:
+        _ = runner.args.typ
+        assert excinfo.value == "'Runner' object has no attribute 'typ'"
 
 
 def test_command_line_argument_parsing_with_subclass(monkeypatch):
