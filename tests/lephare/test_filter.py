@@ -2,15 +2,11 @@ import os
 
 import numpy as np
 import pytest
-
 from lephare import (
     Filter,
     flt,  # noqa: E402
 )
 from lephare.filterSvc import FilterSvc  # noqa: E402
-
-TESTDIR = os.path.abspath(os.path.dirname(__file__))
-TESTDATADIR = os.path.join(TESTDIR, "../data")
 
 
 @pytest.fixture
@@ -44,7 +40,7 @@ def test_filtersvc(test_data_dir, filter_file):
     assert len(fltvec) == 1
 
 
-def test_filter_base_class(test_data_dir):
+def test_filter_base_class(test_data_dir, set_env_vars):
     """Simple test to ensure that we can create an instance of a Filter object."""
     config_file_path = os.path.join(test_data_dir, "examples/COSMOS.para")
     filter = Filter(config_file=config_file_path)
@@ -52,7 +48,7 @@ def test_filter_base_class(test_data_dir):
     assert len(filter.keymap)
 
 
-def test_filter_with_kwargs(test_data_dir):
+def test_filter_with_kwargs(test_data_dir, set_env_vars):
     """Simple test to ensure that we can create an instance of a Filter object
     and that we can pass kwargs when instantiating the object."""
     config_file_path = os.path.join(test_data_dir, "examples/COSMOS.para")
