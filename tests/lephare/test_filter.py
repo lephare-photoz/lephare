@@ -3,6 +3,7 @@ import os
 import numpy as np
 import pytest
 from lephare import (
+    Filter,
     flt,  # noqa: E402
 )
 from lephare.filterSvc import FilterSvc  # noqa: E402
@@ -37,3 +38,23 @@ def test_filtersvc(test_data_dir, filter_file):
     # filters in COSMOS.para not available to the unit tests
     fltvec = FilterSvc.from_config(os.path.join(test_data_dir, "examples/COSMOS.para"))
     assert len(fltvec) == 1
+
+
+def test_filter_base_class(test_data_dir, set_env_vars):
+    """Simple test to ensure that we can create an instance of a Filter object."""
+    config_file_path = os.path.join(test_data_dir, "examples/COSMOS.para")
+    filter = Filter(config_file=config_file_path)
+    filter.run()
+    assert len(filter.keymap)
+
+
+def test_filter_with_kwargs(test_data_dir, set_env_vars):
+    """Simple test to ensure that we can create an instance of a Filter object
+    and that we can pass kwargs when instantiating the object."""
+    config_file_path = os.path.join(test_data_dir, "examples/COSMOS.para")
+    input_args = {"verbose": True, "TRANS_TYPE": 42}
+    filter = Filter(config_file=config_file_path)
+    filter.run(**input_args)
+    assert len(filter.keymap)
+    assert filter.verbose
+    assert filter.keymap["TRANS_TYPE"].value == "42"
