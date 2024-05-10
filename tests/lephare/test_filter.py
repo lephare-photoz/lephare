@@ -1,12 +1,16 @@
 import os
 
+import matplotlib
 import numpy as np
 import pytest
+
 from lephare import (
     Filter,
     flt,  # noqa: E402
 )
 from lephare.filterSvc import FilterSvc  # noqa: E402
+
+matplotlib.use("Agg")
 
 
 @pytest.fixture
@@ -58,3 +62,13 @@ def test_filter_with_kwargs(test_data_dir, set_env_vars):
     assert len(filter.keymap)
     assert filter.verbose
     assert filter.keymap["TRANS_TYPE"].value == "42"
+
+
+def test_flt_plot_filter_curve():
+    """Simple test that exercises the plot_filter_curve method."""
+    tophat = flt(100.0, 200.0, 50)
+    tophat.plot_filter_curve()
+    tophat.plot_filter_curve(normed=True)
+
+    # this is assertion doesn't mean anything, just here to assert _something_.
+    assert tophat.name == ""
