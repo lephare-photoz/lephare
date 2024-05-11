@@ -256,12 +256,14 @@ def load_sed_list(path_to_list, object_type, absolute_paths=False):
     old_dir = os.path.dirname(path_to_list)
     new_dir = f"{lp.dm.lephare_dir}/sed/{object_type}/{name}"
     new_list_file = f"{new_dir}/{name}.list"
+    # Create the config value that needs to be passed to lephare.
+    new_config_val = f"sed/{object_type}/{name}"
     if os.path.exists(new_list_file):
         print(
             f"List file already exists at {new_list_file}\n"
             "The SEDs may already have been loaded to the work directory."
         )
-        return new_list_file
+        return new_config_val
 
     # Get the list of sed files.
     with open(path_to_list, "r") as f:
@@ -294,4 +296,4 @@ def load_sed_list(path_to_list, object_type, absolute_paths=False):
     with open(new_list_file, "w") as file:
         # Define the data to be written
         file.write(new_list)
-    return new_list_file
+    return new_config_val
