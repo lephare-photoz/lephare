@@ -244,9 +244,9 @@ def load_sed_list(path_to_list, object_type, absolute_paths=False):
 
     Returns
     =======
-        new_list_file : str
+        new_config_val : str
             The location of the new list file with respect to current
-            LEPHAREWORK directory. This is the value to set
+            LEPHAREWORK directory. This is the value to set in the config.
     """
     # The type must by one of the three lephare standards
     assert object_type in object_types
