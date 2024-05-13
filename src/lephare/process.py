@@ -234,7 +234,7 @@ def load_sed_list(path_to_list, object_type, absolute_paths=False):
     Parameters
     ==========
     path_to_list : str
-        The path to the SED list file.
+        The path to the SED list file. This can be absolute or relative.
     object_type : {'STAR', 'GAL', 'QSO'}
         The type of object. Must be one of "STAR", "GAL", or "QSO".
     absolute_paths : bool
