@@ -44,6 +44,7 @@ development using the following commands:
 
 ```
 >> git submodule update --init --recursive
+>> conda install -c conda-forge cxx-compiler
 >> pip install -e .'[dev]'
 >> pre-commit install
 >> conda install pandoc
@@ -59,10 +60,6 @@ Notes:
    into documentation for ReadTheDocs works as expected. For more information, see
    the Python Project Template documentation on
    [Sphinx and Python Notebooks](https://lincc-ppt.readthedocs.io/en/latest/practices/sphinx.html#python-notebooks)
-
-## Citation
-
-If using this code in scientific research please cite the following papers:
 
 
 This project was automatically generated using the LINCC-Frameworks 
