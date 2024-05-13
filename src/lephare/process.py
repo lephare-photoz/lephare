@@ -5,8 +5,9 @@ import numpy as np
 
 import lephare as lp
 
-__all__ = ["process", "table_to_data", "calculate_offsets", "load_sed_list"]
+__all__ = ["object_types", "process", "table_to_data", "calculate_offsets", "load_sed_list"]
 
+object_types = ["STAR", "GAL", "QSO"]
 
 def process(config, input, col_names=None, standard_names=False, filename=None, offsets=None):
     """Run all required steps to produce photometric redshift estimates
@@ -247,7 +248,7 @@ def load_sed_list(path_to_list, object_type, absolute_paths=False):
             LEPHAREWORK directory. This is the value to set
     """
     # The type must by one of the three lephare standards
-    assert object_type in ["STAR", "GAL", "QSO"]
+    assert object_type in object_types
     # The original file must exist
     assert os.path.isfile(path_to_list)
 
