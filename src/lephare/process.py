@@ -281,7 +281,7 @@ def load_sed_list(path_to_list, object_type, absolute_paths=False):
     print(
         f"Creating new sed directory at {new_dir}.\n" "Attempting to copy sed files and list files in place."
     )
-    os.mkdirs(new_dir)
+    os.makedirs(new_dir)
 
     # Make the new list of files with paths from the type folder
     new_list = ""
