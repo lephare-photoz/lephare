@@ -9,6 +9,7 @@ __all__ = ["object_types", "process", "table_to_data", "calculate_offsets", "loa
 
 object_types = ["STAR", "GAL", "QSO"]
 
+
 def process(config, input, col_names=None, standard_names=False, filename=None, offsets=None):
     """Run all required steps to produce photometric redshift estimates
 
