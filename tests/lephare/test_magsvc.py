@@ -1,7 +1,6 @@
 import os
 
 import pytest
-
 from lephare import GalMag, MagSvc, QSOMag, StarMag
 
 

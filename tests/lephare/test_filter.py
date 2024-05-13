@@ -3,7 +3,6 @@ import os
 import matplotlib
 import numpy as np
 import pytest
-
 from lephare import (
     Filter,
     flt,  # noqa: E402
