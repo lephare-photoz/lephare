@@ -142,7 +142,7 @@ def test_run_zp_auto_adapt_yes(monkeypatch):
 
 
 def test_run_zp_auto_adapt_no(monkeypatch):
-    """Run the zphota class with AUTO_ADAPT toggled on."""
+    """Run the zphota class with AUTO_ADAPT toggled off."""
     config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
     monkeypatch.setattr("sys.argv", ["zphota.py", "--config", config_file_path, "--AUTO_ADAPT", "NO"])
     zp = Zphota(config_file=config_file_path)
