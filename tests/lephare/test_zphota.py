@@ -56,8 +56,9 @@ def test_override_config_file_with_command_line(monkeypatch):
     """Use the command line to feed in a config file, but override one of the values
     with a command line value.
 
-    This is the expected behavior based on L41-43 of runner.py (if config_keymap
-    is not None...)."""
+     This is the expected behavior, but only if we pass the config file in on the
+    command line. Otherwise, as we test in the last part of this, we do not override
+    the value."""
     config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
     monkeypatch.setattr("sys.argv", ["zphota.py", "--config", config_file_path, "--CAT_IN", "cat_foo"])
     zp = Zphota()
@@ -136,7 +137,7 @@ def test_run_zp_auto_adapt_yes(monkeypatch):
     """Run the zphota class with AUTO_ADAPT toggled on."""
     config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
     monkeypatch.setattr("sys.argv", ["zphota.py", "--config", config_file_path, "--AUTO_ADAPT", "YES"])
-    zp = Zphota(config_file=config_file_path)
+    zp = Zphota()
 
     run_configured_zp(zp, config_file_path)
 
@@ -145,6 +146,6 @@ def test_run_zp_auto_adapt_no(monkeypatch):
     """Run the zphota class with AUTO_ADAPT toggled off."""
     config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
     monkeypatch.setattr("sys.argv", ["zphota.py", "--config", config_file_path, "--AUTO_ADAPT", "NO"])
-    zp = Zphota(config_file=config_file_path)
+    zp = Zphota()
 
     run_configured_zp(zp, config_file_path)
