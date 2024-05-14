@@ -1,7 +1,6 @@
+import lephare as lp
 import matplotlib
 import numpy as np
-
-import lephare as lp
 
 matplotlib.use("Agg")
 
