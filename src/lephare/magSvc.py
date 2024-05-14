@@ -44,6 +44,9 @@ class MagSvc:
         elif objtype[0].upper() == "S":
             keywords += ["STAR_LIB_IN", "STAR_LIB_OUT"]
             instance = StarMag
+        else:
+            raise ValueError(f"Unknown objtype: {objtype}")
+
         keymap = read_config(config_file)
         keymap["t"] = keyword("t", objtype)
         keymap["c"] = keyword("c", config_file)
