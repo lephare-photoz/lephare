@@ -36,6 +36,9 @@ def process(config, input, col_names=None, standard_names=False, filename=None, 
     pdf : np.array
         Array of pdfs for each object
     """
+    # ensure that all values in the keymap are keyword objects
+    config = lp.all_types_to_keymap(config)
+
     id, flux, flux_err, context, zspec, string_data = table_to_data(
         config, input, col_names=col_names, standard_names=standard_names
     )
