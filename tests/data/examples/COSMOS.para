@@ -33,7 +33,7 @@ AGE_RANGE  0.,15.e9                                     # Age Min-Max in yr
 
 # 
 FILTER_REP   $LEPHAREDIR/filt           # Repository in which the filters are stored
-FILTER_LIST   subaru/IB527.pb 
+FILTER_LIST   subaru/IB527.pb,subaru/IB679.lowres
 # FILTER_LIST   cosmos/u_cfht.lowres,cosmos/u_new.pb,hsc/gHSC.pb,hsc/rHSC.pb,hsc/iHSC.pb,hsc/zHSC.pb,hsc/yHSC.pb,vista/Y.lowres,vista/J.lowres,vista/H.lowres,vista/K.lowres,cosmos/IB427.lowres,cosmos/IB464.lowres,cosmos/IB484.lowres,cosmos/IB505.lowres,cosmos/IB527.lowres,cosmos/IB574.lowres,cosmos/IB624.lowres,cosmos/IB679.lowres,cosmos/IB709.lowres,cosmos/IB738.lowres,cosmos/IB767.lowres,cosmos/IB827.lowres,cosmos/NB711.lowres,cosmos/NB816.lowres,vista/NB118.lowres,cosmos/irac_ch1.lowres,cosmos/irac_ch2.lowres,cosmos/irac_ch3.lowres,cosmos/irac_ch4.lowres 
 TRANS_TYPE	 1			# TRANSMISSION TYPE
                                         # 0[-def]: Energy, 1: Nb of photons
