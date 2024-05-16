@@ -40,7 +40,7 @@ def test_filtersvc(test_data_dir, filter_file):
         print("SVO not tested due to exception raised : server not reachable?")
     # filters in COSMOS.para not available to the unit tests
     fltvec = FilterSvc.from_config(os.path.join(test_data_dir, "examples/COSMOS.para"))
-    assert len(fltvec) == 1
+    assert len(fltvec) == 2
 
 
 def test_filter_base_class(test_data_dir, set_env_vars):
