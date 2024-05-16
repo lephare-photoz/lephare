@@ -1,8 +1,13 @@
+import os
+import shutil
+
 import numpy as np
 
 import lephare as lp
 
-__all__ = ["process", "table_to_data", "calculate_offsets"]
+__all__ = ["object_types", "process", "table_to_data", "calculate_offsets", "load_sed_list"]
+
+object_types = ["STAR", "GAL", "QSO"]
 
 
 def process(config, input, col_names=None, standard_names=False, filename=None, offsets=None):
@@ -31,6 +36,9 @@ def process(config, input, col_names=None, standard_names=False, filename=None, 
     pdf : np.array
         Array of pdfs for each object
     """
+    # ensure that all values in the keymap are keyword objects
+    config = lp.all_types_to_keymap(config)
+
     id, flux, flux_err, context, zspec, string_data = table_to_data(
         config, input, col_names=col_names, standard_names=standard_names
     )
@@ -219,3 +227,78 @@ def table_to_data(config, input, col_names=None, standard_names=False):
     flux[mask] = -99.0
     flux_err[mask] = -99.0
     return id, flux, flux_err, context, zspec, string_data
+
+
+def load_sed_list(path_to_list, object_type, absolute_paths=False):
+    """Take a sed list and move it with the sed files to the work directory.
+
+    We want to be able to load SED lists from other sources. These may use
+    absolute paths or relative to the list file. They must adopt the lepahre
+    standard which is relative to the sed/$TYPE/ directory
+
+    Parameters
+    ==========
+    path_to_list : str
+        The path to the SED list file. This can be absolute or relative.
+    object_type : {'STAR', 'GAL', 'QSO'}
+        The type of object. Must be one of "STAR", "GAL", or "QSO".
+    absolute_paths : bool
+        Set to True if list of absolute paths and not relative to list file
+
+    Returns
+    =======
+        new_config_val : str
+            The location of the new list file with respect to current
+            LEPHAREWORK directory. This is the value to set in the config.
+    """
+    # The type must by one of the three lephare standards
+    assert object_type in object_types
+    # The original file must exist
+    assert os.path.isfile(path_to_list)
+
+    # Set folder and file names.
+    name = path_to_list.split("/")[-1].split(".")[0]
+    old_dir = os.path.dirname(path_to_list)
+    new_dir = f"{lp.dm.lephare_dir}/sed/{object_type}/{name}"
+    new_list_file = f"{new_dir}/{name}.list"
+    # Create the config value that needs to be passed to lephare.
+    new_config_val = f"sed/{object_type}/{name}"
+    if os.path.exists(new_list_file):
+        print(
+            f"List file already exists at {new_list_file}\n"
+            "The SEDs may already have been loaded to the work directory."
+        )
+        return new_config_val
+
+    # Get the list of sed files.
+    with open(path_to_list, "r") as f:
+        lines = f.readlines()
+    sed_files = []
+    for line in lines:
+        # Ignore commented files
+        if line.strip()[0] != "#":
+            sed_files.append(line.replace("\n", ""))
+
+    # Make the folder to hold the seds.
+    assert not os.path.isdir(new_dir)
+    print(
+        f"Creating new sed directory at {new_dir}.\n" "Attempting to copy sed files and list files in place."
+    )
+    os.makedirs(new_dir)
+
+    # Make the new list of files with paths from the type folder
+    new_list = ""
+    for sed_file in sed_files:
+        new_file = f"{sed_file.split('/')[-1]}"
+        new_list += f"{name}/{new_file}\n"
+        # Copy files
+        if absolute_paths:
+            shutil.copyfile(sed_file, f"{new_dir}/{new_file}")
+        else:
+            shutil.copyfile(f"{old_dir}/{sed_file.split('/')[-1]}", f"{new_dir}/{new_file}")
+
+    # Open the list file for writing and add all the seds
+    with open(new_list_file, "w") as file:
+        # Define the data to be written
+        file.write(new_list)
+    return new_config_val

@@ -88,10 +88,22 @@ class DataManager:
                 be written to {self.lephare_work_dir}."""
             )
 
-    def create_new_run(self):
+    def create_new_run(self, descriptive_directory_name=None):
         """Create a timestamped directory to contain the output from the current run.
         The newly created timestamped directory is symlinked to the path defined
-        by the LEPHAREWORK environment variable."""
+        by the LEPHAREWORK environment variable.
+
+        Parameters
+        ----------
+        descriptive_directory_name: str
+            A descriptive name for the new run directory. If None, the directory
+            will be named with the current timestamp.
+
+        Returns
+        -------
+        run_directory : str
+            The path to the newly created run directory.
+        """
 
         lephare_work_dir = os.getenv("LEPHAREWORK", None)
 
@@ -106,9 +118,18 @@ class DataManager:
                                information on how to set up the directory structure."""
             )
 
-        # given that LEPHAREWORK is a symlink, create a new timestamped run directory
-        now = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
-        run_directory = os.path.realpath(f"{lephare_work_dir}/../{now}")
+        # given that LEPHAREWORK is a symlink, create a new descriptive or
+        # timestamped run directory.
+        if descriptive_directory_name is not None:
+            run_directory = os.path.realpath(f"{lephare_work_dir}/../{descriptive_directory_name}")
+            if os.path.isdir(run_directory):
+                raise FileExistsError(
+                    f"The directory {run_directory} already exists. Please choose another name."
+                )
+        else:
+            now = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
+            run_directory = os.path.realpath(f"{lephare_work_dir}/../{now}")
+
         print(f"Creating new run directory at {run_directory}.")
         os.makedirs(run_directory, exist_ok=True)
 
@@ -120,9 +141,40 @@ class DataManager:
         # create the subdirectories in the new run directory
         self.create_work_subdirectories(run_directory)
 
+        return run_directory
+
     def create_work_subdirectories(self, parent_dir):
         """Creates the required work subdirectories in the parent directory if they
         are not present. No action is taken if the subdirectories already exist."""
         work_sub_directories = ["filt", "lib_bin", "lib_mag", "zphota"]
         for sub_dir in work_sub_directories:
             os.makedirs(os.path.join(parent_dir, sub_dir), exist_ok=True)
+
+    def remove_empty_run_directories(self):
+        """Remove any empty run directories from the cache. If any file exists in
+        any of the subdirectories, the run directory is not considered empty.
+        Note that we generate a new run directory if the work directory is no longer
+        a symlink."""
+        default_os_cache = user_cache_dir("lephare", ensure_exists=True)
+        work_sub_directories = ["filt", "lib_bin", "lib_mag", "zphota"]
+        runs_dir = os.path.join(default_os_cache, "runs")
+        work_dir = os.path.join(default_os_cache, "work")
+        symlink_target = os.readlink(work_dir)
+
+        # Remove empty directories (only if all subdirs are empty)
+        for run_name in os.listdir(runs_dir):
+            run_dir = os.path.join(runs_dir, run_name)
+            empty = True
+            for sub_dir in work_sub_directories:
+                if len(os.listdir(os.path.join(run_dir, sub_dir))) > 0:
+                    empty = False
+                    break
+            if empty:
+                for sub_dir in work_sub_directories:
+                    os.rmdir(os.path.join(run_dir, sub_dir))
+                os.rmdir(run_dir)
+
+        # If we removed the work dir's symlink target, replace with new run dir:
+        if symlink_target not in os.listdir(runs_dir):
+            print("Work directory is no longer a symlink. Creating new run.")
+            self.create_new_run()

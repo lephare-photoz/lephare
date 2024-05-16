@@ -28,3 +28,10 @@ def data_registry_file(test_data_dir):
 def unset_env_vars():
     os.environ.pop("LEPHAREDIR", None)
     os.environ.pop("LEPHAREWORK", None)
+
+
+@pytest.fixture
+def set_env_vars():
+    test_dir = os.path.abspath(os.path.dirname(__file__))
+    os.environ["LEPHAREDIR"] = os.path.join(test_dir, "data")
+    os.environ["LEPHAREWORK"] = os.path.join(test_dir, "tmp")

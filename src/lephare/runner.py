@@ -44,7 +44,7 @@ class Runner:
         if config_keymap is None and config_file is None:
             # this only happens if the code is called as an executed script
             # Consider the keywords given in the line command
-            self.args = self.config_parser(config_keys)
+            self.args = self.config_parser()
             if self.timer:
                 self.start = time.time()
         # set verbosity. check keymap is not set on the commandline.
@@ -71,7 +71,7 @@ class Runner:
 
         config = config_reader(filename)
         for line in config:
-            if line[0] != "#" and line != "\n":
+            if line[0] != "#" and line != "\n" and not line.isspace():
                 splits = line.split()
                 splits[0].lstrip()  # remove leading spaces
                 if splits[0] != "#":
@@ -89,14 +89,8 @@ class Runner:
 
         self.keymap = keymap
 
-    def config_parser(self, config_keys):
-        """Create command line config parser from list of keys
-
-        Parameters
-        ----------
-        config_keys : `list`
-            List of all config keys
-        """
+    def config_parser(self):
+        """Create command line config parser from list of keys"""
         parser = argparse.ArgumentParser(add_help=False)
         # No required positional argument as in the C++ code, though in there
         # absence of the config file results in exiting. Need to understand whether

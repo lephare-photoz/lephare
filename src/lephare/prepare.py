@@ -5,7 +5,16 @@ import yaml
 
 import lephare as lp
 
-__all__ = ["prepare", "overwrite_config", "read_yaml_config", "write_yaml_config", "write_para_config"]
+__all__ = [
+    "prepare",
+    "overwrite_config",
+    "read_yaml_config",
+    "write_yaml_config",
+    "write_para_config",
+    "keymap_to_string_dict",
+    "string_dict_to_keymap",
+    "all_types_to_keymap",
+]
 
 
 def prepare(config, star_config=None, gal_config=None, qso_config=None):
@@ -29,6 +38,20 @@ def prepare(config, star_config=None, gal_config=None, qso_config=None):
     qso_config : dict of lephare.keyword or None
         Config values to override for QSO.
     """
+    # ensure that all values in the keymap are keyword objects
+    config = all_types_to_keymap(config)
+
+    if star_config is not None:
+        star_config = all_types_to_keymap(star_config)
+    if gal_config is not None:
+        gal_config = all_types_to_keymap(gal_config)
+    if qso_config is not None:
+        qso_config = all_types_to_keymap(qso_config)
+
+    # check that the config is string to keyword map
+    for k in config:
+        assert isinstance(config[k], lp.keyword)
+
     object_types = {"STAR": star_config, "GAL": gal_config, "QSO": qso_config}
     # Run the filter command
     # load filters from config
@@ -123,3 +146,30 @@ def write_para_config(keymap, para_file_path):
     with open(para_file_path, "w") as file_handle:
         file_handle.write(para_contents)
         file_handle.close()
+
+
+def keymap_to_string_dict(keymap):
+    """Convert a dictionary of keywords to a dictionary of strings"""
+    config_dict = {}
+    for k in keymap:
+        config_dict[keymap[k].name] = keymap[k].value
+    return config_dict
+
+
+def string_dict_to_keymap(string_dict):
+    """Convert a dictionary of strings to a dictionary of keywords"""
+    keymap = {}
+    for k in string_dict:
+        keymap[k] = lp.keyword(k, str(string_dict[k]))
+    return keymap
+
+
+def all_types_to_keymap(input_config):
+    """Convert all types of configs to keymap"""
+    keymap = {}
+    for k in input_config:
+        if type(input_config[k]) == lp.keyword:
+            keymap[k] = input_config[k]
+        else:
+            keymap[k] = lp.keyword(k, str(input_config[k]))
+    return keymap

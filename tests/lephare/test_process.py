@@ -24,8 +24,10 @@ def test_process(test_data_dir: str):
             reduced_cols.append(c)
         elif "IB527" in c:
             reduced_cols.append(c)
+        elif "IB679" in c:
+            reduced_cols.append(c)
     output, pdfs, zgrid = lp.process(config, input[reduced_cols])
     # Check one of the outputs (results are terrible with just one filter and sparse z grid)
-    assert np.isclose(output["Z_BEST"][0], 0.4)
+    assert np.isclose(output["Z_BEST"][0], 3.58577857627795)
     assert len(zgrid) == 51
-    assert np.isclose(np.sum(pdfs), 1017.1029983913761)
+    assert np.isclose(np.sum(pdfs), 1001.3400039697148)
