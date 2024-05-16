@@ -13,6 +13,7 @@ __all__ = [
     "write_para_config",
     "keymap_to_string_dict",
     "string_dict_to_keymap",
+    "all_types_to_keymap",
 ]
 
 
@@ -37,6 +38,16 @@ def prepare(config, star_config=None, gal_config=None, qso_config=None):
     qso_config : dict of lephare.keyword or None
         Config values to override for QSO.
     """
+    # ensure that all values in the keymap are keyword objects
+    config = all_types_to_keymap(config)
+
+    if star_config is not None:
+        star_config = all_types_to_keymap(star_config)
+    if gal_config is not None:
+        gal_config = all_types_to_keymap(gal_config)
+    if qso_config is not None:
+        qso_config = all_types_to_keymap(qso_config)
+
     # check that the config is string to keyword map
     for k in config:
         assert isinstance(config[k], lp.keyword)
@@ -150,4 +161,15 @@ def string_dict_to_keymap(string_dict):
     keymap = {}
     for k in string_dict:
         keymap[k] = lp.keyword(k, str(string_dict[k]))
+    return keymap
+
+
+def all_types_to_keymap(input_config):
+    """Convert all types of configs to keymap"""
+    keymap = {}
+    for k in input_config:
+        if type(input_config[k]) == lp.keyword:
+            keymap[k] = input_config[k]
+        else:
+            keymap[k] = lp.keyword(k, str(input_config[k]))
     return keymap
