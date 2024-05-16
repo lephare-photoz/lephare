@@ -120,6 +120,7 @@ def calculate_offsets(config, input, col_names=None, standard_names=False):
     a0 : np.array
         Offsets a0
     """
+    config = lp.all_types_to_keymap(config)
     id, flux, flux_err, context, zspec, string_data = table_to_data(
         config, input, col_names=col_names, standard_names=standard_names
     )
