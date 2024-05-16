@@ -1,3 +1,14 @@
+The full LePHARE user manual
+============================
+
+This appendix contains the orginal documentation alongside more details concerning the 
+internal structure of the code and how to run it using the legacy command line arguments.
+
+
+Some of this documentation is effectively deprecated and can refer back to previous
+versions going as far back as the original Fortran code. Take care when using 
+commands exactly as specified here while we work on updating the documentation.
+
 +---------------------------------------------------+
 |                                                   |
 +---------------------------------------------------+
@@ -7,14 +18,14 @@
 +---------------------------------------------------+
 |             PHotometric Analysis for              |
 +---------------------------------------------------+
-|             Redshift Estimations                  |
+|             Redshift Estimation                  |
 +---------------------------------------------------+
 |                                                   |
 +---------------------------------------------------+
 
 | 
 
-Stéphane ARNOUTS & Olivier ILBERT
+Stéphane Arnouts & Olivier Ilbert
 
 | 
 
@@ -26,7 +37,7 @@ Laboratoire d’Astrophysique de Marseille
 
 | 
 
-Johann COHEN-TANUGI
+Johann Cohen-Tanugi
 
 | 
 
@@ -40,12 +51,12 @@ Laboratoire Univers et Particules de Montpellier
 .. _`sect:starter`:
 
 Getting started
-===============
+---------------
 
 .. _`subsect:introduction`:
 
 Introduction
-------------
+^^^^^^^^^^^^
 
 *LePHARE++* is a set of ``C++`` programs to compute photometric
 redshifts ( :math:`z_\mathrm{phot}` ) for galaxies and AGN, and galaxy
@@ -73,10 +84,9 @@ templates are fitted too. It is based on the previous Fortran version of
 .. _`subsect:installation`:
 
 Download and installation
--------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
-| The basic package is available from the website:
-  http://still.to.be.done.fr. Each file is briefly described in Appendix
+| The basic package is available from GitHub. Each file is briefly described in Appendix
   A. Additional SED libraries (in separate tarballs) are also available
   on the same webpage.
 | Before starting, you must set two environment variables:
@@ -120,7 +130,7 @@ Download and installation
   result in critical errors.
 
 Example with one run
---------------------
+^^^^^^^^^^^^^^^^^^^^
 
 | We provide an example of the whole procedure for a test catalog
   included in the package in
@@ -132,7 +142,7 @@ Example with one run
   application. All the key steps are considered.
 
 Structure
----------
+^^^^^^^^^
 
 The structure of the package is illustrated in Fig `1 <#fig:skim>`__.
 Each step is described in the following sections. First, one has to
@@ -145,11 +155,15 @@ emission lines to each SED in the library (program ``mag_gal``). The
 main *LePHARE++* program (program ``zphota``) will use the file
 containing such a grid to fit the photometry from the input catalog.
 
-.. container:: float
-   :name: fig:skim
+.. image:: figures/lephare_skim.png
+  :width: 700
+  :alt: Alternative text
+  :name: fig:skim
+
+
 
 Syntax
-------
+^^^^^^
 
 | All the programs in the suite can be run from a Unix shell with the
   following syntax:
@@ -198,10 +212,10 @@ with the following rules:
 .. _models:
 
 Rest-frame SED libraries through ``sedtolib``
-=============================================
+---------------------------------------------
 
 Overview
---------
+^^^^^^^^
 
 A set of libraries for stars, galaxies, and quasars are available in
 $LEPHAREDIR/sed/STAR, $LEPHAREDIR/sed/GAL, $LEPHAREDIR/sed/QSO [2]_
@@ -219,7 +233,7 @@ can also be used by adding a specific character after the file name in
 the SED list file (see end of section 2.2.2).
 
  ``sedtolib`` program 
-----------------------
+^^^^^^^^^^^^^^^^^^^^^
 
 The program **sedtolib** is used to build the different STAR, QSO and
 GALAXY libraries from a list of SED files. The goal of this program is
@@ -397,7 +411,7 @@ they must be in :math:`\lambda(\AA)`, flux[:math:`erg/s/\AA/cm^2`], with
 increasing :math:`\lambda`.
 
 example
--------
+^^^^^^^
 
 | G **-c** zphot.para **-GAL_SED**
   $LEPHAREDIR/sed/GAL/CFHTLS_SED/CFHTLS_MOD.list **-GAL_LIB** LIB_CFHTLS
@@ -429,7 +443,7 @@ example
 .. _`sec:filter`:
 
 Filters 
-========
+-------
 
 Several sets of filters, from different telescopes, are available in the
 directory ``$LEPHAREDIR/filt/``. You could find most of the standard
@@ -442,7 +456,7 @@ keyword, you could indicate if you prefer to store the filters in
 another directory.
 
 Description and outputs
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 
 | The program **filter** puts together a list of filter response curves,
   and applies some transformations according to the nature of the
@@ -451,7 +465,7 @@ Description and outputs
 .. _syntax-and-parameter-values-1:
 
 Syntax and parameter values
----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 | The syntax is : :math:`\%` **filter -c** zphot.para
 | The following parameters are considered:
@@ -503,7 +517,7 @@ Syntax and parameter values
 .. _`sec:filter`:
 
 Parameter descriptions
-----------------------
+^^^^^^^^^^^^^^^^^^^^^^
 
 | : all the filter names must be separated by a comma. We assume that
   all the filter files are located in the directory
@@ -571,7 +585,7 @@ Parameter descriptions
   This may reflect the SCUBA calibration.
 
 Filter informations
--------------------
+^^^^^^^^^^^^^^^^^^^
 
 Standard filter informations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -714,7 +728,7 @@ vista/K                0.100            0.118    0.364
 .. _`sec:filtcalib`:
 
 Application to long wavelengths 
---------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 LEPHARE has been developped for the optical-NIR domain but can be used
 at shorter (UV) and longer wavelengths (FIR, submm and radio). In
@@ -829,7 +843,7 @@ correction is :
   calibration scheme, a correction up to 7%, may be applied.
 
 Requirement to create a new filter
-----------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 | Filters are ASCII files with the following format :
 | In first row : #   SHORT_NAME_of_FILTER      ADD_COMMENTS
@@ -856,12 +870,12 @@ Requirement to create a new filter
 .. _`sec:mag_gal`:
 
 Predicted magnitudes for galaxy/qso/stars libraries : **mag_gal**
-=================================================================
+-----------------------------------------------------------------
 
 .. _description-and-outputs-1:
 
 Description and outputs
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 
 | The **mag_gal** program predicts the magnitudes expected for
   GALAXY/QSO/STAR templates at various redshifts. It establishes the
@@ -881,7 +895,7 @@ Description and outputs
 .. _syntax-and-parameter-values-2:
 
 Syntax and parameter values
----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 | The usual syntax : :math:`\%` **mag_gal -t** G (or Q, or S) **-c**
   zphot.para
@@ -1034,7 +1048,7 @@ Syntax and parameter values
 +-----------------+------------------+----------+------------------+
 
 The extinction laws and dust emission
--------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 | A set of extinction laws are available in the directory
   (``$LEPHAREDIR/ext/``). Several extinction laws can be used and set up
@@ -1060,7 +1074,7 @@ The extinction laws and dust emission
   templates (but not the final display).
 
 The Emission lines
-------------------
+^^^^^^^^^^^^^^^^^^
 
 The role of nebular emission lines in medium- and even broad-band
 filters has been shown to be essential in several cases (Ilbert et 2009,
@@ -1115,7 +1129,7 @@ subset of models (see ADD_EMLINES option in Section `5.4 <#fit>`__).
 This option is not appropriated for the quasars samples.
 
 ASCII ouput file
-----------------
+^^^^^^^^^^^^^^^^
 
 | An output file is produces in the current directory if **-LIB_ASCII
   YES**. It has the same root name as the binary file with extension
@@ -1130,7 +1144,7 @@ ASCII ouput file
   correction in all filters.
 
 Sizing the library
-------------------
+^^^^^^^^^^^^^^^^^^
 
 | You must be aware that the size of the library becomes quickly huge if
   you do not pay attention. You can estimate its size by considering the
@@ -1143,7 +1157,7 @@ Sizing the library
 .. _example-1:
 
  Example
---------
+^^^^^^^^
 
 | **mag_gal -t Q -c** zphot.para **-FILTER_FILE HDF.filt**
   **-QSO_LIB_IN** LIB_QSO **-QSO_LIB_OUT** QSO_HDF **-EXTINC_LAW** NONE
@@ -1175,7 +1189,7 @@ Sizing the library
   current directory.
 
 The photometric redshift program: ``zphota``
-============================================
+--------------------------------------------
 
 | The program ``zphota`` performs a :math:`\chi^2`-based analysis,
   fitting the predicted flux (built in Sect. `4 <#sec:mag_gal>`__) to
@@ -1213,7 +1227,7 @@ The photometric redshift program: ``zphota``
 .. _lib:
 
 Input libraries
----------------
+^^^^^^^^^^^^^^^
 
 | The principle of SED-fitting is to compare observed flux with
   predicted ones. We can extract from this comparison the photometric
@@ -1242,7 +1256,7 @@ Input libraries
 .. _input:
 
 Input file
-----------
+^^^^^^^^^^
 
 | This section describes how to manage the input file.
 | **CAT_IN** specifies the location and name of the input file.
@@ -1337,7 +1351,7 @@ Filter Context (:math:`2^{(i-1)}`) 1 2 4 8 16 32 64 128
 .. _output:
 
 Output files
-------------
+^^^^^^^^^^^^
 
 | The name of the output file is given with the ``CAT_OUT`` keyword.
 | The format of the output file is flexible. All the columns that the
@@ -1520,7 +1534,7 @@ must be defined, all the other keywords are optional.
 .. _fit:
 
 Managing filters used in the fit
---------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 | The choice of the filters is defined by the context value for each
   object (see `5.2.1 <#context>`__). This context is given in the input
@@ -1653,7 +1667,7 @@ Managing filters used in the fit
 | 
 
 Expanding photometric uncertainties
------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 | By definition the :math:`\chi^2` procedure is sensitive to the
   photometric errors, so it is important to provide reliable
@@ -1666,7 +1680,7 @@ Expanding photometric uncertainties
   redshift.
 
 Adding prior information
-------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 | Additional constraints can be applied to the :math:`\chi^2` fitting
   procedure with the options below.
@@ -1731,7 +1745,7 @@ Adding prior information
 +----------------+----------+------------------+------------------+
 
 Adaptive method
----------------
+^^^^^^^^^^^^^^^
 
 | In the c++ version, we provide the possibility to train the
   zero-points of the photometric catalogue. While this training is less
@@ -1823,7 +1837,7 @@ Adaptive method
 +----------------+----------------+----------------+----------------+
 
 Analysing the PDF
------------------
+^^^^^^^^^^^^^^^^^
 
 We have two methods to extract the information from the fit. Either the
 profile likelihood which was the original method in the fortran version
@@ -1938,7 +1952,7 @@ PDF.
 | 
 
 Physical parameters
--------------------
+^^^^^^^^^^^^^^^^^^^
 
 | After computing the photometric redshifts, other SED fittings can be
   applied to derive FIR properties, absolute magnitudes or to get
@@ -2272,12 +2286,12 @@ the luminosity function in a given reference band.
 +----------------+----------------+----------------+----------------+
 
 The output files and parameters 
-================================
+-------------------------------
 
 .. _`sec:outp`:
 
 The output parameters
----------------------
+^^^^^^^^^^^^^^^^^^^^^
 
 +---------------+-------------------------------------------+---+---+
 | IDENT         | Original IDENT                            |   |   |
@@ -2564,8 +2578,8 @@ The output parameters
 |               | input file                                |   |   |
 +---------------+-------------------------------------------+---+---+
 
-Appendice A : Content of the main tar file (lephare_main.tar.gz)
-================================================================
+Appendix A : Content of the main tar file (lephare_main.tar.gz)
+----------------------------------------------------------------
 
 +-------------------------+-------------------------------------------+
 | $LEPHAREDIR/source/ :   | fortran source files (\*.f)               |
@@ -2663,8 +2677,8 @@ Appendice A : Content of the main tar file (lephare_main.tar.gz)
 |                         | and predefined input files                |
 +-------------------------+-------------------------------------------+
 
-Appendice B : keyword differences between the Fortran and the C++ version
-=========================================================================
+Appendix B : keyword differences between the Fortran and the C++ version
+-------------------------------------------------------------------------
 
 | We list here the keywords with a new format that you should modify to
   use the c++ version. We don’t list new keywords which correspond to
