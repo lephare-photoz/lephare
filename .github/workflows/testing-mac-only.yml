@@ -13,6 +13,13 @@ jobs:
   build:
 
     runs-on: ${{ matrix.os }}
+    env:
+      MACOSX_DEPLOYMENT_TARGET: "10.15"
+      PATH: "$(brew --prefix llvm)/bin:$PATH"
+      CFLAGS: "-I /usr/local/include -I/usr/local/opt/llvm/include"
+      CXXFLAGS: "-I /usr/local/include -I/usr/local/opt/llvm/include -I/opt/homebrew/opt/libomp/include -I/opt/homebrew/opt/llvm/include -I/usr/local/opt/libomp/include"
+      LDFLAGS: "-L/usr/local/opt/libomp/lib -L/opt/homebrew/opt/libomp/lib -L /usr/local/lib -L/usr/local/opt/llvm/lib"
+
     strategy:
       matrix:
         os: [macos-14, macos-12]
@@ -31,6 +38,7 @@ jobs:
     - name: Install dependencies
       run: |
         brew install llvm libomp
+
         python -m pip install --upgrade pip
         python -m pip install .[dev]
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
