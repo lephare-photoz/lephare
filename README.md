@@ -20,8 +20,7 @@ The simplest way to install lephare is using pip:
 pip install lephare
 ```
 
-
-If you prefer to use binary executables from the command line you may wish to conduct a [legacy installation](https://gitlab.lam.fr/Galaxies/LEPHARE/).  
+If you have any problems using pip install please consider creating an issue and informing us what system you are using in order to help us improve robustness.
 
 ## Example usage
 
