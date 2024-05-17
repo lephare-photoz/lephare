@@ -48,18 +48,22 @@ to create and activate a new environment.
 
 .. tabs::
 
-    .. code-tab:: Linux
+    .. tab:: bash
 
-        >> conda create env -n <env_name> python=3.10
-        >> conda activate <env_name>
-        >> conda install cxx-compilers
+        .. code-block:: bash
 
-    .. code-tab:: OSX
+            >> conda create env -n <env_name> python=3.10
+            >> conda activate <env_name>
+            >> conda install cxx-compilers
 
-        >> conda create env -n <env_name> python=3.10
-        >> conda activate <env_name>
-        >> conda install cxx-compilers
-        >> brew install llvm libomp
+    .. tab:: OSX
+
+        .. code-block:: bash
+
+            >> conda create env -n <env_name> python=3.10
+            >> conda activate <env_name>
+            >> conda install cxx-compilers
+            >> brew install llvm libomp
 
 
 Once you have created a new environment, you can install this project for local 
