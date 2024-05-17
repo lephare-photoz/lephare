@@ -62,6 +62,7 @@ Notes:
 
    Home page <self>
    Getting Started <getting_started>
+   Architecture overview<lephare_architecture>
    Notebooks <notebooks>
    Legacy installation <legacy_install>
    Keywords <keywords>
