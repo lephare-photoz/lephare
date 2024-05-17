@@ -1,5 +1,5 @@
 # ruff: noqa
-# These historical examples are note maintained or covered by tests or linting!
+# These historical examples are not maintained or covered by tests or linting!
 
 from math import *
 from sys import *
