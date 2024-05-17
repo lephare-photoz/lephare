@@ -37,7 +37,7 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
-    "sphinx_code_tabs",
+    "sphinx_tabs.tabs",
 ]
 
 extensions.append("autoapi.extension")
