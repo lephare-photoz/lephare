@@ -22,6 +22,7 @@ from ._pdf import *
 from ._photoz import *
 from ._spec import *
 from .data_retrieval import *
+from .default_cosmos_config import *
 from .filter import *
 from .filterSvc import *
 from .mag_gal import *

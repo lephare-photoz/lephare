@@ -10,6 +10,10 @@ def test_prepare(test_data_dir):
     os.environ["LEPHAREWORK"] = os.path.join(test_dir, "../tmp")
     config = lp.read_config(os.path.join(test_data_dir, "examples/COSMOS.para"))
     lp.prepare(config)
+    # Check the default config is consistent
+    default_config = lp.default_cosmos_config
+    assert config["Z_STEP"] != default_config["Z_STEP"]
+    assert default_config["FILTER_REP"] == str(os.path.join(test_data_dir, "filt"))
     # Check it made the galaxy binary file
     assert os.path.exists(os.path.join(test_dir, "../tmp/lib_mag/CE_COSMOS.bin"))
 
