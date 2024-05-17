@@ -84,8 +84,8 @@ def test_create_new_run_creates_symlink(unset_env_vars):
             assert os.path.isdir(os.path.join(tmpdir, "work"))
             # Check the symlink exists
             assert os.path.islink(os.path.join(tmpdir, "work"))
-            assert os.readlink(os.path.join(tmpdir, "work")) == os.path.join(
-                tmpdir, "runs", os.listdir(os.path.join(tmpdir, "runs"))[0]
+            assert os.path.realpath(os.path.join(tmpdir, "work")) == os.path.realpath(
+                os.path.join(tmpdir, "runs", os.listdir(os.path.join(tmpdir, "runs"))[0])
             )
 
 

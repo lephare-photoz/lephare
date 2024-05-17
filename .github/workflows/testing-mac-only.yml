@@ -1,0 +1,66 @@
+# This workflow will install Python dependencies, run tests and report code coverage with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Unit test and code coverage on MacOS
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-14, macos-12]
+        python-version: ['3.10']
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install brew dependencies
+      run: |
+        brew install llvm libomp
+    - uses: mamba-org/setup-micromamba@v1
+      with:
+        environment-name: lephare-env
+        create-args: >-
+          python=${{ matrix.python-version }}
+          cxx-compiler
+        condarc: |
+          channels:
+            - conda-forge
+        init-shell: bash
+
+    - name: Install lephare and dependencies
+      run: |
+
+        export MACOSX_DEPLOYMENT_TARGET="10.15"
+        export PATH="$(brew --prefix llvm)/bin:$PATH"
+        export CFLAGS="-I /usr/local/include -I/usr/local/opt/llvm/include"
+        export CXXFLAGS="-I /usr/local/include -I/usr/local/opt/llvm/include -I/opt/homebrew/opt/libomp/include -I/opt/homebrew/opt/llvm/include -I/usr/local/opt/libomp/include"
+        export LDFLAGS="-L/usr/local/opt/libomp/lib -L/opt/homebrew/opt/libomp/lib -L /usr/local/lib -L/usr/local/opt/llvm/lib"
+
+        python -m pip install --upgrade pip
+        python -m pip install .[dev]
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    - uses: maxim-lobanov/setup-xcode@v1
+      if: matrix.os == 'macos-14'
+      with:
+        xcode-version: '15.1'
+
+    - name: Run unit tests with pytest
+      run: |
+        python -m pytest -s tests --cov=lephare --cov-report=lcov
+
