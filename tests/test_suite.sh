@@ -1,50 +1,48 @@
 #!/usr/bin/env bash
 
+# Set the number of threads for OpenMP
 export OMP_NUM_THREADS='30'
-tmpdir=$(python -c "import lephare as lp; print(f'{lp.LEPHAREDIR}')" | tail -n 1) # use tail to ignore the on-import print statement
-tmpwork=$(python -c "import lephare as lp; print(f'{lp.dm.LEPHAREWORK}')" | tail -n 1)
-export LEPHAREDIR=$tmpdir
-export LEPHAREWORK=$tmpwork
 
-echo "LEPHAREDIR:" $LEPHAREDIR # TODO remove these at the end
-echo "LEPHAREWORK:" $LEPHAREWORK
+# Set the LEPHAREDIR and LEPHAREWORK variables
+export LEPHAREDIR=$(python -c "import lephare as lp; print(f'{lp.LEPHAREDIR}')" | tail -n 1) # use tail to ignore the on-import print statement
+export LEPHAREWORK=$(python -c "import lephare as lp; print(f'{lp.dm.LEPHAREWORK}')" | tail -n 1) # use tail to ignore the on-import print statement
 
-# TODO check the paths in the files themselves - as in, the list files and such
+# Set catalog and config file names
+CAT_IN="$LEPHAREDIR/examples/COSMOS.in"
+CAT_OUT="zphot_short.out"
+CONFIG_FILE="$LEPHAREDIR/examples/COSMOS.para"
+
+# For debugging:
+# echo "LEPHAREDIR:" $LEPHAREDIR 
+# echo "LEPHAREWORK:" $LEPHAREWORK
+# echo "CONFIG_FILE:" $CONFIG_FILE
 
 # Get the data
-#curl -s -o ${LEPHAREDIR}/COSMOS.in https://raw.githubusercontent.com/lephare-photoz/lephare-data/main/examples/COSMOS.in
-echo "STARTING DOWNLOAD"
-if [ -d "$LEPHAREDIR" ]; then
-    curl -o ${LEPHAREDIR}/examples/COSMOS.in https://raw.githubusercontent.com/lephare-photoz/lephare-data/main/examples/COSMOS.in
-    if [ $? -eq 0 ]; then
-        echo "Download successful."
-    else
-        echo "Download failed."
-    fi
-else
-    echo "Directory $LEPHAREDIR does not exist."
-fi
+echo "Downloading to $CAT_IN..."
+curl -s -o $CAT_IN https://raw.githubusercontent.com/lephare-photoz/lephare-data/main/examples/COSMOS.in
 
-# Variables
-export CONFIG_FILE="$LEPHAREDIR/examples/COSMOS.para"
-
-# Test suite commands
+# Run commands
+echo "Running filter..."
 filter -c $CONFIG_FILE
 
-# sedtolib -c ./COSMOS.para -t S --STAR_SED $LEPHAREDIR/examples/STAR_MOD_ALL.list --LIB_ASCII YES
-# mag_gal -c ./COSMOS.para -t S --LIB_ASCII YES --STAR_LIB_OUT ALLSTAR_COSMOS
+echo "Running sedtolib and mag_gal for stars..."
+sedtolib -c $CONFIG_FILE -t S --STAR_SED $LEPHAREDIR/examples/STAR_MOD_ALL.list --LIB_ASCII YES
+mag_gal  -c $CONFIG_FILE -t S --LIB_ASCII YES --STAR_LIB_OUT ALLSTAR_COSMOS
 
-# sedtolib -c $LEPHAREDIR/examples/COSMOS.para -t Q --QSO_SED  $LEPHAREDIR/sed/QSO/SALVATO09/AGN_MOD.list
-# mag_gal -c $LEPHAREDIR/examples/COSMOS.para -t Q --MOD_EXTINC 0,1000  --EB_V 0.,0.1,0.2,0.3 --EXTINC_LAW SB_calzetti.dat --LIB_ASCII NO  --Z_STEP 0.04,0,6 --LIB_ASCII YES
+echo "Running sedtolib and mag_gal for QSOs..."
+sedtolib -c $CONFIG_FILE -t Q --QSO_SED  $LEPHAREDIR/sed/QSO/SALVATO09/AGN_MOD.list
+mag_gal  -c $CONFIG_FILE -t Q --MOD_EXTINC 0,1000  --EB_V 0.,0.1,0.2,0.3 --EXTINC_LAW SB_calzetti.dat --LIB_ASCII NO  --Z_STEP 0.04,0,6 --LIB_ASCII YES
 
-# sedtolib -c $LEPHAREDIR/examples/COSMOS.para -t G --GAL_SED $LEPHAREDIR/examples/COSMOS_MOD.list  --GAL_LIB LIB_VISTA
-# mag_gal  -c $LEPHAREDIR/examples/COSMOS.para -t G --GAL_LIB_IN LIB_VISTA --GAL_LIB_OUT VISTA_COSMOS_FREE --MOD_EXTINC 18,26,26,33,26,33,26,33  --EXTINC_LAW SMC_prevot.dat,SB_calzetti.dat,SB_calzetti_bump1.dat,SB_calzetti_bump2.dat  --EM_LINES EMP_UV  --EM_DISPERSION 0.5,0.75,1.,1.5,2. --Z_STEP 0.04,0,6 --LIB_ASCII YES
+echo "Running sedtolib and mag_gal for galaxies..."
+sedtolib -c $CONFIG_FILE -t G --GAL_SED $LEPHAREDIR/examples/COSMOS_MOD.list  --GAL_LIB LIB_VISTA
+mag_gal  -c $CONFIG_FILE -t G --GAL_LIB_IN LIB_VISTA --GAL_LIB_OUT VISTA_COSMOS_FREE --MOD_EXTINC 18,26,26,33,26,33,26,33  --EXTINC_LAW SMC_prevot.dat,SB_calzetti.dat,SB_calzetti_bump1.dat,SB_calzetti_bump2.dat  --EM_LINES EMP_UV  --EM_DISPERSION 0.5,0.75,1.,1.5,2. --Z_STEP 0.04,0,6 --LIB_ASCII YES
 
-# cat_out=zphot_short.out
+echo "Running zphota..."
+zphota -c $CONFIG_FILE --CAT_IN $CAT_IN --CAT_OUT $CAT_OUT --ZPHOTLIB VISTA_COSMOS_FREE,ALLSTAR_COSMOS,QSO_COSMOS  --ADD_EMLINES 0,100 --AUTO_ADAPT YES   --Z_STEP 0.04,0,6 --CAT_LINES 1,100 --SPEC_OUT YES --PARA_OUT $LEPHAREDIR/examples/output.para --VERBOSE NO --ZFIX NO --PDZ_OUT $LEPHAREWORK/zphota/
 
-# zphota -c $LEPHAREDIR/examples/COSMOS.para --CAT_IN $LEPHAREDIR/examples/COSMOS.in --CAT_OUT $cat_out --ZPHOTLIB VISTA_COSMOS_FREE,ALLSTAR_COSMOS,QSO_COSMOS  --ADD_EMLINES 0,100 --AUTO_ADAPT YES   --Z_STEP 0.04,0,6 --CAT_LINES 1,100 --SPEC_OUT YES --PARA_OUT $LEPHAREDIR/examples/output.para --VERBOSE NO --ZFIX NO --PDZ_OUT $LEPHAREWORK/zphota/
+echo "Generating figures and specs..."
+python $LEPHAREDIR/examples/figuresLPZ.py $CAT_OUT
+python $LEPHAREDIR/examples/spec.py *.spec -d pdf -o $LEPHAREWORK/zphota/spec
 
-# python $LEPHAREDIR/examples/figuresLPZ.py $cat_out
-# python $LEPHAREDIR/examples/spec.py *.spec -d pdf -o $LEPHAREWORK/zphota/spec
-
-# mv $cat_out Id*.spec figuresLPZ.pdf $LEPHAREWORK/zphota/
+echo "Moving output files..."
+mv $CAT_OUT Id*.spec figuresLPZ.pdf $LEPHAREWORK/zphota/
