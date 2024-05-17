@@ -16,22 +16,27 @@ Lephare can be installed with pip:
 
 Example Usage
 *************
-The following example demonstrates how to use Lephare to perform a simple end-to-end flow.
+This is the most basic example of running lephare end-to-end.
 
-.. 
-    TODO - include Minimal_photoz_run notebook
 
-.. 
-    Also - do we include the little snippet?
+.. codeblock
+
     import lephare as lp
     lp.prepare()
     lp.process()
-    matplotlib - plot something <>
+    matplotlib -> plot something
 
-Lephare can be used either via a Jupyter notebook or from the command line. However,
-the use of the command line executables are generally for legacy purposes.
 
-.. TODO - include a link to test_suite.sh?
+To ensure that the installation was successful, this workflow should produce a reasonable 
+plot that demonstrates a  more or less 1 to 1 relationship between the spectroscopic 
+redshift and predicted redshift.
+
+For further example usage, see the Minimal_photoz_run notebook.
+
+.. note
+
+    Lephare can be used either via a Jupyter notebook or from the command line. 
+    However, the use of the command line executables are generally for legacy purposes.
 
 
 Developer guide
@@ -41,15 +46,21 @@ a virtual environment. LINCC-Frameworks engineers primarily use conda to manage
 virtual environments. If you have conda installed locally, you can run the following 
 to create and activate a new environment.
 
-.. code-block:: bash
+.. tabs::
 
-    >> conda create env -n <env_name> python=3.10
-    >> conda activate <env_name>
-    >> conda install cxx-compilers
+    .. code-tab:: Linux
 
-.. 
-    TODO - tabs, and the following line for OSX
-    brew install llvm libomp
+        >> conda create env -n <env_name> python=3.10
+        >> conda activate <env_name>
+        >> conda install cxx-compilers
+
+    .. code-tab:: OSX
+
+        >> conda create env -n <env_name> python=3.10
+        >> conda activate <env_name>
+        >> conda install cxx-compilers
+        >> brew install llvm libomp
+
 
 Once you have created a new environment, you can install this project for local 
 development using the following commands:
@@ -67,13 +78,14 @@ If you can’t find a solution, feel free to `create an issue in the lephare rep
 <https://github.com/lephare-photoz/lephare/issues>`_.
 
 .. note::
-    
-    1. The single quotes around `'[dev]'` may not be required for your operating system.
-    2. `pre-commit install` will initialize pre-commit for this local repository, 
+    The single quotes around `'[dev]'` may not be required for your operating system.
+
+    `pre-commit install` will initialize pre-commit for this local repository, 
     so that a set of tests will be run prior to completing a local commit. For more 
     information, see the Python Project Template documentation on `pre-commit 
     <https://lincc-ppt.readthedocs.io/en/latest/practices/precommit.html>`_.
-    3. Installing `pandoc` allows you to verify that automatic rendering of Jupyter 
+
+    Installing `pandoc` allows you to verify that automatic rendering of Jupyter 
     notebooks into documentation for ReadTheDocs works as expected. For more information, 
     see the Python Project Template documentation on `Sphinx and Python Notebooks 
     <https://lincc-ppt.readthedocs.io/en/latest/practices/sphinx.html#python-notebooks>`_.

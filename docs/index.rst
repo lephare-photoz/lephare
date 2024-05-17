@@ -61,6 +61,7 @@ Notes:
    :hidden:
 
    Home page <self>
+   Getting Started <getting_started>
    Notebooks <notebooks>
    Legacy installation <legacy_install>
    Keywords <keywords>

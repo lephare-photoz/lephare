@@ -31,7 +31,14 @@ version = ".".join(release.split(".")[:2])
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ["breathe", "exhale", "sphinx.ext.mathjax", "sphinx.ext.napoleon", "sphinx.ext.viewcode"]
+extensions = [
+    "breathe",
+    "exhale",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
+    "sphinx_code_tabs",
+]
 
 extensions.append("autoapi.extension")
 extensions.append("nbsphinx")
