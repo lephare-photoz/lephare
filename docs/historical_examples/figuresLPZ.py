@@ -1,3 +1,6 @@
+# ruff: noqa
+# These historical examples are note maintained or covered by tests or linting!
+
 from sys import *
 
 from matplotlib.pyplot import *

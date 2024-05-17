@@ -1,3 +1,6 @@
+# ruff: noqa
+# These historical examples are note maintained or covered by tests or linting!
+
 # Plot (file or window) the observed magnitudes
 # of the objects, along with best-fit templates,
 # reading the info form .zsp and .pdz output
