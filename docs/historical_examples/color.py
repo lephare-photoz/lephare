@@ -1,8 +1,12 @@
-from sys import *
-from matplotlib.pyplot import *
+# ruff: noqa
+# These historical examples are not maintained or covered by tests or linting!
+
 from math import *
+from sys import *
+
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib.pyplot import *
 
 
 ############################
