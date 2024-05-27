@@ -42,6 +42,8 @@ Once you have created a new environment, you can install this project for local
 development using the following commands:
 
 ```
+>> git clone https://github.com/lephare-photoz/lephare.git
+>> cd lephare
 >> git submodule update --init --recursive
 >> conda install -c conda-forge cxx-compiler
 >> pip install -e .'[dev]'
