@@ -12,6 +12,8 @@ IMPORTANT! This project is in an early development stage. If you wish to use and
 LePHARE (PHotometric Analysis for Redshift Estimation) is a Python package built on a complete rewrite in C++ of the [Fortran code](https://www.cfht.hawaii.edu/~arnouts/LEPHARE/acknowledgement.html) LePhare.
 LePHARE computes photometric redshifts and physical parameters by fitting spectral energy distributions (SED) to a dataset of photometric fluxes or apparent magnitudes.
 
+To get started we recommend you look at the full documentation [here](https://lephare.readthedocs.io/). Below we provide some very basic information on installation only. 
+
 ## Installation
 
 The simplest way to install lephare is using pip:
@@ -24,9 +26,11 @@ If you have any problems using pip install please consider creating an issue and
 
 ## Example usage
 
-We provide a number of [Jupyter notebooks](docs/notebooks/) demonstrating various aspects of the Python code.
+We provide a number of example [Jupyter notebooks](docs/notebooks/) demonstrating various aspects of the Python code. If you get these via a git clone and install lephare using pip these should run.
 
 ## Dev Guide - Getting Started
+
+For developers we recommend installing with a local pip installation with the editable flag set as described below.
 
 Before installing any dependencies or writing code, it's a great idea to create a
 virtual environment. LINCC-Frameworks engineers primarily use `conda` to manage virtual
@@ -34,21 +38,21 @@ environments. If you have conda installed locally, you can run the following to
 create and activate a new environment.
 
 ```
->> conda create -n <env_name> python=3.10
->> conda activate <env_name>
+conda create -n <env_name> python=3.10
+conda activate <env_name>
 ```
 
 Once you have created a new environment, you can install this project for local
 development using the following commands:
 
 ```
->> git clone https://github.com/lephare-photoz/lephare.git
->> cd lephare
->> git submodule update --init --recursive
->> conda install -c conda-forge cxx-compiler
->> pip install -e .'[dev]'
->> pre-commit install
->> conda install pandoc
+git clone https://github.com/lephare-photoz/lephare.git
+cd lephare
+git submodule update --init --recursive
+conda install -c conda-forge cxx-compiler
+pip install -e .'[dev]'
+pre-commit install
+conda install pandoc
 ```
 
 Notes:
