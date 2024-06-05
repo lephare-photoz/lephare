@@ -63,14 +63,14 @@ class prior
   // In general it is safer to simply overwrite the weights directly.
 
   // General function allowing pybind overwriting
-  std::function<vector<double>(vector<SED>, onesource*)> weights_function =
-      [](vector<SED> fullLib, onesource* source) {
+  std::function<vector<double>(vector<SED*>, onesource*)> weights_function =
+      [](vector<SED*> fullLib, onesource* source) {
         // Default weight behavior all set to 1.
         vector<double> onesVector(fullLib.size(), 1.0f);
         return onesVector;
       };
   // Default behavior of the method
-  int set_weights(vector<SED> fullLib, onesource* source) {
+  int set_weights(vector<SED*> fullLib, onesource* source) {
     // Call the current chi2_function
     weights = weights_function(fullLib, source);
     if (fullLib.size() != weights.size()) {
@@ -80,7 +80,7 @@ class prior
   };
   // Allow setting a new weights_function from Python
   void set_weights_function(
-      std::function<vector<double>(vector<SED>, onesource*)> func) {
+      std::function<vector<double>(vector<SED*>, onesource*)> func) {
     weights_function = func;
   };
 };

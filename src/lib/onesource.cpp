@@ -25,6 +25,7 @@
 #include "SED.h"
 #include "globals.h"
 #include "opa.h"
+#include "prior.h"
 
 using namespace std;
 
