@@ -1,3 +1,4 @@
+#include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -18,6 +19,7 @@ namespace py = pybind11;
 #include "oneElLambda.h"
 #include "opa.h"
 #include "photoz_lib.h"
+#include "prior.h"
 
 template <typename x, typename modT>
 void applySEDLibTemplate(modT &m, std::string name) {

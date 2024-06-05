@@ -10,10 +10,9 @@
 #ifndef PRIOR_H  // check that this keyword has been set already
 #define PRIOR_H  // define the keyword to be checked
 
-// #include "onesource.h"
-// #include "SED.h"
 #include <functional>
 #include <stdexcept>
+#include <vector>
 
 using namespace std;
 

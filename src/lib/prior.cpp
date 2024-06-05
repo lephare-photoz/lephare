@@ -18,6 +18,7 @@
 
 #include <functional>
 #include <iostream>
+#include <vector>
 
 #include "SED.h"
 #include "globals.h"
