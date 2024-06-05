@@ -16,6 +16,7 @@
 
 #include "prior.h"
 
+#include <array>
 #include <functional>
 #include <iostream>
 #include <vector>
