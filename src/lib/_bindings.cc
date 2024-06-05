@@ -154,6 +154,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("name", &SED::name)
       .def_readonly("nummod", &SED::nummod)
       .def_readonly("mag", &SED::mag)
+      .def_readonly("red", &SED::red)
       .def_readwrite("index_z0", &SED::index_z0)
       .def("is_gal", &SED::is_gal)
       .def("is_star", &SED::is_star)
