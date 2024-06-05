@@ -18,6 +18,7 @@
 #include "flt.h"  // filter class
 #include "globals.h"
 #include "opa.h"
+#include "prior.h"
 
 using namespace std;
 
@@ -59,6 +60,9 @@ class onesource {
   double zminIR, chiminIR, dmminIR, imasminIR;
   array<double, 4>
       priorLib;  // Prior with the range in abs mag gal, abs mag AGN
+
+  // The general prior
+  prior priorObj;
 
   vector<double> chibay;
   vector<double> gridzg, gridLdustIR, gridEbv, gridLIR;
@@ -176,8 +180,8 @@ class onesource {
            const array<int, 2> &bp);
   void fitIR(vector<SED *> &fulllib, const vector<vector<double>> &flux,
              const int imagm, const string fit_frsc, cosmo lcdm);
-  double nzprior(const double luv, const double lnir, const double reds,
-                 const array<int, 2> bp);
+  // double nzprior(const double luv, const double lnir, const double reds,
+  //                const array<int, 2> bp);
   void rm_discrepant(vector<SED *> &fulllib, const vector<vector<double>> &flux,
                      const vector<size_t> &valid, const double funz0,
                      const array<int, 2> bp, double thresholdChi2,

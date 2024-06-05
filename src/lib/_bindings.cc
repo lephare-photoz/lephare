@@ -347,6 +347,8 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readwrite("spec", &onesource::spec)
       .def_readwrite("consiz", &onesource::consiz)
       .def_readwrite("closest_red", &onesource::closest_red)
+      // The prior for overwriting the weights
+      .def_readwrite("priorObj", &onesource::priorObj)
       .def_readonly("pos", &onesource::pos)
       .def_readonly("cont", &onesource::cont)
       .def_readonly("pdfmap", &onesource::pdfmap)
@@ -407,6 +409,21 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("zsecChi2", &onesource::zsecMod)
       .def_readonly("zsecScale", &onesource::zsecMod)
       .def_readonly("zsecAge", &onesource::zsecAge);
+
+  /******** CLASS prior *********/
+  py::class_<prior>(
+      mod, "prior",
+      "The prior class which allows Python overwriting of the weights")
+      .def(py::init(),
+           "Constructor for prior class initialised with a onesource instance")
+      .def("set_weights_function", &prior::set_weights_function,
+           "Set a new weights function from Python")
+      .def_readwrite("apply_nz", &prior::apply_nz,
+                     "int 1 if apply nzlim prior.")
+      .def_readwrite("apply_weights", &prior::apply_weights,
+                     "int 1 to apply weights.")
+      .def_readwrite("weights", &prior::weights,
+                     "The weights to apply to the fulllib models.");
 
   py::class_<PDF>(mod, "PDF")
       .def(py::init<double, double, size_t>(), py::arg("min"), py::arg("max"),
