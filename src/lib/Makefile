@@ -72,22 +72,22 @@ OBJECTS = \
         prior.o\
 
 all: $(FILES)
-    if [ ! -d "../../bin" ]; then mkdir ../../bin; fi
-    cp $(FILES) ../../bin/
+	if [ ! -d "../../bin" ]; then mkdir ../../bin; fi
+	cp $(FILES) ../../bin/
 
 %.o: %.cpp *h 
-    $(FC) $(CFLAGS) -c  $*.cpp  -o $*.o   
+	$(FC) $(CFLAGS) -c  $*.cpp  -o $*.o   
 
 %: %.cpp $(LIB_LEPHARE) *h
-    $(FC) $(CFLAGS) $*.cpp -o $*  $(LIB_LEPHARE)  $(LIBS)
+	$(FC) $(CFLAGS) $*.cpp -o $*  $(LIB_LEPHARE)  $(LIBS)
 
 
 $(FILES): $(LIB_LEPHARE)
 
 $(LIB_LEPHARE): $(OBJECTS)
-    rm -f $(LIB_LEPHARE)
-    $(AR) rv $(LIB_LEPHARE) $(OBJECTS)
-    $(RANLIB) $(LIB_LEPHARE)
+	rm -f $(LIB_LEPHARE)
+	$(AR) rv $(LIB_LEPHARE) $(OBJECTS)
+	$(RANLIB) $(LIB_LEPHARE)
 #
 #
 #################################################
@@ -96,16 +96,16 @@ $(LIB_LEPHARE): $(OBJECTS)
 #
 #
 clean:
-    rm -f \#*
-    rm -f *.o
-    rm -f *.a
-    rm -f *~
+	rm -f \#*
+	rm -f *.o
+	rm -f *.a
+	rm -f *~
 
-    rm -f minuit/\#*
-    rm -f minuit/*.o
-    rm -f minuit/*.a
-    rm -f minuit/*~
-    rm -f ../../bin/*
+	rm -f minuit/\#*
+	rm -f minuit/*.o
+	rm -f minuit/*.a
+	rm -f minuit/*~
+	rm -f ../../bin/*
 
 #
 #
@@ -115,21 +115,21 @@ clean:
 #
 #
 archi:
-    rm -f $(ARCHIVE)
-    tar cvf $(ARCHIVE) *.cpp *.h
-    gzip $(ARCHIVE)
-    echo "Archive: $(ARCHIVE).gz"
+	rm -f $(ARCHIVE)
+	tar cvf $(ARCHIVE) *.cpp *.h
+	gzip $(ARCHIVE)
+	echo "Archive: $(ARCHIVE).gz"
 #
 #
 ################################################
 #######     Create working directory        ####
 ################################################
 work:
-    mkdir -p $(LEPHAREWORK)
-    mkdir -p $(LEPHAREWORK)/filt
-    mkdir -p $(LEPHAREWORK)/lib_bin
-    mkdir -p $(LEPHAREWORK)/lib_mag
+	mkdir -p $(LEPHAREWORK)
+	mkdir -p $(LEPHAREWORK)/filt
+	mkdir -p $(LEPHAREWORK)/lib_bin
+	mkdir -p $(LEPHAREWORK)/lib_mag
 
 doc:
-    doxygen ../doc/Doxyfile
+	doxygen ../doc/Doxyfile
 
