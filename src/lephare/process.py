@@ -10,7 +10,7 @@ __all__ = ["object_types", "process", "table_to_data", "calculate_offsets", "loa
 object_types = ["STAR", "GAL", "QSO"]
 
 
-def process(config, input, col_names=None, standard_names=False, filename=None, offsets=None):
+def process(config, input, col_names=None, standard_names=False, filename=None, offsets=None, prior=None):
     """Run all required steps to produce photometric redshift estimates
 
     Parameters
@@ -28,6 +28,9 @@ def process(config, input, col_names=None, standard_names=False, filename=None, 
         Output file name for the output catalogue.
     offsets : list
         If offsets are set autoadapt is not run but the set values are used.
+    prior : function
+        Function that converts a lephare.SED into a weight. We loop over all
+        SEDs to get the list of weights.
 
     Returns
     =======
@@ -77,7 +80,11 @@ def process(config, input, col_names=None, standard_names=False, filename=None, 
     photozlist = []
     for i in range(ng):
         one_obj = lp.onesource(i, photz.gridz)
-        one_obj.readsource(str(i), flux[i], flux_err[i], 63, zspec[i], " ")
+        one_obj.readsource(str(i), flux[i], flux_err[i], context[i], zspec[i], " ")
+        if prior is not None:
+            weights = [prior(lib, one_obj) for lib in photz.fullLib]
+            one_obj.priorObj.apply_weights = 1
+            one_obj.priorObj.weights = weights
         photz.prep_data(one_obj)
         photozlist.append(one_obj)
 
