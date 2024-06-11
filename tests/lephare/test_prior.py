@@ -55,3 +55,13 @@ def test_nzprior():
     s.ab = [1.0e-9, 1.0e-9]
     s.busnorma = [1, 1]
     assert np.isclose(p.nz_prior(s, 0.0, 0.0, 0.0, 0.0, [0, 0]), 1)
+
+
+def test_update_chi2():
+    p = lp.prior()
+    s = lp.onesource(0, [0, 1])
+    star_sed = "o5v.sed.ext"
+    sed_filename = os.path.join(lp.LEPHAREDIR, "sed/STAR/", star_sed)
+    sed = lp.StarSED(star_sed, 1)
+    sed.read(sed_filename)
+    assert np.isclose(p.update_chi2(s, 0.0, sed, 0, 0.0, 0.0, [0, 0], False, False), 0.0)

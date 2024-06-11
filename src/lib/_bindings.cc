@@ -154,8 +154,11 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("name", &SED::name)
       .def_readonly("nummod", &SED::nummod)
       .def_readonly("mag", &SED::mag)
-      .def_readonly("red", &SED::red)
       .def_readwrite("index_z0", &SED::index_z0)
+      .def_readwrite("luv", &SED::luv)
+      .def_readwrite("lnir", &SED::lnir)
+      .def_readwrite("mag0", &SED::mag0)
+      .def_readwrite("red", &SED::red)
       .def("is_gal", &SED::is_gal)
       .def("is_star", &SED::is_star)
       .def("is_qso", &SED::is_qso)
@@ -424,6 +427,7 @@ PYBIND11_MODULE(_lephare, mod) {
            "Set a new weights function from Python")
       .def("absmag_prior", &prior::absmag_prior)
       .def("nz_prior", &prior::nz_prior)
+      .def("update_chi2", &prior::update_chi2)
       .def_readwrite("apply_nz", &prior::apply_nz,
                      "int 1 if apply nzlim prior.")
       .def_readwrite("apply_weights", &prior::apply_weights,
