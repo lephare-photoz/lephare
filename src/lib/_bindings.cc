@@ -413,7 +413,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("zsecScale", &onesource::zsecMod)
       .def_readonly("zsecAge", &onesource::zsecAge);
 
-  /******** CLASS prior *********/
+  /******** CLASS prior, functions in prior.h *********/
   py::class_<prior>(
       mod, "prior",
       "The prior class which allows Python overwriting of the weights")
@@ -421,6 +421,8 @@ PYBIND11_MODULE(_lephare, mod) {
            "Constructor for prior class initialised with a onesource instance")
       .def("set_weights_function", &prior::set_weights_function,
            "Set a new weights function from Python")
+      .def("absmag_prior", &prior::absmag_prior)
+      .def("nz_prior", &prior::nz_prior)
       .def_readwrite("apply_nz", &prior::apply_nz,
                      "int 1 if apply nzlim prior.")
       .def_readwrite("apply_weights", &prior::apply_weights,

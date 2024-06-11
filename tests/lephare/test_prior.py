@@ -40,3 +40,9 @@ def test_prior(test_data_dir: str):
     assert ~np.isclose(output["Z_BEST"][0], 3.58577857627795)  # Should not equal the original redshift
     assert len(zgrid) == 51
     assert np.sum(output["Z_BEST"] > 2) == 0
+
+
+def test_absmag_prior():
+    p = lp.prior()
+    s = lp.onesource(0, [0, 1])
+    assert np.isclose(p.absmag_prior(s, 0.0, 0.0, 0, 0.0, 0.0, 0.0), 1000000000.0)
