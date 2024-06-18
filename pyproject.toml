@@ -111,6 +111,8 @@ select = [
     "D300",
     "D417",
     "D419",
+    # Update numpy to 2.0 
+    "NPY201",
 ]
 
 ignore = [
