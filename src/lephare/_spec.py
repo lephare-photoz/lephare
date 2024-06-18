@@ -198,5 +198,3 @@ def plotspec(filename):
     ax2.plot(zpdf[0, :], zpdf[1, :] / max(zpdf[1, :]), color="k", linestyle="solid", label="P(z) Bayesian")
     ax2.plot(zpdf[0, :], zpdf[2, :] / max(zpdf[2, :]), color="k", linestyle="dashed", label="P(z) Profile")
     ax2.legend(fontsize="10")
-
-    plt.show()
