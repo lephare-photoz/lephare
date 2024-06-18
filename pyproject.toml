@@ -21,7 +21,7 @@ dynamic = ["version"]
 requires-python = ">=3.9"
 dependencies = [
     "matplotlib",
-    "numpy",
+    "numpy<2",
     "astropy",
     "scipy",
     "requests",
