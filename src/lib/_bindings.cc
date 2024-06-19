@@ -126,14 +126,14 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readwrite("lamb_trans", &flt::lamb_trans)
       .def("data", [](const flt &f) {
         int N = f.lamb_trans.size();
-        py::array_t<double> result = py::array_t<double>(N * 2);
+        // Create a 2D array with shape (2, N) (transposed)
+        py::array_t<double> result({2, N});
         py::buffer_info buf = result.request();
-        double *ptr = (double *)buf.ptr;
+        double *ptr = static_cast<double *>(buf.ptr);
         for (size_t i = 0; i < N; i++) {
-          ptr[i] = f.lamb_trans[i].lamb;
-          ptr[N + i] = f.lamb_trans[i].val;
+          ptr[i] = f.lamb_trans[i].lamb;     // First row
+          ptr[N + i] = f.lamb_trans[i].val;  // Second row
         }
-        result.resize({N, N});
         return result;
       });
   mod.def("write_output_filter", &write_output_filter);
@@ -173,14 +173,14 @@ PYBIND11_MODULE(_lephare, mod) {
                                      const string &)>(&SED::writeSED))
       .def("data", [](const SED &f) {
         int N = f.lamb_flux.size();
-        py::array_t<double> result = py::array_t<double>(N * 2);
+        // Create a 2D array with shape (2, N) (transposed)
+        py::array_t<double> result({2, N});
         py::buffer_info buf = result.request();
-        double *ptr = (double *)buf.ptr;
+        double *ptr = static_cast<double *>(buf.ptr);
         for (size_t i = 0; i < N; i++) {
-          ptr[i] = f.lamb_flux[i].lamb;
-          ptr[N + i] = f.lamb_flux[i].val;
+          ptr[i] = f.lamb_flux[i].lamb;     // First row
+          ptr[N + i] = f.lamb_flux[i].val;  // Second row
         }
-        result.resize({N, N});
         return result;
       });
 
