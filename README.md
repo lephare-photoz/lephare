@@ -49,6 +49,7 @@ pip install -e .'[dev]'
 pre-commit install
 conda install pandoc
 ```
+The installation can then be tested by running "python -m pytest tests" from the root directory of the repository.
 
 Notes:
 1. The single quotes around `'[dev]'` may not be required for your operating system.
