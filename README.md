@@ -44,7 +44,7 @@ development using the following commands:
 ```
 git clone git@github.com:lephare-photoz/lephare.git
 git submodule update --init --recursive
-conda install -c conda-forge cxx-compiler
+conda install -c conda-forge cxx-compiler #needed for MACOSX mostly
 pip install -e .'[dev]'
 pre-commit install
 conda install pandoc
