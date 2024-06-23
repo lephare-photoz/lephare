@@ -58,6 +58,7 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+tests/data/sed/QSO/ONE_SED/
 
 # Translations
 *.mo
@@ -80,6 +81,14 @@ instance/
 docs/_build/
 docs/doxygen_output/
 _readthedocs/
+docs/index.rst
+docs/notebooks/data_registry.txt
+docs/notebooks/f2ii.bin
+docs/notebooks/f2ii.doc
+docs/notebooks/outputpython.fits
+docs/notebooks/test_BAY_ZG.prob
+docs/notebooks/toto.fits
+docs/notebooks/zphot.out
 
 # PyBuilder
 target/
