@@ -1,4 +1,4 @@
-# lephare
+# LePHARE
 
 [![Template](https://img.shields.io/badge/Template-LINCC%20Frameworks%20Python%20Project%20Template-brightgreen)](https://lincc-ppt.readthedocs.io/en/latest/)
 
@@ -51,7 +51,20 @@ conda install pandoc
 ```
 The installation can then be tested by running `python -m pytest tests` from the root directory of the repository.
 
+Developers can also build the documentation in the following way:
+
+```
+cd docs/
+pip install -r requirements.txt #install sphinx dependencies
+make html
+```
+
+The doc entry will then be located at `../_readthedocs/html/index.html`. The documentation includes a rendering of
+the notebooks, which thus need to be executed. You can bypass this stage by replacing `make html` above by `make no-notebooks`.
+Executing `make` will list further options.
+
 Notes:
+
 1. The single quotes around `'[dev]'` may not be required for your operating system.
 2. `pre-commit install` will initialize pre-commit for this local repository, so
    that a set of tests will be run prior to completing a local commit. For more
