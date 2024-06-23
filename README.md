@@ -35,7 +35,7 @@ environments. If you have conda installed locally, you can run the following to
 create and activate a new environment.
 
 ```
-conda create -n <env_name> python=3.10
+conda create -n <env_name>
 conda activate <env_name>
 ```
 
