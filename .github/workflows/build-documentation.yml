@@ -37,4 +37,6 @@ jobs:
         sudo apt-get install pandoc doxygen
     - name: Build docs
       run: |
+        pandoc --from=markdown --to=rst --output=readme.rst README.md
+        cat readme.rst docs/toctree.rst > docs/index.rst
         sphinx-build -vvv -T -E -b html -d docs/build/doctrees ./docs docs/build/html
