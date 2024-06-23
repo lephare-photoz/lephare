@@ -23,6 +23,12 @@ pip install lephare
 
 If you have any problems using pip install please consider creating an issue and informing us what system you are using in order to help us improve robustness.
 
+## Ancillary data files and environment variables
+The legacy code LePHARE has been split into two repositorie: (lephare)(https://github.com/lephare-photoz/lephare?tab=readme-ov-file)
+and (lephare-data)(https://github.com/lephare-photoz/lephare-data). The module `data_retrieval` helps the user with downloading the latter, based on
+the setting of the environment variable `LEPHAREDIR`.
+A second environment variable, `LEPHAREWORK`, controls where intermediary files are saved to and retrieved from, during LePHARE execution.
+
 ## Example usage
 
 We provide a number of [Jupyter notebooks](docs/notebooks/) demonstrating various aspects of the Python code.
