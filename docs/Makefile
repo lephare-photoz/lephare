@@ -34,4 +34,5 @@ make_index:
 	rm -f index.rst
 	pandoc --from=markdown --to=rst --output=readme.rst ../README.md
 	cat readme.rst toctree.rst > index.rst
-        rm readme.rst
+	rm readme.rst
+
