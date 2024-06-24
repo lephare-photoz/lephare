@@ -58,6 +58,15 @@ conda install pandoc
 ```
 The installation can then be tested by running `python -m pytest tests` from the root directory of the repository.
 
+In order to obtain the same directory hierarchy as the legacy fortran or c++ version, with the data files inside the
+repository directory structure, the following can be executed:
+
+```
+from lephare import data_retrieval as dr
+dr.get_auxiliary_data(lephare_dir=os.environ["LEPHAREDIR"], clone=False)
+```
+
+
 Developers can also build the documentation in the following way:
 
 ```
