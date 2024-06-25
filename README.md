@@ -6,7 +6,7 @@
 [![Codecov](https://codecov.io/gh/lephare-photoz/lephare/branch/main/graph/badge.svg)](https://codecov.io/gh/lephare-photoz/lephare)
 [![Read The Docs](https://img.shields.io/readthedocs/lephare)](https://lephare.readthedocs.io/)
 
-LePHARE is a code for estimation of galaxy physical parameters and redshift, based on template fitting. It is a complete rewrite in C++ of the [Fortran code](https://www.cfht.hawaii.edu/~arnouts/LEPHARE), with python binding and extension using [pybind11](https://github.com/pybind/pybind11).
+LePHARE is a code for estimating galaxy redshifts and physical parameters using template fitting. It is a complete rewrite in C++ of the [Fortran code](https://www.cfht.hawaii.edu/~arnouts/LEPHARE), with python binding and extension using [pybind11](https://github.com/pybind/pybind11).
 
 The code documentation, including how to install it and to get started, can be found [here](https://lephare.readthedocs.io/).
 
@@ -14,7 +14,7 @@ The code documentation, including how to install it and to get started, can be f
 
 # Request and help
 
-If you need help with the code, or if you have features requests, please use the github issue system to let us know about it
+If you need help with the code, or if you have feature requests, please use the github issue system to let us know.
 
 # Acknowledgements
 [![Template](https://img.shields.io/badge/Template-LINCC%20Frameworks%20Python%20Project%20Template-brightgreen)](https://lincc-ppt.readthedocs.io/en/latest/)
