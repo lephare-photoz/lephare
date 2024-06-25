@@ -9,7 +9,7 @@ and rebuilding the C++ code.
 
 Using cmake directly leaves behind many cache files directories that can cause
 failures when subsequently running ``pip install``. If you encounter errors like
-the following when attempting to pip install lephare, remove any for cmake files
+the following when attempting to pip install lephare, remove any cmake files
 except for the top level CMakeLists.txt file and try again.
 
 .. code-block:: bash
