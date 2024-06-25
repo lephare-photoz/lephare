@@ -1,5 +1,6 @@
 
 <img src="https://avatars.githubusercontent.com/u/165841626?s=400&u=ff86bd4c19a9d36958cf1b47d84849dbe25c274a&v=4" width="128"/>LePHARE: PHotometric Analysis for Redshift Estimation
+
 [![PyPI](https://img.shields.io/pypi/v/lephare?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/lephare/)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/lincc-frameworks/lephare/smoke-test.yml)](https://github.com/lephare-photoz/lephare/actions/workflows/smoke-test.yml)
 [![Codecov](https://codecov.io/gh/lephare-photoz/lephare/branch/main/graph/badge.svg)](https://codecov.io/gh/lephare-photoz/lephare)
