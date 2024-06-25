@@ -1,5 +1,5 @@
 <h1 align="center">
-<img src="https://avatars.githubusercontent.com/u/165841626?s=400&u=ff86bd4c19a9d36958cf1b47d84849dbe25c274a&v=4" width="500">
+<img src="https://avatars.githubusercontent.com/u/165841626?s=400&u=ff86bd4c19a9d36958cf1b47d84849dbe25c274a&v=4" width="250">
 </h1><br>
 
 # LePHARE: PHotometric Analysis for Redshift Estimation
