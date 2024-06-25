@@ -47,6 +47,7 @@ dev = [
     "pytest-cov", # Used to report total code coverage
     "ruff", # Used for static linting of files
     "sphinx", # Used to generate documentation
+    "sphinx-tabs", # Used to generate documentation
     "breathe", # Used to generate documentation
     "exhale", # Used to generate documentation
 ]
