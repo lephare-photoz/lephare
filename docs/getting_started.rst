@@ -22,14 +22,17 @@ This is the most basic example of running lephare end-to-end.
 .. codeblock
 
     import lephare as lp
-    lp.prepare()
-    lp.process()
-    matplotlib -> plot something
+    config=lp.all_types_to_keymap(lp.default_cosmos_config)
+    lp.data_retrieval.get_auxiliary_data(keymap=config, additional_files=['examples/COSMOS.in'])
+    lp.prepare(config)
+    input=Table.read(f"{lp.LEPHAREDIR}/examples/COSMOS.in")
+    output, pdfs, zgrid = lp.process(config, input)
+    
 
 
 To ensure that the installation was successful, this workflow should produce a reasonable 
-plot that demonstrates a  more or less 1 to 1 relationship between the spectroscopic 
-redshift and predicted redshift.
+a more or less 1 to 1 relationship between the spectroscopic redshift "output['ZSPEC']" 
+and predicted redshift "output['Z_BEST']".
 
 For further example usage, see the Minimal_photoz_run notebook.
 
