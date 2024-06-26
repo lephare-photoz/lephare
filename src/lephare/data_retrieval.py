@@ -1,4 +1,7 @@
-"""This module provides functionality for downloading and managing data files using pooch."""
+"""
+This module provides functionality for downloading and managing data files using
+`pooch <https://pypi.org/project/pooch/0.5.2/>`__.
+"""
 
 import concurrent.futures
 import os
