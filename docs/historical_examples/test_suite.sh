@@ -17,9 +17,10 @@ CONFIG_FILE="$LEPHAREDIR/examples/COSMOS.para"
 # echo "LEPHAREWORK:" $LEPHAREWORK
 # echo "CONFIG_FILE:" $CONFIG_FILE
 
-# Get the data
+# Get the data and config file
 echo "Downloading to $CAT_IN..."
 curl -s -o $CAT_IN https://raw.githubusercontent.com/lephare-photoz/lephare-data/main/examples/COSMOS.in
+curl -s -o $CONFIG_FILE https://raw.githubusercontent.com/lephare-photoz/lephare-data/main/examples/COSMOS.para
 
 # Run commands
 echo "Running filter..."
