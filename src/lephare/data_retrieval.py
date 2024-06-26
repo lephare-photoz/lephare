@@ -466,3 +466,4 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
         download_all_files(retriever, file_list, ignore_registry=False)
     if additional_files is not None:
         download_all_files(retriever, additional_files, ignore_registry=False)
+    os.system(f"rm {registry_file}")
