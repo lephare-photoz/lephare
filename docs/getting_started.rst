@@ -16,7 +16,7 @@ Lephare can be installed with pip:
 
 Example Usage
 *************
-This is the most basic example of running lephare end-to-end. You can also get
+The following snippet is the most basic example of running lephare end-to-end. You can also get
 an example notebook running this code `here <https://github.com/lephare-photoz/lephare/blob/main/docs/notebooks/Minimal_photoz_run.ipynb>`_.
 
 
@@ -31,7 +31,7 @@ an example notebook running this code `here <https://github.com/lephare-photoz/l
     
 
 
-To ensure that the installation was successful, this workflow should produce a 
+To ensure that the everything was successful, this workflow should produce a 
 a more or less 1 to 1 relationship between the spectroscopic redshift "output['ZSPEC']" 
 and predicted redshift "output['Z_BEST']".
 
@@ -100,6 +100,12 @@ editable mode with the `-e` option so that any changes are immediately propagate
             pip install -e .'[dev]'
 
 
+At this stage running the tests is a good way to check everything is working:
+
+.. code-block:: bash
+
+    pytest tests
+
 Once you have created a new environment, you can install precommit and pandoc 
 which will help you to run precommit checks and create the documentation locally:
 
@@ -107,6 +113,20 @@ which will help you to run precommit checks and create the documentation locally
 
     pre-commit install
     conda install pandoc
+
+Developers can also build the documentation in the following way:
+
+.. code-block:: bash
+    
+    cd docs/
+    pip install -r requirements.txt #install sphinx dependencies
+    make html
+
+The doc entry will then be located at `../_readthedocs/html/index.html`. The 
+documentation includes a rendering of the notebooks, which thus need to be 
+executed. You can bypass this stage by replacing `make html`` above by 
+`make no-notebooks`. Executing `make` will list further options.
+
 
 If you wish to incorporate your changes to the main branch, please make a fork of 
 the repository and then create a pull request. 
@@ -116,14 +136,19 @@ If you can’t find a solution, feel free to `create an issue in the lephare rep
 <https://github.com/lephare-photoz/lephare/issues>`_.
 
 Some developers who are familiar with the original version of the code may
-want to have all the external data present in the same repository as the code.
+want to have all the external data present in the same repository as the code
+or some other preferred location.
 One way to acheive this is to use the automatic downloading functionality to 
 put all the external data in that location after git cloning the main code:
 
-.. code-block:: python
 
-    import lephare as lp
-    lp.data_retrieval.get_auxiliary_data(keymap=config, additional_files=['examples/COSMOS.in'])
+.. code-block:: python
+    
+    # Set the LEPHAREWORK dir prior to importing lephare to use your preferred location.
+    import os
+    os.environ["LEPHAREDIR"]="/path/to/the/preferred/directory/"
+    from lephare import data_retrieval as dr
+    dr.get_auxiliary_data(clone=False)
 
 .. note::
     The single quotes around `'[dev]'` may not be required for your operating system.
@@ -137,3 +162,6 @@ put all the external data in that location after git cloning the main code:
     notebooks into documentation for ReadTheDocs works as expected. For more information, 
     see the Python Project Template documentation on `Sphinx and Python Notebooks 
     <https://lincc-ppt.readthedocs.io/en/latest/practices/sphinx.html#python-notebooks>`_.
+
+    The environment variables `LEPHAREDIR` and `LEPHAREWORK` are set on import
+    in Python. Care must be taken not to reset after importing.
