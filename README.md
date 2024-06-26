@@ -42,4 +42,4 @@ For more information about the project template see the [documentation](https://
 The authors gratefully acknowledge the important contribution of LINCC Framework members (notably [Olivia Lynn](https://github.com/OliviaLynn) and [Drew Oldag](https://github.com/drewoldag)) to the
 construction of the LePHARE github infratructure.
 
-The LePHARE logo is the work of [Eve Barlier](https://evebarlier.tumblr.com/). Thank you!
+The LePHARE logo is the work of [Eve Barlier](https://www.instagram.com/eve.barlier/). Thank you!
