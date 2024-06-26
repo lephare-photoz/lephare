@@ -16,6 +16,28 @@ The code documentation, including how to install it and to get started, can be f
 
 If you need help with the code, or if you have feature requests, please use the github issue system to let us know.
 
+# Citing LePHARE
+
+If You  use LePhare  code, please acknowledge it with the following references :
+
+- Arnouts, S.; Cristiani, S.; Moscardini, L., Matarrese, S., Lucchin, F.  et al., 1999, MNRAS,  310, 540
+
+- Ilbert, O.; Arnouts, S.; McCracken, H. J.; Bolzonella, M.; Bertin, E et al., 2006, A&A, 457, 841
+
+# Contributors
+
+LePHARE was originally developped in Fortran by [Stéphane Arnouts](https://people.lam.fr/arnouts.stephane/) and [Olivier Ilbert](https://people.lam.fr/ilbert.olivier/).
+
+The C++ rewriting is the work of Olivier Ilbert.
+
+Current developments, especially in python, are mainly the work of Olivier Ilbert, [Johann Cohen-Tanugi](https://github.com/johannct), and [Raphael Shirley](http://raphaelshirley.co.uk/).
+
+Other contributors include:
+
+- Mara Salvato (Garching)
+- Iary Davidson
+- Leo Michel-Dansac (LAM)
+
 # Acknowledgements
 [![Template](https://img.shields.io/badge/Template-LINCC%20Frameworks%20Python%20Project%20Template-brightgreen)](https://lincc-ppt.readthedocs.io/en/latest/)
 
