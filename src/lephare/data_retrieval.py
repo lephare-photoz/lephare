@@ -417,7 +417,7 @@ def config_to_required_files(keymap, base_url=None):
     return required_files
 
 
-def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=None):
+def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=None, clone=True):
     """Get all auxiliary data required to run lephare.
 
     This gets all the filters, seds, and other data files.
@@ -432,6 +432,11 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
         The config dictionary.
     additional_files : list
         Any additional files to be downloaded from the auxiliary file repo.
+    clone : bool
+        If keymap is None, clone=True will git clone the lephare-data repoitory,
+        else it will copy all the lephare-data files over into lephare_dir. This is
+        useful e.g. for developers wanting the exact same code environment as in
+        legacy lephare version.
     """
 
     # ensure that all values in the keymap are keyword objects
@@ -445,7 +450,7 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
     repo_url = f"https://github.com/lephare-photoz/{repo_name}"
     registry_file = DEFAULT_REGISTRY_FILE
     data_path = lephare_dir
-    if keymap is None:
+    if keymap is None and clone is True:
         # Assume if filt is present assume everything is.
         if os.path.isdir(f"{lephare_dir}/filt"):
             warnings.warn(
