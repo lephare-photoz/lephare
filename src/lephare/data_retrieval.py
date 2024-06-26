@@ -434,7 +434,8 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
     """
 
     # ensure that all values in the keymap are keyword objects
-    keymap = all_types_to_keymap(keymap)
+    if keymap is not None:
+        keymap = all_types_to_keymap(keymap)
 
     # Get the registry file
     download_registry_from_github()
