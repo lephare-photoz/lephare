@@ -7,13 +7,13 @@ The code documentation, including how to install it and to get started, can be f
 
 **IMPORTANT!** The current repository is under development. If you wish to use LePHARE for science work, please download it from the [currently stable repository](https://gitlab.lam.fr/Galaxies/LEPHARE/).
 
-# Request and help
+# Requests and help
 
 If you need help with the code, or if you have feature requests, please use the github issue system to let us know.
 
 # Citing LePHARE
 
-If You  use LePhare  code, please acknowledge it with the following references :
+If you use LePHARE, please acknowledge it with the following references:
 
 - Arnouts, S.; Cristiani, S.; Moscardini, L., Matarrese, S., Lucchin, F.  et al., 1999, MNRAS,  310, 540
 
