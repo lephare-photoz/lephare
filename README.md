@@ -26,10 +26,10 @@ LePHARE was originally developped in Fortran by [Stéphane Arnouts](https://peop
 The C++ and python rewriting of the code is the work of Olivier Ilbert, [Johann Cohen-Tanugi](https://github.com/johannct), and [Raphael Shirley](http://raphaelshirley.co.uk/).
 
 Other contributors include:
-Iary Davidzon, Mara Salvato (MPE), Cédric Dubois (LAM), and Maria Petkova
+Iary Davidzon, Mara Salvato (MPE), Cédric Dubois (LAM), and Maria Petkova.
 
 We acknowledge fruitful discussions with
-Emeric Le Floc'h (CEA), Léo Michel-Dansac (LAM), Jean-Charles Lambert (LAM)
+Emeric Le Floc'h (CEA), Léo Michel-Dansac (LAM), Jean-Charles Lambert (LAM).
 
 
 # Acknowledgements
