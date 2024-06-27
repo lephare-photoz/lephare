@@ -730,9 +730,14 @@ void SED::applyExtLines(const ext &oneext) {
   if (longEL != 65) cout << " Error with size of ebv lines " << longEL << endl;
   // If you want to use the redshift dependency of the attenuation line versus
   // continuum F=F(z=0)+a*z If such option is re-activated, absolutely need to
-  // change the code in read_lib and onesource.cpp double a=0.2; No redshift
-  // dependency
+  // change the code in read_lib and onesource.cpp
+  // double a=0.2;
+  // No redshift dependency
   double a = 0.;
+
+  // needed to establish the escape fraction. Relation by Hayes et al 2011.
+  double CLya = 0.445;
+  double kLya = 13.8;
 
   // if needed because E(b-V)>0
   if (ebv > 1.e-20) {
@@ -770,6 +775,11 @@ void SED::applyExtLines(const ext &oneext) {
           if (new_ext[k].ori < 0) new_ext[k].val = 0.;
           val =
               (line_all[k]).val * pow(10., (-0.4 * ebv / f * (new_ext[k]).val));
+          // Relation by Hayes et al 2011 to derive the escape fraction
+          if (line_all[k].lamb > 1215. && line_all[k].lamb < 1216.) {
+            double f_esc_Lya = CLya * pow(10., (-0.4 * ebv / f * kLya));
+            val = val * f_esc_Lya;
+          }
         }
         // Count what is the line according to the original fac_line
         l++;
@@ -1271,12 +1281,13 @@ void GalSED::generateEmEmpUV(double MNUV_int, double NUVR) {
   // attenuation seems to be alreay included I took OIII5007/OIII4959=3 I
   // took 4.081 betwen 5007 and Hbeta, as the physical recipes. This ratio will
   // be modified later as a function of redshift. I took 0.3 for NII/Halpha
-  // according to the BPT diagram 6 for Lyman_alpha, but no real idea
+  // according to the BPT diagram. For Lyman_alpha, use the same factor as for
+  // physical recipes since fescape fraction is applied.
   // double Z0_line[65] =
   // {6,0,0,0,0,0,0,1.425,1.425,0,0,0,0,0,0,0,0,0,0,0,1,1.36,4.081,0,0,0,0,0,0,2.85,0.86,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
   // Original ratio used in 2009 paper
-  double Z0_line[65] = {1.62, 0, 0, 0,    0,  0, 0, 0.81, 0.81, 0,    0, 0, 0,
+  double Z0_line[65] = {22.2, 0, 0, 0,    0,  0, 0, 0.81, 0.81, 0,    0, 0, 0,
                         0,    0, 0, 0,    0,  0, 0, 1,    0.21, 0.59, 0, 0, 0,
                         0,    0, 0, 2.90, 0., 0, 0, 0,    0,    0,    0, 0, 0,
                         0,    0, 0, 0,    0,  0, 0, 0,    0,    0,    0, 0, 0,
@@ -1330,12 +1341,13 @@ void GalSED::generateEmEmpSFR(double sfr, double NUVR) {
   // attenuation seems to be alreay included I took OIII5007/OIII4959=3 I
   // took 4.081 betwen 5007 and Hbeta, as the physical recipes. This ratio will
   // be modified later as a function of redshift. I took 0.3 for NII/Halpha
-  // according to the BPT diagram 6 for Lyman_alpha, but no real idea
-  double Z0_line[65] = {6, 0,    0,    0, 0, 0, 0, 1.425, 1.425, 0, 0, 0, 0, 0,
-                        0, 0,    0,    0, 0, 0, 1, 1.36,  4.081, 0, 0, 0, 0, 0,
-                        0, 2.85, 0.86, 0, 0, 0, 0, 0,     0,     0, 0, 0, 0, 0,
-                        0, 0,    0,    0, 0, 0, 0, 0,     0,     0, 0, 0, 0, 0,
-                        0, 0,    0,    0, 0, 0, 0, 0,     0};
+  // according to the BPT diagram. For Lyman_alpha, use the same factor as for
+  // physical recipes since fescape fraction is applied.
+  double Z0_line[65] = {
+      22.2, 0, 0, 0, 0,    0,     0, 1.425, 1.425, 0, 0, 0, 0,    0,    0, 0, 0,
+      0,    0, 0, 1, 1.36, 4.081, 0, 0,     0,     0, 0, 0, 2.85, 0.86, 0, 0, 0,
+      0,    0, 0, 0, 0,    0,     0, 0,     0,     0, 0, 0, 0,    0,    0, 0, 0,
+      0,    0, 0, 0, 0,    0,     0, 0,     0,     0, 0, 0, 0,    0};
   // Checks
   longEL = sizeof(Z0_line) / sizeof(Z0_line[0]);
   if (longEL != 65) cout << " Error with size of lines Z0 " << longEL << endl;
