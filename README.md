@@ -23,15 +23,14 @@ If you use LePHARE, please acknowledge it with the following references:
 
 LePHARE was originally developped in Fortran by [Stéphane Arnouts](https://people.lam.fr/arnouts.stephane/) and [Olivier Ilbert](https://people.lam.fr/ilbert.olivier/).
 
-The C++ rewriting is the work of Olivier Ilbert.
-
-Current developments, especially in python, are mainly the work of Olivier Ilbert, [Johann Cohen-Tanugi](https://github.com/johannct), and [Raphael Shirley](http://raphaelshirley.co.uk/).
+The C++ and python rewriting of the code is the work of Olivier Ilbert, [Johann Cohen-Tanugi](https://github.com/johannct), and [Raphael Shirley](http://raphaelshirley.co.uk/).
 
 Other contributors include:
+Iary Davidzon, Mara Salvato (MPE), Cédric Dubois (LAM), and Maria Petkova
 
-- Mara Salvato (Garching)
-- Iary Davidson
-- Leo Michel-Dansac (LAM)
+We acknowledge fruitful discussions with
+Emeric Le Floc'h (CEA), Léo Michel-Dansac (LAM), Jean-Charles Lambert (LAM)
+
 
 # Acknowledgements
 [![Template](https://img.shields.io/badge/Template-LINCC%20Frameworks%20Python%20Project%20Template-brightgreen)](https://lincc-ppt.readthedocs.io/en/latest/)
