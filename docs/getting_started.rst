@@ -16,8 +16,6 @@ The simplest way to install LePHARE is with pip:
     be immediately available after pip installation.
 
 
-Example Usage
-*************
 The following Python snippet is the most basic example of running lephare end-to-end. 
 You can also get an example notebook running this code `here <https://github.com/lephare-photoz/lephare/blob/main/docs/notebooks/Minimal_photoz_run.ipynb>`_.
 
@@ -35,14 +33,22 @@ You can also get an example notebook running this code `here <https://github.com
     output, pdfs, zgrid = lp.process(config, input_table)
     
 
-
 This will take over ten minutes to run. To check that everything was successful, 
 this workflow should produce a 1 to 1 relationship between the spectroscopic 
-redshift `output['ZSPEC']` and predicted redshift `output['Z_BEST']`.
+redshift `output['ZSPEC']` and predicted redshift `output['Z_BEST']`. Most users
+will want to run lephare on their own data set so will have to change the config,
+set the filters and modify the input tables.
 
+Example Usage
+*************
 
-.. note
+We have made an intermediate notebook to demonstrate how a new user can download
+the required filters and run lephare on their own data. You can download the notebook
+`here <https://github.com/lephare-photoz/lephare/blob/main/docs/notebooks/Intermediate_usage_notebook.ipynb>`_ 
+which should directly run following installation of lephare via pip.
+You can also see the executed notebook with all outputs :doc:`here <notebooks/Intermediate_usage_notebook>`.
 
+.. note::
     Lephare can be used either via the Python interface or from the command line. 
     The use of the command line executables are generally for legacy purposes.
     An example of using the command line arguments can be found `here <https://github.com/lephare-photoz/lephare/blob/main/docs/historical_examples/test_suite.sh>`_.
