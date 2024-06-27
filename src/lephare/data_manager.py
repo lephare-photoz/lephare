@@ -41,7 +41,7 @@ class DataManager:
                 os.makedirs(self.lephare_dir)
             else:
                 print(
-                    f"LEPHAREDIR is being set to the default cache directory which is at:\n"
+                    f"LEPHAREDIR is being set to the default cache directory:\n"
                     f"{self.lephare_dir}\n"
                     f"More than 1Gb may be written there."
                 )
@@ -61,12 +61,14 @@ class DataManager:
             # Location of work linked dir <default_cache>/work and the timestamped directory
             symlink_work_directory = f"{default_os_cache}/work"
 
+            print(f"LEPHAREWORK is being set to the default cache directory:\n" f"{symlink_work_directory}")
+
             # first remove the symlink if it already exists
             if os.path.islink(symlink_work_directory):
                 # os.unlink(symlink_work_directory) #We no longer make a new link
                 print(
-                    f"Default work cache at {symlink_work_directory}"
-                    f"is already linked. This is linked to the run directory:\n"
+                    f"Default work cache is already linked. \n"
+                    f"This is linked to the run directory:\n"
                     f"{os.readlink(symlink_work_directory)}"
                 )
             else:
@@ -87,12 +89,13 @@ class DataManager:
 
             # set the instance variable to the <default_cache>/work symlink
             self.lephare_work_dir = symlink_work_directory
+
         else:
             # the lephare work dir env var is set, create subdirectories if needed
             self.create_work_subdirectories(self.lephare_work_dir)
             print(
-                f"""User defined LEPHAREWORK is set. All intermediate files will
-                be written to {self.lephare_work_dir}."""
+                f"User defined LEPHAREWORK is set. All intermediate files will "
+                f"be written to:\n {self.lephare_work_dir}"
             )
 
     def create_new_run(self, descriptive_directory_name=None):
