@@ -1,9 +1,11 @@
 Getting Started
 ---------------
 
+
+
 Installation
 ============
-Lephare can be installed with pip:
+The simplest way to install LePHARE is with pip:
 
 .. code-block:: bash
     
@@ -16,53 +18,100 @@ Lephare can be installed with pip:
 
 Example Usage
 *************
-The following snippet is the most basic example of running lephare end-to-end. You can also get
-an example notebook running this code `here <https://github.com/lephare-photoz/lephare/blob/main/docs/notebooks/Minimal_photoz_run.ipynb>`_.
+The following Python snippet is the most basic example of running lephare end-to-end. 
+You can also get an example notebook running this code `here <https://github.com/lephare-photoz/lephare/blob/main/docs/notebooks/Minimal_photoz_run.ipynb>`_.
 
 
 .. code-block:: python
 
     import lephare as lp
+    from astropy.table import Table
+    # The following config is highly dependent on your input data and science goals
     config=lp.all_types_to_keymap(lp.default_cosmos_config)
     lp.data_retrieval.get_auxiliary_data(keymap=config, additional_files=['examples/COSMOS.in'])
     lp.prepare(config)
-    input=Table.read(f"{lp.LEPHAREDIR}/examples/COSMOS.in")
-    output, pdfs, zgrid = lp.process(config, input)
+    # The following example table is in the lephare input format.
+    input_table=Table.read(f"{lp.LEPHAREDIR}/examples/COSMOS.in")
+    output, pdfs, zgrid = lp.process(config, input_table)
     
 
 
-To ensure that the everything was successful, this workflow should produce a 
-a more or less 1 to 1 relationship between the spectroscopic redshift "output['ZSPEC']" 
-and predicted redshift "output['Z_BEST']".
-
+This will take over ten minutes to run. To check that everything was successful, 
+this workflow should produce a 1 to 1 relationship between the spectroscopic 
+redshift `output['ZSPEC']` and predicted redshift `output['Z_BEST']`.
 
 
 .. note
 
-    Lephare can be used either via a Jupyter notebook or from the command line. 
-    However, the use of the command line executables are generally for legacy purposes.
+    Lephare can be used either via the Python interface or from the command line. 
+    The use of the command line executables are generally for legacy purposes.
     An example of using the command line arguments can be found `here <https://github.com/lephare-photoz/lephare/blob/main/docs/historical_examples/test_suite.sh>`_.
 
-External data and the environment variables
+
+Auxiliary Data and the Environment Variables
 ===========================================
-LePHARE depends on external data sets such as spectral energy distributions,
+LePHARE depends on auxiliary data sets such as spectral energy distributions,
 filter transmission curves, and attenuation curves. In order to keep the pip
 installation light these are now stored in a distinct repository called
 `lephare-data <https://github.com/lephare-photoz/lephare-data>`_.
 
 
-
 We have built some automatic machinery for downloading the required files 
 for a given config `para` file. However, some users may prefer to simply clone
-the entire directory. 
+the entire directory. The automatic download functionality can also be used to
+download all external data.
 
 .. note::
     lephare uses environment variables to locate the external data and work files.
-    If you want to download the full external data repository you must set the environment
-    variable `LEPHAREDIR` to its location. If not lephare will use the default cache
-    location.
+    These are set by default to your cache.
+    If you want to download the external data to a specific location you must set the
+    environment variable `LEPHAREDIR` to its location. This must be done prior to 
+    importing lephare in a python session. If not lephare will use the default cache
+    location on your system.
 
-Developer guide
+In the following snippet we show how you might set the `LEPHAREDIR` to a new location 
+and download all the auxiliary data there:
+
+.. code-block:: python
+
+    import os
+    os.environ['LEPHAREDIR']='/path/to/my/preferred/directory/'
+    # You must import lephare after setting the variables
+    import lephare as lp
+    # If you do not set a config input to the following function in gets everything.
+    lp.data_retrieval.get_auxiliary_data(clone=False)
+
+* `LEPHAREDIR` is the location of the auxiliary input data.
+* `LEPHAREWORK` is the location of the intermediate files produced during a lephare run.
+
+Both can be set if preferred or left to the default location in the user cache.
+
+
+Advanced Usage
+==============
+
+Taking advantage of the advanced capabilities of LePHARE will depend on a detailed
+understanding of the configurations which can be specified by text file or via a dictionary 
+in Python. In the later stages of the documentation we cover the various options
+that can be specified via :doc:`keywords <keywords>`.
+
+For an example text file see the COSMOS example `here <https://github.com/lephare-photoz/lephare-data/blob/main/examples/COSMOS.para>`_.
+
+One way to set config values is to start with the default cosmos config 
+dictionary which is shipped with the Python by default and to update those elements 
+you want to change. In the following Python snippet we start with the default
+COSMOS config and update the redshift grid using the `Z_STEP` keyword to a finer
+grid which would increase accuracy but take longer to execute:
+
+.. code-block:: python
+
+    import lephare as lp
+    config=lp.default_cosmos_config.copy()
+    config.update({
+        'Z_STEP': '0.001,0.,7.', # A very fine redshift grid
+    })
+
+Developer Guide
 ===============
 Before installing any dependencies or writing code, it's a great idea to create 
 a virtual environment. LINCC-Frameworks engineers primarily use conda to manage 
@@ -137,18 +186,10 @@ If you can’t find a solution, feel free to `create an issue in the lephare rep
 
 Some developers who are familiar with the original version of the code may
 want to have all the external data present in the same repository as the code
-or some other preferred location.
-One way to acheive this is to use the automatic downloading functionality to 
-put all the external data in that location after git cloning the main code:
+or some other preferred location. They could set the `LEPHAREDIR` to the code 
+location and then use the automatic downloading functionality to put all
+the auxiliary data there as it was in the previous versions.
 
-
-.. code-block:: python
-    
-    # Set the LEPHAREWORK dir prior to importing lephare to use your preferred location.
-    import os
-    os.environ["LEPHAREDIR"]="/path/to/the/preferred/directory/"
-    from lephare import data_retrieval as dr
-    dr.get_auxiliary_data(clone=False)
 
 .. note::
     The single quotes around `'[dev]'` may not be required for your operating system.
@@ -165,3 +206,7 @@ put all the external data in that location after git cloning the main code:
 
     The environment variables `LEPHAREDIR` and `LEPHAREWORK` are set on import
     in Python. Care must be taken not to reset after importing.
+
+    It remains possible to build the C++ code using either make or cmake directly.
+    This is not recommended and will likely require OS specific changes. It may be 
+    useful on unusual systems where we do not support compilation.
