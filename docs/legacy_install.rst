@@ -1,17 +1,67 @@
-Legacy installation
+Advanced Usage via Command Line Interface
 ========================================================================================
 
-Some users may want to use the original binaries to run lephare. 
-To do so requires making the c++ binaries using the MakeFile.
+The four principle command line tools are immeidately available after installing 
+with pip. The basic calls to each are summarised below.
 
-Requirements
-------------
+`filter` can often be called with just the config file
+
+.. code-block:: bash
+
+  filter -c config_file.para
+
+`sedtolib` will typically require the config and the object type. Updated library names which 
+overwrite the config can also be passed to it.
+
+.. code-block:: bash
+
+  sedtolib -c config_file.para \
+    -t G \ # type G for Galaxies
+    --GAL_SED COSMOS_MOD.list \ # optional flag to overwrite
+    --GAL_LIB LIB_VISTA 
+
+`mag_gal`` likewise can be run with just the config and type but is also highly customisable.
+
+.. code-block:: bash
+
+  mag_gal  -c config_file.para \
+    -t G \
+    --GAL_LIB_IN LIB_VISTA \
+    --GAL_LIB_OUT VISTA_COSMOS_FREE \
+    --MOD_EXTINC 18,26,26,33,26,33,26,33  \
+    --EXTINC_LAW SMC_prevot.dat,SB_calzetti.dat,SB_calzetti_bump1.dat,SB_calzetti_bump2.dat  \
+    --EM_LINES EMP_UV  \
+    --EM_DISPERSION 0.5,0.75,1.,1.5,2.
+
+Finally `zphota`` can be run similarly.
+
+.. code-block:: bash
+
+  zphota -c config_file.para \
+  --CAT_IN COSMOS.in \
+  --CAT_OUT zphot_vista_adapt.out \
+  --ZPHOTLIB VISTA_COSMOS_FREE,ALLSTAR_COSMOS,QSO_COSMOS  \
+  --ADD_EMLINES 0,100 \
+  --AUTO_ADAPT YES  
+
+Most of the optional flags that are sent to the command line arguments correspond to 
+keywords in the config file and effectively override them.
+
+A more detailed example shell script which will run the COSMOS example can be found `here <https://github.com/lephare-photoz/lephare/blob/main/docs/historical_examples/test_suite.sh>`_.
+
+This `example <https://github.com/lephare-photoz/lephare-data/blob/main/examples/README_full>`_ also shows some more advanced features which can be accessed via the command line.
+
+Legacy Installation
+-------------------
+
+In addition to the Command Line Interface that is available immediately following 
+pip installation some users may want to use the original binaries to run lephare. 
+To do so requires making the c++ binaries using the MakeFile. It is possible to
+install these binaries using either cmake or make. This is not the recommended 
+method but it remains a possibility.
 
 The C++ part of LePhare has no external dependency beyond OpenMP and standard compiling and linking libraries. The python part depends on cmake and several packages from the python scientific ecosystem (see below).
 In order to run make you will need an appropriate compiler for instance gcc on a Mac which can be installed with ``brew install gcc``.
-
-Legacy installation methods
----------------------------
 
 Build only the C++ executables with make (historical method)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
