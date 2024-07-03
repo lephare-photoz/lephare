@@ -22,8 +22,8 @@ sys.path.insert(0, os.path.abspath("../src/"))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "lephare"
-copyright = "2023, Johann Cohen-Tanugi"
-author = "Johann Cohen-Tanugi"
+copyright = "2023, the LePHARE collaboration"
+author = "The LePHARE collaboration"
 release = version("lephare")
 # for example take major/minor
 version = ".".join(release.split(".")[:2])
