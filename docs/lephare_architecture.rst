@@ -1,5 +1,9 @@
-Architecture Overview of lephare
------------------
+Advanced Usage via Python Interface
+--------------------------------
+
+The best way to learn about the Python interface is through running the example :doc:`notebooks <notebooks>`.
+
+Whether or not you are running via Python or the command line there are four key stages of a LePHARE run.
 
 Core stages of lephare
 ======================

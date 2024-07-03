@@ -34,14 +34,21 @@ class DataManager:
             # If this directory does not exist, create it
             if not os.path.isdir(self.lephare_dir):
                 print(
-                    f"""Lephare default cache directory being created at
-                    {self.lephare_dir}. More than 1Gb may be written there."""
+                    f"LEPHAREDIR is being set to the default cache directory which is being created at:\n"
+                    f"{self.lephare_dir}\n"
+                    f"More than 1Gb may be written there."
                 )
                 os.makedirs(self.lephare_dir)
+            else:
+                print(
+                    f"LEPHAREDIR is being set to the default cache directory:\n"
+                    f"{self.lephare_dir}\n"
+                    f"More than 1Gb may be written there."
+                )
         else:
             print(
-                f"""User defined LEPHAREDIR is set. Code runs depend on all required
-                auxiliary data being present at {self.lephare_dir}."""
+                f"User defined LEPHAREDIR is set. Code runs depend on all required\n"
+                f"auxiliary data being present at {self.lephare_dir}."
             )
 
         self.lephare_work_dir = os.getenv("LEPHAREWORK", None)
@@ -54,13 +61,15 @@ class DataManager:
             # Location of work linked dir <default_cache>/work and the timestamped directory
             symlink_work_directory = f"{default_os_cache}/work"
 
+            print(f"LEPHAREWORK is being set to the default cache directory:\n" f"{symlink_work_directory}")
+
             # first remove the symlink if it already exists
             if os.path.islink(symlink_work_directory):
                 # os.unlink(symlink_work_directory) #We no longer make a new link
                 print(
-                    f"""Default work cache at {symlink_work_directory}
-                    is already linked. This is linked to the run directory:
-                    {os.readlink(symlink_work_directory)}"""
+                    f"Default work cache is already linked. \n"
+                    f"This is linked to the run directory:\n"
+                    f"{os.readlink(symlink_work_directory)}"
                 )
             else:
                 # create a runs directory in the default cache locations
@@ -80,12 +89,13 @@ class DataManager:
 
             # set the instance variable to the <default_cache>/work symlink
             self.lephare_work_dir = symlink_work_directory
+
         else:
             # the lephare work dir env var is set, create subdirectories if needed
             self.create_work_subdirectories(self.lephare_work_dir)
             print(
-                f"""User defined LEPHAREWORK is set. All intermediate files will
-                be written to {self.lephare_work_dir}."""
+                f"User defined LEPHAREWORK is set. All intermediate files will "
+                f"be written to:\n {self.lephare_work_dir}"
             )
 
     def create_new_run(self, descriptive_directory_name=None):

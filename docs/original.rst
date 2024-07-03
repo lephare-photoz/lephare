@@ -1,64 +1,21 @@
-The full LePHARE user manual
+Detailed LePHARE user manual
 ============================
 
-This appendix contains the orginal documentation alongside more details concerning the 
+LePHARE was written by Stéphane Arnouts & Olivier Ilbert (Laboratoire 
+d’Astrophysique de Marseille) and later by Johann Cohen-Tanugi (Laboratoire 
+Univers et Particules de Montpellier). Full details of all contributors can be 
+found on the main GitHub `here <https://github.com/lephare-photoz/lephare/>`_.
+
+This section contains more details concerning the 
 internal structure of the code and how to run it using the legacy command line arguments.
+.
 
-
-Some of this documentation is effectively deprecated and can refer back to previous
-versions going as far back as the original Fortran code. Take care when using 
-commands exactly as specified here while we work on updating the documentation.
-
-+---------------------------------------------------+
-|                                                   |
-+---------------------------------------------------+
-| **Le PHARE++**                                    |
-+---------------------------------------------------+
-|                                                   |
-+---------------------------------------------------+
-|             PHotometric Analysis for              |
-+---------------------------------------------------+
-|             Redshift Estimation                  |
-+---------------------------------------------------+
-|                                                   |
-+---------------------------------------------------+
-
-| 
-
-Stéphane Arnouts & Olivier Ilbert
-
-| 
-
-Laboratoire d’Astrophysique de Marseille
-
-| 
-
-  
-
-| 
-
-Johann Cohen-Tanugi
-
-| 
-
-Laboratoire Univers et Particules de Montpellier
-
-.. container:: center
-
-   With the contribution of Iary Davidzon, Mara Salvato, Cédric Dubois,
-   Emeric Le Floc’h, Raphael Shirley, and Maria Petkova
-
-.. _`sect:starter`:
-
-Getting started
----------------
-
-.. _`subsect:introduction`:
+.. _`sect:introduction`:
 
 Introduction
-^^^^^^^^^^^^
+-------------
 
-*LePHARE++* is a set of ``C++`` programs to compute photometric
+*LePHARE* is a set of ``C++`` programs to compute photometric
 redshifts ( :math:`z_\mathrm{phot}` ) for galaxies and AGN, and galaxy
 physical parameters [1]_ by fitting spectral energy distributions (SEDs)
 to a dataset of photometric fluxes or apparent magnitudes. Stellar
@@ -81,65 +38,65 @@ templates are fitted too. It is based on the previous Fortran version of
 -  The photometric redshift code based on a :math:`\chi^2` fitting
    method. This part can also be used to compute physical parameters.
 
-.. _`subsect:installation`:
 
-Download and installation
-^^^^^^^^^^^^^^^^^^^^^^^^^
+.. Comment out old download instructions
+.. Download and installation
+.. ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-| The basic package is available from GitHub. Each file is briefly described in Appendix
-  A. Additional SED libraries (in separate tarballs) are also available
-  on the same webpage.
-| Before starting, you must set two environment variables:
+.. | The basic package is available from GitHub. Each file is briefly described in Appendix
+..   A. Additional SED libraries (in separate tarballs) are also available
+..   on the same webpage.
+.. | Before starting, you must set two environment variables:
 
--  ``$LEPHAREDIR`` is the root directory of the software (e.g.,
-   ``/home/yourname/LEPHARE/``)
+.. -  ``$LEPHAREDIR`` is the root directory of the software (e.g.,
+..    ``/home/yourname/LEPHARE/``)
 
--  ``$LEPHAREWORK`` is the path of a new directory which will be created
-   when compiling the code (e.g. ``$LEPHAREDIR/work/``).
-   ``$LEPHAREWORK`` will contain libraries created by *LePHARE++* (it
-   can be placed anywhere). The code will use ``$LEPHAREDIR/work/`` if
-   it doesn’t exist.
+.. -  ``$LEPHAREWORK`` is the path of a new directory which will be created
+..    when compiling the code (e.g. ``$LEPHAREDIR/work/``).
+..    ``$LEPHAREWORK`` will contain libraries created by *LePHARE++* (it
+..    can be placed anywhere). The code will use ``$LEPHAREDIR/work/`` if
+..    it doesn’t exist.
 
-| These two environment variables could be set definitively in the usual
-  files depending on your shell (e.g., ``.bash_profile`` or
-  ``.csh_envlph``) as any environment variable.
-| Once downloaded (and unpackaged) *LePHARE++* , enter in the directory
-  ``source``. Then open the file ``Makefile`` and modify its options
-  according to your OS if needed (see notes below).
-| Once your OS is ready to compile the code, execute the commands:
-| $ make clean
-| $ make
-| if you recompile once again from scratch. Note that the directory
-  ``$LEPHAREWORK`` will be created during this phase.
-| You can create the directory ``$LEPHAREWORK`` separately with the
-  command:
-| $ make work
-| You can use ``Makefile`` to build a gzipped file containing all the
-  source files by the command:
-| $ make archive
-| Notes on the compiler options:
-| With the default set-up, the compiler is GNU ``g++`` with basic
-  optimization flags (``-g -std=c++11 -O3``). If you want to enable
-  parallelization (OPENMP), other options should be included (e.g.,
-  ``-lpthread``). MacOS users must be aware that the ``g++`` installed
-  via XCode is a wrapper of ``clang`` and can raise errors while
-  compiling; the easiest solution is to install the original GNU
-  compiler (in the GCC package by Free Software Foundation) available
-  through Homebrew or MacPorts. Note also that the code has been tested
-  with GCC versions :math:`>6` (6.3.0 and 7.3.0); older versions may
-  result in critical errors.
+.. | These two environment variables could be set definitively in the usual
+..   files depending on your shell (e.g., ``.bash_profile`` or
+..   ``.csh_envlph``) as any environment variable.
+.. | Once downloaded (and unpackaged) *LePHARE++* , enter in the directory
+..   ``source``. Then open the file ``Makefile`` and modify its options
+..   according to your OS if needed (see notes below).
+.. | Once your OS is ready to compile the code, execute the commands:
+.. | $ make clean
+.. | $ make
+.. | if you recompile once again from scratch. Note that the directory
+..   ``$LEPHAREWORK`` will be created during this phase.
+.. | You can create the directory ``$LEPHAREWORK`` separately with the
+..   command:
+.. | $ make work
+.. | You can use ``Makefile`` to build a gzipped file containing all the
+..   source files by the command:
+.. | $ make archive
+.. | Notes on the compiler options:
+.. | With the default set-up, the compiler is GNU ``g++`` with basic
+..   optimization flags (``-g -std=c++11 -O3``). If you want to enable
+..   parallelization (OPENMP), other options should be included (e.g.,
+..   ``-lpthread``). MacOS users must be aware that the ``g++`` installed
+..   via XCode is a wrapper of ``clang`` and can raise errors while
+..   compiling; the easiest solution is to install the original GNU
+..   compiler (in the GCC package by Free Software Foundation) available
+..   through Homebrew or MacPorts. Note also that the code has been tested
+..   with GCC versions :math:`>6` (6.3.0 and 7.3.0); older versions may
+..   result in critical errors.
 
-Example with one run
-^^^^^^^^^^^^^^^^^^^^
+.. Example with one run
+.. ^^^^^^^^^^^^^^^^^^^^
 
-| We provide an example of the whole procedure for a test catalog
-  included in the package in
-| ``$LEPHAREDIR/test/``. For this example, we used the COSMOS2015
-  catalogue (Laigle et al. 2016) but limited to the zCOSMOS bright
-  sample, for which also spectroscopy is provided. You can find more
-  detailed examples in ``$LEPHAREDIR/examples/``. Different
-  configurations are tested, showing how to configure the code for this
-  application. All the key steps are considered.
+.. | We provide an example of the whole procedure for a test catalog
+..   included in the package in
+.. | ``$LEPHAREDIR/test/``. For this example, we used the COSMOS2015
+..   catalogue (Laigle et al. 2016) but limited to the zCOSMOS bright
+..   sample, for which also spectroscopy is provided. You can find more
+..   detailed examples in ``$LEPHAREDIR/examples/``. Different
+..   configurations are tested, showing how to configure the code for this
+..   application. All the key steps are considered.
 
 Structure
 ^^^^^^^^^
