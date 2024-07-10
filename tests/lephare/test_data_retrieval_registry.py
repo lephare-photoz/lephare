@@ -40,7 +40,9 @@ def test_download_registry_success():
     with patch("requests.get", return_value=mock_response) as mock_get_remote_registry:  # noqa: F841
         with tempfile.TemporaryDirectory() as tmp_dir:
             registry_outfile = os.path.join(tmp_dir, "registry.txt")
-            download_registry_from_github(outfile=registry_outfile)
+            text = download_registry_from_github(outfile=registry_outfile)
+            # test the returned value
+            assert text == "file1\nfile2\nfile3"
             # Check that we can open it (and it contains expected content)
             with open(registry_outfile, "r") as file:
                 assert file.read() == "file1\nfile2\nfile3"

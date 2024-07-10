@@ -1,4 +1,7 @@
-"""This module provides functionality for downloading and managing data files using pooch."""
+"""
+This module provides functionality for downloading and managing data files using
+`pooch <https://pypi.org/project/pooch/0.5.2/>`__.
+"""
 
 import concurrent.futures
 import os
@@ -128,6 +131,7 @@ def download_registry_from_github(url="", outfile=""):
         file.write(response.text)
 
     print(f"Registry file downloaded and saved as {outfile}.")
+    return response.text
 
 
 def read_list_file(list_file, prefix=""):
@@ -413,7 +417,7 @@ def config_to_required_files(keymap, base_url=None):
     return required_files
 
 
-def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=None):
+def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=None, clone=True):
     """Get all auxiliary data required to run lephare.
 
     This gets all the filters, seds, and other data files.
@@ -428,19 +432,25 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
         The config dictionary.
     additional_files : list
         Any additional files to be downloaded from the auxiliary file repo.
+    clone : bool
+        If keymap is None, clone=True will git clone the lephare-data repoitory,
+        else it will copy all the lephare-data files over into lephare_dir. This is
+        useful e.g. for developers wanting the exact same code environment as in
+        legacy lephare version.
     """
 
     # ensure that all values in the keymap are keyword objects
-    keymap = all_types_to_keymap(keymap)
+    if keymap is not None:
+        keymap = all_types_to_keymap(keymap)
 
     # Get the registry file
-    download_registry_from_github()
+    file_text = download_registry_from_github()
     base_url = DEFAULT_BASE_DATA_URL
     repo_name = "lephare-data"
     repo_url = f"https://github.com/lephare-photoz/{repo_name}"
     registry_file = DEFAULT_REGISTRY_FILE
     data_path = lephare_dir
-    if keymap is None:
+    if keymap is None and clone is True:
         # Assume if filt is present assume everything is.
         if os.path.isdir(f"{lephare_dir}/filt"):
             warnings.warn(
@@ -454,7 +464,11 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
             os.system(f"git clone {repo_url} {lephare_dir}")
     else:
         retriever = make_retriever(base_url=base_url, registry_file=registry_file, data_path=data_path)
-        file_list = config_to_required_files(keymap)
+        if keymap is not None:
+            file_list = config_to_required_files(keymap)
+        else:
+            file_list = np.array(file_text.split())[0:-1:2]
         download_all_files(retriever, file_list, ignore_registry=False)
     if additional_files is not None:
         download_all_files(retriever, additional_files, ignore_registry=False)
+    os.system(f"rm {registry_file}")
