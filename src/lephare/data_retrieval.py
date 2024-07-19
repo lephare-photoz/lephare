@@ -157,6 +157,10 @@ def read_list_file(list_file, prefix=""):
     """
     file_names = []
 
+    if prefix != "" and ("sed" in list_file or "filt" in list_file):
+        print("Warning : prefix argument discarded when 'sed' or 'filt' is in list_file string")
+        prefix = ""
+
     # Check if the list_file is a URL
     if urlparse(list_file).scheme in ("http", "https"):
         response = requests.get(list_file, timeout=60)
