@@ -26,9 +26,14 @@ def test_filter_file_by_prefix(test_data_dir):
 
 
 def test_read_list_file(test_data_dir):
+    with pytest.raises(FileNotFoundError):
+        read_list_file("non_existing_file.txt")
     file_path = os.path.join(test_data_dir, "test_file_names.list")
     expected_files = ["prefix1_file1", "prefix2_file2"]
     assert read_list_file(file_path) == expected_files
+    # with sed in file path
+    file_path = os.path.join(test_data_dir, "sed/GAL/ONE_SED.list")
+    assert read_list_file("tests/data/sed/GAL/ONE_SED.list") == ["sed/GAL/o5v.sed.ext"]
 
 
 @patch("requests.get")
