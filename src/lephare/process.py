@@ -50,7 +50,7 @@ def process(config, input, col_names=None, standard_names=False, filename=None, 
     srclist = []
     for i in range(ng):
         one_obj = lp.onesource(i, photz.gridz)
-        one_obj.readsource(str(i), flux[i], flux_err[i], context[i], zspec[i], string_data[i])
+        one_obj.readsource(str(i), flux[i], flux_err[i], context[i], zspec[i], str(string_data[i]))
         photz.prep_data(one_obj)
         srclist.append(one_obj)
 
@@ -132,7 +132,7 @@ def calculate_offsets(config, input, col_names=None, standard_names=False):
     srclist = []
     for i in range(ng):
         one_obj = lp.onesource(i, photz.gridz)
-        one_obj.readsource(str(i), flux[i], flux_err[i], context[i], zspec[i], string_data[i])
+        one_obj.readsource(str(i), flux[i], flux_err[i], context[i], zspec[i], str(string_data[i]))
         photz.prep_data(one_obj)
         srclist.append(one_obj)
 
