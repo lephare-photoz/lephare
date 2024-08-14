@@ -29,7 +29,7 @@ You can also get an example notebook running this code `here <https://github.com
     lp.data_retrieval.get_auxiliary_data(keymap=config, additional_files=['examples/COSMOS.in'])
     lp.prepare(config)
     # The following example table is in the lephare input format.
-    input_table=Table.read(f"{lp.LEPHAREDIR}/examples/COSMOS.in")
+    input_table=Table.read(f"{lp.LEPHAREDIR}/examples/COSMOS.in",format="ascii")
     output, pdfs, zgrid = lp.process(config, input_table)
     
 
