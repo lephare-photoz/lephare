@@ -175,7 +175,7 @@ pair<double, double> PDF::uncMin(double dchi) {
   }
 
   // Loop over each point of the PDF to find the maximum error
-  for (size_t k = ib; k < xaxis.size(); k++) {
+  for (size_t k = ib; k < xaxis.size() - 1; k++) {
     // When the considered chi2 is above the chi2 limit and the following one
     // below
     if (chi2[k] <= chiLim && chi2[k + 1] > chiLim) {
@@ -208,7 +208,7 @@ pair<double, double> PDF::credible_interval(float level, double val) {
   bound_val = upper_bound(xaxis.begin(), xaxis.end(), val);
   size_t maxid = bound_val - xaxis.begin();
   // Take the index of the closest value
-  if (maxid > 0) {
+  if (maxid > 0 && maxid < xaxis.size()) {
     if ((xaxis[maxid] - val) > (val - xaxis[maxid - 1])) maxid = maxid - 1;
   }
 
