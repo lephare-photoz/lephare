@@ -1047,7 +1047,7 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
   for (size_t k = 0; k < pdfmap[7].size(); k++)
     pdfmap[7].vPDF[k] = PDFcol2loc[k];
   for (size_t k = 0; k < pdfmap[8].size(); k++)
-    pdfmap[8].vPDF[k] = PDFcol2loc[k];
+    pdfmap[8].vPDF[k] = PDFmrefloc[k];
 
   // Normalize the PDF
 
