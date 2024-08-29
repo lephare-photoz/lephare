@@ -216,7 +216,7 @@ pair<double, double> PDF::credible_interval(float level, double val) {
 
   // Upper bound does not necessarily return the closest value on the xaxis grid
   // from val
-  if (maxid > 0) {
+  else if (maxid > 0) {
     if ((xaxis[maxid] - val) > (val - xaxis[maxid - 1])) maxid = maxid - 1;
   }
 
