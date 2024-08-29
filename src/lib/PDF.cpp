@@ -194,7 +194,7 @@ pair<double, double> PDF::uncMin(double dchi) {
  Derive the mode of the PDF, as well as the uncertainties
  Deal with asymetric PDF for the uncertainties
  First argument is the confidence level to consider, and the second argument is
- the considered value
+ the considered value (typically the mode in the redshift distribution)
  */
 pair<double, double> PDF::credible_interval(float level, double val) {
   pair<double, double> result;
@@ -207,8 +207,16 @@ pair<double, double> PDF::credible_interval(float level, double val) {
   // Find the index corrresponding to the value given in input
   bound_val = upper_bound(xaxis.begin(), xaxis.end(), val);
   size_t maxid = bound_val - xaxis.begin();
-  // Take the index of the closest value
-  if (maxid > 0 && maxid < xaxis.size()) {
+
+  // If val is at the upper boundary of the xaxis
+  //(id est the redshift of the mode is the last redshift of the zgrid),
+  // then bound_val is xaxis.end() and maxid=size which oveflows as an index.
+  // we need to decrement by 1
+  if (maxid == xaxis.size()) maxid -= 1;
+
+  // Upper bound does not necessarily return the closest value on the xaxis grid
+  // from val
+  if (maxid > 0) {
     if ((xaxis[maxid] - val) > (val - xaxis[maxid - 1])) maxid = maxid - 1;
   }
 
