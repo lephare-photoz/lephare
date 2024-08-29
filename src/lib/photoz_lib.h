@@ -47,12 +47,9 @@ class PhotoZ {
   PhotoZ(keymap &key_analysed);
 
   virtual ~PhotoZ() {
-    for (auto &sed: fullLib)
-      delete sed;
-    for (auto &sed: fullLibIR)
-      delete sed;
-    for (auto &sed: lightLib)
-      delete sed;
+    for (auto &sed: fullLib) delete sed;
+    for (auto &sed: fullLibIR) delete sed;
+    for (auto &sed: lightLib) delete sed;
     fullLib.clear();
     fullLibIR.clear();
     lightLib.clear();
