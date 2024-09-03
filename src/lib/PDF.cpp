@@ -201,91 +201,92 @@ pair<double, double> PDF::credible_interval(float level, double val) {
   vector<double>::iterator bound_val, bound_left_id, bound_right_id, boundpos,
       boundneg;
 
+  // val is the centered value of the credible interval; it has to be located
+  // inside the xaxis.
+  if (val < scaleMin || val > scaleMax) {
+    throw invalid_argument("argument val = " + to_string(val) +
+                           "is not in range [" + to_string(xaxis.front()) +
+                           "," + to_string(xaxis.back()) + "].");
+  }
+
   // if levels given in percentage
   if (level > 1.) level /= 100.;
-
-  // Find the index corrresponding to the value given in input
-  bound_val = upper_bound(xaxis.begin(), xaxis.end(), val);
-  size_t maxid = bound_val - xaxis.begin();
-
-  // If val is at the upper boundary of the xaxis
-  //(id est the redshift of the mode is the last redshift of the zgrid),
-  // then bound_val is xaxis.end() and maxid=size which oveflows as an index.
-  // we need to decrement by 1
-  if (maxid == xaxis.size()) maxid -= 1;
-
-  // Upper bound does not necessarily return the closest value on the xaxis grid
-  // from val
-  else if (maxid > 0) {
-    if ((xaxis[maxid] - val) > (val - xaxis[maxid - 1])) maxid = maxid - 1;
-  }
 
   // Compute the full cumulant
   vector<double> cumulant;
   double tmp = 0;
   cumulant.push_back(0.0);
-  for (size_t k = 0; k < xaxis.size() - 1; k++) {
+  for (size_t k = 0; k < vsize - 1; k++) {
     tmp += (xaxis[k + 1] - xaxis[k]) * (vPDF[k + 1] + vPDF[k]) / 2.;
     cumulant.push_back(tmp);
   }
 
-  // If cumulative defined
-  if (cumulant.back() > 0) {
-    // Normalization
-    for (auto &c : cumulant) c /= cumulant.back();
-
-    // - Use cumulant to compute integral from minimum x value to the mode
-    double cumul_left = cumulant[maxid];
-    // - Use cumulant to compute integral from the mode to the end
-    double cumul_right = 1. - cumul_left;
-
-    // Define the limits, taken into account the asymetry of the PDF
-    double lowerLevel, upperLevel;
-    // If integral of the PDF above the mode is higher than xval/2 and lower
-    // than 0.5, enough area on each side
-    if (cumul_right >= level / 2. && cumul_left >= level / 2.) {
-      upperLevel = cumul_left + level / 2.;
-      lowerLevel = cumul_left - level / 2.;
-      // Case with the intergral between the min and the mode which is lower
-      // than level/2
-    } else if (cumul_right <= level / 2.) {
-      // Integrate on the right in order to encompass 99.9% of the PDF
-      upperLevel = 0.999;
-      lowerLevel = 0.999 - level;
-      // Case with the intergral between the min and the mode which is lower
-      // than level/2
-    } else {
-      // Integrate on the left, leaving only 0.1% below the lower limit
-      upperLevel = level - 0.001;
-      lowerLevel = 0.001;
-    }
-
-    // Iterator pointing on the item with a value for the upper-level integral
-    bound_right_id = upper_bound(cumulant.begin(), cumulant.end(), upperLevel);
-    size_t indR = bound_right_id - cumulant.begin();
-    // Linear interpolation - right case
-    if (xaxis[indR - 1] > val) {
-      // args in reverse order y, y1, x1, y2, x2, in order to get x instead of y
-      result.second =
-          linear_interp(upperLevel, cumulant[indR - 1], xaxis[indR - 1],
-                        cumulant[indR], xaxis[indR]);
-    } else {
-      result.second = xaxis[indR];
-    }
-    // Linear interpolation - left case
-    bound_left_id = upper_bound(cumulant.begin(), cumulant.end(), lowerLevel);
-    size_t indL = bound_left_id - cumulant.begin() - 1;
-    if (xaxis[indL + 1] < val) {
-      result.first = linear_interp(lowerLevel, cumulant[indL], xaxis[indL],
-                                   cumulant[indL + 1], xaxis[indL + 1]);
-    } else {
-      result.first = xaxis[indL];
-    }
-
+  // normalize if cumulative defined
+  if (cumulant.back() <= 0) {
+    return make_pair(xaxis.front(), xaxis.back());
   } else {
-    result.first = xaxis[0];
-    result.second = xaxis.back();
+    for (auto &c : cumulant) c /= cumulant.back();
   }
+
+  // PDF x axis is by construction uniformly sampled, thus so is the cumulant
+  // vector. Then the closest to but lower than val index is immediately
+  // computable
+  int idx_lo = (val - scaleMin) / scaleStep;
+  double cum_lo = cumulant[idx_lo];
+  int idx_hi = idx_lo + 1;
+  double cum_hi = cumulant[idx_hi];
+  // interpolated value of cumulant at xaxis value val
+  double cum_val = cum_lo + (cum_hi - cum_lo) /
+                                (xaxis[idx_hi] - xaxis[idx_lo]) *
+                                (val - xaxis[idx_lo]);
+
+  // - Use cumulant to compute integral from minimum x value to the mode
+  double cumul_left = cum_val;
+  // - Use cumulant to compute integral from the mode to the end
+  double cumul_right = 1. - cumul_left;
+
+  // Define the limits, taking into account the asymetry of the PDF
+  double lowerLevel, upperLevel;
+  // If integral of the PDF above the mode is higher than level/2 and lower
+  // than 0.5, enough area on each side
+  if (cumul_right >= level / 2. && cumul_left >= level / 2.) {
+    upperLevel = cumul_left + level / 2.;
+    lowerLevel = cumul_left - level / 2.;
+    // Case with the integral between the min and the mode which is lower
+    // than level/2
+  } else if (cumul_right <= level / 2.) {
+    // Integrate on the right in order to encompass 99.9% of the PDF
+    upperLevel = 1.;
+    lowerLevel = 1. - level;
+    // Case with the integral between the min and the mode which is lower
+    // than level/2
+  } else {
+    // Integrate on the left, leaving only 0.1% below the lower limit
+    upperLevel = level;
+    lowerLevel = 0.0;
+  }
+
+  // Iterator pointing on the item with a value for the upper-level integral
+  bound_right_id = upper_bound(cumulant.begin(), cumulant.end(), upperLevel);
+  size_t indR = bound_right_id - cumulant.begin();
+  // Linear interpolation - right case
+  if (xaxis[indR - 1] > val) {
+    // args in reverse order y, y1, x1, y2, x2, in order to get x instead of y
+    result.second = linear_interp(upperLevel, cumulant[indR - 1],
+                                  xaxis[indR - 1], cumulant[indR], xaxis[indR]);
+  } else {
+    result.second = xaxis[indR];
+  }
+  // Linear interpolation - left case
+  bound_left_id = upper_bound(cumulant.begin(), cumulant.end(), lowerLevel);
+  size_t indL = bound_left_id - cumulant.begin() - 1;
+  if (xaxis[indL + 1] < val) {
+    result.first = linear_interp(lowerLevel, cumulant[indL], xaxis[indL],
+                                 cumulant[indL + 1], xaxis[indL + 1]);
+  } else {
+    result.first = xaxis[indL];
+  }
+
   return result;
 }
 
