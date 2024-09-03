@@ -191,10 +191,10 @@ pair<double, double> PDF::uncMin(double dchi) {
 }
 
 /*
- Derive the mode of the PDF, as well as the uncertainties
- Deal with asymetric PDF for the uncertainties
+ Derive the credible interval of the PDF, possibly asymetric
  First argument is the confidence level to consider, and the second argument is
- the considered value (typically the mode in the redshift distribution)
+ the considered value centering the interval (typically the mode in the redshift
+ distribution)
  */
 pair<double, double> PDF::credible_interval(float level, double val) {
   pair<double, double> result;
