@@ -201,12 +201,12 @@ pair<double, double> PDF::credible_interval(float level, double val) {
   vector<double>::iterator bound_val, bound_left_id, bound_right_id, boundpos,
       boundneg;
 
-  // val is the centered value of the credible interval; it has to be located
-  // inside the xaxis.
+  // val is the centered value of the credible interval; it normally has to be
+  // located inside the xaxis. But we have pdfmaps that will never be correct,
+  // e.g. when BC03 is not used (no physical parameter estimation), and thus we
+  // return an empty interval
   if (val < scaleMin || val > scaleMax) {
-    throw invalid_argument("argument val = " + to_string(val) +
-                           "is not in range [" + to_string(xaxis.front()) +
-                           "," + to_string(xaxis.back()) + "].");
+    return make_pair(val, val);
   }
 
   // if levels given in percentage
