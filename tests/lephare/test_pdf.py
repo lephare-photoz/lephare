@@ -42,11 +42,13 @@ def test_plot():
 def test_credible_interval():
     test_pdf = lp.PDF(0, 1, 100)
     test_pdf.setYvals(np.ones_like(test_pdf.xaxis), is_chi2=False)
-    # assertion if argument val is outside of the xgrid range
-    with pytest.raises(ValueError):
-        a, b = test_pdf.credible_interval(0.2, -1)
-    with pytest.raises(ValueError):
-        a, b = test_pdf.credible_interval(0.2, 2)
+    # check output if argument val is outside of the xgrid range
+    a, b = test_pdf.credible_interval(0.2, -1)
+    assert a == -1
+    assert b == -1
+    a, b = test_pdf.credible_interval(0.2, 2)
+    assert a == 2
+    assert b == 2
     # case where, even as a percentage, level is too high
     a, b = test_pdf.credible_interval(250, 0.5)
     assert a == pytest.approx(0.0)
