@@ -16,6 +16,7 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
+    "Programming Language :: C++",
 ]
 dynamic = ["version"]
 requires-python = ">=3.9"
@@ -36,7 +37,7 @@ mag_gal = "lephare.mag_gal:main"
 zphota = "lephare.zphota:main"
 
 [project.urls]
-"Source Code" = "https://github.com/lincc-frameworks/lephare"
+"Source Code" = "https://github.com/lephare-photoz/lephare"
 
 # On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
 [project.optional-dependencies]
