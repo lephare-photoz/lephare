@@ -86,7 +86,7 @@ class MakeDoc(Command):
 
 setup(
     name="lephare",
-    url="https://gitlab.lam.fr/Galaxies/LEPHARE",
+    url="https://lephare.readthedocs.io/en/latest/",
     long_description=long_description,
     long_description_content_type="text/markdown",
     # add extension module
