@@ -5,7 +5,7 @@ Getting Started
 
 Installation
 ============
-The simplest way to install LePHARE is with pip:
+LePHARE is distributed with `pypi <https://pypi.org/project/lephare/>`_, and thus the simplest way to install it is with pip:
 
 .. code-block:: bash
     
