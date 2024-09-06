@@ -58,9 +58,11 @@ class PDF {
                                      ///< highest to smallest peaks in ML
   double levelCumu2x(float xval);    // find the xaxis value corresponding to a
                                      // level in the cumulative function
-  pair<double, double> credible_interval(
-      float xval,
-      double redLoc);  // Look for the confidence interval around redLoc
+
+  pair<double, double> confidence_interval(float level, double val);
+
+  pair<double, double> credible_interval(float level, double val);
+
   inline size_t get_maxid() const {
     return max_element(vPDF.begin(), vPDF.end()) - vPDF.begin();
   }
@@ -83,4 +85,6 @@ class PDF {
   inline size_t size() const { return vsize; }
 };
 
+pair<double, double> quadratic_min(double x1, double x2, double x3, double y1,
+                                   double y2, double y3);
 #endif

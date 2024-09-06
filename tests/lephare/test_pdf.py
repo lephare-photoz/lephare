@@ -6,6 +6,57 @@ import pytest
 matplotlib.use("Agg")
 
 
+def test_quadratic_min():
+    # check alignment assertion
+    def line(x):
+        return 2 * x + 1
+
+    x = [0, 1, 2]
+    y = [line(t) for t in x]
+    with pytest.raises(ValueError):
+        xm, ym = lp.quadratic_min(*x, *y)
+
+    for a in [+1, -1]:
+
+        def parab(x, a):
+            return a * x * x
+
+        x = [-1, 0.5, 1]
+        y = [parab(t, a) for t in x]
+        xm, ym = lp.quadratic_min(*x, *y)
+        assert xm == pytest.approx(0)
+        assert ym == pytest.approx(0)
+
+    # check for both concave and convex (min and max search)
+    for a in [-2, 2]:
+        b = 1
+        c = 2
+        x1 = 0.5
+
+        def parab(x, a, b, c):
+            return a * x**2 + b * x + c
+
+        x = [x1 - 0.1, x1, x1 + 0.3]
+        y = [parab(t, a, b, c) for t in x]
+        xm, ym = lp.quadratic_min(*x, *y)
+        assert xm == pytest.approx(-b / 2.0 / a)
+        assert ym == pytest.approx(c - b**2 / 4.0 / a)
+
+    # random parabola and random triplet
+    p = -5 + 10 * np.random.random(3)  # a,b,c between -5 and 5
+
+    def parab(x):
+        return p[0] * x**2 + p[1] * b * x + p[2] * c
+
+    xt = -p[1] / 2 / p[0]
+    yt = parab(xt)
+    x = xt - 0.1 + 0.2 * np.random.random(3)  # 3 pts at -0.1 +0.1 from extremum
+    y = parab(x)
+    xm, ym = lp.quadratic_min(*x, *y)
+    assert xm == pytest.approx(xt)
+    assert ym == pytest.approx(yt)
+
+
 def test_pdf():
     """Basic test to ensure we can instantiate a PDF object."""
     test_pdf = lp.PDF(0, 3, 10)

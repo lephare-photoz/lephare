@@ -19,6 +19,24 @@
 
 using namespace std;
 
+pair<double, double> quadratic_min(double x1, double x2, double x3, double y1,
+                                   double y2, double y3) {
+  double x23 = x2 - x3;
+  double x31 = x3 - x1;
+  double x12 = x1 - x2;
+  double delta = x23 * x1 * x1 + x31 * x2 * x2 + x12 * x3 * x3;
+  double a = y1 * x23 + y2 * x31 + y3 * x12;
+  if (a == 0.)  // possibly fragile
+    throw invalid_argument("The three points are aligned");
+  double b = y1 * (x2 * x2 - x3 * x3) - y2 * (x1 * x1 - x3 * x3) +
+             y3 * (x1 * x1 - x2 * x2);
+  double c = y1 * x2 * x3 * x23 + y2 * x1 * x3 * x31 + y3 * x1 * x2 * x12;
+  double ba = b / a;
+  double xmin = 0.5 * ba;
+  double ymin = -0.25 * ba * b / delta + c / delta;
+  return make_pair(xmin, ymin);
+}
+
 /*
  CONSTRUCTOR OF THE PDF
 */
@@ -176,6 +194,68 @@ pair<double, double> PDF::uncMin(double dchi) {
 
   // Loop over each point of the PDF to find the maximum error
   for (size_t k = ib; k < xaxis.size() - 1; k++) {
+    // When the considered chi2 is above the chi2 limit and the following one
+    // below
+    if (chi2[k] <= chiLim && chi2[k + 1] > chiLim) {
+      // Linear interpolation
+      double slope = (chiLim - chi2[k]) / (chi2[k + 1] - chi2[k]);
+      // store the minimum error
+      result.second = xaxis[k] + slope * (xaxis[k + 1] - xaxis[k]);
+      break;
+    }
+  }
+
+  return result;
+}
+
+pair<double, double> PDF::confidence_interval(float dchi, double val) {
+  // Initialize the uncertainties with the range considered
+  pair<double, double> result = make_pair(xaxis[0], xaxis[vsize - 1]);
+
+  // val is the centered value of the confidence interval; it normally has to be
+  // located inside the xaxis. We
+  // return an empty interval if it is not the case (it should not happen in
+  // practice where val is the interpolated z of the chi2 minimum)
+  if (val < scaleMin || val > scaleMax) {
+    return make_pair(val, val);
+  }
+
+  // find global minimum of the chi2 curve ...
+  auto it = min_element(std::begin(chi2), std::end(chi2));
+  // ...and its index and value
+  int min_ib = std::distance(std::begin(chi2), it);
+  double chi2min = chi2[min_ib];
+  double zmin = xaxis[min_ib];
+  // improve accuracy by searching for a parabolic minimum
+  if (min_ib != 0 && min_ib != vsize - 1) {
+    // reminder : xaxis is ordered and uniform
+    auto parab_min =
+        quadratic_min(xaxis[min_ib - 1], xaxis[min_ib], xaxis[min_ib + 1],
+                      chi2[min_ib - 1], chi2[min_ib], chi2[min_ib + 1]);
+    zmin = parab_min.first;  // currently this is already computed in
+                             // onesource::interp...
+    chi2min = parab_min.second;
+  }
+
+  double chiLim = chi2min + dchi;
+
+  // Now we search for the position where the chi2 curve goes above chiLim,
+  // right and left from index min_ib, which remains reasonable compared to zmin
+  // position Loop over each point of the PDF to find the minimum error
+  for (int k = 0; k < min_ib; k++) {
+    // When the considered chi2 is below the chi2 limit and the following one
+    // above
+    if (chi2[k] >= chiLim && chi2[k + 1] < chiLim) {
+      // Linear interpolation
+      double slope = (chiLim - chi2[k]) / (chi2[k + 1] - chi2[k]);
+      // store the minimum error
+      result.first = xaxis[k] + slope * (xaxis[k + 1] - xaxis[k]);
+      break;
+    }
+  }
+
+  // Loop over each point of the PDF to find the maximum error
+  for (size_t k = min_ib; k < xaxis.size() - 1; k++) {
     // When the considered chi2 is above the chi2 limit and the following one
     // below
     if (chi2[k] <= chiLim && chi2[k + 1] > chiLim) {
