@@ -405,8 +405,8 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
     firstprivate(s2n, invsab, invsabSq, abinvsabSq, imagm, nbul, busul, \
                      priorLib, number_threads, thread_id) private(il)
   {
-      // Catch the name of the local thread in the parrallelisation
-      thread_id = omp_get_thread_num();
+    // Catch the name of the local thread in the parrallelisation
+    thread_id = omp_get_thread_num();
 #endif
 
     // Compute normalisation and chi2
