@@ -775,9 +775,10 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
       }
     }
 
-// Catch the name of the local thread in the parallelisation
+    // Catch the name of the local thread in the parallelisation
+    int thread_id = 0;
 #ifdef _OPENMP
-    int thread_id = omp_get_thread_num();
+    thread_id = omp_get_thread_num();
 #pragma omp for
 #endif
     // Loop over all SEDs from the library
