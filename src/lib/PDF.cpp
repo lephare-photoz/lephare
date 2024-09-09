@@ -19,8 +19,8 @@
 
 using namespace std;
 
-pair<double, double> quadratic_min(double x1, double x2, double x3, double y1,
-                                   double y2, double y3) {
+pair<double, double> quadratic_extremum(double x1, double x2, double x3,
+                                        double y1, double y2, double y3) {
   double x23 = x2 - x3;
   double x31 = x3 - x1;
   double x12 = x1 - x2;
@@ -230,8 +230,8 @@ pair<double, double> PDF::confidence_interval(float dchi, double val) {
   if (min_ib != 0 && min_ib != vsize - 1) {
     // reminder : xaxis is ordered and uniform
     auto parab_min =
-        quadratic_min(xaxis[min_ib - 1], xaxis[min_ib], xaxis[min_ib + 1],
-                      chi2[min_ib - 1], chi2[min_ib], chi2[min_ib + 1]);
+        quadratic_extremum(xaxis[min_ib - 1], xaxis[min_ib], xaxis[min_ib + 1],
+                           chi2[min_ib - 1], chi2[min_ib], chi2[min_ib + 1]);
     zmin = parab_min.first;  // currently this is already computed in
                              // onesource::interp...
     chi2min = parab_min.second;

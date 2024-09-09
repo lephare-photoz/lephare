@@ -85,6 +85,6 @@ class PDF {
   inline size_t size() const { return vsize; }
 };
 
-pair<double, double> quadratic_min(double x1, double x2, double x3, double y1,
-                                   double y2, double y3);
+pair<double, double> quadratic_extremum(double x1, double x2, double x3,
+                                        double y1, double y2, double y3);
 #endif

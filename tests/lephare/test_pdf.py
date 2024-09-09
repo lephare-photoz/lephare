@@ -6,7 +6,7 @@ import pytest
 matplotlib.use("Agg")
 
 
-def test_quadratic_min():
+def test_quadratic_extremum():
     # check alignment assertion
     def line(x):
         return 2 * x + 1
@@ -14,7 +14,7 @@ def test_quadratic_min():
     x = [0, 1, 2]
     y = [line(t) for t in x]
     with pytest.raises(ValueError):
-        xm, ym = lp.quadratic_min(*x, *y)
+        xm, ym = lp.quadratic_extremum(*x, *y)
 
     for a in [+1, -1]:
 
@@ -23,7 +23,7 @@ def test_quadratic_min():
 
         x = [-1, 0.5, 1]
         y = [parab(t, a) for t in x]
-        xm, ym = lp.quadratic_min(*x, *y)
+        xm, ym = lp.quadratic_extremum(*x, *y)
         assert xm == pytest.approx(0)
         assert ym == pytest.approx(0)
 
@@ -38,7 +38,7 @@ def test_quadratic_min():
 
         x = [x1 - 0.1, x1, x1 + 0.3]
         y = [parab(t, a, b, c) for t in x]
-        xm, ym = lp.quadratic_min(*x, *y)
+        xm, ym = lp.quadratic_extremum(*x, *y)
         assert xm == pytest.approx(-b / 2.0 / a)
         assert ym == pytest.approx(c - b**2 / 4.0 / a)
 
@@ -52,7 +52,7 @@ def test_quadratic_min():
     yt = parab(xt)
     x = xt - 0.1 + 0.2 * np.random.random(3)  # 3 pts at -0.1 +0.1 from extremum
     y = parab(x)
-    xm, ym = lp.quadratic_min(*x, *y)
+    xm, ym = lp.quadratic_extremum(*x, *y)
     assert xm == pytest.approx(xt)
     assert ym == pytest.approx(yt)
 
