@@ -76,6 +76,11 @@ def test_set_yvals():
     np.testing.assert_array_equal(test_pdf.vPDF, yvals)
     np.testing.assert_array_almost_equal(test_pdf.chi2, -2 * np.log(yvals))
 
+    # checking that negative value in vPDF raises an exception
+    with pytest.raises(ValueError):
+        yvals[5] = -1
+        test_pdf.setYvals(yvals, is_chi2=False)
+
 
 def test_plot():
     """Simple test to exercise the plot method."""

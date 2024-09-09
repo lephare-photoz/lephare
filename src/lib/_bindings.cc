@@ -248,6 +248,7 @@ PYBIND11_MODULE(_lephare, mod) {
   //   ;
 
   /******** FUNCTIONS IN GLOBALS.H *********/
+  mod.attr("HIGH_CHI2") = HIGH_CHI2;
   mod.def("get_lephare_env", &get_lephare_env);
   mod.def("check_first_char", &check_first_char);
   mod.def("blackbody", &blackbody);
