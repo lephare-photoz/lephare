@@ -208,17 +208,9 @@ pair<double, double> PDF::uncMin(double dchi) {
   return result;
 }
 
-pair<double, double> PDF::confidence_interval(float dchi, double val) {
+pair<double, double> PDF::confidence_interval(float dchi) {
   // Initialize the uncertainties with the range considered
   pair<double, double> result = make_pair(xaxis[0], xaxis[vsize - 1]);
-
-  // val is the centered value of the confidence interval; it normally has to be
-  // located inside the xaxis. We
-  // return an empty interval if it is not the case (it should not happen in
-  // practice where val is the interpolated z of the chi2 minimum)
-  if (val < scaleMin || val > scaleMax) {
-    return make_pair(val, val);
-  }
 
   // find global minimum of the chi2 curve ...
   auto it = min_element(std::begin(chi2), std::end(chi2));
