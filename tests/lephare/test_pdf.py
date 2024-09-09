@@ -135,3 +135,46 @@ def test_credible_interval():
     a, b = test_pdf.credible_interval(95.46, 5)
     assert a == pytest.approx(3, 0.001)
     assert b == pytest.approx(7, 0.001)
+
+
+def test_improve_extremum():
+    pdf = lp.PDF(0, 1, 101)
+    xaxis = np.array(pdf.xaxis)
+    for arg in [True, False]:
+        a, b = pdf.improve_extremum(arg)
+        assert a == pdf.xaxis[0]
+        if arg:
+            assert b == lp.HIGH_CHI2
+        else:
+            assert b == 0.0
+
+    # tweak chi2 to check that parabolic improvement is
+    # not done if one of the points is at HIGH_CHI2
+    yval = np.array(pdf.chi2)
+    yval[50] = 1
+    yval[51] = 2
+    pdf.setYvals(yval, is_chi2=True)
+    a, b = pdf.improve_extremum(True)
+    assert a == pdf.xaxis[50]
+    assert b == 1
+    # tweak vPDF to the same effect, with one of the points at 0
+    yval = np.zeros_like(pdf.xaxis)
+    yval[50] = 1
+    yval[51] = 2
+    pdf.setYvals(yval, is_chi2=False)
+    a, b = pdf.improve_extremum(False)
+    assert a == pdf.xaxis[51]
+    assert b == 2
+
+    # 2 normal situations
+    pdf.setYvals((xaxis - 0.45) ** 2 + 0.2, True)
+    a, b = pdf.improve_extremum(True)
+    assert a == pytest.approx(0.45)
+    assert b == pytest.approx(0.2)
+
+    y = -((xaxis - 0.45) ** 2) + 0.2
+    y[y < 0] = 0.0
+    pdf.setYvals(y, False)
+    a, b = pdf.improve_extremum(False)
+    assert a == pytest.approx(0.45)
+    assert b == pytest.approx(0.2)

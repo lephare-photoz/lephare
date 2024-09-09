@@ -114,6 +114,34 @@ int PDF::chi2mini() {
   return indexMin;
 }
 
+pair<double, double> PDF::improve_extremum(bool is_chi2) const {
+  size_t id;
+  double x[3];
+  double y[3];
+
+  // the extremum the precision of which is to be improved
+  // is either the chi2 min or the PDF max
+  id = is_chi2 ? min_element(chi2.begin(), chi2.end()) - chi2.begin()
+               : max_element(vPDF.begin(), vPDF.end()) - vPDF.begin();
+
+  // no quadratic search possible at boundaries
+  if (id == 0 || id == vsize - 1)
+    return is_chi2 ? make_pair(xaxis[id], chi2[id])
+                   : make_pair(xaxis[id], vPDF[id]);
+
+  for (size_t k = 0; k < 3; k++) {
+    x[k] = xaxis[id - 1 + k];
+    y[k] = is_chi2 ? chi2[id - 1 + k] : vPDF[id - 1 + k];
+    // give up quadratic search if one of the chi2 is invalid
+    if (is_chi2 && y[k] == HIGH_CHI2) return make_pair(xaxis[id], chi2[id]);
+    // in the case of vPDF, it is a bit more problematic, but let's assume that
+    // 0. is indeed a non acceptable value for the parabolic algorithm
+    if (!is_chi2 && y[k] == 0.) return make_pair(xaxis[id], vPDF[id]);
+  }
+
+  return quadratic_extremum(x[0], x[1], x[2], y[0], y[1], y[2]);
+}
+
 /*
  Interpolation into the chi2 distribution
  Description : Parabolic interpolation for minmum Chi2

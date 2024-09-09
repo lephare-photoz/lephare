@@ -425,6 +425,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("levelCumu2x", &PDF::levelCumu2x)
       .def("credible_interval", &PDF::credible_interval)
       .def("confidence_interval", &PDF::confidence_interval)
+      .def("improve_extremum", &PDF::improve_extremum)
       .def_readwrite("vPDF", &PDF::vPDF)
       .def_readwrite("xaxis", &PDF::xaxis)
       .def_readwrite("chi2", &PDF::chi2)
