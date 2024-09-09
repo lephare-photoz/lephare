@@ -1611,11 +1611,12 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
     oneObj->interp(zfix, zintp, lcdm);
     // Uncertainties from the minimum chi2 + delta chi2
     oneObj->uncertaintiesMin();
-    // Uncertainties from the bayesian method
+    // Uncertainties from the bayesian method, centered on the median
     oneObj->uncertaintiesBay();
     // find a second peak in the PDZ
     oneObj->secondpeak(fullLib, dz_win, min_thres);
-    // find the mode of the marginalized PDF and associated uncertainties
+    // find the mode of the marginalized PDF and associated uncertainties,
+    // centered on the mode
     oneObj->mode();
     // Fixed the redshift considered for abs mag, etc depending on the option
     oneObj->considered_red(zfix, methz);
