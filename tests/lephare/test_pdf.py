@@ -62,6 +62,16 @@ def test_pdf():
     test_pdf = lp.PDF(0, 3, 10)
     assert test_pdf.size() == 10
     assert len(test_pdf.chi2) == 10
+    # testing bad input
+
+
+def test_index():
+    pdf = lp.PDF(0, 3, 10)
+    assert pdf.index(-1) == 0
+    assert pdf.index(20) == 9
+    assert pdf.index(2) == 6
+    assert pdf.index(2.1) == 6
+    assert pdf.index(2.2) == 7
 
 
 def test_set_yvals():
@@ -178,3 +188,14 @@ def test_improve_extremum():
     a, b = pdf.improve_extremum(False)
     assert a == pytest.approx(0.45)
     assert b == pytest.approx(0.2)
+
+
+def test_confidence_interval():
+    pdf = lp.PDF(-5, 5, 1001)
+    pdf.setYvals(np.array(pdf.xaxis) ** 2, is_chi2=True)
+    a, b = pdf.confidence_interval(1)
+    assert a == pytest.approx(-1)
+    assert b == pytest.approx(1)
+    a, b = pdf.confidence_interval(2.71)
+    assert a == pytest.approx(-np.sqrt(2.71), 1.0e-5)
+    assert b == pytest.approx(np.sqrt(2.71), 1.0e-5)

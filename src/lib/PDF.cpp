@@ -240,23 +240,12 @@ pair<double, double> PDF::confidence_interval(float dchi) {
   // Initialize the uncertainties with the range considered
   pair<double, double> result = make_pair(xaxis[0], xaxis[vsize - 1]);
 
-  // find global minimum of the chi2 curve ...
-  auto it = min_element(std::begin(chi2), std::end(chi2));
-  // ...and its index and value
-  int min_ib = std::distance(std::begin(chi2), it);
-  double chi2min = chi2[min_ib];
-  double zmin = xaxis[min_ib];
-  // improve accuracy by searching for a parabolic minimum
-  if (min_ib != 0 && min_ib != vsize - 1) {
-    // reminder : xaxis is ordered and uniform
-    auto parab_min =
-        quadratic_extremum(xaxis[min_ib - 1], xaxis[min_ib], xaxis[min_ib + 1],
-                           chi2[min_ib - 1], chi2[min_ib], chi2[min_ib + 1]);
-    zmin = parab_min.first;  // currently this is already computed in
-                             // onesource::interp...
-    chi2min = parab_min.second;
-  }
+  // get the chi2 minimum with quadratic improvement
+  auto extremum = improve_extremum(true);
+  double zmin = extremum.first;
+  double chi2min = extremum.second;
 
+  size_t min_ib = index(zmin);
   double chiLim = chi2min + dchi;
 
   // Now we search for the position where the chi2 curve goes above chiLim,
