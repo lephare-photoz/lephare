@@ -1048,16 +1048,16 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
   // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] / 5:["AGE"] /
   // 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] / 10:["MIN_ZQ"] /
   // 11:["BAY_ZG"] / 12:["BAY_ZQ"] Put back 1 dimension array into PDF objects
-  pdfbayzg.vPDF.assign((PDFzloc), (PDFzloc + pdfbayzg.size()));
-  pdfbayzq.vPDF.assign((PDFzqloc), (PDFzqloc + pdfbayzq.size()));
-  pdfmass.vPDF.assign((PDFmassloc), (PDFmassloc + pdfmass.size()));
-  pdfsfr.vPDF.assign((PDFSFRloc), (PDFSFRloc + pdfsfr.size()));
-  pdfssfr.vPDF.assign((PDFsSFRloc), (PDFsSFRloc + pdfssfr.size()));
-  pdfage.vPDF.assign((PDFAgeloc), (PDFAgeloc + pdfage.size()));
-  pdfldust.vPDF.assign((PDFLdustloc), (PDFLdustloc + pdfldust.size()));
-  pdfcol1.vPDF.assign((PDFcol1loc), (PDFcol1loc + pdfcol1.size()));
-  pdfcol2.vPDF.assign((PDFcol2loc), (PDFcol2loc + pdfcol2.size()));
-  pdfmref.vPDF.assign((PDFmrefloc), (PDFmrefloc + pdfmref.size()));
+  pdfbayzg.vPDF.assign((PDFzloc), (PDFzloc+pdfbayzg.size()));
+  pdfbayzq.vPDF.assign((PDFzqloc), (PDFzqloc+pdfbayzq.size()));
+  pdfmass.vPDF.assign((PDFmassloc), (PDFmassloc+pdfmass.size()));
+  pdfsfr.vPDF.assign((PDFSFRloc), (PDFSFRloc+pdfsfr.size()));
+  pdfssfr.vPDF.assign((PDFsSFRloc), (PDFsSFRloc+pdfssfr.size()));
+  pdfage.vPDF.assign((PDFAgeloc), (PDFAgeloc+pdfage.size()));
+  pdfldust.vPDF.assign((PDFLdustloc), (PDFLdustloc+pdfldust.size()));
+  pdfcol1.vPDF.assign((PDFcol1loc), (PDFcol1loc+pdfcol1.size()));
+  pdfcol2.vPDF.assign((PDFcol2loc), (PDFcol2loc+pdfcol2.size()));
+  pdfmref.vPDF.assign((PDFmrefloc), (PDFmrefloc+pdfmref.size()));
 
   // Normalize the PDF
 
