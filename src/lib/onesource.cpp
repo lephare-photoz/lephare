@@ -879,6 +879,21 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
   colAnalysis = ((fltColRF[0] >= 0) && (fltColRF[1] >= 0) &&
                  (fltColRF[2] >= 0) && (fltColRF[3] >= 0) && (fltREF >= 0));
 
+  // Prepare direct references for all variables stored inside slow containers
+  auto &pdfmass = pdfmap[0];
+  auto &pdfsfr = pdfmap[1];
+  auto &pdfssfr = pdfmap[2];
+  auto &pdfldust = pdfmap[3];
+  auto &pdflir = pdfmap[4];
+  auto &pdfage = pdfmap[5];
+  auto &pdfcol1 = pdfmap[6];
+  auto &pdfcol2 = pdfmap[7];
+  auto &pdfmref = pdfmap[8];
+  auto &pdfminzg = pdfmap[9];
+  auto &pdfminzq = pdfmap[10];
+  auto &pdfbayzg = pdfmap[11];
+  auto &pdfbayzq = pdfmap[12];
+
   // parrallellize over each SED
 #ifdef _OPENMP
   // double start = omp_get_wtime();
@@ -909,7 +924,7 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
           prob = exp(-0.5 * (fulllib[il]->chi2 - chimin[0]));
           // photo-z PDF of galaxies
           // Sum the proba to marginalize
-          pos = pdfmap[11].index(fulllib[il]->red);
+          pos = pdfbayzg.index(fulllib[il]->red);
           PDFzloc[pos] += prob;
 
           // If able to determine a normalisation and get a the mass (assume
@@ -921,24 +936,24 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
             // 5:["AGE"] / 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] /
             // 10:["MIN_ZQ"] / 11:["BAY_ZG"] / 12:["BAY_ZQ"] stellar mass PDF of
             // galaxies
-            pos = pdfmap[0].index(LOG10D(dmloc * massloc));
+            pos = pdfmass.index(LOG10D(dmloc * massloc));
             PDFmassloc[pos] += prob;
 
             // SFR PDF of galaxies
-            pos = pdfmap[1].index(LOG10D(fulllib[il]->sfr * dmloc));
+            pos = pdfsfr.index(LOG10D(fulllib[il]->sfr * dmloc));
             PDFSFRloc[pos] += prob;
 
             // sSFR PDF of galaxies
-            pos = pdfmap[2].index(LOG10D(fulllib[il]->ssfr));
+            pos = pdfssfr.index(LOG10D(fulllib[il]->ssfr));
             PDFsSFRloc[pos] += prob;
 
             // Age PDF of galaxies
-            pos = pdfmap[5].index(LOG10D(fulllib[il]->age));
+            pos = pdfage.index(LOG10D(fulllib[il]->age));
             PDFAgeloc[pos] += prob;
 
             // Ldust PDF of galaxies, ltir already in log
             if (fulllib[il]->ltir >= 0) {
-              pos = pdfmap[3].index(fulllib[il]->ltir + log10(dmloc));
+              pos = pdfldust.index(fulllib[il]->ltir + log10(dmloc));
               PDFLdustloc[pos] += prob;
             }
           }
@@ -950,16 +965,16 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
 
             // First rest-frame color
             col1 = rfSED->mag[fltColRF[0] - 1] - rfSED->mag[fltColRF[1] - 1];
-            pos = pdfmap[6].index(col1);
+            pos = pdfcol1.index(col1);
             PDFcol1loc[pos] += prob;
 
             // Second rest-frame color
             col2 = rfSED->mag[fltColRF[2] - 1] - rfSED->mag[fltColRF[3] - 1];
-            pos = pdfmap[7].index(col2);
+            pos = pdfcol2.index(col2);
             PDFcol2loc[pos] += prob;
 
             // Reference absolute magnitude
-            pos = pdfmap[8].index(rfSED->mag[fltREF - 1] - 2.5 * log10(dmloc));
+            pos = pdfmref.index(rfSED->mag[fltREF - 1] - 2.5 * log10(dmloc));
             PDFmrefloc[pos] += prob;
           }
 
@@ -968,7 +983,7 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
           prob = exp(-0.5 * (fulllib[il]->chi2 - chimin[1]));
 
           // photo-z PDF of QSO
-          pos = pdfmap[12].index(fulllib[il]->red);
+          pos = pdfbayzq.index(fulllib[il]->red);
           PDFzqloc[pos] += prob;
         }
       }
@@ -986,7 +1001,7 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
         double chi2loc = fulllib[il]->chi2;
         if (chi2loc < 0.99e9) {
           // 11: BAYZG
-          int poszloc = pdfmap[11].index(fulllib[il]->red);
+          int poszloc = pdfbayzg.index(fulllib[il]->red);
           int nlibloc = fulllib[il]->nlib;
           int indloc = fulllib[il]->index;
           // If local minimum inside the thread, store the new minimum for the
@@ -1001,19 +1016,23 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
       // Find the minimum for each redshift step by collapsing the threads
 #pragma omp for
       for (int i = 0; i < dimzg; i++) {
+        auto &loc0chi2 = locChi2[0][i];
+        auto &loc1chi2 = locChi2[1][i];
+        auto &loc0ind = locInd[0][i];
+        auto &loc1ind = locInd[1][i];
         for (int j = 0; j < number_threads; j++) {
           // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] /
           // 5:["AGE"] / 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] /
           // 10:["MIN_ZQ"] / 11:["BAY_ZG"] / 11:["BAY_ZQ"] look for the new
           // minimum among the threads / Galaxies
-          if (pdfmap[9].chi2[i] > locChi2[0][i][j]) {
-            pdfmap[9].chi2[i] = locChi2[0][i][j];
-            pdfmap[9].ind[i] = locInd[0][i][j];
+          if (pdfminzg.chi2[i] > loc0chi2[j]) {
+            pdfminzg.chi2[i] = loc0chi2[j];
+            pdfminzg.ind[i] = loc0ind[j];
           }
           // look for the new minimum among the threads / AGN
-          if (pdfmap[10].chi2[i] > locChi2[1][i][j]) {
-            pdfmap[10].chi2[i] = locChi2[1][i][j];
-            pdfmap[10].ind[i] = locInd[1][i][j];
+          if (pdfminzq.chi2[i] > loc1chi2[j]) {
+            pdfminzq.chi2[i] = loc1chi2[j];
+            pdfminzq.ind[i] = loc1ind[j];
           }
         }
       }
@@ -1029,26 +1048,16 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
   // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] / 5:["AGE"] /
   // 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] / 10:["MIN_ZQ"] /
   // 11:["BAY_ZG"] / 12:["BAY_ZQ"] Put back 1 dimension array into PDF objects
-  for (size_t k = 0; k < pdfmap[11].size(); k++)
-    pdfmap[11].vPDF[k] = PDFzloc[k];
-  for (size_t k = 0; k < pdfmap[12].size(); k++)
-    pdfmap[12].vPDF[k] = PDFzqloc[k];
-  for (size_t k = 0; k < pdfmap[0].size(); k++)
-    pdfmap[0].vPDF[k] = PDFmassloc[k];
-  for (size_t k = 0; k < pdfmap[1].size(); k++)
-    pdfmap[1].vPDF[k] = PDFSFRloc[k];
-  for (size_t k = 0; k < pdfmap[2].size(); k++)
-    pdfmap[2].vPDF[k] = PDFsSFRloc[k];
-  for (size_t k = 0; k < pdfmap[5].size(); k++)
-    pdfmap[5].vPDF[k] = PDFAgeloc[k];
-  for (size_t k = 0; k < pdfmap[3].size(); k++)
-    pdfmap[3].vPDF[k] = PDFLdustloc[k];
-  for (size_t k = 0; k < pdfmap[6].size(); k++)
-    pdfmap[6].vPDF[k] = PDFcol1loc[k];
-  for (size_t k = 0; k < pdfmap[7].size(); k++)
-    pdfmap[7].vPDF[k] = PDFcol2loc[k];
-  for (size_t k = 0; k < pdfmap[8].size(); k++)
-    pdfmap[8].vPDF[k] = PDFmrefloc[k];
+  pdfbayzg.vPDF.assign((PDFzloc), (PDFzloc+pdfbayzg.size()));
+  pdfbayzq.vPDF.assign((PDFzqloc), (PDFzqloc+pdfbayzq.size()));
+  pdfmass.vPDF.assign((PDFmassloc), (PDFmassloc+pdfmass.size()));
+  pdfsfr.vPDF.assign((PDFSFRloc), (PDFSFRloc+pdfsfr.size()));
+  pdfssfr.vPDF.assign((PDFsSFRloc), (PDFsSFRloc+pdfssfr.size()));
+  pdfage.vPDF.assign((PDFAgeloc), (PDFAgeloc+pdfage.size()));
+  pdfldust.vPDF.assign((PDFLdustloc), (PDFLdustloc+pdfldust.size()));
+  pdfcol1.vPDF.assign((PDFcol1loc), (PDFcol1loc+pdfcol1.size()));
+  pdfcol2.vPDF.assign((PDFcol2loc), (PDFcol2loc+pdfcol2.size()));
+  pdfmref.vPDF.assign((PDFmrefloc), (PDFmrefloc+pdfmref.size()));
 
   // Normalize the PDF
 
@@ -1057,8 +1066,8 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
 
   // Convert minimum chi2 at a given redshift into proba
   //  9:["MIN_ZG"] / 10:["MIN_ZQ"]
-  pdfmap[9].chi2toPDF();
-  pdfmap[10].chi2toPDF();
+  pdfminzg.chi2toPDF();
+  pdfminzq.chi2toPDF();
 
   return;
 }
