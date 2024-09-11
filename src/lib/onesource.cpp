@@ -877,15 +877,18 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
 
   // parrallellize over each SED
 #ifdef _OPENMP
-#pragma omp declare reduction(vec_add : vector<double> : transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), plus<double>()))
-    //    initializer(omp_priv = decltype(omp_orig)(omp_orig.size()))
-  // double start = omp_get_wtime();
+#pragma omp declare reduction(vec_add : vector<double> : transform(      \
+	omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), \
+	plus<double>()))
+
 #pragma omp parallel private(pos, col1, col2, rfSED, prob) firstprivate( \
         thread_id, dimzg, number_threads) shared(locChi2, locInd, fulllib)
   {
     // Catch the name of the local thread in the parallelisation
     thread_id = omp_get_thread_num();
-#pragma omp for schedule(static, 10000) reduction( vec_add : PDFzloc, PDFzqloc, PDFmassloc, PDFSFRloc, PDFsSFRloc, PDFAgeloc, PDFLdustloc, PDFcol1loc, PDFcol2loc, PDFmrefloc) nowait
+#pragma omp for schedule(static, 10000) reduction(                      \
+        vec_add : PDFzloc, PDFzqloc, PDFmassloc, PDFSFRloc, PDFsSFRloc, \
+	PDFAgeloc, PDFLdustloc, PDFcol1loc, PDFcol2loc, PDFmrefloc) nowait
 #endif
     // Loop over all SEDs, which is parallelized
     for (size_t i = 0; i < va.size(); i++) {
@@ -1029,16 +1032,16 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
   // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] / 5:["AGE"] /
   // 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] / 10:["MIN_ZQ"] /
   // 11:["BAY_ZG"] / 12:["BAY_ZQ"] Put back 1 dimension array into PDF objects
-  pdfbayzg.vPDF.assign( PDFzloc.begin(), PDFzloc.end() );
-  pdfbayzq.vPDF.assign( PDFzqloc.begin(), PDFzqloc.end() );
-  pdfmass.vPDF.assign(  PDFmassloc.begin(), PDFmassloc.end());
-  pdfsfr.vPDF.assign(   PDFSFRloc.begin(), PDFSFRloc.end());
-  pdfssfr.vPDF.assign(  PDFsSFRloc.begin(), PDFsSFRloc.end());
-  pdfage.vPDF.assign(   PDFAgeloc.begin(), PDFAgeloc.end());
-  pdfldust.vPDF.assign( PDFLdustloc.begin(), PDFLdustloc.end());
-  pdfcol1.vPDF.assign(  PDFcol1loc.begin(), PDFcol1loc.end());
-  pdfcol2.vPDF.assign(  PDFcol2loc.begin(), PDFcol2loc.end());
-  pdfmref.vPDF.assign(  PDFmrefloc.begin(), PDFmrefloc.end());
+  pdfbayzg.vPDF.assign(PDFzloc.begin(), PDFzloc.end());
+  pdfbayzq.vPDF.assign(PDFzqloc.begin(), PDFzqloc.end());
+  pdfmass.vPDF.assign(PDFmassloc.begin(), PDFmassloc.end());
+  pdfsfr.vPDF.assign(PDFSFRloc.begin(), PDFSFRloc.end());
+  pdfssfr.vPDF.assign(PDFsSFRloc.begin(), PDFsSFRloc.end());
+  pdfage.vPDF.assign(PDFAgeloc.begin(), PDFAgeloc.end());
+  pdfldust.vPDF.assign(PDFLdustloc.begin(), PDFLdustloc.end());
+  pdfcol1.vPDF.assign(PDFcol1loc.begin(), PDFcol1loc.end());
+  pdfcol2.vPDF.assign(PDFcol2loc.begin(), PDFcol2loc.end());
+  pdfmref.vPDF.assign(PDFmrefloc.begin(), PDFmrefloc.end());
 
   // Normalize the PDF
 
