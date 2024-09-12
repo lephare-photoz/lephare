@@ -77,6 +77,7 @@ endif()
 
 # only set these flags if in `INCLUDE_COVERAGE` env var is set (to any value)
 # on linux/gcc it seems that one needs to run with LD_PRELOAD=/lib/x86_64-linux-gnu/libtsan.so.0 prepended
+# and do a `sudo sysctl vm.mmap_rnd_bits=28` prior to running
 if(DEFINED ENV{INCLUDE_COVERAGE})
   message(STATUS "Building with code coverage enabled.")
   SET(GCC_COVERAGE_COMPILE_FLAGS "-g -O0 -coverage -fprofile-arcs -ftest-coverage -fPIC -pie")
