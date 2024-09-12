@@ -64,13 +64,26 @@ else()
     add_compile_options("-mno-vzeroupper" "-mavx2" "-floop-unroll-and-jam" )
 endif()
 
+# only set these flags if testing presence of race conditions :
+# https://github.com/google/sanitizers/wiki/ThreadSanitizerCppManual
+if(DEFINED ENV{SANITIZE_THREAD})
+  message(STATUS "Building with thread sanitizing enabled.")
+  SET(GCC_COVERAGE_COMPILE_FLAGS "-g -O2 -fsanitize=thread")
+  SET(GCC_COVERAGE_LINK_FLAGS    "-fsanitize=thread")
+  SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
+  SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
+endif()
+
+
 # only set these flags if in `INCLUDE_COVERAGE` env var is set (to any value)
+# on linux/gcc it seems that one needs to run with LD_PRELOAD=/lib/x86_64-linux-gnu/libtsan.so.0 prepended
+# and do a `sudo sysctl vm.mmap_rnd_bits=28` prior to running
 if(DEFINED ENV{INCLUDE_COVERAGE})
   message(STATUS "Building with code coverage enabled.")
   SET(GCC_COVERAGE_COMPILE_FLAGS "-g -O0 -coverage -fprofile-arcs -ftest-coverage")
-  SET(GCC_COVERAGE_LINK_FLAGS    "-coverage -lgcov")
-  SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}" )
-  SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}" )
+  SET(GCC_COVERAGE_LINK_FLAGS    "-coverage -lgcov -lpthread")
+  SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
+  SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
 endif()
 
 add_library(lepharelib STATIC ${SOURCES})
