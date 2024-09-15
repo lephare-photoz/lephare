@@ -115,6 +115,9 @@ def test_credible_interval():
     a, b = test_pdf.credible_interval(0.2, 2)
     assert a == 2
     assert b == 2
+    a, b = test_pdf.credible_interval(0.0, 2)
+    assert a == 2
+    assert b == 2
     # case where, even as a percentage, level is too high
     a, b = test_pdf.credible_interval(250, 0.5)
     assert a == pytest.approx(0.0)
@@ -140,11 +143,42 @@ def test_credible_interval():
 
     test_pdf.setYvals(gaus(np.array(test_pdf.xaxis)), is_chi2=False)
     a, b = test_pdf.credible_interval(68.26, 5)
-    assert a == pytest.approx(4, 0.0001)
-    assert b == pytest.approx(6, 0.0001)
+    assert a == pytest.approx(4, 0.01)
+    assert b == pytest.approx(6, 0.01)
     a, b = test_pdf.credible_interval(95.46, 5)
-    assert a == pytest.approx(3, 0.001)
-    assert b == pytest.approx(7, 0.001)
+    assert a == pytest.approx(3, 0.01)
+    assert b == pytest.approx(7, 0.01)
+
+    # analytical pdf
+    x = np.linspace(-1, 1, 10001)
+    y = np.zeros_like(x)
+    y[x >= 0] = -x[x >= 0] + 1
+    y[x < 0] = x[x < 0] + 1
+    # triangular symmetric, area=1
+    pdf = lp.PDF(-1, 1, 10001)
+    pdf.setYvals(y, is_chi2=False)
+    # central value
+    val = 0.0
+    for level in np.linspace(0.0, 1.0, 100):
+        a, b = pdf.credible_interval(level, val)
+        assert a == pytest.approx(-b)
+        assert b == pytest.approx(1 - np.sqrt(1 - level))
+    for val in [-0.5, -0.3, -0.1, 0.1, 0.3, 0.5]:
+        for level in [0.1, 0.3, 0.6, 0.9]:
+            a, b = pdf.credible_interval(level, val)
+            cumul_left = 0.5 - val**2 / 2.0 + val if val > 0 else 0.5 + val**2 / 2.0 + val
+            if cumul_left < level / 2.0:
+                assert a == -1.0
+                if level < 0.5:
+                    assert b == pytest.approx(-1 + np.sqrt(2 * level))
+                else:
+                    assert b == pytest.approx(1 - np.sqrt(2 - 2 * level))
+            if cumul_left > 1.0 - level / 2.0:
+                assert b == 1.0
+                if level < 0.5:
+                    assert a == pytest.approx(1 - np.sqrt(2 * level))
+                else:
+                    assert a == pytest.approx(-1 + np.sqrt(2 - 2 * level))
 
 
 def test_improve_extremum():

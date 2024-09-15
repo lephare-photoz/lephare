@@ -293,8 +293,9 @@ pair<double, double> PDF::credible_interval(float level, double val) {
   // val is the centered value of the credible interval; it normally has to be
   // located inside the xaxis. But we have pdfmaps that will never be correct,
   // e.g. when BC03 is not used (no physical parameter estimation), and thus we
-  // return an empty interval
-  if (val < scaleMin || val > scaleMax) {
+  // return an empty interval.
+  // Likewise when level <= 0, which is not a meaningful value.
+  if (val < scaleMin || val >= scaleMax || level <= 0.) {
     return make_pair(val, val);
   }
 
@@ -319,7 +320,8 @@ pair<double, double> PDF::credible_interval(float level, double val) {
 
   // PDF x axis is by construction uniformly sampled, thus so is the cumulant
   // vector. Then the closest to but lower than val index is immediately
-  // computable
+  // computable. val<scaleMax => idx_lo < vsize-1 so that idx_hi is at most
+  // vsize-1
   int idx_lo = (val - scaleMin) / scaleStep;
   double cum_lo = cumulant[idx_lo];
   int idx_hi = idx_lo + 1;
@@ -355,25 +357,25 @@ pair<double, double> PDF::credible_interval(float level, double val) {
     lowerLevel = 0.0;
   }
 
-  // Iterator pointing on the item with a value for the upper-level integral
+  // Iterator pointing on the first item that has upperLevel < item
   bound_right_id = upper_bound(cumulant.begin(), cumulant.end(), upperLevel);
   size_t indR = bound_right_id - cumulant.begin();
   // Linear interpolation - right case
-  if (xaxis[indR - 1] > val) {
+  if (xaxis[indR - 1] < upperLevel) {
     // args in reverse order y, y1, x1, y2, x2, in order to get x instead of y
     result.second = linear_interp(upperLevel, cumulant[indR - 1],
                                   xaxis[indR - 1], cumulant[indR], xaxis[indR]);
   } else {
-    result.second = xaxis[indR];
+    result.second = xaxis[indR - 1];
   }
   // Linear interpolation - left case
   bound_left_id = upper_bound(cumulant.begin(), cumulant.end(), lowerLevel);
-  size_t indL = bound_left_id - cumulant.begin() - 1;
-  if (xaxis[indL + 1] < val) {
-    result.first = linear_interp(lowerLevel, cumulant[indL], xaxis[indL],
-                                 cumulant[indL + 1], xaxis[indL + 1]);
+  size_t indL = bound_left_id - cumulant.begin();
+  if (xaxis[indL - 1] < lowerLevel) {
+    result.first = linear_interp(lowerLevel, cumulant[indL - 1],
+                                 xaxis[indL - 1], cumulant[indL], xaxis[indL]);
   } else {
-    result.first = xaxis[indL];
+    result.first = xaxis[indL - 1];
   }
 
   return result;
