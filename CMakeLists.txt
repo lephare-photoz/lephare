@@ -64,6 +64,10 @@ else()
     add_compile_options("-mno-vzeroupper" "-mavx2" "-floop-unroll-and-jam" )
 endif()
 
+if(DEFINED ENV{INCLUDE_COVERAGE} AND DEFINED ENV{SANITIZE_ADDRESS})
+  message(FATAL_ERROR "Conflicting build options: INCLUDE_COVERAGE and SANITIZE_ADDRESS")
+endif()
+
 # only set these flags if in `INCLUDE_COVERAGE` env var is set (to any value)
 if(DEFINED ENV{INCLUDE_COVERAGE})
   message(STATUS "Building with code coverage enabled.")
@@ -71,6 +75,19 @@ if(DEFINED ENV{INCLUDE_COVERAGE})
   SET(GCC_COVERAGE_LINK_FLAGS    "-coverage -lgcov")
   SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}" )
   SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}" )
+endif()
+
+# Enable the address sanitizer with an environment variable.
+# This should be on when testing for memory access errors.
+# It requires a compiler built with the address sanitizer enabled.
+# When running, the library must be preloaded with `LD_PRELOAD=libasan.so`.
+# https://github.com/google/sanitizers/wiki/AddressSanitizer
+if(DEFINED ENV{SANITIZE_ADDRESS})
+  message(STATUS "Building with address sanitizer enabled.")
+  SET(GCC_COVERAGE_COMPILE_FLAGS "-g -fsanitize=address")
+  SET(GCC_COVERAGE_LINK_FLAGS    "-fsanitize=address")
+  SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
+  SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
 endif()
 
 add_library(lepharelib STATIC ${SOURCES})
