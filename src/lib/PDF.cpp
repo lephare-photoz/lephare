@@ -301,6 +301,9 @@ pair<double, double> PDF::credible_interval(float level, double val) {
 
   // if levels given in percentage
   if (level > 1.) level /= 100.;
+  // we assume that level>1 means level provided as a percentage
+  // but this means that now level should be <1
+  if (level > 1.) return make_pair(scaleMin, scaleMax);
 
   // Compute the full cumulant
   vector<double> cumulant;
