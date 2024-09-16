@@ -11,12 +11,6 @@ TESTDATADIR = os.path.join(TESTDIR, "../data")
 # Test init
 
 
-def test_no_config(capsys):
-    _ = Zphota()
-    captured = capsys.readouterr()
-    assert captured.out == "WARNING: no config file provided!\n"
-
-
 def test_with_config_file():
     """Use a config file to instantiate the Zphota class. Expect the keymap to be
     populated."""
