@@ -66,8 +66,9 @@ endif()
 
 # only set these flags if testing presence of race conditions :
 # https://github.com/google/sanitizers/wiki/ThreadSanitizerCppManual
-# on linux/gcc it seems that one needs to run with LD_PRELOAD=/lib/x86_64-linux-gnu/libtsan.so.0 prepended
-# and do a `sudo sysctl vm.mmap_rnd_bits=28` prior to running
+# on linux/gcc it seems that one needs to run with 
+# LD_PRELOAD=/lib/x86_64-linux-gnu/libtsan.so.0 prepended
+# and to do a `sudo sysctl vm.mmap_rnd_bits=28` prior to running
 if(DEFINED ENV{SANITIZE_THREAD})
   message(STATUS "Building with thread sanitizing enabled.")
   SET(GCC_COVERAGE_COMPILE_FLAGS "-g -O2 -fsanitize=thread")
