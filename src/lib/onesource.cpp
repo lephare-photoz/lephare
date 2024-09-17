@@ -903,8 +903,8 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
     // Catch the name of the local thread in the parallelisation
     thread_id = omp_get_thread_num();
 #pragma omp for schedule(static, 10000) reduction(                           \
-        + : PDFzloc, PDFzqloc, PDFmassloc, PDFSFRloc, PDFsSFRloc, PDFAgeloc) \
-    nowait
+        + : PDFzloc, PDFzqloc, PDFmassloc, PDFSFRloc, PDFsSFRloc, PDFAgeloc, \
+            PDFLdustloc, PDFcol1loc, PDFcol2loc, PDFmrefloc) nowait
 #endif
     // Loop over all SEDs, which is parallelized
     for (size_t i = 0; i < va.size(); i++) {
