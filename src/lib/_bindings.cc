@@ -248,6 +248,7 @@ PYBIND11_MODULE(_lephare, mod) {
   //   ;
 
   /******** FUNCTIONS IN GLOBALS.H *********/
+  mod.attr("HIGH_CHI2") = HIGH_CHI2;
   mod.def("get_lephare_env", &get_lephare_env);
   mod.def("check_first_char", &check_first_char);
   mod.def("blackbody", &blackbody);
@@ -423,6 +424,8 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("size", &PDF::size)
       .def("levelCumu2x", &PDF::levelCumu2x)
       .def("credible_interval", &PDF::credible_interval)
+      .def("confidence_interval", &PDF::confidence_interval)
+      .def("improve_extremum", &PDF::improve_extremum)
       .def_readwrite("vPDF", &PDF::vPDF)
       .def_readwrite("xaxis", &PDF::xaxis)
       .def_readwrite("chi2", &PDF::chi2)
@@ -430,4 +433,5 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readwrite("secondP", &PDF::secondP)
       .def_readwrite("ind", &PDF::ind)
       .def_readwrite("secondInd", &PDF::secondInd);
+  mod.def("quadratic_extremum", &quadratic_extremum);
 }  // PYBIND11_MODULE
