@@ -9,6 +9,9 @@ LePHARE is distributed with `pypi <https://pypi.org/project/lephare/>`_, and thu
 
 .. code-block:: bash
     
+    # We recommend using Python 3.12 which is the best tested
+    conda create -n <env_name> python=3.12
+    conda activate <env_name>
     pip install lephare
 
 .. note::
@@ -131,7 +134,7 @@ editable mode with the `-e` option so that any changes are immediately propagate
 
         .. code-block:: bash
 
-            conda create env -n <env_name> 
+            conda create -n <env_name> python=3.12
             conda activate <env_name>
             conda install cxx-compilers # May not be required for linux
             git clone https://github.com/lephare-photoz/lephare.git
@@ -144,7 +147,7 @@ editable mode with the `-e` option so that any changes are immediately propagate
 
         .. code-block:: bash
 
-            conda create env -n <env_name> 
+            conda create -n <env_name> python=3.12
             conda activate <env_name>
             conda install cxx-compilers
             brew install llvm libomp
