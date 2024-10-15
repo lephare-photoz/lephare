@@ -1,7 +1,6 @@
 import os
-from contextlib import nullcontext
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import mock_open, patch
 
 import pytest
 from lephare.data_retrieval import (
@@ -43,7 +42,16 @@ def test_read_list_file_remote(mock_get):
 
 def test_make_default_retriever(data_registry_file):
     mock_registry_content = "file1.txt hash1\nfile2.txt hash2"
-    with patch("builtins.open", return_value=nullcontext(mock_registry_content)):
+
+    # Create a mock_open instance
+    m_open = mock_open(read_data=mock_registry_content)
+
+    # Mock __enter__ and __exit__ for context management
+    m_open.return_value.__enter__ = lambda self: self
+    m_open.return_value.__exit__ = lambda self, exc_type, exc_val, exc_tb: None
+
+    # Patch the built-in open method with the mocked version
+    with patch("builtins.open", m_open):
         retriever = make_default_retriever()
         assert retriever.base_url == DEFAULT_BASE_DATA_URL
         assert retriever.path == Path(DEFAULT_LOCAL_DATA_PATH)
