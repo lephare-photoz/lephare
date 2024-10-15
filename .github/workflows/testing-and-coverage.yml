@@ -44,7 +44,7 @@ jobs:
     - name: Collect C++ coverage
       run: |
         lcov --output-file coverage.cpp --capture --directory build --rc geninfo_ignore_errors=mismatch
-        lcov --output-file coverage.cpp --extract coverage.cpp $PWD/src/"*"
+        lcov --output-file coverage.cpp --extract coverage.cpp $PWD/src/"*" --rc geninfo_ignore_errors=mismatch
         cat coverage.lcov coverage.cpp > coverage.txt
 
     - name: Upload coverage report to codecov
