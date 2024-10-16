@@ -45,6 +45,11 @@ jobs:
             platform_id: manylinux_x86_64
             manylinux_image: manylinux2014
             python_version: "3.12"
+          - os: ubuntu-22.04
+            python: 313
+            platform_id: manylinux_x86_64
+            manylinux_image: manylinux2014
+            python_version: "3.13"
 
           # MacOS x86_64
           - os: macos-12
@@ -63,6 +68,10 @@ jobs:
             python: 312
             platform_id: macosx_x86_64
             python_version: "3.12"
+          - os: macos-12
+            python: 313
+            platform_id: macosx_x86_64
+            python_version: "3.13"
 
           # MacOS arm64
           - os: macos-14
@@ -81,6 +90,10 @@ jobs:
             python: 312
             platform_id: macosx_arm64
             python_version: "3.12"
+          - os: macos-14
+            python: 313
+            platform_id: macosx_arm64
+            python_version: "3.13"
 
     steps:
       - name: Checkout LePhare
@@ -114,7 +127,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0  # Optional, use if you use setuptools_scm
-        submodules: true  # Optional, use if you have submodules
+        submodules: recursive  # Optional, use if you have submodules
 
     - name: Build SDist
       run: pipx run build --sdist
