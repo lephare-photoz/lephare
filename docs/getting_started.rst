@@ -136,7 +136,6 @@ editable mode with the `-e` option so that any changes are immediately propagate
 
             conda create -n <env_name> python=3.12
             conda activate <env_name>
-            conda install cxx-compilers # May not be required for linux
             git clone https://github.com/lephare-photoz/lephare.git
             cd lephare
             git submodule update --init --recursive
@@ -149,7 +148,6 @@ editable mode with the `-e` option so that any changes are immediately propagate
 
             conda create -n <env_name> python=3.12
             conda activate <env_name>
-            conda install cxx-compilers
             brew install llvm libomp
             git clone https://github.com/lephare-photoz/lephare.git
             cd lephare
