@@ -13,6 +13,10 @@ LePHARE is distributed with `pypi <https://pypi.org/project/lephare/>`_, and thu
     conda create -n <env_name> python=3.12
     conda activate <env_name>
     pip install lephare
+    # If you want to run the notebooks you must install a notebook server
+    conda install -c conda-forge jupyterlab
+    # And create a kernel which has access to this environment
+    python -m ipykernel install --user --name <kernel_name>
 
 .. note::
     For existing users accustomed to using the command line arguments, those should 
