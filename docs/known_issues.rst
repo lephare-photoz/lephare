@@ -47,14 +47,21 @@ check that clang compilers are set as the default.
 
 .. code-block:: bash
 
-   >> echo $CC
-    arm64-apple-darwin20.0.0-clang
-   >> echo $CXX
-    arm64-apple-darwin20.0.0-clang++
+    echo $CC
+    #arm64-apple-darwin20.0.0-clang
+    echo $CXX
+    #arm64-apple-darwin20.0.0-clang++
 
 If these are not set to clang, you can attempt to set them using conda with the
 forllowing commands:
 
 .. code-block:: bash
 
-   >> conda install -c conda-forge cxx-compiler
+    conda install -c conda-forge cxx-compiler
+
+PyPI installation from source
+=============================
+When no PyPI binaries are available there may be issues installing from source.
+If we have not covered your operating system or Python version pip will installed
+attempt to install from source. If you have problems installing from source via 
+PyPI it may be simpler to follow the developer installation instructions.
