@@ -65,3 +65,12 @@ When no PyPI binaries are available there may be issues installing from source.
 If we have not covered your operating system or Python version pip will installed
 attempt to install from source. If you have problems installing from source via 
 PyPI it may be simpler to follow the developer installation instructions.
+
+AVX2 compiler flags
+===================
+Advanced Vector eXtensions (AVX) can increase performance when they are available.
+We have had an installation issue on high performance clusters where the node
+that lephare was installed on had access to AVX2 and compiled with the flag set 
+but then failed when it was run on a node without them due to old hardware. 
+Advanced users can switch this flag off if they encounter this issue which can
+be manifest in the vague error: illegal instruction (core dumped).
