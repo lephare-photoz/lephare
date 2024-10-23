@@ -62,7 +62,7 @@ forllowing commands:
 PyPI installation from source
 =============================
 When no PyPI binaries are available there may be issues installing from source.
-If we have not covered your operating system or Python version pip will installed
+If we have not covered your operating system or Python version pip will
 attempt to install from source. If you have problems installing from source via 
 PyPI it may be simpler to follow the developer installation instructions.
 
