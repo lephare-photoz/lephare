@@ -9,7 +9,14 @@ LePHARE is distributed with `pypi <https://pypi.org/project/lephare/>`_, and thu
 
 .. code-block:: bash
     
+    # We recommend using Python 3.12 which is the best tested
+    conda create -n <env_name> python=3.12
+    conda activate <env_name>
     pip install lephare
+    # If you want to run the notebooks you must install a notebook server
+    conda install -c conda-forge jupyterlab
+    # And create a kernel which has access to this environment
+    python -m ipykernel install --user --name <kernel_name>
 
 .. note::
     For existing users accustomed to using the command line arguments, those should 
@@ -86,6 +93,8 @@ and download all the auxiliary data there:
     import lephare as lp
     # If you do not set a config input to the following function in gets everything.
     lp.data_retrieval.get_auxiliary_data(clone=False)
+    # Setting clone=True would use a git clone which may be faster but will only run 
+    # on an empty directory.
 
 * `LEPHAREDIR` is the location of the auxiliary input data.
 * `LEPHAREWORK` is the location of the intermediate files produced during a lephare run.
@@ -93,10 +102,10 @@ and download all the auxiliary data there:
 Both can be set if preferred or left to the default location in the user cache.
 
 
-Advanced Usage
+Example Usage
 ==============
 
-Taking advantage of the advanced capabilities of LePHARE will depend on a detailed
+Taking advantage of the full capabilities of LePHARE will depend on a detailed
 understanding of the configurations which can be specified by text file or via a dictionary 
 in Python. In the later stages of the documentation we cover the various options
 that can be specified via :doc:`keywords <keywords>`.
@@ -119,6 +128,8 @@ grid which would increase accuracy but take longer to execute:
 
 Developer Guide
 ===============
+The developer install is required for editing the code but can also be useful
+on systems that do not have PyPI binaries and for systems that are not well tested.
 Before installing any dependencies or writing code, it's a great idea to create 
 a virtual environment. LINCC-Frameworks engineers primarily use conda to manage 
 virtual environments. If you have conda installed locally, you can run the following 
@@ -131,9 +142,8 @@ editable mode with the `-e` option so that any changes are immediately propagate
 
         .. code-block:: bash
 
-            conda create env -n <env_name> 
+            conda create -n <env_name> python=3.12
             conda activate <env_name>
-            conda install cxx-compilers # May not be required for linux
             git clone https://github.com/lephare-photoz/lephare.git
             cd lephare
             git submodule update --init --recursive
@@ -144,9 +154,8 @@ editable mode with the `-e` option so that any changes are immediately propagate
 
         .. code-block:: bash
 
-            conda create env -n <env_name> 
+            conda create -n <env_name> python=3.12
             conda activate <env_name>
-            conda install cxx-compilers
             brew install llvm libomp
             git clone https://github.com/lephare-photoz/lephare.git
             cd lephare

@@ -89,6 +89,7 @@ The pybind11 header files are provided in the *extern* directory, but after a `g
 
    conda create env -n <env_name> python=3.10
    conda activate <env_name>
+   conda install -c conda-forge cxx-compiler
    pip install -e .'[dev]'
    pre-commit install
    conda install pandoc

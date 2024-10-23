@@ -63,10 +63,9 @@ PYBIND11_MODULE(_lephare, mod) {
            "standard constructor")
       .def_readwrite("lamb_opa", &opa::lamb_opa)
       .def_readwrite("opared", &opa::red)
-      .def("read", &opa::read)
-      //   .def("lmin", &opa::lmin, "return smallest wavelength stored")
-      //   .def("lmax", &opa::lmax, "return largest wavelength stored")
-      ;
+      .def("read", &opa::read);
+  //   .def("lmin", &opa::lmin, "return smallest wavelength stored")
+  //   .def("lmax", &opa::lmax, "return largest wavelength stored")
 
   /******** CLASS EXT *********/
   py::class_<ext>(mod, "ext")
