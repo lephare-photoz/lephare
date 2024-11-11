@@ -62,7 +62,7 @@ You can also see the executed notebook with all outputs :doc:`here <notebooks/In
 
 
 Auxiliary Data and the Environment Variables
-===========================================
+============================================
 LePHARE depends on auxiliary data sets such as spectral energy distributions,
 filter transmission curves, and attenuation curves. In order to keep the pip
 installation light these are now stored in a distinct repository called
@@ -70,9 +70,13 @@ installation light these are now stored in a distinct repository called
 
 
 We have built some automatic machinery for downloading the required files 
-for a given config `para` file. However, some users may prefer to simply clone
-the entire directory. The automatic download functionality can also be used to
-download all external data.
+for a given config `para` file. The automatic download functionality can also be used to
+download all external data. However, some users may prefer to simply clone
+the entire directory:
+
+.. code-block:: bash
+    
+    git clone https://github.com/lephare-photoz/lephare-data
 
 .. note::
     lephare uses environment variables to locate the external data and work files.
@@ -102,8 +106,8 @@ and download all the auxiliary data there:
 Both can be set if preferred or left to the default location in the user cache.
 
 
-Example Usage
-==============
+The configuration keywords
+==========================
 
 Taking advantage of the full capabilities of LePHARE will depend on a detailed
 understanding of the configurations which can be specified by text file or via a dictionary 
