@@ -1,7 +1,19 @@
 Advanced Usage via Python Interface
 --------------------------------
 
-The best way to learn about the Python interface is through running the example :doc:`notebooks <notebooks>`.
+
+The best way to learn about the Python interface is through running the 
+example :doc:`notebooks <notebooks>`. We have made an intermediate notebook to demonstrate how a new user can download
+the required filters and run lephare on their own data. You can download the notebook
+`here <https://github.com/lephare-photoz/lephare/blob/main/docs/notebooks/Intermediate_usage_notebook.ipynb>`_ 
+which should directly run following installation of lephare via pip.
+You can also see the executed notebook with all outputs :doc:`here <notebooks/Intermediate_usage_notebook>`.
+
+.. note::
+    Lephare can be used either via the Python interface or from the command line. 
+    The use of the command line executables are generally for legacy purposes.
+    An example of using the command line arguments can be found `here <https://github.com/lephare-photoz/lephare/blob/main/docs/historical_examples/test_suite.sh>`_.
+
 
 Whether or not you are running via Python or the command line there are four key stages of a LePHARE run.
 
@@ -132,3 +144,8 @@ https://github.com/lephare-photoz/lephare-data/blob/main/examples/output.para
 
 In general this output will contain the best estimate of the redshift alongside
 other physical parameters.
+
+The three most basic notebooks which demonstrate the key Python functionality are 
+available in these notebooks: :doc:`Minimal full run <../notebooks/Minimal_photoz_run>`,
+:doc:`Intermediate usage notebook <../notebooks/Intermediate_usage_notebook>`, and
+:doc:`Example full run <../notebooks/Example_full_run>`.

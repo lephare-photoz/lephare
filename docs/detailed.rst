@@ -4,13 +4,6 @@ Detailed LePHARE user manual
 Introduction
 -------------
 
-LePHARE was written by Stéphane Arnouts & Olivier Ilbert (Laboratoire
-d’Astrophysique de Marseille) and later by Johann Cohen-Tanugi
-(Laboratoire Univers et Particules de Montpellier) and Raphael Shirley
-(Max Planck Institute for extraterrestrial Physics). Full details of
-all contributors can be found on the main GitHub `here
-<https://github.com/lephare-photoz/lephare/>`_.
-
 This section contains details concerning the internal structure
 of the code, meaning of keywords and how to run the code (with the python
 interface and/or command lines).
@@ -2537,3 +2530,10 @@ Appendix B : keyword differences between the Fortran and the C++ version
    (:math:`L_{\nu}[erg.s^{-1}.Hz^{-1}]= A\pi D^2[cm^2] f_{\nu}[erg.s^{-1}.cm^{-2}.Hz^{-1}]`)
    you get:
    :math:`L_{\nu,\odot}[erg.s^{-1}.Hz^{-1}]=10^{-0.4(M^{AB}_{\nu,\odot} -51.605)}`
+
+Appendix C : C++ compilation flags
+----------------------------------
+
+C++ compilation makes use of a number compilation flags which can be changed 
+to improve performance or enable compilation on unusual systems. By updating
+the CMakeLists.txt file flags can be removed, added, or be updated.

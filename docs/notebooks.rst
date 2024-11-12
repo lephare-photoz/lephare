@@ -1,5 +1,11 @@
 Notebooks
-========================================================================================
+=========
+
+This is the full set of example notebooks. They range from very simple and uninformative
+to demonstrating advanced access to the low level functionality. They should all be able to run 
+independently following installation.
+
+
 
 .. toctree::
 

@@ -17,20 +17,25 @@ LePHARE (PHotometric Analysis for Redshift Estimation)
    :align: center
    :width: 150px
 
-LePHARE computes photometric redshifts and physical parameters by fitting spectral energy distributions (SED) 
-to a dataset of photometric fluxes or apparent magnitudes. LePHARE is a Python package built on 
-a complete rewrite in C++ of the `Fortran code <https://www.cfht.hawaii.edu/~arnouts/LEPHARE>`_.
+Since 1999 LePHARE has been a code for computing photometric redshifts and 
+physical parameters by fitting spectral energy distributions (SED) to a dataset 
+of photometric fluxes or apparent magnitudes. 
+LePHARE was originally written in fortran (Arnout et al. 1999; Ilbert et al. 2006). 
+It has been completely rewritten in C++ with a Python interface.
+
 
 .. toctree::
    :hidden:
 
    Home page <self>
    Getting Started <getting_started>
-   Advanced usage via Python interface <lephare_architecture>
-   Advanced usage via Command Line Interface <legacy_install>
+   Advanced Installation <advanced_install>
+   Usage with Python Interface <python_usage>
    All notebooks <notebooks>
-   Detailed documentation <original>
+   Usage with Command Line Interface <commandline_usage>
+   Detailed documentation <detailed>
    Keywords <keywords>
    C API Reference <doxygen_output/c_lib/library_root>
    Python API Reference <autoapi/index>
    Known issues <known_issues>
+   Acknowledgements <acknowledgements>
