@@ -10,7 +10,7 @@ independently following installation.
 .. toctree::
 
     Minimal full run <notebooks/Minimal_photoz_run>
-    Intermediate usage notebook <notebooks/Intermediate_usage_notebook>
+    Typical usage <notebooks/Intermediate_usage_notebook>
     Example full run <notebooks/Example_full_run>
     Building a list of onesources <notebooks/Building_list_of_onesources>
     Example of usage of magSvc <notebooks/Example_of_usage_of_magSvc>

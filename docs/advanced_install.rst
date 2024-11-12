@@ -1,7 +1,9 @@
 Advanced Installation with full clones of repositories
 ======================================================
-LePHARE is split across two repositories one for the code and one for the
-auxiliary data. Advanced users or developers may want to edit the files in 
+LePHARE is split across two repositories one for the 
+`code <https://github.com/lephare-photoz/lephare>`_ and one for the
+auxiliary `data <https://github.com/lephare-photoz/lephare-data>`_. 
+Advanced users or developers may want to edit the files in 
 both. In this section we explain a developer install and clone of both 
 git repositories in order to allow modification of the code and auxiliary data.
 
