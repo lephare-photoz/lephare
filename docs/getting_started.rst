@@ -5,7 +5,9 @@ Getting Started
 
 Installation
 ============
-LePHARE is distributed with `pypi <https://pypi.org/project/lephare/>`_, and thus the simplest way to install it is with pip:
+LePHARE is distributed with `pypi <https://pypi.org/project/lephare/>`_, and 
+thus the simplest way to install it is with pip. This depends on having both 
+conda and pip installed.
 
 .. code-block:: bash
     
@@ -172,7 +174,7 @@ At this stage running the tests is a good way to check everything is working:
 
 .. code-block:: bash
 
-    pytest tests
+    python -m pytest tests
 
 Once you have created a new environment, you can install precommit and pandoc 
 which will help you to run precommit checks and create the documentation locally:
