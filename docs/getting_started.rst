@@ -79,6 +79,8 @@ the entire directory:
 .. code-block:: bash
     
     git clone https://github.com/lephare-photoz/lephare-data
+    # Set the LEPHAREDIR to this data location
+    export LEPHAREDIR=$PWD/lephare-data
 
 .. note::
     lephare uses environment variables to locate the external data and work files.
