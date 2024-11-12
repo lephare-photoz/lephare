@@ -27,7 +27,7 @@ conda installed.
 
 In order to run LePHARE we need to download auxiliary data such as filters, SEDs, 
 and attenuation curves which are not shipped with the code. These are explained
-in more detail below but for simplicity you can download everything via Python:
+in more detail below but for simplicity you can download everything via Python (~1.3Gb):
 
 .. code-block:: python
 
@@ -36,19 +36,22 @@ in more detail below but for simplicity you can download everything via Python:
 
 
 The following Python snippet is the most basic example to test the installation has worked. 
+This will generate intermediate files and outputs stored in the cache or to 
+the user defined storage locations discussed later.
 You can also get an example notebook running this code `here <https://github.com/lephare-photoz/lephare/blob/main/docs/notebooks/Minimal_photoz_run.ipynb>`_.
 
 
 .. code-block:: python
 
-    import lephare as lp
+    # Continuing from the cell above...
     from astropy.table import Table
     # The following config is highly dependent on your input data and science goals
     config=lp.default_cosmos_config.copy()
     lp.prepare(config)
     # The following example table is in the lephare input format.
     input_table=Table.read(f"{lp.LEPHAREDIR}/examples/COSMOS.in",format="ascii")
-    output, pdfs, zgrid = lp.process(config, input_table)
+    # In the next command output is an astropy.table.Table object with the results
+    output,_ = lp.process(config, input_table)
     
 
 This will take over ten minutes to run. To check that everything was successful, 

@@ -31,7 +31,7 @@ It has been completely rewritten in C++ with a Python interface.
    Getting Started <getting_started>
    Advanced Installation <advanced_install>
    Usage with Python Interface <python_usage>
-   All notebooks <notebooks>
+   Example notebooks <notebooks>
    Usage with Command Line Interface <commandline_usage>
    Detailed documentation <detailed>
    Keywords <keywords>

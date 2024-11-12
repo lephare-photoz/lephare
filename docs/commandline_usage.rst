@@ -1,12 +1,12 @@
 Advanced Usage via Command Line Interface
-========================================================================================
+=========================================
 
 The four principle command line tools are immediately available after installing 
 with pip. They can also be called by building the c++ executables directly but 
 that is generally not advised. The four basic operations are summarised below.
 
-Legacy code overview and main features
---------------------------------------
+Running with the command line
+-----------------------------
 
 LePHARE consists of a set of four principle executables:
 
@@ -38,7 +38,7 @@ overwrite the config can also be passed to it.
     --GAL_SED COSMOS_MOD.list \ # optional flag to overwrite
     --GAL_LIB LIB_VISTA 
 
-`mag_gal`` likewise can be run with just the config and type but is also highly customisable.
+`mag_gal` likewise can be run with just the config and type but is also highly customisable.
 
 .. code-block:: bash
 
@@ -51,7 +51,7 @@ overwrite the config can also be passed to it.
     --EM_LINES EMP_UV  \
     --EM_DISPERSION 0.5,0.75,1.,1.5,2.
 
-Finally `zphota`` can be run similarly.
+Finally `zphota` can be run similarly.
 
 .. code-block:: bash
 
@@ -66,7 +66,7 @@ Most of the optional flags that are sent to the command line arguments correspon
 keywords in the config file and effectively override them.
 
 A more detailed example shell script which will run the COSMOS example can be found 
-`here <https://github.com/lephare-photoz/lephare/blob/main/docs/historical_examples/test_suite.sh>`_.
+`here <https://github.com/lephare-photoz/lephare/blob/main/docs/test_suite/test_suite.sh>`_.
 
 This `example <https://github.com/lephare-photoz/lephare-data/blob/main/examples/README_full>`_ 
 also shows some more advanced features which can be accessed via the command line.
