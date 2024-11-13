@@ -1,5 +1,6 @@
 import os
 import shutil
+import time
 
 import numpy as np
 
@@ -10,7 +11,16 @@ __all__ = ["object_types", "process", "table_to_data", "calculate_offsets", "loa
 object_types = ["STAR", "GAL", "QSO"]
 
 
-def process(config, input, col_names=None, standard_names=False, filename=None, offsets=None):
+def process(
+    config,
+    input,
+    col_names=None,
+    standard_names=False,
+    filename=None,
+    offsets=None,
+    pdf_type=11,
+    write_outputs=False,
+):
     """Run all required steps to produce photometric redshift estimates
 
     Parameters
@@ -28,6 +38,12 @@ def process(config, input, col_names=None, standard_names=False, filename=None, 
         Output file name for the output catalogue.
     offsets : list
         If offsets are set autoadapt is not run but the set values are used.
+    pdf_type : int
+        The PDF type. The default 11 is the Bayesian marginalised PDF for
+        Galaxies.
+    write_outputs : bool
+        Whether to write the output spectra, PDF, and ascii file if specified
+        in the config. By default these are not written to save space.
 
     Returns
     =======
@@ -83,10 +99,13 @@ def process(config, input, col_names=None, standard_names=False, filename=None, 
 
     # Perform the main run
     photz.run_photoz(photozlist, a0, a1)
+    # Write outputs if requested
+    if write_outputs:
+        photz.write_outputs(photozlist, int(time.time()))
     # Get the pdfs
     pdfs = []
     for i in range(ng):
-        pdf = photozlist[i].pdfmap[11]
+        pdf = photozlist[i].pdfmap[pdf_type]
         pdf, zgrid = np.array(pdf.vPDF), np.array(pdf.xaxis)
         pdfs.append(pdf)
 
