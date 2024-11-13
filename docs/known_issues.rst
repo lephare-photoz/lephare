@@ -74,3 +74,10 @@ that lephare was installed on had access to AVX2 and compiled with the flag set
 but then failed when it was run on a node without them due to old hardware. 
 Advanced users can switch this flag off if they encounter this issue which can
 be manifest in the vague error: illegal instruction (core dumped).
+
+Installation on Fedora redhat
+=============================
+There may be an issue compiling lephare on Fedora/redhat, based on an attempt
+on a rocky 8.8 distribution (gcc 8.5.0). The compilation error is related to the
+std::filesystem standard library and is alleviated by adding the compilation flag
+stdc++fs. You can see information at `stack overflow <https://stackoverflow.com/questions/71548227/undefined-reference-to-stdfilesystem-cxx11>`_.
