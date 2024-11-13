@@ -22,7 +22,9 @@ def test_prepare(test_data_dir):
 def test_load_sed_list(test_data_dir):
     test_dir = os.path.abspath(os.path.dirname(__file__))
     # Move one of the example sed folders
-    _ = shutil.copytree(os.path.join(test_dir, "../data/sed/QSO"), os.path.join(test_dir, "../tmp/seds"))
+    _ = shutil.copytree(
+        os.path.join(test_dir, "../data/sed/QSO"), os.path.join(test_dir, "../tmp/seds"), dirs_exist_ok=True
+    )
     lp.load_sed_list(os.path.join(test_dir, "../tmp/seds/ONE_SED.list"), "QSO")
     # Check the list is there
     assert os.path.exists(os.path.join(test_dir, "../data/sed/QSO/ONE_SED/ONE_SED.list"))

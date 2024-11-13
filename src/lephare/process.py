@@ -1,5 +1,6 @@
 import os
 import shutil
+import time
 
 import numpy as np
 
@@ -10,7 +11,15 @@ __all__ = ["object_types", "process", "table_to_data", "calculate_offsets", "loa
 object_types = ["STAR", "GAL", "QSO"]
 
 
-def process(config, input, col_names=None, standard_names=False, filename=None, offsets=None):
+def process(
+    config,
+    input,
+    col_names=None,
+    standard_names=False,
+    filename=None,
+    offsets=None,
+    write_outputs=False,
+):
     """Run all required steps to produce photometric redshift estimates
 
     Parameters
@@ -28,13 +37,16 @@ def process(config, input, col_names=None, standard_names=False, filename=None, 
         Output file name for the output catalogue.
     offsets : list
         If offsets are set autoadapt is not run but the set values are used.
+    write_outputs : bool
+        Whether to write the output spectra, PDF, and ascii file if specified
+        in the config. By default these are not written to save space.
 
     Returns
     =======
     output : astropy.table.Table
         The output table.
-    pdf : np.array
-        Array of pdfs for each object
+    photozlist : list of lephare.onesource
+        List of lephare onesource objects.
     """
     # ensure that all values in the keymap are keyword objects
     config = lp.all_types_to_keymap(config)
@@ -83,16 +95,12 @@ def process(config, input, col_names=None, standard_names=False, filename=None, 
 
     # Perform the main run
     photz.run_photoz(photozlist, a0, a1)
-    # Get the pdfs
-    pdfs = []
-    for i in range(ng):
-        pdf = photozlist[i].pdfmap[11]
-        pdf, zgrid = np.array(pdf.vPDF), np.array(pdf.xaxis)
-        pdfs.append(pdf)
-
-    # Loop over objects to compute photoz
+    # Write outputs if requested
+    if write_outputs:
+        photz.write_outputs(photozlist, int(time.time()))
     output = photz.build_output_tables(photozlist, para_out=None, filename=filename)
-    return output, np.array(pdfs), np.array(zgrid)
+    # Return the table and all the onesource objects
+    return output, photozlist
 
 
 def calculate_offsets(config, input, col_names=None, standard_names=False):
