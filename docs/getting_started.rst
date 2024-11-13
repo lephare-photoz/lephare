@@ -52,6 +52,8 @@ You can also get an example notebook running this code `here <https://github.com
     input_table=Table.read(f"{lp.LEPHAREDIR}/examples/COSMOS.in",format="ascii")
     # In the next command output is an astropy.table.Table object with the results
     output,_ = lp.process(config, input_table)
+    # One can then inspect, for instance, the first 5 lines of output
+    output[:5]
     
 
 This will take over ten minutes to run. To check that everything was successful, 
