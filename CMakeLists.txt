@@ -51,8 +51,10 @@ set(SOURCES
 )
 
 #! May need to remove the -march=native, this may cause problems in the compiled, pip installable, version.
-# Remove flags that break mac compilation with g++-13
-add_compile_options("-Ofast" "-ffast-math" "-fno-finite-math-only" "-fsigned-zeros" "-fno-associative-math" "-fno-inline" "-march=native" "-mtune=native" "-funroll-loops" "-fomit-frame-pointer" "-finline" "-ftree-vectorize")
+#-0fast enables finite-math-only, but the code is not guaranteed to catch all Nan or inf occurrences, so we need to disable it with -fno-finite-math-only
+#-fsigned-zeros is the default in gcc, which does not disable it with -0fast; on the contrary, clang disables it with -0fast so we need to manually enable it.
+#tree-vectorize is needed for vectorization, but unroll-loops is for profiling purpose
+add_compile_options("-Ofast" "-fno-finite-math-only" "-fsigned-zeros" "-fno-associative-math" "-march=native" "-mtune=native" "-funroll-loops" "-ftree-vectorize")
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(ENV{CC} "/usr/local/opt/llvm/bin/clang")
     set(ENV{CXX} "/usr/local/opt/llvm/bin/clang++")
@@ -61,7 +63,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(CMAKE_CPP_COMPILER "clang++")
     set(CMAKE_C_COMPILER "clang")
 else()
-    add_compile_options("-mno-vzeroupper" "-mavx2" "-floop-unroll-and-jam" )
+  #  These break mac compilation with g++-13
+  # no-vzeroupper instruct compiler to not optimize control flow from AVX2 to SSE, this is for profiling purpose.
+  add_compile_options("-mno-vzeroupper" "-mavx2" )
 endif()
 
 # only set these flags if testing presence of race conditions :
