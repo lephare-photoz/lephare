@@ -18,9 +18,7 @@ def process(
     standard_names=False,
     filename=None,
     offsets=None,
-    pdf_type=11,
     write_outputs=False,
-    return_all=False,
 ):
     """Run all required steps to produce photometric redshift estimates
 
@@ -39,22 +37,16 @@ def process(
         Output file name for the output catalogue.
     offsets : list
         If offsets are set autoadapt is not run but the set values are used.
-    pdf_type : int
-        The PDF type. The default 11 is the Bayesian marginalised PDF for
-        Galaxies.
     write_outputs : bool
         Whether to write the output spectra, PDF, and ascii file if specified
         in the config. By default these are not written to save space.
-    return_all : bool
-        Whether to return the full list of lephare.onesource objects with full
-        flexibility for accessing onesource methods.
 
     Returns
     =======
     output : astropy.table.Table
         The output table.
-    pdf : np.array
-        Array of pdfs for each object
+    photozlist : list of lephare.onesource
+        List of lephare onesource objects.
     """
     # ensure that all values in the keymap are keyword objects
     config = lp.all_types_to_keymap(config)
@@ -107,15 +99,8 @@ def process(
     if write_outputs:
         photz.write_outputs(photozlist, int(time.time()))
     output = photz.build_output_tables(photozlist, para_out=None, filename=filename)
-    if return_all:
-        return output, photozlist, None
-    # Get the pdfs
-    pdfs = []
-    for i in range(ng):
-        pdf = photozlist[i].pdfmap[pdf_type]
-        pdf, xaxis = np.array(pdf.vPDF), np.array(pdf.xaxis)
-        pdfs.append(pdf)
-    return output, np.array(pdfs), np.array(xaxis)
+    # Return the table and all the onesource objects
+    return output, photozlist
 
 
 def calculate_offsets(config, input, col_names=None, standard_names=False):
