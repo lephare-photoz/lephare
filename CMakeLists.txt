@@ -53,7 +53,7 @@ set(SOURCES
 #! May need to remove the -march=native, this may cause problems in the compiled, pip installable, version.
 #-0fast enables finite-math-only, but the code is not guaranteed to catch all Nan or inf occurrences, so we need to disable it with -fno-finite-math-only
 #-fsigned-zeros is the default in gcc, which does not disable it with -0fast; on the contrary, clang disables it with -0fast so we need to manually enable it.
-add_compile_options("-Ofast" "-fno-finite-math-only" "-fsigned-zeros" "-fno-associative-math" "-march=native" "-mtune=native" "-funroll-loops" "-fomit-frame-pointer" "-ftree-vectorize")
+add_compile_options("-Ofast" "-fno-finite-math-only" "-fsigned-zeros" "-fno-associative-math" "-march=native" "-mtune=native" "-funroll-loops" "-ftree-vectorize")
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(ENV{CC} "/usr/local/opt/llvm/bin/clang")
     set(ENV{CXX} "/usr/local/opt/llvm/bin/clang++")
