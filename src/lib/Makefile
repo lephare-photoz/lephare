@@ -27,8 +27,8 @@
 OS := $(shell uname -s)
 ifeq ($(OS), Darwin)
     # For macOS we have had issues with this. Try this first: brew install llvm libomp
-    FC         = clang++
-    CFLAGS     = -g -std=c++17 -fopenmp -Wall -fno-inline -Wno-psabi -L/opt/homebrew/opt/libomp/lib -I/opt/homebrew/opt/libomp/include -lomp
+    FC         = g++-13
+    CFLAGS     = -g -std=c++17 -fopenmp -Wall -fno-inline -Wno-psabi
 endif
 ifeq ($(OS), Linux)
     # For Linux
