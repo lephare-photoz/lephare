@@ -61,7 +61,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(CMAKE_CPP_COMPILER "clang++")
     set(CMAKE_C_COMPILER "clang")
 else()
-    add_compile_options("-mno-vzeroupper" "-mavx2" "-floop-unroll-and-jam" )
+    add_compile_options("-mno-vzeroupper" "-mavx2" )
 endif()
 
 # only set these flags if testing presence of race conditions :
