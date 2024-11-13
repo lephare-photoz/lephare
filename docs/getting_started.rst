@@ -21,9 +21,12 @@ conda installed.
     # And create a kernel which has access to this environment
     python -m ipykernel install --user --name <kernel_name>
 
-.. note::
-    For existing users accustomed to using the command line arguments, those should 
-    be immediately available after pip installation.
+.. warning:: 
+    For previous users of who have set LEPHAREDIR and LEPHAREWORK
+    in their environment these should be unset to avoid clashing versions. 
+
+    Be aware that the structure of the repository has changed with respect to 
+    all previous versions.
 
 In order to run LePHARE we need to download auxiliary data such as filters, SEDs, 
 and attenuation curves which are not shipped with the code. These are explained
