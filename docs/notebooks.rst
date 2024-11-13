@@ -10,8 +10,8 @@ independently following installation.
 .. toctree::
 
     Minimal full run <notebooks/Minimal_photoz_run>
-    Typical usage <notebooks/Typical_use_case>
-    Example full run <notebooks/Detailed_run>
+    Typical use case <notebooks/Typical_use_case>
+    Detailed run <notebooks/Detailed_run>
     Developer example: Building a list of onesources <notebooks/Building_list_of_onesources>
     Developer example: Example of usage of magSvc <notebooks/Example_of_usage_of_magSvc>
     Developer example: Data retrieval <notebooks/Data_retrieval>
