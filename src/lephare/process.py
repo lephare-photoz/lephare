@@ -20,6 +20,7 @@ def process(
     offsets=None,
     pdf_type=11,
     write_outputs=False,
+    return_all=False,
 ):
     """Run all required steps to produce photometric redshift estimates
 
@@ -44,6 +45,9 @@ def process(
     write_outputs : bool
         Whether to write the output spectra, PDF, and ascii file if specified
         in the config. By default these are not written to save space.
+    return_all : bool
+        Whether to return the full list of lephare.onesource objects with full
+        flexibility for accessing onesource methods.
 
     Returns
     =======
@@ -102,16 +106,16 @@ def process(
     # Write outputs if requested
     if write_outputs:
         photz.write_outputs(photozlist, int(time.time()))
+    output = photz.build_output_tables(photozlist, para_out=None, filename=filename)
+    if return_all:
+        return output, photozlist, None
     # Get the pdfs
     pdfs = []
     for i in range(ng):
         pdf = photozlist[i].pdfmap[pdf_type]
-        pdf, zgrid = np.array(pdf.vPDF), np.array(pdf.xaxis)
+        pdf, xaxis = np.array(pdf.vPDF), np.array(pdf.xaxis)
         pdfs.append(pdf)
-
-    # Loop over objects to compute photoz
-    output = photz.build_output_tables(photozlist, para_out=None, filename=filename)
-    return output, np.array(pdfs), np.array(zgrid)
+    return output, np.array(pdfs), np.array(xaxis)
 
 
 def calculate_offsets(config, input, col_names=None, standard_names=False):
