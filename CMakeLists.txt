@@ -56,12 +56,12 @@ set(SOURCES
 #tree-vectorize is needed for vectorization, but unroll-loops is for profiling purpose
 add_compile_options("-Ofast" "-fno-finite-math-only" "-fsigned-zeros" "-fno-associative-math" "-march=native" "-mtune=native" "-funroll-loops" "-ftree-vectorize")
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    set(ENV{CC} "/usr/local/opt/llvm/bin/clang")
-    set(ENV{CXX} "/usr/local/opt/llvm/bin/clang++")
-    set(ENV{LDFLAGS} "-L/usr/local/opt/llvm/lib")
-    set(ENV{CPPFLAGS} "-I/usr/local/opt/llvm/include")
-    set(CMAKE_CPP_COMPILER "clang++")
-    set(CMAKE_C_COMPILER "clang")
+    #set(ENV{CC} "/usr/local/opt/llvm/bin/clang")
+    #set(ENV{CXX} "/usr/local/opt/llvm/bin/clang++")
+    #set(ENV{LDFLAGS} "-L/usr/local/opt/llvm/lib")
+    #set(ENV{CPPFLAGS} "-I/usr/local/opt/llvm/include")
+    #set(CMAKE_CPP_COMPILER "clang++")
+    #set(CMAKE_C_COMPILER "clang")
 else()
   #  These break mac compilation with g++-13
   # no-vzeroupper instruct compiler to not optimize control flow from AVX2 to SSE, this is for profiling purpose.
