@@ -52,7 +52,7 @@ set(SOURCES
 
 #! May need to remove the -march=native, this may cause problems in the compiled, pip installable, version.
 # Remove flags that break mac compilation with g++-13
-add_compile_options("-Ofast" "-ffast-math" "-fno-finite-math-only" "-fsigned-zeros" "-fno-associative-math" "-fno-inline" "-march=native" "-mtune=native" "-funroll-loops" "-fomit-frame-pointer" "-finline" "-ftree-vectorize")
+add_compile_options("-Ofast" "-fno-finite-math-only" "-fsigned-zeros" "-fno-associative-math" "-fno-inline" "-march=native" "-mtune=native" "-funroll-loops" "-fomit-frame-pointer" "-finline" "-ftree-vectorize")
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(ENV{CC} "/usr/local/opt/llvm/bin/clang")
     set(ENV{CXX} "/usr/local/opt/llvm/bin/clang++")
