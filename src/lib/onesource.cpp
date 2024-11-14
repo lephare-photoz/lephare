@@ -771,7 +771,7 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
         fulllibIR[i]->chi2 = chi2loc;
 
       } else {
-        fulllibIR[i]->chi2 = 1.e9;
+        fulllibIR[i]->chi2 = HIGH_CHI2;
       }
     }
 
