@@ -473,7 +473,7 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
       }
 
       // keep the minimum chi2
-      if (chi2loc[il] < 0.99e9) {
+      if (chi2loc[il] < HIGH_CHI2) {
         int nlibloc = (fulllib[il])->nlib;
         // If local minimum inside the thread, store the new minimum for the
         // thread done per type s (0 gal, 1 AGN, 2 stars)
@@ -911,7 +911,7 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
       size_t il = va[i];
 
       // Check that the model has a defined probability
-      if (fulllib[il]->chi2 < 0.99e9) {
+      if (fulllib[il]->chi2 < HIGH_CHI2) {
         // nlib, index z=0
         int nlibloc = fulllib[il]->nlib;
 
