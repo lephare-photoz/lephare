@@ -26,7 +26,7 @@
 #
 OS := $(shell uname -s)
 ifeq ($(OS), Darwin)
-    # For macOS we have had issues with this. Try this first: brew install llvm libomp
+    # For macOS we hve had various issues on arm chips. The following should work after 'brew install llvm libomp gcc@13'
     FC         = g++-13
     CFLAGS     = -g -std=c++17 -fopenmp -Wall -fno-inline -Wno-psabi
 endif
