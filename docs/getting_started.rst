@@ -5,9 +5,9 @@ Getting Started
 
 Installation
 ============
-LePHARE is distributed with `pypi <https://pypi.org/project/lephare/>`_, and 
-thus the simplest way to install it is with pip. This depends on having 
-conda installed.
+LePHARE is distributed with the Python Package Index `(PyPI) <https://pypi.org/project/lephare/>`_, and 
+thus the simplest way to install it is with pip. We also reccommend using a conda 
+environment to control Python version and isolate your installation:
 
 .. code-block:: bash
     
