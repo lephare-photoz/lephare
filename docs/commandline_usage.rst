@@ -10,8 +10,7 @@ Running with the command line
 
 LePHARE consists of a set of four principle executables:
 
-- ``filter``: read a configurable set of filters and store a representation of 
-them for later use.
+- ``filter``: read a configurable set of filters and store a representation of them for later use.
 
 - ``sedtolib``: read a configurable set of SED, and store the results into a binary library in a common format for later use.
 
