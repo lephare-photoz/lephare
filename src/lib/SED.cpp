@@ -52,8 +52,8 @@ SED::SED(const string nameC, int nummodC, string type) {
   ebv = 0.;      // E(B-V) applied to the SED
   extlawId =
       0;  // index of the extinction law when dust attenuation has been applied
-  chi2 = 1.e9;  // chi2 of the fit
-  dm = -999.;   // Rescaling of the template
+  chi2 = HIGH_CHI2;  // chi2 of the fit
+  dm = -999.;        // Rescaling of the template
   distMod = 0;
 }
 

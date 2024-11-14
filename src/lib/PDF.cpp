@@ -160,7 +160,8 @@ double PDF::int_parab() {
   } else {
     // if one of the chi2 necessary for the interpolation k-1 -> k+1 too high,
     // can't interpolate
-    if (chi2[ib - 1] > 1.e9 || chi2[ib] > 1.e9 || chi2[ib + 1] > 1.e9) {
+    if (chi2[ib - 1] > HIGH_CHI2 || chi2[ib] > HIGH_CHI2 ||
+        chi2[ib + 1] > HIGH_CHI2) {
       // keep the original value
       xmin = xaxis[ib];
     } else {

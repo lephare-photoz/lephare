@@ -373,7 +373,7 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
 #ifdef _OPENMP
   number_threads = omp_get_max_threads();
 #endif
-  vector<vector<double>> locChi2(3, vector<double>(number_threads, 1.e9));
+  vector<vector<double>> locChi2(3, vector<double>(number_threads, HIGH_CHI2));
   vector<vector<int>> locInd(3, vector<int>(number_threads, -1));
 
   // Compute some quantities linked to ab and sab to save computational time in
@@ -912,11 +912,10 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
 
       // Check that the model has a defined probability
       if (fulllib[il]->chi2 < HIGH_CHI2) {
-        // nlib, index z=0
-        int nlibloc = fulllib[il]->nlib;
+        object_type nlibloc = fulllib[il]->nlib;
 
         // Marginalization for the galaxies
-        if (nlibloc == 0) {
+        if (nlibloc == object_type::GAL) {
           // probability exp(-chi2/2), but multiplied by a common factor
           // exp(-chi2_min/2) for the same object Since the the PDF is
           // normalized later, this factor vanishes. It allows to compute
@@ -979,7 +978,7 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
           }
 
           // marginalization for the QSO
-        } else if (nlibloc == 1) {
+        } else if (nlibloc == object_type::QSO) {
           prob = exp(-0.5 * (fulllib[il]->chi2 - chimin[1]));
 
           // photo-z PDF of QSO
