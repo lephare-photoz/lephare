@@ -1,3 +1,6 @@
+
+.. _allkeywords-label:
+
 List of keywords available for configuration of the LePhare executables 
 =======================================================================
 

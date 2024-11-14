@@ -12,15 +12,15 @@ interface and/or command lines).
 The basic principle
 ^^^^^^^^^^^^^^^^^^^
 
-*LePHARE* is a set of ``C++`` programs to compute photometric redshifts ( :math:`z_\mathrm{phot}` ) for galaxies and AGN, and galaxy physical parameters by fitting spectral energy distributions (SEDs) to a dataset of photometric fluxes or apparent magnitudes. Stellar templates are fitted too. The set of ``C++`` programs can also be manipulated as a library and handle through python scripts or notebooks.
+*LePHARE* is a set of ``C++`` programs to compute photometric redshifts ( :math:`z_\mathrm{phot}` ) for galaxies and AGN, and galaxy physical parameters by fitting spectral energy distributions (SEDs) to a dataset of photometric fluxes or apparent magnitudes. Stellar templates are fitted too. The set of ``C++`` programs can also be manipulated as a library with python. The code can be run through notebooks or scripts, but also with command lines in the Unix shell as it was the case in previous versions of LePHARE in fortran. 
 
-The photometric computation can be decomposed in four parts, as illustrated in Fig `1 <#fig:skim>`__:
+The photometric computation can be decomposed in four parts, as illustrated in :ref:`Fig.1 <fig-skim>`.
 
 - a preliminary step to read the SED from synthetic models or observed spectra and build the SED library. This corresponds to the program ``sedtolib`` in command lines, and the class ``Sedtolib`` in python.
 
-- a preliminary step to read the input filters used in the input galaxy catalog and build the filter library. This corresponds to the program ``filter`` in command line, and the class ``Filter`` in python.
+- a preliminary step to read the input filters used in the input photometric catalog and build the filter library. This corresponds to the program ``filter`` in command line, and the class ``Filter`` in python.
 
-- a program to compute apparent magnitudes in the filter set for each template of the library, along a grid of redshift, adding dust attenuation and nebular emission lines and storing the results. This step allows the user to extract basic information relative to the filters (e.g. :math:`\lambda_{mean}`, AB-corrections, attenuation) and SEDs (e.g. k-corrections, color-color diagrams, etc.). This corresponds to the program ``mag_gal`` in command line, and the class ``MagGal`` in python.
+- a program to compute apparent magnitudes in the filter set for each template of the library, along a grid of redshifts, adding dust attenuation according to one or several laws, IGM opacity and nebular emission lines and storing the results. This step allows the user to extract basic information relative to the filters (e.g. :math:`\lambda_{mean}`, AB-corrections, attenuation) and SEDs (e.g. k-corrections, color-color diagrams, etc.). This corresponds to the program ``mag_gal`` in command line, and the class ``MagGal`` in python.
    
 - The photometric redshift code based on a :math:`\chi^2` fitting method using the previously established libraries. This part can also be used to compute physical parameters. This corresponds to the program ``zphota`` in command line, and the class ``PhotoZ`` in python.
 
@@ -28,10 +28,13 @@ When running the code using command lines in your Unix shell, these four steps n
   
 
 
-.. image:: figures/LePHARE_skim.png
+.. figure:: figures/lephare_skim.png
   :width: 700
-  :alt: Alternative text
-  :name: fig:skim
+  :alt: Basic run
+  :name: fig-skim
+  :align: left
+	  
+  Fig.1: This figure present the four basic steps to run the code with command lines. The steps 1-2-3 could be compressed in a single one using the code "prepare" in python. 
 
 
 
@@ -39,9 +42,11 @@ When running the code using command lines in your Unix shell, these four steps n
 Structure of the code
 ^^^^^^^^^^^^^^^^^^^^^
 
-The structure of the package is illustrated in Fig `2 <#fig:structure>`__.
+The structure of the package is illustrated in :ref:`Fig.2 <fig-structure>`.
 
-The executables are stored in your default ``bin`` directory when installing the code using ``pip install``. They should be in your PATH and you shouldn't have to take care of anything. However, if you decide to install the code as a developper, i.e. by cloning the code from the `lephare github repository <https://github.com/lephare-photoz/lephare>`_, the executables will be located in the ``LEPHARE/bin/`` directory. This directory should be automatically added to your PATH. The ``C++`` source code are located in ``LEPHARE/src/lib/`` and the python scripts are in ``LEPHARE/src/lephare/``.
+The executables are stored in your default ``bin`` directory when installing the code using ``pip install``. They should be in your PATH and you shouldn't have to take care of that. If you want to know where the executables are located, try *which setolib* in your prompt.
+
+If you have installed the code in developper mode, i.e. by cloning the code from the `lephare github repository <https://github.com/lephare-photoz/lephare>`_, the ``C++`` source codes are located in ``LEPHARE/src/lib/`` and the python scripts are in ``LEPHARE/src/lephare/``.
 
 
 Two directories are essential for the functionning of the code:
@@ -53,16 +58,17 @@ Two directories are essential for the functionning of the code:
    
 These two environment variables could be set in two different ways, depending on your need:
 
-- Let the code set these environment variables by default (no action needed on your side). In such case, the code will identify your default ``cache`` directory. ``$LEPHAREDIR`` will be set to ``cache/lephare/data/``. ``$LEPHAREWORK`` will be set to ``cache/lephare/work/``
+- Let the code set these environment variables by default (no action needed on your side). In such case, the code will identify your default ``cache`` directory. These directories are indicated in the notebook when excecuting  ``import lephare as lp`` in a notebook cell.
 
-- Set yourself the values of these variables, either definitively in the usual files depending on your shell (e.g., ``.bash_profile`` or ``.csh_envlph``) or define them everytime you run the code. Defining them everytime is useful if you want to save the intermediate libraries within a different directory for each of your run.
+- Set yourself the values of these variables. ``$LEPHAREWORK`` could point to any directory you like (intermediate library will be stored inside).  ``$LEPHAREDIR`` should point to the LePHARE internal data directory (see below).
+`
 
-
-.. image:: figures/LePHARE_structure.png
+.. figure:: figures/lephare_structure.png
   :width: 700
   :alt: Alternative text
-  :name: fig:structure
+  :name: fig-structure
 
+  Fig.2: Structure of the *LePHARE* repository.
 
 
 The LePHARE internal data directory
@@ -72,11 +78,11 @@ The code needs essential information to run, like the filter curves or the SED t
 
 For a question of disk space and downloading time, the internal data are not installed by default. You have different methods to populate this directory:
 
-- When importing the *LePHARE* package in python (``import lephare as lp``), a function allows the user to download only the data needed for the run ``lp.data_retrieval.get_auxiliary_data(keymap=keymap, additional_files=["examples/COSMOS.in", "examples/output.para"])``, with ``keymap`` being the map of keywords used to configure the run. The code will check the existence of the data before downloading them again.
+- When importing the *LePHARE* package in python (``import lephare as lp``), a function allows the user to download only the data needed for the run ``lp.data_retrieval.get_auxiliary_data(keymap=keymap, additional_files=["examples/COSMOS.in", "examples/output.para"])``, with ``keymap`` being the map of keywords used to configure the run. The code will check if the data are already stored before downloading them again.
 
-- You can also retrieve all internal data available in *LePHARE* immediatly, using the previous function ``lp.data_retrieval.get_auxiliary_data(clone=False)``. You need 1.3Gb available.
+- You can retrieve all internal data available in *LePHARE* immediatly, using the previous function ``lp.data_retrieval.get_auxiliary_data(clone=True)``. You need 2Gb free to download these data. 
 
-- You can also clone the data directory from `lephare-data github repository <https://github.com/lephare-photoz/lephare-data/>`_. In such case, ``$LEPHAREDIR`` should be set to the ``LEPHARE-data`` directory.
+- You can also clone the data directory from `lephare-data github repository <https://github.com/lephare-photoz/lephare-data/>`_. In such case, the environment variable ``$LEPHAREDIR`` should be set to the ``LEPHARE-data`` directory path created by the cloning (not done automatically).
 
 
 
@@ -88,7 +94,7 @@ The sub-directories in ``$LEPHAREDIR`` are the following:
 
 - ``ext/`` includes several dust attenuation curves.
 
-- ``opa/`` contains tables with the opacity of the intergalactic medium at various redshifts. The code uses by default the Madau et al. (1995) opacity.
+- ``opa/`` contains tables with the opacity of the intergalactic medium at various redshifts. The code uses by default the Madau et al. (1995) opacity. 
 
 - ``vega/`` includes some spectra used for calibration (e.g. Vega to AB convertion).
 
@@ -117,21 +123,21 @@ Running the code
 Configuration files
 ^^^^^^^^^^^^^^^^^^^
 
-Two configuration files are important to run the code.
+Two configuration files (noted .para) allow the user to set up the properties of the template-fitting run, as well as the quantitites that the user want in output.
 
-One configuration file set the parameters associated to the run (e.g., ``$LEPHAREDIR/example/COSMOS.para``). It defines the set of templates, the filters and all the parameters that you want to tune to get the best results. You can store your parameter file where you want (e.g., in the directory where you run the code) to keep configuration files of different runs. Configuration files must be in ASCII format, compliant with the following rules:
+One configuration file set the parameters associated to the run (e.g., ``$LEPHAREDIR/example/COSMOS.para`` an example which contains all the keywords). It defines the set of templates, the filters and all the parameters that you want to tune to get the best results. You can save your parameter file where you want (e.g., in the directory where you run the code) to keep configuration files of different runsat any location. Configuration files must be in ASCII format, compliant with the following rules:
 
 1.  Only one parameter per line, with the syntax: PARAMETER_NAME value(s)
 2.  Comment line starts with “#”.
 3.  Depending on the parameter, values can be Float, Integer, or String (without quotation marks).
 4.  When a parameter accepts multiple values, these must be comma separated (no space).
 5.  When a parameter accepts a file location (as a String), the path can include environmental variables (``$HOME`` and ``$LEPHAREDIR``).
-6.  Some parameters are mandatory, *LePHARE++* will print out an error message if they are not set (either in the configuration file or via the command line)
-7.  Other parameters can be omitted (*LePHARE++* will assign a default value to them)
+6.  Some parameters are mandatory. *LePHARE++* will print out an error message if they are not set.
+7.  Other parameters can be omitted (*LePHARE++* will assign a default value to them).
 
 In the next sections, we will mark the mandatory parameters with an asterisk ("\*").
 
-A second configuration file (e.g., ``$LEPHAREDIR/example/output.para``) indicates which properties should be written in the output file. If not existing, all possible properties will be included in the output.
+A second configuration file (e.g., ``$LEPHAREDIR/example/output.para``) indicates which properties should be written in the output file. If the output para is not mentioned explicitly, the output file will include all the parameters that LePhare compute. 
 
 
 
@@ -151,7 +157,7 @@ All the programs in the suite can be run from a Unix shell with the following sy
 
 where `program` is the name of the program (among ``filter``, ``sedtolib``, ``mag_gal``, ``zphota``), followed by a configuration file called with the ``-c`` option.
 
-The various code options are defined in the configuration file but can also be given through additional instructions in the command line. Using such an optional list of parameters, any ``--Parameter value`` statement overrides the values in the configuration file.
+The various code options are defined in the configuration file but can also be given through additional instructions in the command line. Using such an optional list of parameters, any ``--Parameter value`` statement overrides the values in the configuration file. All the parameters are listed in the section :ref:`Keywords<allkeywords-label>`.
 
 An extensive example on how to run the code with command lines and including some advanced features is available in this `example <https://github.com/lephare-photoz/lephare-data/blob/main/examples/README_full>`_.
  
@@ -167,14 +173,14 @@ The ``C++`` programs can also be manipulated as a library using the python inter
 
 Classes from the *LePHARE* library can be manipulated from the python interface. Several notebooks are given in example in :doc:`notebooks <notebooks>`.
 
-The `full run notebook <https://lephare.readthedocs.io/en/latest/notebooks/Example_full_run.html>`_ is the closest to the four steps outlined in Fig `1 <#fig:skim>`__, i.e. creating the filter library, the SED library, then build the predicted magnitudes from these filters and SEDs (for GAL/QSO/STAR), and finally running the photometric redshifts.
+The `detailed run notebook <https://lephare.readthedocs.io/en/latest/notebooks/detailed_run.html>`_ is the closest to the four steps outlined in Fig `1 <#fig:skim>`__, i.e. creating the filter library, the SED library, then build the predicted magnitudes from these filters and SEDs (for GAL/QSO/STAR), and finally running the photometric redshifts for a subsample of galaxies from COSMOS2020 having a spec-z.
 
-However, we also added a function ``lp.prepare`` which first compute the full predicted magnitude library (the equivalent of combining filter, sedtolib, mag_gal together in the command lines), and then we compute the photometric redshifts with ``lp.process``.
+However, we also added a function ``lp.prepare`` which first compute the full predicted magnitude library (the equivalent of combining filter, sedtolib, mag_gal together in the command lines), and then we compute the photometric redshifts with ``lp.process`` as in the example below and in this `typical run notebook <https://lephare.readthedocs.io/en/latest/notebooks/typical_run.html>`_.
 
 .. code-block:: bash
 
   # Read the config file within the working directory		
-  config = lp.read_config("zphot.para")
+  config = lp.read_config("your_config.para")
   # Example of change in the keywords
   config.update(
     {
