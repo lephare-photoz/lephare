@@ -912,10 +912,10 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
 
       // Check that the model has a defined probability
       if (fulllib[il]->chi2 < HIGH_CHI2) {
-        object_type nlibloc = fulllib[il]->nlib;
+        int nlibloc = fulllib[il]->nlib;
 
         // Marginalization for the galaxies
-        if (nlibloc == object_type::GAL) {
+        if (nlibloc == 0) {
           // probability exp(-chi2/2), but multiplied by a common factor
           // exp(-chi2_min/2) for the same object Since the the PDF is
           // normalized later, this factor vanishes. It allows to compute
@@ -978,7 +978,7 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
           }
 
           // marginalization for the QSO
-        } else if (nlibloc == object_type::QSO) {
+        } else if (nlibloc == 1) {
           prob = exp(-0.5 * (fulllib[il]->chi2 - chimin[1]));
 
           // photo-z PDF of QSO
