@@ -998,7 +998,7 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
         size_t il = va[i];
         // Index of the considered redshift into the PDF
         double chi2loc = fulllib[il]->chi2;
-        if (chi2loc < 0.99e9) {
+        if (chi2loc < HIGH_CHI2) {
           // 11: BAYZG
           int poszloc = pdfbayzg.index(fulllib[il]->red);
           int nlibloc = fulllib[il]->nlib;
@@ -1094,7 +1094,7 @@ void onesource::generatePDF_IR(vector<SED *> &fulllib) {
       double prob = exp(-0.5 * ((*it)->chi2 - chiminIR));
 
       // Check that the model has a defined probability
-      if ((*it)->chi2 >= 0 && (*it)->chi2 < 0.99e9) {
+      if ((*it)->chi2 >= 0 && (*it)->chi2 < HIGH_CHI2) {
         // If able to determine a normalisation
         if ((*it)->dm > 0) {
           // LIR PDF of galaxies, ltir already in log
