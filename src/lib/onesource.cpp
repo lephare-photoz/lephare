@@ -397,7 +397,8 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
   bool mabsAGNprior = (priorLib[2] < 0 && priorLib[3] < 0);
 
   // parrallellize over each SED
-  vector<double> chi2loc(fulllib.size(), 1.e9), dmloc(fulllib.size(), -999.);
+  vector<double> chi2loc(fulllib.size(), HIGH_CHI2),
+      dmloc(fulllib.size(), -999.);
   size_t il;
 #ifdef _OPENMP
   // double start = omp_get_wtime();
@@ -415,7 +416,7 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
       // index to be considered because of ZFIX=YES
       il = va[i];
       // Initialize
-      chi2loc[il] = 1.e9;
+      chi2loc[il] = HIGH_CHI2;
       dmloc[il] = -999.;
 
       // Measurement of scaling factor dm only with (fobs>flim), dchi2/ddm = 0
@@ -440,7 +441,7 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
       if (nbul > 0) {
         for (size_t k = 0; k < imagm; k++) {
           if ((dmloc[il] * busul[k] * flux[il][k]) > ab[k] && busnorma[k] == 1)
-            chi2loc[il] = 1.e9;
+            chi2loc[il] = HIGH_CHI2;
         }
       }
 
@@ -460,10 +461,10 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
         if (reds < 1.e-10) abs_mag = abs_mag - funz0;
         // Galaxy rejection
         if ((abs_mag <= priorLib[0] || abs_mag >= priorLib[1]) && libtype == 0)
-          chi2loc[il] = 1.e9;
+          chi2loc[il] = HIGH_CHI2;
         // AGN rejection
         if ((abs_mag <= priorLib[2] || abs_mag >= priorLib[3]) && libtype == 1)
-          chi2loc[il] = 1.e9;
+          chi2loc[il] = HIGH_CHI2;
       }
       // Prior N(z)
       if (bp[0] >= 0 && libtype == 0) {
@@ -706,7 +707,7 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
 #ifdef _OPENMP
   number_threads = omp_get_max_threads();
 #endif
-  vector<double> locChi2(number_threads, 1.e9);
+  vector<double> locChi2(number_threads, HIGH_CHI2);
   vector<int> locInd(number_threads, -1);
 
   // Compute some quantities linked to ab and sab to save computational time in
@@ -831,7 +832,8 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
   // Do a local minimisation per thread (store chi2 and index) dim 1: type, dim
   // 2: thread, 3: index of the redshift grid
   vector<vector<vector<double>>> locChi2(
-      3, vector<vector<double>>(dimzg, vector<double>(number_threads, 1.e9)));
+      3,
+      vector<vector<double>>(dimzg, vector<double>(number_threads, HIGH_CHI2)));
   vector<vector<vector<int>>> locInd(
       3, vector<vector<int>>(dimzg, vector<int>(number_threads, -1)));
 
@@ -998,7 +1000,7 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
         size_t il = va[i];
         // Index of the considered redshift into the PDF
         double chi2loc = fulllib[il]->chi2;
-        if (chi2loc < 0.99e9) {
+        if (chi2loc < HIGH_CHI2) {
           // 11: BAYZG
           int poszloc = pdfbayzg.index(fulllib[il]->red);
           int nlibloc = fulllib[il]->nlib;
@@ -1689,7 +1691,7 @@ void onesource::secondpeak(vector<SED *> &fulllib, const double dz_win,
   pdfmap[9].secondMax(dz_win);
   // Default measurement
   zsec = -99.9;
-  zsecChi2 = 1.e9;
+  zsecChi2 = HIGH_CHI2;
   zsecEbv = -99.;
   zsecExtlaw = -99;
   zsecScale = -99.;
