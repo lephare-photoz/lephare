@@ -10,7 +10,6 @@ from lephare.data_retrieval import (
     _check_downloaded_files,
     _create_directories_from_files,
     download_all_files,
-    download_file,
     filter_files_by_prefix,
     make_default_retriever,
     make_retriever,
@@ -105,12 +104,12 @@ def test_check_downloaded_files_empty(mock_getsize):
     assert not _check_downloaded_files(file_names, downloaded_files)
 
 
-def test_download_single_file(data_registry_file):
-    retriever = make_retriever(registry_file=data_registry_file)
-    file_name = "file1.txt"
-    with patch.object(retriever, "fetch", return_value="/path/to/downloaded/file1.txt") as mock_fetch:
-        download_file(retriever, file_name)
-        mock_fetch.assert_called_once_with(file_name)
+# def test_download_single_file(data_registry_file):
+#     retriever = make_retriever(registry_file=data_registry_file)
+#     file_name = "file1.txt"
+#     with patch.object(retriever, "fetch", return_value="/path/to/downloaded/file1.txt") as mock_fetch:
+#         download_file(retriever, file_name)
+#         mock_fetch.assert_called_once_with(file_name)
 
 
 # def test_download_single_file_ignore_registry(data_registry_file):

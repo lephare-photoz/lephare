@@ -273,7 +273,11 @@ def download_file(retriever, file_name, ignore_registry=False):
             downloader=downloader,
         )
     else:
-        return retriever.fetch(file_name)
+        downloader = pooch.HTTPDownloader(headers={"User-Agent": "LePHARE"})
+        return retriever.fetch(
+            file_name,
+            downloader=downloader,
+        )
 
 
 def download_all_files(retriever, file_names, ignore_registry=False, retry=MAX_RETRY_ATTEMPTS):
