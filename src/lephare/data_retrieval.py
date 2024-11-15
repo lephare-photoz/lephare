@@ -87,7 +87,7 @@ def _check_registry_is_latest_version(remote_registry_url, local_registry_file):
     local_registry_hash = pooch.file_hash(local_registry_file, alg="sha256")
     remote_hash_url = os.path.splitext(remote_registry_url)[0] + "_hash.sha256"
 
-    remote_hash_response = requests.get(remote_hash_url, timeout=60)
+    remote_hash_response = requests.get(remote_hash_url, headers={"User-Agent": "LePHARE"}, timeout=60)
     remote_hash_response.raise_for_status()  # Raise exceptions for non-200 status codes
 
     return remote_hash_response.text.strip() == local_registry_hash
