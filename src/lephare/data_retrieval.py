@@ -244,7 +244,7 @@ def _create_directories_from_files(file_names):
             print(f"Created directory: {directory}")
 
 
-def download_file(retriever, file_name, ignore_registry=False):
+def download_file(retriever, file_name, ignore_registry=False, downloader=None):
     """Download a file using the retriever, optionally ignoring the registry.
 
     Parameters
@@ -255,15 +255,18 @@ def download_file(retriever, file_name, ignore_registry=False):
         The name of the file to download.
     ignore_registry : bool
         If True, download the file without checking its hash against the registry.
+    downloader : pooch.HTTPDownloader
+        The downloader is required to set the user for building on readthedocs
 
     Returns
     -------
     str
         The path to the downloaded file.
     """
+    if downloader is None:
+        downloader = pooch.HTTPDownloader(headers={"User-Agent": "LePHARE"})
     if ignore_registry:
         print(f"Downloading without registry: {file_name}...")
-        downloader = pooch.HTTPDownloader(headers={"User-Agent": "LePHARE"})
         return pooch.retrieve(
             url=urljoin(retriever.base_url, file_name),
             known_hash=None,
@@ -273,7 +276,6 @@ def download_file(retriever, file_name, ignore_registry=False):
             downloader=downloader,
         )
     else:
-        downloader = pooch.HTTPDownloader(headers={"User-Agent": "LePHARE"})
         return retriever.fetch(
             file_name,
             downloader=downloader,

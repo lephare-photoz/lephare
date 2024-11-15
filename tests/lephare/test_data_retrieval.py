@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from unittest.mock import mock_open, patch
 
+import pooch
 import pytest
 from lephare.data_retrieval import (
     DEFAULT_BASE_DATA_URL,
@@ -10,6 +11,7 @@ from lephare.data_retrieval import (
     _check_downloaded_files,
     _create_directories_from_files,
     download_all_files,
+    download_file,
     filter_files_by_prefix,
     make_default_retriever,
     make_retriever,
@@ -104,22 +106,28 @@ def test_check_downloaded_files_empty(mock_getsize):
     assert not _check_downloaded_files(file_names, downloaded_files)
 
 
-# def test_download_single_file(data_registry_file):
-#     retriever = make_retriever(registry_file=data_registry_file)
-#     file_name = "file1.txt"
-#     with patch.object(retriever, "fetch", return_value="/path/to/downloaded/file1.txt") as mock_fetch:
-#         download_file(retriever, file_name)
-#         mock_fetch.assert_called_once_with(file_name)
+def test_download_single_file(data_registry_file):
+    retriever = make_retriever(registry_file=data_registry_file)
+    downloader = pooch.HTTPDownloader(headers={"User-Agent": "LePHARE"})
+    file_name = "file1.txt"
+    with patch.object(retriever, "fetch", return_value="/path/to/downloaded/file1.txt") as mock_fetch:
+        download_file(retriever, file_name, downloader=downloader)
+        mock_fetch.assert_called_once_with(file_name, downloader=downloader)
 
 
-# def test_download_single_file_ignore_registry(data_registry_file):
-#     retriever = make_retriever(registry_file=data_registry_file)
-#     file_name = "file1.txt"
-#     with patch("pooch.retrieve", return_value="/path/to/downloaded/file1.txt") as mock_retrieve:
-#         download_file(retriever, file_name, ignore_registry=True)
-#         mock_retrieve.assert_any_call(
-#             url=f"{retriever.base_url}{file_name}", known_hash=None, fname=file_name, path=retriever.path
-#         )
+def test_download_single_file_ignore_registry(data_registry_file):
+    retriever = make_retriever(registry_file=data_registry_file)
+    file_name = "file1.txt"
+    downloader = pooch.HTTPDownloader(headers={"User-Agent": "LePHARE"})
+    with patch("pooch.retrieve", return_value="/path/to/downloaded/file1.txt") as mock_retrieve:
+        download_file(retriever, file_name, ignore_registry=True, downloader=downloader)
+        mock_retrieve.assert_any_call(
+            url=f"{retriever.base_url}{file_name}",
+            known_hash=None,
+            fname=file_name,
+            path=retriever.path,
+            downloader=downloader,
+        )
 
 
 @patch("lephare.data_retrieval.download_file")
