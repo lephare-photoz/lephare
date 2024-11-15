@@ -5,13 +5,6 @@
 LePHARE (PHotometric Analysis for Redshift Estimation)
 ========================================================================================
 
-.. warning::
-
-   This is a work in progress, and should not be used by anyone at this stage. The 
-   current LePHARE code is to be found at `https://gitlab.lam.fr/Galaxies/LEPHARE 
-   <https://gitlab.lam.fr/Galaxies/LEPHARE>`_.
-
-
 .. image:: https://avatars.githubusercontent.com/u/165841626?s=400&u=ff86bd4c19a9d36958cf1b47d84849dbe25c274a&v=4
    :alt: LePHARE logo
    :align: center
@@ -22,6 +15,12 @@ physical parameters by fitting spectral energy distributions (SED) to a dataset
 of photometric fluxes or apparent magnitudes. 
 LePHARE was originally written in fortran (Arnout et al. 1999; Ilbert et al. 2006). 
 It has been completely rewritten in C++ with a Python interface.
+
+.. note::
+
+   This is the official version of LePHARE in C++/Python. It is in active development. The 
+   deprecated version can be found `here <https://gitlab.lam.fr/Galaxies/LEPHARE>`_ 
+   in case you have legacy code that depends on it.
 
 
 .. toctree::
