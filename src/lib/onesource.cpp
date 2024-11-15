@@ -911,7 +911,7 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
       size_t il = va[i];
 
       // Check that the model has a defined probability
-      if (sed->chi2 < HIGH_CHI2) {
+      if (fulllib[il]->chi2 < HIGH_CHI2) {
         object_type nlibloc = fulllib[il]->nlib;
 
         // Marginalization for the galaxies
