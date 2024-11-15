@@ -124,7 +124,7 @@ def download_registry_from_github(url="", outfile=""):
         return
 
     # Download the registry file
-    response = requests.get(url, timeout=120)
+    response = requests.get(url, headers={"User-Agent": "LePHARE"}, timeout=120)
     response.raise_for_status()  # Raise exceptions for non-200 status codes
 
     with open(outfile, "w", encoding="utf-8") as file:
@@ -263,11 +263,14 @@ def download_file(retriever, file_name, ignore_registry=False):
     """
     if ignore_registry:
         print(f"Downloading without registry: {file_name}...")
+        downloader = pooch.HTTPDownloader(headers={"User-Agent": "LePHARE"})
         return pooch.retrieve(
             url=urljoin(retriever.base_url, file_name),
             known_hash=None,
             fname=file_name,
             path=retriever.path,
+            # The following may now be required by GitHub
+            downloader=downloader,
         )
     else:
         return retriever.fetch(file_name)

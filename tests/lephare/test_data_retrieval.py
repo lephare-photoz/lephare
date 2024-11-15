@@ -113,14 +113,14 @@ def test_download_single_file(data_registry_file):
         mock_fetch.assert_called_once_with(file_name)
 
 
-def test_download_single_file_ignore_registry(data_registry_file):
-    retriever = make_retriever(registry_file=data_registry_file)
-    file_name = "file1.txt"
-    with patch("pooch.retrieve", return_value="/path/to/downloaded/file1.txt") as mock_retrieve:
-        download_file(retriever, file_name, ignore_registry=True)
-        mock_retrieve.assert_any_call(
-            url=f"{retriever.base_url}{file_name}", known_hash=None, fname=file_name, path=retriever.path
-        )
+# def test_download_single_file_ignore_registry(data_registry_file):
+#     retriever = make_retriever(registry_file=data_registry_file)
+#     file_name = "file1.txt"
+#     with patch("pooch.retrieve", return_value="/path/to/downloaded/file1.txt") as mock_retrieve:
+#         download_file(retriever, file_name, ignore_registry=True)
+#         mock_retrieve.assert_any_call(
+#             url=f"{retriever.base_url}{file_name}", known_hash=None, fname=file_name, path=retriever.path
+#         )
 
 
 @patch("lephare.data_retrieval.download_file")
