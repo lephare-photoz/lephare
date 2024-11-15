@@ -85,12 +85,12 @@ class onesource {
     for (int k = 0; k < 3; k++) {
       zmin[k] = -99.9;
       indmin[k] = -99;
-      chimin[k] = 1.e9;
+      chimin[k] = HIGH_CHI2;
       imasmin[k] = -99;
     }
     zminIR = -99.9;
     indminIR = -99;
-    chiminIR = 1.e9;
+    chiminIR = HIGH_CHI2;
     imasminIR = -99;
     nbused = 0;
     pos = 0;

@@ -373,7 +373,7 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
 #ifdef _OPENMP
   number_threads = omp_get_max_threads();
 #endif
-  vector<vector<double>> locChi2(3, vector<double>(number_threads, 1.e9));
+  vector<vector<double>> locChi2(3, vector<double>(number_threads, HIGH_CHI2));
   vector<vector<int>> locInd(3, vector<int>(number_threads, -1));
 
   // Compute some quantities linked to ab and sab to save computational time in
@@ -473,7 +473,7 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
       }
 
       // keep the minimum chi2
-      if (chi2loc[il] < 0.99e9) {
+      if (chi2loc[il] < HIGH_CHI2) {
         int nlibloc = (fulllib[il])->nlib;
         // If local minimum inside the thread, store the new minimum for the
         // thread done per type s (0 gal, 1 AGN, 2 stars)
@@ -771,7 +771,7 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
         fulllibIR[i]->chi2 = chi2loc;
 
       } else {
-        fulllibIR[i]->chi2 = 1.e9;
+        fulllibIR[i]->chi2 = HIGH_CHI2;
       }
     }
 
@@ -911,12 +911,11 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
       size_t il = va[i];
 
       // Check that the model has a defined probability
-      if (fulllib[il]->chi2 < 0.99e9) {
-        // nlib, index z=0
-        int nlibloc = fulllib[il]->nlib;
+      if (fulllib[il]->chi2 < HIGH_CHI2) {
+        object_type nlibloc = fulllib[il]->nlib;
 
         // Marginalization for the galaxies
-        if (nlibloc == 0) {
+        if (nlibloc == object_type::GAL) {
           // probability exp(-chi2/2), but multiplied by a common factor
           // exp(-chi2_min/2) for the same object Since the the PDF is
           // normalized later, this factor vanishes. It allows to compute
@@ -979,7 +978,7 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
           }
 
           // marginalization for the QSO
-        } else if (nlibloc == 1) {
+        } else if (nlibloc == object_type::QSO) {
           prob = exp(-0.5 * (fulllib[il]->chi2 - chimin[1]));
 
           // photo-z PDF of QSO
@@ -999,7 +998,7 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
         size_t il = va[i];
         // Index of the considered redshift into the PDF
         double chi2loc = fulllib[il]->chi2;
-        if (chi2loc < 0.99e9) {
+        if (chi2loc < HIGH_CHI2) {
           // 11: BAYZG
           int poszloc = pdfbayzg.index(fulllib[il]->red);
           int nlibloc = fulllib[il]->nlib;
@@ -1095,7 +1094,7 @@ void onesource::generatePDF_IR(vector<SED *> &fulllib) {
       double prob = exp(-0.5 * ((*it)->chi2 - chiminIR));
 
       // Check that the model has a defined probability
-      if ((*it)->chi2 >= 0 && (*it)->chi2 < 0.99e9) {
+      if ((*it)->chi2 >= 0 && (*it)->chi2 < HIGH_CHI2) {
         // If able to determine a normalisation
         if ((*it)->dm > 0) {
           // LIR PDF of galaxies, ltir already in log

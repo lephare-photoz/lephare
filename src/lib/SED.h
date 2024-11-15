@@ -38,7 +38,7 @@ class SED {
   int nummod;
   object_type nlib;
   int index, index_z0, posz = -1;
-  double red, chi2 = 1.e9, dm, lnir, luv, lopt, inter;
+  double red, chi2 = HIGH_CHI2, dm, lnir, luv, lopt, inter;
   double mass, age, sfr, ssfr,
       ltir;  // need to put it out of GalSED since used in the PDF without
              // knowing that it's a gal.
