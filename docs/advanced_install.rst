@@ -10,16 +10,26 @@ git repositories in order to allow modification of the code and auxiliary data.
 
 Auxiliary Data and the Environment Variables
 ********************************************
+
 LePHARE depends on auxiliary data sets such as spectral energy distributions,
 filter transmission curves, and attenuation curves. In order to keep the pip
 installation light these are now stored in a distinct repository called
 `lephare-data <https://github.com/lephare-photoz/lephare-data>`_.
 
+LePHARE uses environment variables to locate the external data and work files. These are set by default to your cache. Both can be set if preferred. The two environment variables are the following:
 
-We have built some automatic machinery for downloading the required files 
-for a given config `para` file. The automatic download functionality can also be used to
-download all external data. However, some users may prefer to simply clone
-the entire directory:
+* `LEPHAREDIR` is the location of the auxiliary data.
+* `LEPHAREWORK` is the location of the intermediate files produced during a LePHARE run.
+
+
+
+.. note::
+    If you want to download the external data to a specific location you must set the
+    environment variable `LEPHAREDIR` to its location. This must be done prior to 
+    importing lephare in a python session. If not LePHARE will use the default cache
+    location on your system.
+    
+Some users may prefer to simply clone the entire  auxiliary data directory:
 
 .. code-block:: bash
     
@@ -27,16 +37,12 @@ the entire directory:
     # Set the LEPHAREDIR to this data location
     export LEPHAREDIR=$PWD/lephare-data
 
-.. note::
-    lephare uses environment variables to locate the external data and work files.
-    These are set by default to your cache.
-    If you want to download the external data to a specific location you must set the
-    environment variable `LEPHAREDIR` to its location. This must be done prior to 
-    importing lephare in a python session. If not lephare will use the default cache
-    location on your system.
-
-In the following snippet we show how you might set the `LEPHAREDIR` to a new location 
-and download all the auxiliary data there:
+    
+We have also built some automatic machinery for downloading the
+required files for a given config `para` file. The automatic download
+functionality can also be used to download all external data. In the
+following snippet we show how you might set the `LEPHAREDIR` to a new
+location and download all the auxiliary data there:
 
 .. code-block:: python
 
@@ -51,10 +57,6 @@ and download all the auxiliary data there:
     # Setting clone=True would use a git clone which may be faster but will only run 
     # on an empty directory.
 
-* `LEPHAREDIR` is the location of the auxiliary input data.
-* `LEPHAREWORK` is the location of the intermediate files produced during a lephare run.
-
-Both can be set if preferred or left to the default location in the user cache.
 
 Developer Installation
 **********************
