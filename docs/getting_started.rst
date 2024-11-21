@@ -6,7 +6,14 @@ Getting Started
 Installation
 ============
 LePHARE is distributed with the Python Package Index `(PyPI) <https://pypi.org/project/lephare/>`_, and 
-thus the simplest way to install it is with pip. We also reccommend using a conda 
+thus the simplest way to install it is with pip:
+
+.. code-block:: bash
+
+    pip install lephare
+
+    
+We also reccommend using a conda 
 environment to control Python version and isolate your installation:
 
 .. code-block:: bash
@@ -21,6 +28,13 @@ environment to control Python version and isolate your installation:
     # And create a kernel which has access to this environment
     python -m ipykernel install --user --name <kernel_name>
 
+A this stage, the following Python snippet should work:
+
+.. code-block:: python
+
+    import lephare as lp
+
+    
 .. warning:: 
     For previous users of who have set LEPHAREDIR and LEPHAREWORK
     in their environment these should be unset to avoid clashing versions. 
@@ -46,9 +60,10 @@ You can also get an example notebook running this code `here <https://github.com
 
 .. code-block:: python
 
-    # Continuing from the cell above...
+    import lephare as lp
     from astropy.table import Table
     # The following config is highly dependent on your input data and science goals
+    # You can change it for your own needs
     config=lp.default_cosmos_config.copy()
     lp.prepare(config)
     # The following example table is in the lephare input format.
@@ -61,12 +76,15 @@ You can also get an example notebook running this code `here <https://github.com
 
 This will take over ten minutes to run. To check that everything was successful, 
 this workflow should produce a 1 to 1 relationship between the spectroscopic 
-redshift `output['ZSPEC']` and predicted redshift `output['Z_BEST']`. Most users
-will want to run lephare on their own data set so will have to change the config,
-set the filters and modify the input tables.
+redshift `output['ZSPEC']` and predicted redshift `output['Z_BEST']`. 
+
+
 
 The Configuration Keywords
 ==========================
+
+Most users will want to run lephare on their own data set so will have to change the config,
+set the filters and modify the input tables.
 
 Taking advantage of the full capabilities of LePHARE will depend on a detailed
 understanding of the configurations which can be specified by text file or via a dictionary 
@@ -86,5 +104,5 @@ grid which would increase accuracy but take longer to execute:
     import lephare as lp
     config=lp.default_cosmos_config.copy()
     config.update({
-        'Z_STEP': '0.001,0.,7.', # A very fine redshift grid
+        'Z_STEP': '0.01,0.,7.', # A very fine redshift grid
     })

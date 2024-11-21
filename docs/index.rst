@@ -14,7 +14,8 @@ Since 1999 LePHARE has been a code for computing photometric redshifts and
 physical parameters by fitting spectral energy distributions (SED) to a dataset 
 of photometric fluxes or apparent magnitudes. 
 LePHARE was originally written in fortran (Arnout et al. 1999; Ilbert et al. 2006). 
-It has been completely rewritten in C++ with a Python interface.
+It has been completely rewritten in C++ with a Python interface with a larger team of developpers including
+J. Cohen-Tanugi and R. Shirley.
 
 .. note::
 
