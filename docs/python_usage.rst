@@ -5,7 +5,7 @@ Advanced Usage via Python Interface
 The best way to learn about the Python interface is through running the 
 example :doc:`notebooks <notebooks>`. We have made an intermediate notebook to demonstrate how a new user can download
 the required filters and run lephare on their own data. You can download the notebook from
-`here <https://github.com/lephare-photoz/lephare/blob/main/docs/notebooks/Typical_use_case.ipynb>`_ 
+`here <https://github.com/lephare-photoz/lephare/blob/main/docs/notebooks/README.md>`_ 
 which should directly run following installation of lephare via pip.
 You can also see the executed notebook with all outputs :doc:`here <notebooks/Typical_use_case>`.
 
