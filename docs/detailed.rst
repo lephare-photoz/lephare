@@ -24,11 +24,11 @@ The photometric computation can be decomposed in four parts, as illustrated in :
    
 - The photometric redshift code based on a :math:`\chi^2` fitting method using the previously established libraries. This part can also be used to compute physical parameters. This corresponds to the program ``zphota`` in command line, and the class ``PhotoZ`` in python.
 
-When running the code using command lines in your Unix shell, these four steps need to have been run at least once (but not everytime if the libraries already exist). When running the code using the python interface, these steps could be combined or atomized in smaller steps, but the basic principle of building the magnitude libraries before computing the photometric redshifts remain the same.
+When running the code using command lines in your Unix shell, these four steps need to have been run at least once (but not everytime if the libraries already exist). When running the code using the python interface, the first three steps could be combined or atomized in smaller steps, but the basic principle of building the magnitude libraries before computing the photometric redshifts remain the same.
   
 
 
-.. figure:: figures/lephare_skim.png
+.. figure:: figures/LePHARE_skim.png
   :width: 700
   :alt: Basic run
   :name: fig-skim
@@ -44,7 +44,7 @@ Structure of the code
 
 The structure of the package is illustrated in :ref:`Fig.2 <fig-structure>`.
 
-The executables are stored in your default ``bin`` directory when installing the code using ``pip install``. They should be in your PATH and you shouldn't have to take care of that. If you want to know where the executables are located, try *which setolib* in your prompt.
+The executables are stored in your default ``bin`` directory when installing the code using ``pip install``. They should be in your PATH and you shouldn't have to take care of that. If you want to know where the executables are located, try ``which setolib` in your prompt.
 
 If you have installed the code in developper mode, i.e. by cloning the code from the `lephare github repository <https://github.com/lephare-photoz/lephare>`_, the ``C++`` source codes are located in ``LEPHARE/src/lib/`` and the python scripts are in ``LEPHARE/src/lephare/``.
 
@@ -61,9 +61,8 @@ These two environment variables could be set in two different ways, depending on
 - Let the code set these environment variables by default (no action needed on your side). In such case, the code will identify your default ``cache`` directory. These directories are indicated in the notebook when excecuting  ``import lephare as lp`` in a notebook cell.
 
 - Set yourself the values of these variables. ``$LEPHAREWORK`` could point to any directory you like (intermediate library will be stored inside).  ``$LEPHAREDIR`` should point to the LePHARE internal data directory (see below).
-`
 
-.. figure:: figures/lephare_structure.png
+.. figure:: figures/LePHARE_structure.png
   :width: 700
   :alt: Alternative text
   :name: fig-structure
@@ -78,17 +77,16 @@ The code needs essential information to run, like the filter curves or the SED t
 
 For a question of disk space and downloading time, the internal data are not installed by default. You have different methods to populate this directory:
 
-- When importing the *LePHARE* package in python (``import lephare as lp``), a function allows the user to download only the data needed for the run ``lp.data_retrieval.get_auxiliary_data(keymap=keymap, additional_files=["examples/COSMOS.in", "examples/output.para"])``, with ``keymap`` being the map of keywords used to configure the run. The code will check if the data are already stored before downloading them again.
+- You can clone the full auxiliary data directory from `lephare-data github repository <https://github.com/lephare-photoz/lephare-data/>`_. In such case, the environment variable ``$LEPHAREDIR`` should be set to the ``LEPHARE-data`` directory path created by the cloning (not done automatically).
 
-- You can retrieve all internal data available in *LePHARE* immediatly, using the previous function ``lp.data_retrieval.get_auxiliary_data(clone=True)``. You need 2Gb free to download these data. 
+- You can retrieve all auxiliary data available in *LePHARE* immediatly, using the function ``lp.data_retrieval.get_auxiliary_data(clone=True)`` after having imported lephare as lp in python. You need 2Gb free to download these data. This function allows the user to download only the data needed for the run ``lp.data_retrieval.get_auxiliary_data(keymap=keymap, additional_files=["examples/COSMOS.in", "examples/output.para"])``, with ``keymap`` being the map of keywords used to configure the run. The code will check if the data are already stored before downloading them again.
 
-- You can also clone the data directory from `lephare-data github repository <https://github.com/lephare-photoz/lephare-data/>`_. In such case, the environment variable ``$LEPHAREDIR`` should be set to the ``LEPHARE-data`` directory path created by the cloning (not done automatically).
 
 
 
 The sub-directories in ``$LEPHAREDIR`` are the following:
 
-- ``sed/`` which contains three sub-directories for galaxies ``GAL``, for Active Galaxy Nuclei ``QSO`` (named QSO for legacy reason), and for stars ``STAR``. Each of these subdirectory contains its own set of templates (the various directories should have a README file and a file named ``.list`` with a default list of templates.
+- ``sed/`` which contains three sub-directories for galaxies ``GAL``, for Active Galaxy Nuclei ``QSO`` (named QSO for legacy reason), and for stars ``STAR``. Each of these subdirectory contains its own set of templates (the various directories should have a README file and a file named ``.list`` with a default list of templates).
 
 - ``filt/`` contains subdirectories with telescope/instrument/survey names corresponding to a set of filters. A large number of filters are already included in the package. However, we propose also a solution when using the python interface to download the filters from a `Filter Profile Service <http://svo2.cab.inta-csic.es/theory/fps/>`_ with a much more extensive filter database.
 
@@ -125,19 +123,20 @@ Configuration files
 
 Two configuration files (noted .para) allow the user to set up the properties of the template-fitting run, as well as the quantitites that the user want in output.
 
-One configuration file set the parameters associated to the run (e.g., ``$LEPHAREDIR/example/COSMOS.para`` an example which contains all the keywords). It defines the set of templates, the filters and all the parameters that you want to tune to get the best results. You can save your parameter file where you want (e.g., in the directory where you run the code) to keep configuration files of different runsat any location. Configuration files must be in ASCII format, compliant with the following rules:
+One configuration file set the parameters associated to the run (e.g., ``$LEPHAREDIR/example/COSMOS.para`` an example which contains all the keywords). It defines the set of templates, the filters and all the parameters that you want to tune to get the best results. You can save your parameter file where you want (e.g., in the directory where you run the code) to keep configuration files of different runs at any location. Configuration files must be in ASCII format, compliant with the following rules:
 
 1.  Only one parameter per line, with the syntax: PARAMETER_NAME value(s)
 2.  Comment line starts with “#”.
 3.  Depending on the parameter, values can be Float, Integer, or String (without quotation marks).
 4.  When a parameter accepts multiple values, these must be comma separated (no space).
 5.  When a parameter accepts a file location (as a String), the path can include environmental variables (``$HOME`` and ``$LEPHAREDIR``).
-6.  Some parameters are mandatory. *LePHARE++* will print out an error message if they are not set.
-7.  Other parameters can be omitted (*LePHARE++* will assign a default value to them).
+6.  Some parameters are mandatory. *LePHARE* will print out an error message if they are not set.
+7.  Other parameters can be omitted (*LePHARE* will assign a default value to them).
 
 In the next sections, we will mark the mandatory parameters with an asterisk ("\*").
 
-A second configuration file (e.g., ``$LEPHAREDIR/example/output.para``) indicates which properties should be written in the output file. If the output para is not mentioned explicitly, the output file will include all the parameters that LePhare compute. 
+A second configuration file (e.g., ``$LEPHAREDIR/example/output.para``) indicates which properties should be written in the output file. The output.para includes all the possible output parameters. You can comment those that are of no intersest to you. 
+
 
 
 
@@ -171,7 +170,7 @@ The ``C++`` programs can also be manipulated as a library using the python inter
 
    import lephare as lp
 
-Classes from the *LePHARE* library can be manipulated from the python interface. Several notebooks are given in example in :doc:`notebooks <notebooks>`.
+Several notebooks are given in example in `here <https://github.com/lephare-photoz/lephare/blob/main/docs/notebooks/README.md>`_.
 
 The `detailed run notebook <https://lephare.readthedocs.io/en/latest/notebooks/detailed_run.html>`_ is the closest to the four steps outlined in Fig `1 <#fig:skim>`__, i.e. creating the filter library, the SED library, then build the predicted magnitudes from these filters and SEDs (for GAL/QSO/STAR), and finally running the photometric redshifts for a subsample of galaxies from COSMOS2020 having a spec-z.
 
@@ -201,16 +200,18 @@ However, we also added a function ``lp.prepare`` which first compute the full pr
 
 .. _models:
 
-Build the rest-frame template library
+Build the rest-frame templates library
 ---------------------------------
 
 
 Overview
 ^^^^^^^^
 
-In this first step, we generate a unique binary file from different kinds of SEDs (star/AGN/galaxy) with various original formats (ASCII, binary). The binary output file (\*.bin) is saved in the directory ``$LEPHAREWORK/lib_bin/`` with an attached doc file (\*.doc) and a file with physical information (\*.phys) for galaxies. For models with input SEDs expressed in luminosity or energy (:math:`L_{\odot}/A`,\ :math:`\nu L_{\nu}`,...), like BC03, or the FIR libraries, the SED are converted in flux (:math:`erg/s/cm^2/A`).
+In this first step, we generate a unique binary file from different kinds of SEDs (star/AGN/galaxy) with various original formats (ASCII, binary). The binary output file (\*.bin) is saved in the directory ``$LEPHAREWORK/lib_bin/`` with an attached doc file (\*.doc). An associated file with physical information (\*.phys) is provided only for galaxies (not calibrated or not relevant for stars or AGN). For models with input SEDs expressed in luminosity or energy (:math:`L_{\odot}/A`,\ :math:`\nu L_{\nu}`,...), like BC03, or the FIR libraries, the SED are converted in flux (:math:`erg/s/cm^2/A`).
 
-A set of libraries for stars, galaxies, and AGN are available in $LEPHAREDIR/sed/STAR, $LEPHAREDIR/sed/GAL, $LEPHAREDIR/sed/QSO directories and organized in different sub-folders. Each sub-folder contains a specific collection of SED files, described in a README (how those SEDs were built, etc.), and a file (usually with the suffix ``.list``) listing the relative path of the SED files to be used as input to create the libeary. For STAR and QSO and most of the galaxies, SEDs are written in ASCII, with :math:`\lambda(A)`, flux[:math:`erg/s/A/cm^2`], with increasing :math:`\lambda`. For Galaxy, in addition to empirical SEDs, output files from stellar synthesis population models (BC03) with a more complex format can also be used by adding a specific character after the file name in the SED list file.
+A set of libraries for stars, galaxies, and AGN are available in $LEPHAREDIR/sed/STAR, $LEPHAREDIR/sed/GAL, $LEPHAREDIR/sed/QSO directories and organized in different sub-folders. Each sub-folder contains a specific collection of SED files, described in a README (how those SEDs were built, etc.), and a file (usually with the suffix ``.list``) listing the relative path of the SED files to be used as input to create the libeary. For STAR and QSO and most of the galaxies, SEDs are written in ASCII, with :math:`\lambda(A)`, flux[:math:`erg/s/A/cm^2`], with increasing :math:`\lambda`. For Galaxy, in addition to empirical SEDs, output files from stellar synthesis population models (BC03) with a more complex format can also be used by adding a specific character *BC03* after the file name in the SED list file. Here are two examples of lists with the 
+`BC03 templates <https://github.com/lephare-photoz/lephare-data/blob/main/sed/GAL/BC03_CHAB/BC03COMB_MOD.list>`_  used in Ilbert et al. (2015) and the 
+`COSMOS templates <https://github.com/lephare-photoz/lephare-data/blob/main/sed/GAL/COSMOS_SED/COSMOS_MOD.list>`_ used in Ilbert et al. (2009)
 
 
 
@@ -233,7 +234,7 @@ The syntax is
 with python
 ~~~~~~~~~~~
 
-With the python, you need to instantiate an object from the class ``Sedtolib``, and indicate the type of SEDs (GAL/QSO/STAR) when applying the fonction ``run``.
+With the python, you need to instantiate an object from the class ``Sedtolib``, and indicate the type of SEDs (GAL/QSO/STAR) when applying the function ``run``.
 
 .. code-block:: python
 
@@ -251,40 +252,37 @@ Parameter values
 ^^^^^^^^^^^^^^^^
 
 
-The parameter value "XXX" means either GAL or QSO or STAR. Note that SEL_AGE and AGE_RANGE are relevant only when using templates including an age (e.g. BC03).
+The parameter value "XXX" means either GAL or QSO or STAR.
   
+ 
 +-------------+--------+---------+----------------------------------+
 | parameter   | type   | default | description                      |
 +=============+========+=========+==================================+
 | XXX_SED(\*) | string | —-      | Full pathname of file with the   |
 |             |        |         | list of selected SED files       |
-+-------------+--------+---------+----------------------------------+
 |             | (n=1)  |         |                                  |
 +-------------+--------+---------+----------------------------------+
 | XXX_LIB(\*) | string | —-      | Name of the output binary        |
-|             |        |         | library (with no extension)      |
-+-------------+--------+---------+----------------------------------+
+|             |        |         | library (with no extension).     |
 |             | (n=1)  |         | Files *$XXX_LIB*.bin,            |
 |             |        |         | *$XXX_LIB*.doc and               |
 |             |        |         | *$XXX_LIB*.phys                  |
-+-------------+--------+---------+----------------------------------+
 |             |        |         | saved in                         |
 |             |        |         | $\ *LEPHAREWORK*/lib_bin/        |
 +-------------+--------+---------+----------------------------------+
 | XXX_FSCALE  | float  | 1.0     | Flux scale to be applied to each |
 |             |        |         | SED in the list                  |
-+-------------+--------+---------+----------------------------------+
 |             | (n=1)  |         |                                  |
 +-------------+--------+---------+----------------------------------+
 | SEL_AGE     | string | NONE    | Full pathname of file with a     |
 |             |        |         | list of ages (Gyr)               |
+|             | (n=1)  |         | to be extracted.                 |
+|             |        |         | Only when using templates        |
+|             |        |         | including an age (e.g. BC03).    |
 +-------------+--------+---------+----------------------------------+
-|             | (n=1)  |         | to be extracted from BC03        |
-|             |        |         |                                  |
-+-------------+--------+---------+----------------------------------+
-| AGE_RANGE   | float  | —–      | Range of age (Gyr)               |
-+-------------+--------+---------+----------------------------------+
-|             | (n=2)  |         |                                  |
+| AGE_RANGE   | float  | —–      | Range of age (Gyr).              |
+|             | (n=2)  |         | Only when using templates        |
+|             |        |         | including an age (e.g. BC03).    |
 +-------------+--------+---------+----------------------------------+
 
 
@@ -293,9 +291,8 @@ Adding new templates
 ^^^^^^^^^^^^^^^^^^^^
 
 New SEDs can be easily added to the current ones. They must be located
-in the appropriate directory (GAL/STAR/QSO). If they are ASCII files
-they must be in :math:`\lambda(A)`, flux[:math:`erg/s/A/cm^2`], with
-increasing :math:`\lambda`.
+in the appropriate directory (GAL/STAR/QSO) and we also advice to create a subdirectory. If they are ASCII files
+they must be in :math:`\lambda(A)`, flux[:math:`erg/s/A/cm^2`], with increasing :math:`\lambda`.
 
 
 
@@ -346,7 +343,8 @@ For Far-Infrared (FIR) SEDs *($LEPHAREDIR/sed/GAL)*, different SEDs are availabl
 - LAGACHE/: 46 FIR templates
 - SK06/ : different set of starburst models based on Siebenmorgen &Krugel (2006)
 
-Note that for the first 3 libraries (CHARY-ELBAZ, DALE, LAGACHE), we have subtracted a stellar component from their SEDs to get only the dust contribution at the shortest wavelengths.
+  .. note::
+     Note that for the first 3 libraries (CHARY-ELBAZ, DALE, LAGACHE), we have subtracted a stellar component from their SEDs to get only the dust contribution at the shortest wavelengths.
 
 
 To know the format of the SEDs that are used in your list, an additional character must be specified after each SED file, allowing you to mix in one list of different types of galaxy SEDs. For example, you could prepare a new list which includes:
@@ -356,11 +354,11 @@ To know the format of the SEDs that are used in your list, an additional charact
 | COSMOS_SED/Ell1_A_0.sed
 | COSMOS_SED/Ell2_A_0.sed
 
-In each list, it is possible to comment a template with #.
-For ASCII SED file, no character is required. The character BC03 is used for the Bruzual and Charlot 2003 models. For the BC03 templates, the file is in ASCII for the C++ version of LePhare, to avoid the problem of portability between various systems.
+In each list, it is possible to comment out a template with #.
+For ASCII SED file, no character is required. The character BC03 is used for the Bruzual and Charlot 2003 models. For the BC03 templates, the files are in ASCII for the C++ version of LePhare, to avoid the problem of portability between various systems.
 
-For the list with FIR SEDs, the character LW (as for Long Wavelength) is required.
-
+For the list with FIR SEDs, the character LW (as for Long Wavelength) is required, with an example for Chary and Elbaz (2001)
+`templates list <https://github.com/lephare-photoz/lephare-data/blob/main/sed/GAL/CHARY_ELBAZ/CHARY_ELBAZ.list>`_.
 
 Find physical information associated to the library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -371,10 +369,10 @@ For the galaxy templates, an additional file is generated associated to the libr
 
 | where
 | Age is expressed in yr
-| :math:`L_{UV}` is NUV monochromatic luminosity (Log([erg/s/Hz])) (:math:`\int_{2100}^{2500} L_{\lambda} d\lambda /400 * 2300^2/c` ))
+| :math:`L_{UV}` is near-ultraviolet monochromatic luminosity (Log([erg/s/Hz])) (:math:`\int_{2100}^{2500} L_{\lambda} d\lambda /400 * 2300^2/c` ))
 | :math:`L_R` is optical r monochromatic luminosity (Log([erg/s/Hz]))  (:math:`\int_{5500}^{6500} L_{\lambda} d\lambda /1000 * 6000^2/c` ))
-| :math:`L_K` is NIR K monochromatic luminosity (Log([erg/s/Hz]))  (:math:`\int_{21000}^{23000} L_{\lambda} d\lambda /2000 * 22000^2/c`  ))
-| :math:`L_{IR}` is the IR luminosity (Log([:math:`L_{\odot}`]))
+| :math:`L_K` is near-infrared K monochromatic luminosity (Log([erg/s/Hz]))  (:math:`\int_{21000}^{23000} L_{\lambda} d\lambda /2000 * 22000^2/c`  ))
+| :math:`L_{IR}` is the infrared luminosity (Log([:math:`L_{\odot}`]))
 | Mass is the stellar mass (:math:`M_{\odot}`), .i.e. the mass truly in  stars (not the integral of the SFH)
 | SFR is the ongoing star formation rate (:math:`M_{\odot}/yr`)
 | Metallicity is the Gas metallicity of the galaxy
@@ -383,7 +381,7 @@ For the galaxy templates, an additional file is generated associated to the libr
 
 | If not available, the parameters are set to -99.
 
-| The IR luminosity (:math:`L_{IR}`) is derived using LW libraries. For  the Infra-red libraries ( LW: Dale, Lagache, Chary-Elbaz, Siebenmorgen  & Krugel) the IR luminosity is measured from 8 to 1000 microns. These  luminosities may be slightly different then the ones quoted by the  authors due to the different definitions of the :math:`L_{IR}` integration limit and because (at least for Dale, Lagache, and  Chary-Elbaz) we have subtracted the underlying stellar component from the original SEDs.
+| The IR luminosity (:math:`L_{IR}`) is derived using LW libraries (LW for Long Wavelengtgh to describe the dust emission). For  the Infra-red libraries ( LW: Dale, Lagache, Chary-Elbaz, Siebenmorgen  & Krugel) the IR luminosity is measured from 8 to 1000 microns. These  luminosities may be slightly different then the ones quoted by the  authors due to the different definitions of the :math:`L_{IR}` integration limit and because (at least for Dale, Lagache, and  Chary-Elbaz) we have subtracted the underlying stellar component from the original SEDs.
 
 
 
@@ -408,12 +406,12 @@ The goal of this step is to:
 
 - read a list of filter, corresponding to the ones used in your input catalogue;
   
-- read each of these filters and convert them into a comman format;
+- read each of these filters and convert them into a common format;
 
-- store them in a common library in ``$LEPHAREWORK/filt/``
+- store them in a common library in ``$LEPHAREWORK/filt/``.
 
   
-Several sets of filters from different telescopes are available in the directory ``$LEPHAREDIR/filt/``. You could find most of the standard filters (like the Johnson-Kron-Cousins in ``filt/jkc``). New set of filters can be added in this directory.  You could also store new filters in another directory than ``$LEPHAREDIR/filt/`` using the keyword ``FILTER_REP``.
+Several sets of filters from different telescopes/instruments are available in the directory ``$LEPHAREDIR/filt/``. You could find in this directory most of the standard filters (like the Johnson-Kron-Cousins in ``filt/jkc``). New set of filters can be added in this directory.  You could also store new filters in another directory than ``$LEPHAREDIR/filt/`` using the keyword ``FILTER_REP``.
 
 
 
@@ -423,17 +421,21 @@ Syntax
 with command lines
 ~~~~~~~~~~~~~~~~~~
 
-The program ``filter`` puts together a list of filter response curves, and applies some transformations according to the nature of the filters. The resulting file in the directory ``$LEPHAREWORK/filt/``.
+The program ``filter`` puts together a list of filter response curves, and applies some transformations according to the nature of the filters as define in the configuration file. 
   
 .. code-block:: bash
 
   filter -c config_file.para
 
 
+The resulting file is placed in the directory ``$LEPHAREWORK/filt/``.
+
+
+
 with python
 ~~~~~~~~~~~
 
-With the python, you need to instantiate an object from the class ``Filter``, and apply the function ``run``.
+With the python interface, you need to instantiate an object from the class ``Filter``, and apply the function ``run``.
 
 .. code-block:: python
 
@@ -459,14 +461,16 @@ Parameter descriptions
 |                |                |                     | repository         |
 |                |                |                     | containing the     |
 |                |                |                     | filters.           |
-+----------------+----------------+---------------------+--------------------+
 |                | (n=1)          |                     |                    |
 |                |                |                     |                    |
 +----------------+----------------+---------------------+--------------------+
 | FILTER_LIST    | string         | —-                  | filter files       |
 |                |                |                     | separated by a     |
-|                |                |                     | comma.             |
-+----------------+----------------+---------------------+--------------------+
+|                |                |                     | comma. Keep the    |
+|                |                |                     | same order as in   |
+|                |                |                     | the input          |
+|                |                |                     | photometric        |
+|                |                |                     | catalogue.         |
 |                | Nfilt not      |                     |                    |
 |                | limited        |                     |                    |
 +----------------+----------------+---------------------+--------------------+
@@ -475,7 +479,6 @@ Parameter descriptions
 |                |                |                     | type: 0=           |
 |                |                |                     | Energy; 1=         |
 |                |                |                     | Photon             |
-+----------------+----------------+---------------------+--------------------+
 |                | n=1 or n=Nfilt |                     |                    |
 +----------------+----------------+---------------------+--------------------+
 | FILTER_CALIB   | integer        | 0                   | Filter             |
@@ -483,14 +486,15 @@ Parameter descriptions
 |                |                |                     | for long           |
 |                |                |                     | wavelengths        |
 |                |                |                     | [0-def].           |
+|                | n=1 or n=Nfilt |                     | Could use a value  |
+|                |                |                     | per filter         |
+|                |                |                     | separated          |
+|                |                |                     | with coma.         |
 +----------------+----------------+---------------------+--------------------+
-|                | n=1 or n=Nfilt |                     |                    |
-+----------------+----------------+---------------------+--------------------+
-| FILTER_FILE    | string         | filter              | Name of the        |
+| FILTER_FILE    | string         | filter              | Name of the output |
 |                |                |                     | file with all      |
 |                |                |                     | combined           |
 |                |                |                     | filters .          |
-+----------------+----------------+---------------------+--------------------+
 |                | (n=1)          |                     | It is saved in     |
 |                |                |                     | $LEPHAREWORK/filt/ |
 |                |                |                     |                    |
@@ -501,7 +505,7 @@ Parameter descriptions
 
 ``FILTER_LIST``: all the filter names must be separated by a comma. We assume that all the filter files are located in the directory ``$LEPHAREDIR/filt/``, except if the keyword ``FILTER_REP`` is specified. When writing the set of filters to be used, only the pathname after the common string ``$LEPHAREDIR/filt/`` should be specified.
   
-``TRANS_TYPE``: type of the transmission curve for each filter, separated by a comma. The number of arguments should match the number of filter but if only value is given, which will be use for all the filters. The transmissions (:math:`T_{\lambda}`) are dimensionless (in % ), however they refer either to a transmission in Energy or Photon which will slightly modify the magnitude estimates. The magnitude is :
+``TRANS_TYPE``: type of the transmission curve for each filter, separated by a comma. The number of arguments should match the number of filter, unless only one is given. In that case it will be used for all filters. The transmissions (:math:`T_{\lambda}`) are dimensionless (in % ), however they refer either to a transmission in Energy or Photon which will slightly modify the magnitude estimates. The magnitude is :
 
   .. math:: mag(*) = -2.5 \log_{10} \frac{\int F_{\lambda}(*) R_{\lambda} d\lambda}{\int F_{\lambda}(Vega) R_{\lambda} d\lambda}
 
@@ -546,8 +550,7 @@ Filters are ASCII files with the following format :
 
 Wavelengths must be in increasing order. It is better to put the lowest and highest :math:`\lambda` with Transmission=0. The units of transmission are not considered.
 
-The header, the transmission at 0 on the edges, and the transmission sorted in lambda are set internally if not
-  prepared by the user.
+The header, the transmission at 0 on the edges, and the transmission sorted in lambda are set internally if not prepared by the user.
 
 As an exemple : filter pippo.pb and put it in $LEPHAREDIR/filt/pippo/pippo.pb :
 
@@ -559,7 +562,7 @@ As an exemple : filter pippo.pb and put it in $LEPHAREDIR/filt/pippo/pippo.pb :
 6000    0
 ======= ================================
 
-
+The user should avoid setting a resolution that is unnecessarily high, as this could result in expensive computational time for the predicted magnitude library.
 
 Getting new filter automatically (only in python)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -585,8 +588,8 @@ The filters are stored in a single ascii file as given by ``FILTER_FILE`` and st
 
 
 
-Others
-^^^^^^
+Additionnal features
+^^^^^^^^^^^^^^^^^^^^
 
 Get information on the filters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -661,7 +664,7 @@ Extinction informations
   and is the default law for the galactic extinction.
 | % **filter_extinc** -c COSMOS.para -FILTER_FILE filter_test.dat
 | It returns:
-| # Computing ATMOSPHERIC AND GALACTIC EXTINCTION
+| # Computing ATMOSPHERIC AND GALACTIC EXTINCTIONS
 | # with the following options:
 
 =============================== =================
@@ -721,8 +724,7 @@ domain by E. Le Floc’h to evaluate the photometric accuracy. Some issues
 have to be considered :
 
 -  the Vega spectrum is not defined at :math:`\lambda\ge 160\mu m`.
-   Thus, AB magnitudes should be used as standard when combining a large
-   wavelength domain.
+   Thus, the AB magnitude system should be used as standard when combining a large wavelength domain.
 
 -  The bandpass in radio domain is very narrow and does not require to
    convolve through the filter. However the structure of *LePHARE*
@@ -731,16 +733,16 @@ have to be considered :
 
 More important, at long wavelengths the equivalent fluxes are taken as
 the monochromatic flux density calculated at the effective wavelength of
-the filter and for a reference spectum that would result in the same
+the filter and for a reference spectrum that would result in the same
 energy received on the detector:
 
 .. math:: <F_{\nu}> = \frac{\int F_{\nu} R_{\nu} d\nu}{\int \frac{B_{\nu}}{B_{\nu_0}} R_{\nu} d\nu}
 
 where :math:`B_\nu` is the reference spectrum and :math:`\nu_0` the
-effective frequency of the filter. In LEPHARE, the flux estimates are
+effective frequency of the filter. In LePHARE, the flux estimates are
 equivalent to consider :math:`\frac{B_{\nu}}{B_{\nu_0}}=1`
 (:math:`B_{\nu}=ctt`). Therefore there is a correction factor to account
-for with respect to the original flux estimated by LEPHARE. This
+for with respect to the original flux estimated by LePHARE. This
 correction is :
 
 .. math:: <F_{\nu}>^{COR} = <F_{\nu}>^{LePhare} \times \frac{\int R_{\nu} d\nu}{\int \frac{B_{\nu}}{B_{\nu_0}} R_{\nu} d\nu}
@@ -813,7 +815,7 @@ correction is :
   :math:`B_{\nu}=BB(T=10,000K)` and :math:`\lambda_0` defined as
   :math:`\nu B_ {\nu}=ctt` (FILTER_CALIB=4), which seems to better
   reflect the current MIPS calibration. In this case, correction factors
-  between 3% to 7% are applied to the theoretical magnitudes. However, we also compare the correction
+  between 3% to 7% are applied to the magnitudes predicted from the templates. However, we also compare the correction
   factors when both :math:`\lambda_0` and :math:`B_{\nu}` refer to a
   black body at T=10,000K (FILTER_CALIB=3). In this case, the
   corrections become negligeable with :math:`\sim`\ 1%.
@@ -823,7 +825,7 @@ correction is :
   at a level of 1% with respect to most of the calibration scheme
   considered at long wavelength and thus no correction is required. A
   special warning for MIPS calibration, where depending on the
-  calibration scheme, a correction up to 7%, may be applied.
+  calibration scheme, a correction up to 7%, may be applied to the predicted magnitudes when computed.
 
 
 
@@ -872,7 +874,7 @@ with python
 ~~~~~~~~~~~
 
 
-You need to instantiate an object from the class ``MagGal``, and indicate the type (GAL/QSO/STAR) when applying the fonction ``run``.
+You need to instantiate an object from the class ``MagGal``, and indicate the type (GAL/QSO/STAR) when applying the function ``run``.
 
 .. code-block:: python
 
@@ -895,9 +897,8 @@ For a set of filters given by ``FILTER_FILE`` and an input SED library defined b
 | Parameters      | type                 | default  | description                           |
 +=================+======================+==========+=======================================+
 | FILTER_FILE(\*) | string               | —-       | Name of the                           |
-|                 |                      |          | filter file                           |
-+-----------------+----------------------+----------+---------------------------------------+
-|                 | (n=1)                |          | file must exist                       |
+|                 |                      |          | filter file.                          |
+|                 | (n=1)                |          | File must already exist               |
 |                 |                      |          | in                                    |
 |                 |                      |          | $LEPHAREWORK/filt/                    |
 +-----------------+----------------------+----------+---------------------------------------+
@@ -905,40 +906,35 @@ For a set of filters given by ``FILTER_FILE`` and an input SED library defined b
 |                 |                      |          | GAL/QSO/STAR                          |
 |                 |                      |          | binary library                        |
 |                 |                      |          | (with no                              |
-|                 |                      |          | extension)                            |
-+-----------------+----------------------+----------+---------------------------------------+
-|                 | (n=1)                |          | Files must exist                      |
+|                 |                      |          | extension).                           |
+|                 | (n=1)                |          | Files must already exist              |
 |                 |                      |          | in                                    |
 |                 |                      |          | $LEPHAREWORK/lib_bin/                 |
 +-----------------+----------------------+----------+---------------------------------------+
 | XXX_LIB_OUT(\*) | string               | —-       | Name of the                           |
 |                 |                      |          | magnitude binary                      |
 |                 |                      |          | library (with no                      |
-|                 |                      |          | extension)                            |
-+-----------------+----------------------+----------+---------------------------------------+
-|                 | (n=1)                |          | files                                 |
+|                 |                      |          | extension).                           |
+|                 | (n=1)                |          | Files created as                      |
 |                 |                      |          | GAL[QSO]_LIB_OUT*.bin                 |
 |                 |                      |          | (.doc)                                |
-+-----------------+----------------------+----------+---------------------------------------+
-|                 |                      |          | are saved in                          |
+|                 |                      |          | and saved in                          |
 |                 |                      |          | $LEPHAREWORK/lib_mag/                 |
 +-----------------+----------------------+----------+---------------------------------------+
 | MAGTYPE(\*)     | string               | —-       | Magnitude type                        |
 |                 |                      |          | (AB or VEGA)                          |
 +-----------------+----------------------+----------+---------------------------------------+
-|                 |                      |          |                                       |
-+-----------------+----------------------+----------+---------------------------------------+
 | ZGRID_TYPE      | int                  | 0        | 0: constant step                      |
 |                 |                      |          | in redshift                           |
-+-----------------+----------------------+----------+---------------------------------------+
-|                 | (n=1)                |          | 1: evolving step                      |
+|                 | (n=1)                |          |                                       |
+|                 |                      |          | 1: evolving step                      |
 |                 |                      |          | in redshift as                        |
 |                 |                      |          | :math:`dz \times (1+z)`               |
 +-----------------+----------------------+----------+---------------------------------------+
 | Z_STEP          | float                | 0.04,0,6 | dz,zmin,zmax:                         |
 |                 |                      |          | redshift step, dz                     |
-+-----------------+----------------------+----------+---------------------------------------+
-|                 | (n=3)                |          | the minimum                           |
+|                 |                      |          |                                       |
+|                 | (n=3)                |          | The minimum                           |
 |                 |                      |          | (zmin) and the                        |
 |                 |                      |          | maximum redshift                      |
 |                 |                      |          | (zmax).                               |
@@ -948,23 +944,20 @@ For a set of filters given by ``FILTER_FILE`` and an input SED library defined b
 |                 |                      |          | :math:`\Lambda_0`.                    |
 |                 |                      |          | Used for age                          |
 |                 |                      |          | constraints.                          |
-+-----------------+----------------------+----------+---------------------------------------+
 |                 | (n=3)                |          |                                       |
 +-----------------+----------------------+----------+---------------------------------------+
 | EXTINC_LAW      | string               | NONE     | Extinction laws                       |
 |                 |                      |          | to be used (in                        |
 |                 |                      |          | $LEPHAREDIR/ext/)                     |
-+-----------------+----------------------+----------+---------------------------------------+
-|                 |(n\ :math:`\le`\ 10)  |          | several files                         |
+|                 | (n :math:`\le` 10)   |          | several files                         |
 |                 |                      |          | separated by                          |
 |                 |                      |          | comma                                 |
 +-----------------+----------------------+----------+---------------------------------------+
 | MOD_EXTINC      | integer              | 0,0      | Range of models                       |
 |                 |                      |          | for which                             |
 |                 |                      |          | extinction will                       |
-|                 |                      |          | be applied                            |
-+-----------------+----------------------+----------+---------------------------------------+
-|                 |(n\ :math:`\le`\ 20)  |          | The numbers                           |
+|                 |                      |          | be applied.                           |
+|                 | (n :math:`\le` 20)   |          | The numbers                           |
 |                 |                      |          | refer to the                          |
 |                 |                      |          | models in the                         |
 |                 |                      |          | $GAL_SED list                         |
@@ -979,26 +972,25 @@ For a set of filters given by ``FILTER_FILE`` and an input SED library defined b
 |                 |                      |          | values to be                          |
 |                 |                      |          | applied                               |
 +-----------------+----------------------+----------+---------------------------------------+
-|                 |(n\ :math:`\le`\ 100) |          | values separated                      |
+|                 | (n :math:`\le` 100)  |          | values separated                      |
 |                 |                      |          | by comma.                             |
 +-----------------+----------------------+----------+---------------------------------------+
 | EM_LINES        | string               | NO       | Add contribution                      |
 |                 |                      |          | of emission                           |
 |                 |                      |          | lines and                             |
 |                 |                      |          | specify                               |
-+-----------------+----------------------+----------+---------------------------------------+
 |                 | (n=1)                |          | how to derive                         |
 |                 |                      |          | them                                  |
 |                 |                      |          | (``EMP_UV``,                          |
 |                 |                      |          | ``EMP_SFR``,                          |
-|                 |                      |          | ``PHYS``)                             |
+|                 |                      |          | ``PHYS``). Only applied to            |
+|                 |                      |          | galaxy templates                      |
 +-----------------+----------------------+----------+---------------------------------------+
 | EM_DISPERSION   | float                | 1        | the emission                          |
 |                 |                      |          | lines can vary                        |
 |                 |                      |          | by these                              |
 |                 |                      |          | fractions from                        |
 |                 |                      |          | the expected                          |
-+-----------------+----------------------+----------+---------------------------------------+
 |                 |                      |          | value (example                        |
 |                 |                      |          | 0.5,1.,1.5)                           |
 +-----------------+----------------------+----------+---------------------------------------+
@@ -1006,7 +998,6 @@ For a set of filters given by ``FILTER_FILE`` and an input SED library defined b
 |                 |                      |          | emission in                           |
 |                 |                      |          | templates when                        |
 |                 |                      |          | missing.                              |
-+-----------------+----------------------+----------+---------------------------------------+
 |                 |                      | (n=1)    | This is based on                      |
 |                 |                      |          | the energy                            |
 |                 |                      |          | absorbed over                         |
@@ -1017,8 +1008,7 @@ For a set of filters given by ``FILTER_FILE`` and an input SED library defined b
 |                 |                      |          | magnitudes saved                      |
 |                 |                      |          | in                                    |
 |                 |                      |          | $LEPHAREWORK                          |
-+-----------------+----------------------+----------+---------------------------------------+
-|                 | (n=1)                |          | called                                |
+|                 | (n=1)                |          | and called                            |
 |                 |                      |          | $GAL[QSO]_LIB_OUT.dat                 |
 +-----------------+----------------------+----------+---------------------------------------+
 
@@ -1026,14 +1016,18 @@ For a set of filters given by ``FILTER_FILE`` and an input SED library defined b
 The extinction laws and dust emission
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A set of extinction laws are available in the directory (``$LEPHAREDIR/ext/``). Several extinction laws can be used and set up in the keyword ``EXTINC_LAW``. Each extinction law will be applied to a range of SED models specified by the keywords ``MOD_EXTINC``. The model number corresponds to the rank in the list of SEDs used in ``GAL_SED``. The number of models must be twice the number of extinction laws. The different values of reddening excess E(B-V) are given in the keyword ``EB_V`` and will apply to all extinction laws. The extinguished flux is : :math:`F_{\lambda}^e = F_{\lambda}^0\  10^{-0.4 A_{\lambda}}=  F_{\lambda}^0\  10^{-0.4 k_{\lambda} E(B-V)}`
+A set of extinction (or attenuation) laws are available in the directory (``$LEPHAREDIR/ext/``). Several extinction laws can be used at the same time and set up in the keyword ``EXTINC_LAW``. Each extinction law will be applied to a range of SED models specified by the keywords ``MOD_EXTINC``. The model number corresponds to the rank in the list of SEDs used in ``GAL_SED``. For each extinction law, two numbers needs to be provided indicating the first and last model number of a range. So, the number of models must be twice the number of extinction laws. For instance, if ``EXTINC_LAW SMC_prevot.dat,SB_calzetti.dat``, we expect four numbers for ``MOD_EXTINC 13,23,23,31`` with the first law applied to the model between 13 and 23, and the second law between 23 and 31.
 
-If extinction is applied, a new estimate of the IR dust luminosity is computed by measuring the amount of light absorbed. Some templates don’t include dust emission. We add the possibility of having the dust emission by using ``ADD_DUSTEM YES``. In such case, we use the templates from Bethermin et al. (2012) and sum their flux contribution to the stellar template (e.g. BC03). **Don’t use this option if your templates already include dust emission**. The B12 templates are different for each redshift. However, a current limitation of the code is that an incorrect dust SED is displayed in the .spec file (while the fit is correct). Therefore, we use by default only one B12 template at :math:`z=0`. The fit will be correct if you use all templates (but not the final display).
+The different values of reddening excess E(B-V) are given in the keyword ``EB_V`` and will apply to all extinction laws. The extinguished flux is : :math:`F_{\lambda}^e = F_{\lambda}^0\  10^{-0.4 A_{\lambda}}=  F_{\lambda}^0\  10^{-0.4 k_{\lambda} E(B-V)}`
+
+If dust extinction is applied, a prediction of the expected IR dust luminosity is computed using energy balance.
+
+Some templates don’t include dust emission, as for instance BC03 (or any template extrapolated in infrared using CSP models). We add the possibility of having the dust emission by using ``ADD_DUSTEM YES`` using this energy balance principle. In such case, we use the templates from Bethermin et al. (2012) (hereafter B12) and sum their flux contribution to the stellar template (e.g. BC03). **Don’t use this option if your templates already include dust emission**. The B12 templates are different for each redshift, as given in the `B12 list <https://github.com/lephare-photoz/lephare-data/blob/main/sed/GAL/BETHERMIN12/BETHERMIN12_MOD.list>`_. However, a current limitation of the code is that we can display only the first template of the list in FIR in the .spec file, while we use the correct redshifted template when we do the fit. This limitation affect only the display of the .spec file in FIR. But to avoid confusion, we limit ourself to only one B12 template in the list. You can decide to remove the comments in front of the other B12 templates and use all of them, knowing that the display could be affected (but the internal fit correct).
 
 The Emission lines
 ~~~~~~~~~~~~~~~~~~
 
-The role of nebular emission lines in medium- and even broad-band filters has been shown to be essential in several cases (Ilbert et 2009, Schearer et al. 2009, Labbe et al. 2013, Stefanon et al. 2015). Some templates already include emission lines. In this case, you could use ``EM_LINES NO`` to avoid creating additional ones. To include emission lines in the template SEDs if they don’t exist, one of the available methods must be selected through the parameter ``EM_LINES``. There are three different options:
+The role of nebular emission lines is essential when using medium-bands (Ilbert et 2009), but also when using only broad-band filters (Schearer et al. 2009, Labbe et al. 2013, Stefanon et al. 2015). Some galaxy templates already include emission lines. In this case, you could use ``EM_LINES NO`` to avoid creating additional ones. To include emission lines in the template galaxy SEDs if they don’t exist, one of the available methods must be selected through the parameter ``EM_LINES``. There are three different options:
 
 -  **EMP_UV** LePHARE accounts for the contribution of emission lines with a simple recipe based on the Kennicutt (1998) relations. The SFR is estimated from UV luminosity, which in turn defines the H\ :math:`\alpha` luminosity. Intensity of other lines (:math:`Ly_{\alpha}`, :math:`H_{\alpha}`, :math:`H_{\beta}`, [OII], OIII[4959] and OIII[5007]) are defined accordingly by using the flux ratios provided in Ilbert et al. (2009) and slightly adjusted since. The UV luminosity is derived directly from the SED template. Emission lines are not considered in red galaxies with :math:`(NUV-r)_{ABS}\ge 4` (rest frame, dust corrected color). This option works for any kind of input template.
 
@@ -1047,36 +1041,27 @@ With the option ``EM_DISPERSION``, the emission lines can vary from the standard
 
 Even if emission lines have been built for the entire library, during any SED fitting run the user can decide to ignore them for a given subset of models (see ``ADD_EMLINES option``).
 
-This option is not appropriated for the quasars samples.
+This option is not appropriated for the AGN samples. For AGN, the contribution from emission lines to the flux in a given band is even stronger than for normal galaxies. Do not compute emission lines using star-formation recipes established for galaxies. The templates in QSO are empirical (e.g. Salvato et al. 2009,….) and thus the emission lines are already included in the SED. For the syntethic models of QSO included in QSO/SYNTH the emission lines are also already included.
 
 
 
 
+.. _outputlib:
 
-Output
-^^^^^^
+Outputs
+^^^^^^^
 
 
 The binary output file (\*.bin) is saved in the directory ``$LEPHAREWORK/lib_mag/`` with an attached doc file (\*.doc). 
 
-
-ASCII ouput file
-~~~~~~~~~~~~~~~~
-
-An output file is produces in the current directory if ``LIB_ASCII YES``. It has the same root name as the binary file with extension .dat and contains the following informations :
+An output file is produced in the current directory if ``LIB_ASCII YES``. It has the same root name as the binary file with extension .dat and contains the following informations :
 
 | Model, Extinc-law, E(B-V), :math:`L_{TIR}(L_{\odot})`, Z, DMod, Age(yr), nrec, n , (mag(i),i=1,n),(kcor(i),i=1,n)
 
-where Model is the number of models based on the original list, Extinc-law refers to the number of the extinction laws used, :math:`L_{TIR}` the new estimate of the IR luminosity, DMod is the distance modulus, nrec is a record (internal use), n the number of filters, mag(i) the magnitudes in all filters and kcor(i), the k-correction in all filters.
+where Model is the number of models based on the original list, Extinc-law refers to the number of the extinction laws used, :math:`L_{TIR}` the new estimate of the IR luminosity, DMod is the distance modulus, nrec is a record (internal use), n the number of filters, mag(i) the predicted magnitudes in all filters and kcor(i), the k-correction in all filters (see Hogg 1999 for definitions).
 
 
-Sizing the library
-~~~~~~~~~~~~~~~~~~
-
-You must be aware that the size of the library becomes quickly huge if you do not pay attention. You can estimate its size by considering the following numbers :
-
-| # of models x # of age x # of z steps x # of extinction law x # of EB-V
-| For exemple, 10 SEDs with 60 ages, 2 extinction laws and 6 E(B-V) and 150 z steps will exceed 1,000,000 rows.
+You must be aware that the size of the library becomes quickly huge if you do not pay attention. You can estimate its size by considering the following numbers : # of models x # of age x # of z steps x # of extinction law x # of EB-V. For exemple, 10 SEDs with 60 ages, 2 extinction laws and 6 E(B-V) and 150 z steps will exceed 1,000,000 rows.
 
 
 
@@ -1106,11 +1091,11 @@ The final step performs a :math:`\chi^2`-based analysis, fitting the predicted f
 
   .. math:: \chi^2 =   \sum_i [ \frac{F_{obs,i} - s F_{temp,i}}{\sigma_i}]^2
 
-where i refers to the band used for the analysis and :math:`s` the scaling factor that is chosen to minimize the :math:`\chi^2` values (:math:`{\it d}\chi^2/{\it d}s=0`):
+where *i* refers to the band used for the analysis and :math:`s` the scaling factor that is chosen to minimize the :math:`\chi^2` values (:math:`{\it d}\chi^2/{\it d}s=0`):
 
   .. math:: s =   \sum_j [ \frac{F_{obs,j}  F_{temp,j}}{\sigma_j^2} ]  / \sum_j [ \frac{F_{temp,j}^2}{ \sigma_j^2}]
 
-where j refers to the band used for the scaling (j can be different from i). The photometric baseline can span a large wavelength range, as long as the templates are established accordingly. Galaxy, star, and QSO libraries can be used in the same run, but the :math:`\chi^2` minimization process is performed distinctly for each class. For a given class (e.g., galaxy SEDs) several libraries can be combined.
+where *j* refers to the band used for the scaling (*j* can be different from *i*). The photometric baseline can span a large wavelength range, as long as the templates are established accordingly. Galaxy, star, and QSO libraries can be used in the same run, but the :math:`\chi^2` minimization process is performed distinctly for each class. For a given class (e.g., galaxy SEDs) several libraries can be combined.
 
 Different options are available to improve the :math:`z_\mathrm{phot}` measurement: physical priors, adaptive photometric adjustments, addition of nebular emission lines in the synthetic SEDs. If the templates include physical information (e.g. BC03), the code can output the stellar mass, star formation rate, etc., for each object.
 
@@ -1137,13 +1122,13 @@ The program ``zphota`` is used to derive the photo-z and the physical parameters
   zphota -c config_file.para --CAT_IN sourcelist.in
 
   
-with sourcelist.in being the input file in ascii format.
+with sourcelist.in being the input file in ascii format with command lines (an advantage with the python interface is that you can use any format).
 
 
 With python
 ~~~~~~~~~~~
 
-You can run the photometric redshift with the function ``lp.process``  prepared to ficilitate your work, or using the class ``lp.PhotoZ``. Here are the two methods:
+You can run the photometric redshift with the function ``lp.process``  prepared to facilitate your work, or using the class ``lp.PhotoZ``. Here are the two methods:
 
 
 .. code-block:: bash
@@ -1155,6 +1140,7 @@ You can run the photometric redshift with the function ``lp.process``  prepared 
   # Calculate the photometric redshifts
   output, pdfs, zgrid = lp.process(config, input_table)
 
+The ``input_table`` is a python table with a pre-defined format (explained below).
 
   
 .. code-block:: python
@@ -1175,41 +1161,10 @@ The ``sourcelist`` is a vector of objects of the class ``onesource`` containing 
 Input
 ^^^^^
 
+This section describes how to manage the input file. The associated keywords are listed here. Most of them become useless when using the python interface.
 
 
 
-Input file when using command lines
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This section describes how to manage the input file. ``CAT_IN`` specifies the location and name of the input file. The input catalogue must be an ASCII table including at least for each entry:
-
--  an identification number (Id);
--  the apparent magnitudes (or fluxes);
--  the corresponding errors.
-
-   
-The format is specified by ``CAT_FMT``, whose value must be set to ``MEME`` (“Magnitude-Error-Magnitude-Error”) to use a catalog in the format
-| *Id mag1 err1 mag2 err2 ... magN errN*...
-while the string ``MMEE`` (“Magnitude...Magnitude-Error...Error”) is used for catalogs written like
-| *Id mag1 mag2 ... magN err1 err2 ... errN*...
-
-Other columns may follow the photometric baseline when the option ``CAT_TYPE`` is set to ``LONG`` (it is ``SHORT`` by default). Such extended catalog will look like:
-
-| *Id mag1 err1 mag2 err2 ... magN errN Context  z_spec Extra1 Extra2...*
-
-The ``Context`` indicates which passbands can be used for the object in this row (see below), :math:`z_\mathrm{spec}` is the input redshift (can be also equal to -99), and “Extra1”, “Extra2”, etc. are the remaining columns (any kind of values) that will be read by the program as a single string and propagated in the output if required. Only ``Context`` and :math:`z_\mathrm{spec}` are compulsory in the LONG format, while Extra1, Extra2, etc. can be left empty.
-
-The input catalogue could include magnitudes or fluxes. To use fluxes, you must specify ``F`` for the parameter ``INP_TYPE`` and fluxes must be given in :math:`\mathrm{erg}/\mathrm{s}/\mathrm{cm}^2/\mathrm{Hz}`.
-If you use magnitude in input, use ``INP_TYPE M``. In this case, The calibration system is declared by the parameter ``CAT_MAG``, which can be either ``VEGA`` or ``AB``. In any case the filters in the catalog must be the same (and in the same order) as in the SED library built with ``mag_gal``.
-
-For a given object, the flux in a given filter could miss (not observed or the photometric extraction failed). If the magnitude (or flux) and the associated are **both** negative, this filter will be ignored.
-
-If the measurement is missing because the flux is too faint to be detected, one could use an **upper-limit**. In such case, the magnitude (or flux) are positive and set to the upper-limit value while the error should be negative. The predicted magnitude will forced to be fainter than the magnitude given in the photometric catalogue.
-
-You can run ``zphota`` on a subsample of sources. ``CAT_LINE`` gives the range of entries which should be considered when running the code. For instance, ``CAT_LINE 1,1000`` will run the code only on the first 1000 lines.
-| NOTE: commented lines are NOT considered while reading the catalogue, so this range should be intended as the number of entries, not rows.
-
- 
    +----------------+----------------+----------------+----------------+
    | Input catalog  |                |                |                |
    |                |                |                |                |
@@ -1247,7 +1202,11 @@ You can run ``zphota`` on a subsample of sources. ``CAT_LINE`` gives the range o
    |                |                |                | rows read in   |
    |                |                |                | input catalog  |
    |                |                |                | (starting from |
-   |                |                |                | 1)             |
+   |                |                |                | 1).            |
+   |                |                |                | Read all the   |
+   |                |                |                | catalogue by   |
+   |                |                |                | default        |
+   |                |                |                |                |
    +----------------+----------------+----------------+----------------+
    | CAT_TYPE       | string[1]      | SHORT          | Input catalog  |
    |                |                |                | format         |
@@ -1256,6 +1215,55 @@ You can run ``zphota`` on a subsample of sources. ``CAT_LINE`` gives the range o
    +----------------+----------------+----------------+----------------+
 
 
+The information needed for the fit
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+We expect in input:
+
+-  an identification number (Id);
+-  the apparent magnitudes (or fluxes);
+-  the corresponding errors.
+- A ``Context`` value associated to each source indicates which passbands can be used for the object, explained in :ref:`context`
+- :math:`z_\mathrm{spec}` is the input redshift (can be also equal to -99 if not defined).
+
+The filters in the input catalog must be the same and in the same order as in the predicted magnitude library (the one stored in $LEPHAREWORK/lib_mag).
+  
+``Context`` and :math:`z_\mathrm{spec}` are only compulsory in the LONG format. ``Context`` could be set at 0 to consider all filters.
+
+For a given object, the magnitude (or flux) in a given filter could miss (not observed or the photometric extraction failed). If the magnitude (or flux) and the associated are **both** negative, this filter will be ignored (for instance, you can put -99 -99 for the flux and associated error). This is another way to ignore a band than context.
+
+If the measurement is missing because the flux is too faint to be detected, one could use an **upper-limit**. In such case, the magnitude (or flux) are positive and set to the upper-limit value while the error should be negative. The predicted magnitude will be forced to be fainter than the magnitude given in the photometric catalogue. We advice to use flux with appropriate uncertainties and no upper-limits, which is more correct statistically.
+
+
+The input catalogue could include magnitudes or fluxes. To use fluxes, you must specify ``F`` for the parameter ``INP_TYPE`` and fluxes must be given in :math:`\mathrm{erg}/\mathrm{s}/\mathrm{cm}^2/\mathrm{Hz}`.
+If you use magnitude in input, use ``INP_TYPE M``. In this case, The calibration system is declared by the parameter ``CAT_MAG``, which can be either ``VEGA`` or ``AB``. 
+
+
+
+
+
+Input file when using command lines
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We expect an ascii file in input when using command lines. ``CAT_IN`` specifies the location and name of the input file.
+
+The format of the input catalogue is specified by ``CAT_FMT``, whose value must be set to ``MEME`` (“Magnitude-Error-Magnitude-Error”) to use a catalog in the format
+| *Id mag1 err1 mag2 err2 ... magN errN*...
+while the string ``MMEE`` (“Magnitude...Magnitude-Error...Error”) is used for catalogs written like
+| *Id mag1 mag2 ... magN err1 err2 ... errN*...
+
+Other columns may follow the photometric baseline when the option ``CAT_TYPE`` is set to ``LONG`` (it is ``SHORT`` by default). Such extended catalog will look like:
+
+| *Id mag1 err1 mag2 err2 ... magN errN Context  z_spec Extra1 Extra2...*
+
+``Context`` and :math:`z_\mathrm{spec}` were already described. ``Extra1 Extra2...``, etc. are the remaining columns (any kind of values) that will be read by the program as a single string and propagated in the output if required. Only ``Context`` and :math:`z_\mathrm{spec}` are compulsory in the LONG format, while Extra1, Extra2, etc. can be left empty.
+
+You can run ``zphota`` on a subsample of sources. ``CAT_LINE`` gives the range of entries which should be considered when running the code. For instance, ``CAT_LINE 1,1000`` will run the code only on the first 1000 lines.
+| NOTE: commented lines are NOT considered while reading the catalogue, so this range should be intended as the number of entries, not rows.
+
+ 
+
 
 
 Input source list when using python
@@ -1263,13 +1271,36 @@ Input source list when using python
 
 
 
-Let's start with an input file ``input.txt`` with five filters u, g, r, i, z. This file is taken in ascii as an example, but it could be in any format readable by python (which is an advantage compared to the run done with command lines).
-We can also have stored the context and the spec-z in this catalogue.
+Let's assume that we have an input file ``input.txt`` for a survey having five filters u, g, r, i, z. We assume that this is formated as explained in the command line case. The example assume an ascii file, but it could be in any format readable by python (which is an advantage compared to the run done with command lines). We assume that the context and the spec-z are also stored in this catalogue.
 
 
-There is two different methods to establish the input source list and run the photo-z:
+There is two different methods to create the input source list and run the photo-z:
+
 
 **Method 1**
+
+.. code-block:: python
+
+  # Load the full catalogue
+  cat = Table.read("input.txt", format="ascii")
+
+  # You will need to set the table columns in order:
+  # Id, flux0, err0, flux1, err1,..., context, zspec, arbitrary_string
+  input_table = Table()
+  # The id is in the first column
+  input_table["id"] = cosmos_full[0]
+  for n, name in enumerate(filters):
+     input_table["f_"+name] = cat[2 * n + 1]
+     input_table["ferr_"+name] = cat[2 * n + 2]
+  # The context is a binary flag. Here we set it to use all filters.
+  input_table["context"] = np.sum(2 ** np.arange(len(filters)))
+  input_table["zspec"] = cat[11]
+  input_table["string_data"] = "arbitrary_info"
+
+  # Calculate the photometric redshifts using the function process
+  output, pdfs, zgrid = lp.process(config, input_table)
+
+**Method 2**
 
 .. code-block:: python
 
@@ -1295,30 +1326,7 @@ There is two different methods to establish the input source list and run the ph
   photz.run_photoz(sourcelist, [],[] )
 
 
-**Method 2**
-
-.. code-block:: python
-
-  # Load the full catalogue
-  cat = Table.read("input.txt", format="ascii")
-
-  # You will need to set the table columns in order:
-  # id, flux0, err0, flux1, err1,..., context, zspec, arbitrary_string
-  input_table = Table()
-  # The id is in the first column
-  input_table["id"] = cosmos_full[0]
-  for n, name in enumerate(filters):
-     input_table["f_"+name] = cat[2 * n + 1]
-     input_table["ferr_"+name] = cat[2 * n + 2]
-  # The context is a binary flag. Here we set it to use all filters.
-  input_table["context"] = np.sum(2 ** np.arange(len(filters)))
-  input_table["zspec"] = cat[11]
-  input_table["string_data"] = "arbitrary_info"
-
-  # Calculate the photometric redshifts using the function process
-  output, pdfs, zgrid = lp.process(config, input_table)
-
-
+.. _context:
   
 Context
 ~~~~~~~
@@ -1335,19 +1343,16 @@ Filter Context (:math:`2^{(i-1)}`) 1 2 4 8 16 32 64 128
 
  
 One context value corresponds to a unique filter combination:
+
 - if an object is observed in all passband but H : Context=191
 - if an object is observed in UGRIZ : Context=31
 - if an object is observed in GRIZK : Context=158
 
-If the context is absent in the input catalog, it is equivalent to use all the passbands for all the objects, so Context=255. However, the code checks the error and flux values. If both values are negative, the band is not used.
+If the context is absent in the input catalog (format SHORT), or put at 0, it is equivalent to use all the passbands for all the objects. However, the code checks the error and flux values. If both values are negative, the band is not used.
 
 In practice, the context specified in the input catalog can include all the passbands where the object has been observed even the bands where it is not detected (upper-limit).
 
-Additional options in the configuration file will allow to restrict the use of the catalog to some specific filter combinations.
-  
-| **Note 1**: if the flux (or mag) and the associated error are negative, the filter is ignored in the fit.
-
-| **Note 2**: In the configuration file, some options refer to a sum of filter context: GLB_CONTEXT, FORB_CONTEXT, ADAPT_CONTEXT, MABS_CONTEXT, FIR_CONT, FIR_SCALE
+Additional options in the configuration file will allow to restrict the use of the catalog to some specific filter combinations as GLB_CONTEXT, FORB_CONTEXT, ADAPT_CONTEXT, MABS_CONTEXT, FIR_CONT. They set the globally the bands to be used (GLB_CONTEXT), to be removed (FORB_CONTEXT), the ones used for the calibration of the offsets (ADAPT_CONTEXT), the ones to compute absolute magnitudes (MABS_CONTEXT) and finally the bands to be used for FIR templates (FIR_CONT).
 
 
 
@@ -1361,16 +1366,16 @@ Parameters of the fit
 Input libraries
 ~~~~~~~~~~~~~~~
 
-The principle of SED-fitting is to compare observed flux with predicted ones. We can extract from this comparison the photometric redshift but also physical parameters associated to the galaxies.
+The principle of SED-fitting is to compare observed flux with predicted ones. We can extract from this comparison the photometric redshift but also physical parameters associated to a given galaxy.
 Therefore, a fundamental input of the fit is a library containing predicted magnitudes/flux.
-The name of this library should be transmitted using the keyword ``ZPHOTLIB``. The name should be a string and points to the binary file stored in ``$LEPHAREWORK/lib_mag/`` (indicate only the name of the file without extension).
+The name of this :ref:`library<outputlib>` should be transmitted using the keyword ``ZPHOTLIB``. The name should be a string and points to the binary file stored in ``$LEPHAREWORK/lib_mag/`` (indicate only the name of the file without extension).
 
 
 For instance, if a file ``BC03_LIB.bin`` has been created and is stored in ``$LEPHAREWORK/lib_mag/``, you can simply use the option ``ZPHOTLIB BC03_LIB``.
 
-Several librairies can be combined, with their name separated with coma. You can use as many libraries as you want. Moreover, you can combine libraries created with GAL/QSO/STAR templates and the code will recognize if it corresponds to a GAL, QSO, or STAR library.
+Several librairies can be used consequently on the same input catalog, with their name separated with coma. You can use as many libraries as you want. Moreover, you can use simultaneusly libraries created with GAL/QSO/STAR templates and the code will recognize if it corresponds to a GAL, QSO, or STAR library.
 
-Finally, one can modify the properties of the input library by applying emission lines to only a sub-sample of the templates and by reducing the explored range of E(B-V) and redshift. For instance ``ADD_EMLINES`` defines the range of galaxy models (from the .list file) in which the code considers the emission lines contribution. Similarly ``Z_RANGE`` and ``EBV_RANGE`` could be used to reduce the redshift and the E(B-V) coverage allowed in the fit.
+Finally, one can modify the properties of the input library by considering emission lines for only a sub-sample of the templates and by limiting the explored range of E(B-V) and redshift. For instance ``ADD_EMLINES`` defines the range of galaxy models (from the .list file) in which the code considers the emission lines contribution. Similarly ``Z_RANGE`` and ``EBV_RANGE`` could be used to limit the redshift and the E(B-V) coverage allowed in the fit.
 
 
 
@@ -1383,7 +1388,7 @@ Finally, one can modify the properties of the input library by applying emission
 |                |                    |                 | extension)      |
 |                |                    |                 | like            |
 |                |                    |                 | XXX_LIB_OUT     |
-+----------------+--------------------+-----------------+-----------------+
+|                |                    |                 |                 |
 |                | (:math:`n \geq 1`) |                 | Files should    |
 |                |                    |                 | exist in        |
 |                |                    |                 | $LEPHAREWORK    |
@@ -1391,8 +1396,8 @@ Finally, one can modify the properties of the input library by applying emission
 +----------------+--------------------+-----------------+-----------------+
 | ADD_EMLINES    | int                | 0,0             | Range of        |
 |                |                    |                 | galaxy models   |
-|                |                    |                 | in which        |
-+----------------+--------------------+-----------------+-----------------+
+|                |                    |                 | fo which        |
+|                |                    |                 |                 |
 |                | (n=2)              |                 | considering     |
 |                |                    |                 | emission lines  |
 |                |                    |                 | contribution.   |
@@ -1400,14 +1405,14 @@ Finally, one can modify the properties of the input library by applying emission
 | Z_RANGE        | float              | 0.,99.          | Z min and max   |
 |                |                    |                 | allowed in the  |
 |                |                    |                 | GALAXY library  |
-+----------------+--------------------+-----------------+-----------------+
+|                |                    |                 |                 |
 |                | (n=2)              |                 |                 |
 +----------------+--------------------+-----------------+-----------------+
 | EBV_RANGE      | float              | 0,9             | E(B-V) min and  |
 |                |                    |                 | max allowed in  |
-|                |                    |                 | the GALAXY      |
-|                |                    |                 | library         |
-+----------------+--------------------+-----------------+-----------------+
+|                |                    |                 | the library.    |
+|                |                    |                 | Applied to all  |
+|                |                    |                 | attenuation laws|
 |                | (n=2)              |                 |                 |
 +----------------+--------------------+-----------------+-----------------+
 
@@ -1420,54 +1425,51 @@ Finally, one can modify the properties of the input library by applying emission
 Managing filters used in the fit
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The choice of the filters is defined by the context value for each object. This context is given in the input catalogue. You can also force the analysis to some specific filter combination for the whole catalog. If ``GLB_CONTEXT`` is used, it supersedes the individual context. You can also reject some bands with ``FORB_CONTEXT`` keyword. This keyword is useful if you want to perform some test without a specific band.
+The :ref:`context<context>` value defines which filters to be used for the fit follwing  :math:`\sum_{i=0}^{nbd-1} 2^{i}`. This context is given in the input catalogue. You can also force the analysis to some specific filter combination for the whole catalog. If ``GLB_CONTEXT`` is used, it is used in addition to the individual context. You can also reject some bands with ``FORB_CONTEXT`` keyword (for instance, if FORB_CONTEXT=3, you reject the two first bands). This keyword is useful if you want to perform some test without a specific band.
 
-The empirical and stellar population synthesis libraries of galaxy SEDs only account for the stellar light. It is strongly suggested to only use filters where the stellar light is dominant. Typically we suggest to authorize only the filters with :math:`\lambda\le 5\mu m`. Longer wavelength information should be treated separately with the FIR libraries.
+The option ``RM_DISCREPENT_BD`` is designed to remove a band which completely differs from the rest of the SED and can't be explained by the templates. If the :math:`\chi^2` is above a threshold defined by the user, the code will remove the band contributing the most to the :math:`\chi^2`. If the value is still above the threshold, it will use a second band, then stop, even if the :math:`\chi^2` is still above the threshold.
 
 
-+----------------+----------------+----------------+----------------------------------+
-| **Parameters** | **Type**       | **Default      |**Description**                   |
-|                |                | val.**         |                                  |
-+================+================+================+==================================+
-| GLB_CONTEXT    | integer        | -1             | Forces the                       |
-|                |                |                | context of all                   |
-|                |                |                | objects for                      |
-|                |                |                | :math:`\chi^2`                   |
-|                |                |                | analysis                         |
-+----------------+----------------+----------------+----------------------------------+
-|                | (n=1)          |                | defined as :                     |
-|                |                |                | :math:`\sum_{i=0}^{nbd-1} 2^{i}` |
-|                |                |                |                                  |
-|                |                |                |                                  |
-+----------------+----------------+----------------+----------------------------------+
-|                |                |                | 0 means that                     |
-|                |                |                | all bands are                    |
-|                |                |                | used                             |
-+----------------+----------------+----------------+----------------------------------+
-|                |                |                | -1 (default)                     |
-|                |                |                | means that                       |
-|                |                |                | context per                      |
-|                |                |                | object is used                   |
-+----------------+----------------+----------------+----------------------------------+
-| FORB_CONTEXT   | integer        | -1             | context for                      |
-|                |                |                | forbidden                        |
-|                |                |                | bands                            |
-+----------------+----------------+----------------+----------------------------------+
-|                | (n=1)          |                | defined as :                     |
-|                |                |                | :math:`\sum_{i=0}^{nbd-1} 2^{i}` |
-|                |                |                |                                  |
-|                |                |                |                                  |
-+----------------+----------------+----------------+----------------------------------+
-| RM             | float          | 200            | Threshold in                     |
-| _DISCREPENT_BD |                |                | chi2 to                          |
-|                |                |                | consider.                        |
-+----------------+----------------+----------------+----------------------------------+
-|                |                | (n=1)          | Remove 2 bands                   |
-|                |                |                | max, stop when                   |
-|                |                |                | below this                       |
-|                |                |                | chi2                             |
-|                |                |                | threshold.                       |
-+----------------+----------------+----------------+----------------------------------+
+
++---------------------+----------------+----------------+----------------------------------+
+| **Parameters**      | **Type**       | **Default      |**Description**                   |
+|                     |                | val.**         |                                  |
++=====================+================+================+==================================+
+| GLB_CONTEXT         | integer        | -1             | Forces the                       |
+|                     |                |                | context of all                   |
+|                     |                |                | objects for                      |
+|                     |                |                | :math:`\chi^2`                   |
+|                     | (n=1)          |                | analysis in addition             |
+|                     |                |                | to the individual context        |
+|                     |                |                |                                  |
+|                     |                |                |                                  |
+|                     |                |                | 0 means that                     |
+|                     |                |                | all bands are                    |
+|                     |                |                | used                             |
+|                     |                |                |                                  |
+|                     |                |                | -1 (default)                     |
+|                     |                |                | means that                       |
+|                     |                |                | context per                      |
+|                     |                |                | object is used                   |
++---------------------+----------------+----------------+----------------------------------+
+| FORB_CONTEXT        | integer        | -1             | context for                      |
+|                     |                |                | forbidden                        |
+|                     |                |                | bands                            |
+|                     | (n=1)          |                |                                  |
+|                     |                |                |                                  |
+|                     |                |                |                                  |
+|                     |                |                |                                  |
++---------------------+----------------+----------------+----------------------------------+
+| RM_DISCREPENT_BD    | float          | 200            | Threshold in                     |
+|                     |                |                | chi2 to                          |
+|                     |                |                | consider.                        |
+|                     |                |                |                                  |
+|                     |                | (n=1)          | Remove 2 bands                   |
+|                     |                |                | max, stop when                   |
+|                     |                |                | below this                       |
+|                     |                |                | chi2                             |
+|                     |                |                | threshold.                       |
++---------------------+----------------+----------------+----------------------------------+
 
 
 
@@ -1477,29 +1479,26 @@ Expanding photometric uncertainties
 By definition the :math:`\chi^2` procedure is sensitive to the photometric errors, so it is important to provide reliable uncertainties. Users must account for a possible underestimation (when noise correlation is present in the data) or zero-point calibration uncertainties. The keywords ``ERR_FACTOR`` and ``ERR_SCALE`` allow to tune the individual errors. Note that ``ERR_FACTOR`` will not change the best photo-z solution but just the estimates of the errors, while ``ERR_SCALE`` can change the relative contribution of the bands and thus the best redshift.
 
 
-+----------------+---------------------+----------------+----------------+
-| **Parameters** | **Type**            | **Default      |**Description** |
-|                |                     | val.**         |                |
-+================+=====================+================+================+
-| ERR_FACTOR     | float               | 1.0            | Scaling factor |
-|                |                     |                | to the errors  |
-|                |                     |                | (in flux)      |
-+----------------+---------------------+----------------+----------------+
-|                | (n=1)               |                |                |
-|                |                     |                |                |
-+----------------+---------------------+----------------+----------------+
-| ERR_SCALE      | float               | -1.            | Systematic     |
-|                |                     |                | errors (in     |
-|                |                     |                | mag) add in    |
-|                |                     |                | quadrature to  |
-|                |                     |                | the            |
-|                |                     |                | observations   |
-+----------------+---------------------+----------------+----------------+
-|                |(n :math:`\le`\ 100) |                | must match     |
-|                |                     |                | number of      |
-|                |                     |                | bands, not     |
-|                |                     |                | used otherwise |
-+----------------+---------------------+----------------+----------------+
++----------------+----------------------+----------------+----------------+
+| **Parameters** | **Type**             | **Default      |**Description** |
+|                |                      | val.**         |                |
++================+======================+================+================+
+| ERR_FACTOR     | float                | 1.0            | Scaling factor |
+|                |                      |                | to the errors  |
+|                |                      |                | (in flux)      |
+|                | (n=1)                |                |                |
++----------------+----------------------+----------------+----------------+
+| ERR_SCALE      | float                | -1.            | Systematic     |
+|                |                      |                | errors (in     |
+|                |                      |                | mag) add in    |
+|                |                      |                | quadrature to  |
+|                |                      |                | the            |
+|                |                      |                | observations   |
+|                | (n :math:`\le`\ 100) |                | must match     |
+|                |                      |                | number of      |
+|                |                      |                | bands, not     |
+|                |                      |                | used otherwise |
++----------------+----------------------+----------------+----------------+
 
 
 Adding prior information
@@ -1520,17 +1519,17 @@ A prior could be applied to avoid unrealistically bright galaxies. The keyword `
 | NZ_PRIOR       | integer  | -1,-1            | N(z) prior as    |
 |                |          |                  | function of I    |
 |                |          |                  | band.            |
-+----------------+----------+------------------+------------------+
+|                |          |                  |                  |
 |                | (n=2)    |                  | The i-band       |
 |                |          |                  | number should be |
 |                |          |                  | given in input.  |
-+----------------+----------+------------------+------------------+
+|                |          |                  |                  |
 |                |          |                  | The second       |
 |                |          |                  | number indicates |
 |                |          |                  | which band to    |
 |                |          |                  | use if first     |
 |                |          |                  | undefined.       |
-+----------------+----------+------------------+------------------+
+|                |          |                  |                  |
 |                |          |                  | Negative value   |
 |                |          |                  | means no prior.  |
 +----------------+----------+------------------+------------------+
@@ -1539,7 +1538,7 @@ A prior could be applied to avoid unrealistically bright galaxies. The keyword `
 |                |          |                  | acceptable for   |
 |                |          |                  | GAL library      |
 |                |          |                  | [0,0-def]        |
-+----------------+----------+------------------+------------------+
+|                |          |                  |                  |
 |                | (n=2)    |                  | 0.,0. (default)  |
 |                |          |                  | means not used   |
 +----------------+----------+------------------+------------------+
@@ -1548,7 +1547,7 @@ A prior could be applied to avoid unrealistically bright galaxies. The keyword `
 |                |          |                  | acceptable for   |
 |                |          |                  | QSO library      |
 |                |          |                  | [0,0-def]        |
-+----------------+----------+------------------+------------------+
+|                |          |                  |                  |
 |                | (n=2)    |                  | 0.,0. (default)  |
 |                |          |                  | means not used   |
 +----------------+----------+------------------+------------------+
@@ -1556,7 +1555,7 @@ A prior could be applied to avoid unrealistically bright galaxies. The keyword `
 |                |          |                  | for MAG_ABS (1   |
 |                |          |                  | to               |
 |                |          |                  | :math:`N_{bd}`)  |
-+----------------+----------+------------------+------------------+
+|                |          |                  |                  |
 |                | (n=1)    |                  | 0 (default)      |
 |                |          |                  | means not used   |
 +----------------+----------+------------------+------------------+
@@ -1565,14 +1564,13 @@ A prior could be applied to avoid unrealistically bright galaxies. The keyword `
 Adaptive method
 ~~~~~~~~~~~~~~~
 
-We provide the possibility to train the zero-points of the photometric catalogue. While this training is less sophisticated than the fortran version (which allows for a training of the colors and more), this training is sufficient for most of the applications.
+We provide the possibility to train the zero-points of the photometric catalogue. While this training is less sophisticated than the fortran version (which was allowing for a training of the colors not implemented yet and used minuit). However, we consider that the current implementation is sufficient.
 
-In order to turn on this option, use ``AUTO_ADAPT YES``. This procedure requires to have galaxies with a spec-z within the catalogue (format should be LONG with -99 when no spec-z available). This code will first fit the best-fit templates to the objects with a spec-z. Then, it will measure for each filter the systematic offset which minimizes the differences between the predicted and observed magnitudes. This procedure is applied iteratively until convergence of the systematic offset values (maximum of 10 iterations).
+In order to turn on this option, use ``AUTO_ADAPT YES``. This procedure requires to have galaxies with a spec-z within the catalogue (format should be LONG with -99 when no spec-z available). This code will first fit the best-fit templates to the objects with a spec-z. Then, it will measure for each filter the systematic offset which minimizes the differences between the predicted and observed magnitudes. This procedure is applied iteratively until convergence of the systematic offset values (maximum of 10 iterations). This is done only for galaxies. So, do not use stars or AGN for the training.
 
-You can also decide to train the zero-points with a sub-sample of the spec-z sample. Galaxies can be selected in a given apparent magnitude range (``ADAPT_BAND`` and ``ADAPT_LIM``), in a given redshift range (``ADAPT_ZBIN``), in a given model range (``ADAPT_MODBIN``).
-You can decide to train only a specific sub-set of bands which are indicated using the keyword ``ADAPT_CONTEXT``.
+You can also decide to train the zero-points with a sub-sample of the spec-z sample. Galaxies can be selected in a given apparent magnitude range (``ADAPT_BAND`` and ``ADAPT_LIM``), in a given redshift range (``ADAPT_ZBIN``), in a given model range (``ADAPT_MODBIN``). You can decide to train only a specific sub-set of bands which are indicated using the keyword ``ADAPT_CONTEXT``.
 
-If the photometric catalogue contains a large number of objects, you can save times by doing the training only on a sub-catalogue with spec-z and then apply the offsets by hand to the full catalogue with ``APPLY_SYSSHIFT``.
+If the photometric catalogue contains a large number of objects, you can save times by doing the training only on a sub-catalogue with spec-z and then apply the offsets by hand with ``APPLY_SYSSHIFT``.
 
 | **Note 1**: for philosophical reason, we decided that these offsets are added to the predicted magnitudes (because we don’t know if the offsets are due to the imaging, bad knowledge of the filters, bad knowledge of the templates). Therefore, if you want to apply them directly to the observed magnitude in your catalogue, you need to subtract these shifts.
 
@@ -1589,59 +1587,54 @@ In python, you can run only the training part with:
 
 
 
-+----------------+-----------------+----------------+----------------+
-| **Parameters** | **Type**        | **Default      |**Description** |
-|                |                 | val.**         |                |
-+================+=================+================+================+
-| AUTO_ADAPT     | string          | NO             | ZP adaptive    |
-|                |                 |                | method with    |
-|                |                 |                | spectro        |
-+----------------+-----------------+----------------+----------------+
-|                | (:math:`n=1`)   |                |                |
-+----------------+-----------------+----------------+----------------+
-| ADAPT_BAND     | integer         | —–             | Reference band |
-|                |                 |                | for the        |
-|                |                 |                | selection in   |
-|                |                 |                | magnitude      |
-+----------------+-----------------+----------------+----------------+
-|                | (:math:`n=1`)   |                |                |
-+----------------+-----------------+----------------+----------------+
-| ADAPT_LIM      | float           | 18.,24.        | Mag range for  |
-|                |                 |                | spectro in     |
-|                |                 |                | reference band |
-+----------------+-----------------+----------------+----------------+
-|                | (:math:`n=1`)   |                |                |
-+----------------+-----------------+----------------+----------------+
-| ADAPT_CONTEXT  | integer         | -1             | Context for    |
-|                |                 |                | bands used for |
-|                |                 |                | training       |
-+----------------+-----------------+----------------+----------------+
-|                | (:math:`n=1`)   |                | -1 : used      |
-|                |                 |                | context per    |
-|                |                 |                | object         |
-+----------------+-----------------+----------------+----------------+
-| ADAPT_ZBIN     | float           | 0.01,6         | Redshift’s     |
-|                |                 |                | interval used  |
-|                |                 |                | for training   |
-+----------------+-----------------+----------------+----------------+
-|                | (:math:`n=2`)   |                |                |
-+----------------+-----------------+----------------+----------------+
-| ADAPT_MODBIN   | integer         | 1,1000         | Model’s        |
-|                |                 |                | interval used  |
-|                |                 |                | for training   |
-+----------------+-----------------+----------------+----------------+
-|                | (:math:`n=2`)   |                |                |
-+----------------+-----------------+----------------+----------------+
-| APPLY_SYSSHIFT | float           | —–             | Apply          |
-|                |                 |                | systematic     |
-|                |                 |                | shifts in each |
-|                |                 |                | bands          |
-+----------------+-----------------+----------------+----------------+
-|                |(:math:`n\le 50`)|                | number of      |
-|                |                 |                | values must    |
-|                |                 |                | fit number of  |
-|                |                 |                | filters        |
-+----------------+-----------------+----------------+----------------+
++----------------+--------------------+----------------+----------------+
+| **Parameters** | **Type**           | **Default      |**Description** |
+|                |                    | val.**         |                |
++================+====================+================+================+
+| AUTO_ADAPT     | string             | NO             | ZP adaptive    |
+|                |                    |                | method done    |
+|                |                    |                | with galaxies  |
+|                |                    |                | having a spec-z|
++----------------+--------------------+----------------+----------------+
+| ADAPT_BAND     | integer            | —–             | Reference band |
+|                | (:math:`n=1`)      |                | for the        |
+|                |                    |                | selection in   |
+|                |                    |                | magnitude      |
++----------------+--------------------+----------------+----------------+
+| ADAPT_LIM      | float              | 18.,24.        | Mag range in   |
+|                |                    |                | reference band |
+|                |                    |                | of galaxies    |
+|                |                    |                | with spec-z    |
+|                | (:math:`n=1`)      |                |                |
++----------------+--------------------+----------------+----------------+
+| ADAPT_CONTEXT  | integer            | -1             | Context for    |
+|                |                    |                | bands used for |
+|                |                    |                | training       |
+|                |                    |                |                |
+|                | (:math:`n=1`)      |                | -1 : used      |
+|                |                    |                | context per    |
+|                |                    |                | object         |
++----------------+--------------------+----------------+----------------+
+| ADAPT_ZBIN     | float              | 0.01,6         | Redshift’s     |
+|                |                    |                | interval used  |
+|                |                    |                | for training   |
+|                | (:math:`n=2`)      |                |                |
++----------------+--------------------+----------------+----------------+
+| ADAPT_MODBIN   | integer            | 1,1000         | Model’s        |
+|                |                    |                | interval used  |
+|                |                    |                | for training   |
+|                | (:math:`n=2`)      |                |                |
++----------------+--------------------+----------------+----------------+
+| APPLY_SYSSHIFT | float              | —–             | Apply          |
+|                |                    |                | systematic     |
+|                |                    |                | shifts in each |
+|                |                    |                | bands          |
+|                |                    |                |                |
+|                | (:math:`n\le 50`)  |                | number of      |
+|                |                    |                | values must    |
+|                |                    |                | fit number of  |
+|                |                    |                | filters        |
++----------------+--------------------+----------------+----------------+
 
 
 
@@ -1649,17 +1642,17 @@ In python, you can run only the training part with:
 Physical parameters
 ^^^^^^^^^^^^^^^^^^^
 
-After computing the photometric redshifts, other SED fittings can be applied to derive FIR properties, absolute magnitudes or to get physical parameters. Often, the photometric redshifts are computed first, then the redshift value is fixed with option ``ZFIX YES`` and the physical parameters are computed in a second step. The reason for this two steps procedure is that the template libraries producing the best photo-z are not the same as the ones needed to compute physical parameters. However, nothing prevent you for doing the two steps together.
+After computing the photometric redshifts, other templates can be used to derive FIR properties or to get physical parameters. Often, the photometric redshifts are computed first, then the redshift value is fixed with option ``ZFIX YES`` and the physical parameters are computed in a second step. The reason for this two steps procedure is that the template libraries producing the best photo-z are not the same as the ones needed to compute physical parameters. However, nothing prevent you for doing the two steps together.
 
 
 Absolute magnitudes
 ~~~~~~~~~~~~~~~~~~~
 
-This set of parameters allows the user to specify different methods to compute the absolute magnitudes. The absolute magnitudes are computed automatically in all the filters of FILTER_LIST. Different methods are available :
+This set of parameters allows the user to specify different methods to compute the absolute magnitudes for the galaxies. The absolute magnitudes are computed automatically in all the filters of FILTER_LIST. Different methods are available :
 
 - ``MABS_METHOD=0`` : A direct method to compute the absolute magnitude in a given filter from the apparent magnitude measured in the same filter (example: :math:`B_{ABS}=B_{obs}-DM(z)-kcor(B)`). This method is extremely sensitive to k-correction and to systematic effects in the apparent magnitude measurement. This method is likely to be less accurate.
 
-- ``MABS_METHOD=1`` : the goal of this method is to minimize the sensitivity to the templates. For example, the absolute magnitude in the filter B is computed using the observed apparent magnitude in the filter I, which is chosen to be :math:`\lambda(I)=\lambda(B)*(1+z)` at :math:`z\sim 0.7` : :math:`B_{ABS}= I_{obs} -DM(z=0.7) - (kcor(I) + (B-I)_{ABS})^{template}`.
+- ``MABS_METHOD=1`` : the goal of this method is to minimize the sensitivity to the templates. For example, for a source at redshift 0.7, the absolute mag in *B* band is derived from from the observed magnitude in the *I* band because :math:`B_{ABS}= I_{obs} -DM(z=0.7) - (kcor(I) + (B-I)_{ABS})^{template}`.
   This method is described in the appendix of Ilbert et al. (2005). The advantage of this method to limit template dependency. Indeed, if chosen careful, the term k-correction+color doesn’t depend on the template at a given redshift. The drawback of this method is that a systematic effect in the observed band will be directly propagated to the absolute magnitude (like zero-point calibration, or a band systematically with a lower S/N). For this reason, a context associated to each filter (MABS_CONTEXT) reduces the filter set used for the observed apparent magnitudes (for instance, you don’t want to keep in the subset a filter having a large offset between observed and predicted magnitude in AUTO_ADAPT).
 
 - ``MABS_METHOD=2`` : used to measure the absolute magnitudes in all the rest-frame bands using the observed apparent magnitudes always taken in the same observed filter (given by MABS_REF). It’s not optimized but you know exactly which filter is used to compute the absolute magnitudes. As example if MABS_REF is defined as B filter and A could be any filter: :math:`A_{ABS}=B_{obs}-DM(z)- kcor(B) + (A-B)_{ABS}^{temp}`
@@ -1668,120 +1661,113 @@ This set of parameters allows the user to specify different methods to compute t
 
 - ``MABS_METHOD=4`` : imposes the filter depending on the redshift. The filters are given in MABS_FILT for the corresponding redshift bins listed in MABS_ZBIN.
 
-The predicted apparent magnitudes and absolute magnitudes can be computed in a different set of filters than the standard one. In ADDITIONAL_MAG, you can add a different name for the filter file, different than the one indicated in FILTER_FILE. New predicted apparent and absolute magnitudes (only method 3) will be computed in these additional filters.
+The predicted apparent magnitudes and absolute magnitudes can be computed in a different set of filters than the standard one. In ``ADDITIONAL_MAG``, you can add a different name for the filter file, different than the one indicated in ``FILTER_FILE``. New predicted apparent and absolute magnitudes (only method 3) will be computed in these additional filters. No need to create a new library for that (so, don't run mag_gal again in command lines).
 
 
-+----------------+------------------------+--------------------+-----------------------------------------+
-| **Parameters** | **Type**               | **Default          | **Description**                         |
-|                |                        | val.**             |                                         |
-+================+========================+====================+=========================================+
-| Fixing         |                        |                    |                                         |
-| redshift       |                        |                    |                                         |
-+----------------+------------------------+--------------------+-----------------------------------------+
-| ZFIX           | string                 | NO                 | Fixed redshift                          |
-|                |                        |                    | (as defined in                          |
-|                |                        |                    | CAT_TYPE LONG)                          |
-|                |                        |                    | and                                     |
-+----------------+------------------------+--------------------+-----------------------------------------+
-|                | (n=1)                  |                    | search for                              |
-|                |                        |                    | best model                              |
-+----------------+------------------------+--------------------+-----------------------------------------+
-| EXTERNALZ_FILE | string                 | NONE               | Use the spec-z                          |
-|                |                        |                    | from an                                 |
-|                |                        |                    | external file                           |
-|                |                        |                    | (format Id,zs)                          |
-+----------------+------------------------+--------------------+-----------------------------------------+
-|                | (n=1)                  |                    |                                         |
-+----------------+------------------------+--------------------+-----------------------------------------+
-| Option to      |                        |                    |                                         |
-| derive the     |                        |                    |                                         |
-| absolute       |                        |                    |                                         |
-| magnitudes     |                        |                    |                                         |
-+----------------+------------------------+--------------------+-----------------------------------------+
-| MABS_METHOD    | integer                | 0                  | Method used                             |
-|                |                        |                    | for absolute                            |
-|                |                        |                    | magnitudes in                           |
-|                |                        |                    | each filter                             |
-+----------------+------------------------+--------------------+-----------------------------------------+
-|                | (n\ :math:`\le`\ 100)  |                    | 0 (default):                            |
-|                |                        |                    | mag(filter)                             |
-|                |                        |                    | :math:`\rightarrow M_{ABS}` (filter)     |
-|                |                        |                    |                                         |		            
-|                |                        |                    |                                         |	            
-+----------------+------------------------+--------------------+-----------------------------------------+
-|                |                        |                    | 1 :                                     |
-|                |                        |                    | mag(best filter)                        |
-|                |                        |                    | :math:`\rightarrow M_{ABS}` (filter)     |
-|                |                        |                    |                                         |		            
-|                |                        |                    |                                         |	            
-+----------------+------------------------+--------------------+-----------------------------------------+
-|                |                        |                    | 2 :                                     |
-|                |                        |                    | mag(fixed filter with MABS_REF)         |
-|                |                        |                    | :math:`\rightarrow M_{ABS}` (filter)     |
-|                |                        |                    |                                         |		            
-|                |                        |                    |                                         |	            
-+----------------+------------------------+--------------------+-----------------------------------------+
-|                |                        |                    | 3 :                                     |
-|                |                        |                    | best SED mag                            |
-|                |                        |                    | :math:`\rightarrow M_{ABS}` (filter)     |
-|                |                        |                    |                                         |		            
-|                |                        |                    |                                         |	            
-+----------------+------------------------+--------------------+-----------------------------------------+
-|                |                        |                    | 4 :                                     |
-|                |                        |                    | MABS(filter)                            |
-|                |                        |                    | derives                                 |
-|                |                        |                    | according to a                          |
-|                |                        |                    | fixed filter                            |
-+----------------+------------------------+--------------------+-----------------------------------------+
-|                |                        |                    |    in a fixed                           |
-|                |                        |                    | redshift                                |
-|                |                        |                    | interval                                |
-+----------------+------------------------+--------------------+-----------------------------------------+
-|                |                        |                    |    as given by                          |
-|                |                        |                    | MABS_FILT and                           |
-|                |                        |                    | MABS_ZBIN                               |
-+----------------+------------------------+--------------------+-----------------------------------------+
-| MABS_CONTEXT   | integer                | -1                 | Context for                             |
-|                |                        |                    | the bands used                          |
-|                |                        |                    | to derive                               |
-|                |                        |                    | :math:`M_{ABS}`                         |
-|                |                        |                    |                                         |
-+----------------+------------------------+--------------------+-----------------------------------------+
-|                | (n\ :math:`\le`\ 100)  |                    | -1 : used same                          |
-|                |                        |                    | context as for                          |
-|                |                        |                    | photo-z                                 |
-+----------------+------------------------+--------------------+-----------------------------------------+
-| MABS_REF       | integer                | 0                  | Fixed filter                            |
-|                |                        |                    | (if                                     |
-|                |                        |                    | MABS_METHOD=2)                          |
-+----------------+------------------------+--------------------+-----------------------------------------+
-|                | (n\ :math:`\le`\ 100)  |                    | 0 (default)                             |
-|                |                        |                    | means not used                          |
-+----------------+------------------------+--------------------+-----------------------------------------+
-| MABS_FILT      | integer                | —-                 | List of fixed                           |
-|                |                        |                    | filters chosen                          |
-|                |                        |                    | to derive                               |
-|                |                        |                    | :                                       |
-|                |                        |                    | math:`M_{ABS}`                          |
-|                |                        |                    | in all bands                            |
-+----------------+------------------------+--------------------+-----------------------------------------+
-|                |  (n\ :math:`\le`\ 100) |                    | according to                            |
-|                |                        |                    | the redshift                            |
-|                |                        |                    | bins (if                                |
-|                |                        |                    | MABS_METHOD=4)                          |
-+----------------+------------------------+--------------------+-----------------------------------------+
-| MABS_ZBIN      | float                  | —-                 | List of                                 |
-|                |                        |                    | Redshift bins                           |
-|                |                        |                    | associated                              |
-|                |                        |                    | with MABS_FILT                          |
-+----------------+------------------------+--------------------+-----------------------------------------+
-|                | (n\ :math:`\le`\ 200)  |                    | Even number of                          |
-|                |                        |                    | values (if                              |
-|                |                        |                    | MABS_METHOD=4)                          |
-+----------------+------------------------+--------------------+-----------------------------------------+
-| ADDITIONAL_MAG | string                 | —-                 | name of file                            |
-|                |                        |                    | with filters                            |
-+----------------+------------------------+--------------------+-----------------------------------------+
++----------------+---------------------------+--------------------+-----------------------------------------+
+| **Parameters** | **Type**                  | **Default          | **Description**                         |
+|                |                           | val.**             |                                         |
++================+===========================+====================+=========================================+
+| Fixing         |                           |                    |                                         |
+| redshift       |                           |                    |                                         |
++----------------+---------------------------+--------------------+-----------------------------------------+
+| ZFIX           | string                    | NO                 | Fixed redshift                          |
+|                |                           |                    | (as defined in                          |
+|                |                           |                    | CAT_TYPE LONG)                          |
+|                |                           |                    | and                                     |
+|                |                           |                    |                                         |
+|                | (n=1)                     |                    | search for                              |
+|                |                           |                    | best model                              |
++----------------+---------------------------+--------------------+-----------------------------------------+
+| EXTERNALZ_FILE | string                    | NONE               | Use the spec-z                          |
+|                |                           |                    | from an                                 |
+|                |                           |                    | external file                           |
+|                |                           |                    | (format Id,zs)                          |
+|                |                           |                    |                                         |
+|                | (n=1)                     |                    |                                         |
++----------------+---------------------------+--------------------+-----------------------------------------+
+| Option to      |                           |                    |                                         |
+| derive the     |                           |                    |                                         |
+| absolute       |                           |                    |                                         |
+| magnitudes     |                           |                    |                                         |
++----------------+---------------------------+--------------------+-----------------------------------------+
+| MABS_METHOD    | integer                   | 0                  | Method used                             |
+|                |                           |                    | for absolute                            |
+|                |                           |                    | magnitudes in                           |
+|                |                           |                    | each filter                             |
+|                |                           |                    |                                         |
+|                | (n\ :math:`\le`\ 100)     |                    | 0 (default):                            |
+|                |                           |                    | mag(filter)                             |
+|                |                           |                    | :math:`\rightarrow M_{ABS}` (filter)    |
+|                |                           |                    |                                         |		            
+|                |                           |                    |                                         |	            
+|                |                           |                    | 1 :                                     |
+|                |                           |                    | mag(best filter)                        |
+|                |                           |                    | :math:`\rightarrow M_{ABS}` (filter)    |
+|                |                           |                    |                                         |		            
+|                |                           |                    |                                         |	            
+|                |                           |                    | 2 :                                     |
+|                |                           |                    | mag(fixed filter with MABS_REF)         |
+|                |                           |                    | :math:`\rightarrow M_{ABS}` (filter)    |
+|                |                           |                    |                                         |		            
+|                |                           |                    |                                         |	            
+|                |                           |                    | 3 :                                     |
+|                |                           |                    | best SED mag                            |
+|                |                           |                    | :math:`\rightarrow M_{ABS}` (filter)    |
+|                |                           |                    |                                         |		            
+|                |                           |                    |                                         |	            
+|                |                           |                    | 4 :                                     |
+|                |                           |                    | MABS(filter)                            |
+|                |                           |                    | derives                                 |
+|                |                           |                    | according to a                          |
+|                |                           |                    | fixed filter                            |
+|                |                           |                    | in a fixed                              |
+|                |                           |                    | redshift                                |
+|                |                           |                    | interval                                |
+|                |                           |                    | as given by                             |
+|                |                           |                    | MABS_FILT and                           |
+|                |                           |                    | MABS_ZBIN                               |
++----------------+---------------------------+--------------------+-----------------------------------------+
+| MABS_CONTEXT   | integer                   | -1                 | Context for                             |
+|                |                           |                    | the bands used                          |
+|                |                           |                    | to derive                               |
+|                |                           |                    | :math:`M_{ABS}`                         |
+|                |                           |                    |                                         |
+|                | (n\ :math:`\le`\ 100)     |                    | -1 : used same                          |
+|                |                           |                    | context as for                          |
+|                |                           |                    | photo-z                                 |
++----------------+---------------------------+--------------------+-----------------------------------------+
+| MABS_REF       | integer                   | 0                  | Fixed filter                            |
+|                |                           |                    | (if                                     |
+|                |                           |                    | MABS_METHOD=2)                          |
+|                |                           |                    |                                         |
+|                | (n\ :math:`\le`\ 100)     |                    | 0 (default)                             |
+|                |                           |                    | means not used                          |
++----------------+---------------------------+--------------------+-----------------------------------------+
+| MABS_FILT      | integer                   | —-                 | List of fixed                           |
+|                |                           |                    | filters chosen                          |
+|                |                           |                    | to derive                               |
+|                |                           |                    | :                                       |
+|                |                           |                    | math:`M_{ABS}`                          |
+|                |                           |                    | in all bands                            |
+|                |                           |                    |                                         |
+|                | (n\ :math:`\le`\ 100)     |                    | according to                            |
+|                |                           |                    | the redshift                            |
+|                |                           |                    | bins (if                                |
+|                |                           |                    | MABS_METHOD=4)                          |
++----------------+---------------------------+--------------------+-----------------------------------------+
+| MABS_ZBIN      | float                     | —-                 | List of                                 |
+|                |                           |                    | Redshift bins                           |
+|                |                           |                    | associated                              |
+|                |                           |                    | with MABS_FILT                          |
+|                |                           |                    |                                         |
+|                | (n\ :math:`\le`\ 200)     |                    | Even number of                          |
+|                |                           |                    | values (if                              |
+|                |                           |                    | MABS_METHOD=4)                          |
++----------------+---------------------------+--------------------+-----------------------------------------+
+| ADDITIONAL_MAG | string                    | —-                 | name of file                            |
+|                |                           |                    | with filters                            |
++----------------+---------------------------+--------------------+-----------------------------------------+
 
 
 
@@ -1798,7 +1784,9 @@ As for the photo-z, you will find physical parameters measured at the minimum :m
 FIR fit
 ~~~~~~~
 
-A set of four FIR libraries are available, and can be used to characterize the FIR emission of galaxies assuming that the emission is dominated by radiation of dust component heated by star formation activity. No implementation of hot dust heated by an AGN component has been included yet !
+A set of four FIR libraries are available, and can be used to characterize the FIR emission of galaxies. No implementation of hot dust heated by an AGN component has been included yet !
+
+The fit of standard templates describing the stellar emission (as BC03) is simulaneous to the fit in FIR done with the FIR libraries. If you define FIR_LIB, the code will fit a FIR template. We don't consider the energy balance in the fit.
 
 The user defined the minimal rest-frame wavelength for the FIR analysis (FIR_LMIN, default is :math:`\lambda=7\mu m`). The global FIR context (FIR_CONT) specifies the set of filters to be used. However, the final context will depend on the redshift of the source and only filters with :math:`\lambda/(1+z) \ge` FIR_LMIN will be considered.
 
@@ -1822,7 +1810,6 @@ If only one passband is available, the FIR parameters luminosity is derived from
 |                |                     |                | libraries                |
 |                |                     |                | separated by             |
 |                |                     |                | comma                    |
-+----------------+---------------------+----------------+--------------------------+
 |                | (:math:`n\le 5`)    |                |                          |
 |                |                     |                |                          |
 +----------------+---------------------+----------------+--------------------------+
@@ -1830,25 +1817,21 @@ If only one passband is available, the FIR parameters luminosity is derived from
 |                |                     |                | min for FIR              |
 |                |                     |                | analysis (in             |
 |                |                     |                | :math:`\mu m`)           |
-+----------------+---------------------+----------------+--------------------------+
 |                | (:math:`n=1`)       |                |                          |
 +----------------+---------------------+----------------+--------------------------+
 | FIR_CONT       | integer             | -1             | Context for              |
 |                |                     |                | bands to be              |
 |                |                     |                | used in Far-IR           |
-+----------------+---------------------+----------------+--------------------------+
 |                | (:math:`n=1`)       |                |                          |
 +----------------+---------------------+----------------+--------------------------+
 | FIR_FREESCALE  | string              | NO             | Allows for               |
 |                |                     |                | free scaling             |
-+----------------+---------------------+----------------+--------------------------+
 |                | (:math:`n= 1`)      |                |                          |
 +----------------+---------------------+----------------+--------------------------+
 | FIR_SCALE      | integer             | -1             | Context for              |
 |                |                     |                | bands to be              |
 |                |                     |                | used for                 |
 |                |                     |                | scaling                  |
-+----------------+---------------------+----------------+--------------------------+
 |                | (:math:`n= 1`)      |                |                          |
 +----------------+---------------------+----------------+--------------------------+
 | FIR_SUBSTELLAR | string              | NO             | Removing                 |
@@ -1856,34 +1839,37 @@ If only one passband is available, the FIR parameters luminosity is derived from
 |                |                     |                | component from           |
 |                |                     |                | best optical             |
 |                |                     |                | fit                      |
-+----------------+---------------------+----------------+--------------------------+
 |                | (:math:`n =1`)      |                |                          |
 +----------------+---------------------+----------------+--------------------------+
 
 The :math:`V_{max}`
 ~~~~~~~~~~~~~~~~~~~
 
-We compute the maximum redshift at which a galaxy can be observable
-given its SED. This maximum redshift depends on how the sample is
+For any kind of galaxy library, we compute the maximum redshift at which a galaxy can be observable
+given its SED. The :math:`z_{max}` is computed for each galaxy and is used to compute the :math:`V_{max}` for
+the luminosity function in a given reference band or stellar mass function.
+
+This maximum redshift depends on how the sample is
 selected in magnitude, at a given redshift. That’s why the user needs to
-define the selection criteria of the sample. The :math:`z_{max}` is
-computed for each galaxy and is used to compute the :math:`V_{max}` for
-the luminosity function in a given reference band.
+define the selection criteria of the sample. 
+
+Example: if you want to compute the LF:
+
+* in the redshift bins 0.2-0.5, 1-1.5 LIMITS_ZBIN 0.2,0.5,1,1.5
+* in the reference band 1 LIMITS_MAPP_REF 1
+* for a sample selected in band 2 and 6 in each redshift bin, respectively LIMITS_MAPP_SEL 2,6
+* with a magnitude cut  (:math:`17 \le mag \le 26`), LIMITS_MAPP_CUT 17,26,17,26
 
 +----------------+----------------------+----------------+----------------+
 | **Parameters** | **Type**             | **Default      | **             |
 |                |                      | val.**         | Description**  |
 +================+======================+================+================+
-|                |                      |                | Additional     |
-|                |                      |                | Libraries      |
-|                |                      |                | KEYWORDS       |
-+----------------+----------------------+----------------+----------------+
 | LIMITS_ZBIN    | double               | :math:`0,99`   | Redshifts used |
 |                |                      |                | to split in N  |
 |                |                      |                | bins,          |
 |                |                      |                | separated by a |
 |                |                      |                | coma.          |
-+----------------+----------------------+----------------+----------------+
+|                |                      |                |                |
 |                | (:math:`n\le 100`)   |                | Need N+1       |
 |                |                      |                | values (start  |
 |                |                      |                | with the       |
@@ -1892,23 +1878,23 @@ the luminosity function in a given reference band.
 +----------------+----------------------+----------------+----------------+
 |                | integer              | 1              | Band in which  |
 |LIMITS_MAPP_REF |                      |                | the absolute   |
-|                |                      |                | magnitude is   |
+|                | (:math:`n=1`)        |                | magnitude is   |
 |                |                      |                | computed       |
-+----------------+----------------------+----------------+----------------+
-|                | (:math:`n=1`)        |                |                |
+|                |                      |                |                |
 +----------------+----------------------+----------------+----------------+
 |                | integer              | 1              | Give the       |
 |LIMITS_MAPP_SEL |                      |                | selection band |
 |                |                      |                | in each        |
 |                |                      |                | redshift bin.  |
-+----------------+----------------------+----------------+----------------+
+|                |                      |                |                |
 |                | (:math:`n \le 100`)  |                | Need 1 or N    |
 |                |                      |                | values.        |
 +----------------+----------------------+----------------+----------------+
-|                | double               | 90             | Magnitude cut  |
-|LIMITS_MAPP_CUT |                      |                | used in each   |
+|                | double               | 90             | Apparent mag   |
+|LIMITS_MAPP_CUT |                      |                | selection used |
+|                |                      |                | in each        |
 |                |                      |                | redshift bin.  |
-+----------------+----------------------+----------------+----------------+
+|                |                      |                |                |
 |                | (:math:`n \le 100`)  |                | Need 1 or N    |
 |                |                      |                | values.        |
 +----------------+----------------------+----------------+----------------+
@@ -1961,9 +1947,9 @@ You can also directly save in fits file.
 +----------------+--------------------+----------------+----------------+
 | CAT_OUT        | string             | zphot.out      | Name of the    |
 |                |                    |                | output file    |
-|                |                    |                | (full path)    |
-+----------------+--------------------+----------------+----------------+
-|                | (n=1)              |                | by default     |
+|                |                    |                | (full path).   |
+|                |                    |                |                |
+|                | (n=1)              |                | By default     |
 |                |                    |                | saved in       |
 |                |                    |                | working        |
 |                |                    |                | directory      |
@@ -1974,21 +1960,20 @@ You can also directly save in fits file.
 |                |                    |                | output         |
 |                |                    |                | parameters     |
 |                |                    |                | (full path)    |
-+----------------+--------------------+----------------+----------------+
 |                | (n=1)              |                |                |
 |                |                    |                |                |
 +----------------+--------------------+----------------+----------------+
 | SPEC_OUT       | string             | NO             | Output files   |
 |                |                    |                | with           |
 |                |                    |                | Gal/Star/QSO   |
-|                |                    |                | spectra (one   |
+|                |                    |                | spectra. One   |
 |                |                    |                | file per       |
-|                |                    |                | object)        |
-+----------------+--------------------+----------------+----------------+
+|                |                    |                | object.        |
+|                |                    |                |                |
 |                | (n=1)              |                | (if YES: can   |
 |                |                    |                | take a lot of  |
 |                |                    |                | disk space !)  |
-+----------------+--------------------+----------------+----------------+
+|                |                    |                |                |
 |                |                    |                | If a string    |
 |                |                    |                | different from |
 |                |                    |                | NO, save files |
@@ -2002,7 +1987,7 @@ You can also directly save in fits file.
 |                |                    |                | library (one   |
 |                |                    |                | file per       |
 |                |                    |                | object)        |
-+----------------+--------------------+----------------+----------------+
+|                |                    |                |                |
 |                | (n=1)              |                | (if YES: can   |
 |                |                    |                | take a lot of  |
 |                |                    |                | disk space !)  |
@@ -2047,9 +2032,14 @@ The PDF are given in the output file using the keyword ``PDZ_OUT`` for the root 
 
 -  ``BAY_ZG`` all the probabilities :math:`P=exp(-\chi^2/2)` at each redshift step are summed (we marginalize over the redshift).
 
-You can obtain the redshift PDF for the QSO library with similar keyword's value ``MIN_ZQ`` and ``MIN_ZQ``. We also propose in output the PDF for several physical parameters using the BAY approach (sum of probabilities) with ``MASS``, ``SFR``, ``SSFR``, ``AGE``.
+You can obtain the redshift PDF for the QSO library with similar keyword's value ``MIN_ZQ`` and ``MIN_ZQ``. LePHARE also provides in output the PDF for several physical parameters using the BAY approach (sum of probabilities) with ``MASS``, ``SFR``, ``SSFR``, ``AGE``.
 
-The value indicated as ``_BEST`` in the output file are obtained using the PDF computed with the ``MIN`` method. This PDF is also used to refine the photo-z ``_BEST`` solution (``Z_INTERP YES``) with a parabolic interpolation (Bevington, 1969), and to search for secondary solutions (``DZ_WIN``, ``MIN_THRES``). The search for a secondary solution is done by imposing a minimum distance between the two peaks in the PDF (``DZ_WIN``) and a minimum value with respect to the first peak (``MIN_THRES``). All the values in the output file indicated as ``_MED`` and ``_MODE`` are derived using the Bayesian method (i.e. summing the probabilities for a given redshift or physical parameter value). In the case ``_MED`` , we provide the median of the PDF (the old name \_ML still works). In the case ``_MODE`` , we provide the main mode of the PDF.
+The value indicated as ``_BEST`` in the output file are obtained using the PDF computed with the ``MIN`` method. This PDF is also used to refine the photo-z ``_BEST`` solution (``Z_INTERP YES``) with a parabolic interpolation (Bevington, 1969) which allow to find an accuracy lower than the z-grid resolution. This is done for galaxies and QSo templates.
+
+All the values in the output file indicated as ``_MED`` and ``_MODE`` are derived using the Bayesian method (i.e. summing the probabilities for a given redshift or physical parameter value). In the case ``_MED`` , we provide the median of the PDF (the old name \_ML still works). In the case ``_MODE`` , we provide the main mode of the PDF.
+
+The code also searches for secondary solutions (``DZ_WIN``, ``MIN_THRES``) in the profile likelihood (but only for galaxies). The search for a secondary solution is done by imposing a minimum distance between the two peaks in the PDF (``DZ_WIN``) and a minimum value with respect to the first peak (``MIN_THRES``).
+
 
 +----------------+---------------------+----------------+-------------------------------+
 | **Parameters** | **Type**            | **Default      | **Description**               |
@@ -2060,11 +2050,11 @@ The value indicated as ``_BEST`` in the output file are obtained using the PDF c
 |                |                     |                | BAY_ZG sum all                |
 |                |                     |                | probabilities                 |
 |                |                     |                | at a given z.                 |
-+----------------+---------------------+----------------+-------------------------------+
+|                |                     |                |                               |
 |                |                     |                | MIN_ZG takes                  |
 |                |                     |                | exp(-chi2_min/2)              |
 |                |                     |                | at a each z.                  |
-+----------------+---------------------+----------------+-------------------------------+
+|                |                     |                |                               |
 |                |                     |                | [BAY_ZG,BAY_ZQ,MIN_ZG,MIN_ZQ, |
 |                |                     |                | MASS,SFR,SSFR,AGE]            |
 +----------------+---------------------+----------------+-------------------------------+
@@ -2072,8 +2062,8 @@ The value indicated as ``_BEST`` in the output file are obtained using the PDF c
 |                |                     |                | PDF output                    |
 |                |                     |                | files                         |
 |                |                     |                | [def-NONE]                    |
-+----------------+---------------------+----------------+-------------------------------+
-|                |                     |                | add                           |
+|                |                     |                |                               |
+|                |                     |                | Add                           |
 |                |                     |                | automatically                 |
 |                |                     |                | an extension                  |
 |                |                     |                | [\_zgbay.prob,...]            |
@@ -2083,7 +2073,6 @@ The value indicated as ``_BEST`` in the output file are obtained using the PDF c
 |                |                     |                | between                       |
 |                |                     |                | original step                 |
 |                |                     |                | (dz)                          |
-+----------------+---------------------+----------------+-------------------------------+
 |                | (n=1)               |                |                               |
 +----------------+---------------------+----------------+-------------------------------+
 | DZ_WIN         | float               | 0.25           | “smoothing”                   |
@@ -2091,7 +2080,7 @@ The value indicated as ``_BEST`` in the output file are obtained using the PDF c
 |                |                     |                | function for                  |
 |                |                     |                | 2nd peak                      |
 |                |                     |                | search in F(z)                |
-+----------------+---------------------+----------------+-------------------------------+
+|                |                     |                |                               |
 |                | (n=1)               |                | (value between                |
 |                |                     |                | 0 to zmax)                    |
 +----------------+---------------------+----------------+-------------------------------+
@@ -2100,7 +2089,7 @@ The value indicated as ``_BEST`` in the output file are obtained using the PDF c
 |                |                     |                | of 2nd peak in                |
 |                |                     |                | normalised                    |
 |                |                     |                | F(z)                          |
-+----------------+---------------------+----------------+-------------------------------+
+|                |                     |                |                               |
 |                | (n=1)               |                | (value between                |
 |                |                     |                | 0 to 1)                       |
 +----------------+---------------------+----------------+-------------------------------+
@@ -2109,12 +2098,12 @@ The value indicated as ``_BEST`` in the output file are obtained using the PDF c
 |                |                     |                | compute                       |
 |                |                     |                | probability                   |
 |                |                     |                | from F(z)                     |
-+----------------+---------------------+----------------+-------------------------------+
-|                |(n :math:`\le` 100)  |                | (even number                  |
+|                |                     |                |                               |
+|                | (n :math:`\le` 100) |                | (even number                  |
 |                |                     |                | of values),                   |
 |                |                     |                | output vectors                |
 |                |                     |                | from 0 to 100%                |
-+----------------+---------------------+----------------+-------------------------------+
+|                |                     |                |                               |
 |                |                     |                | 0.-default :                  |
 |                |                     |                | not used                      |
 +----------------+---------------------+----------------+-------------------------------+
@@ -2414,9 +2403,9 @@ Appendix A : Content of LEPHARE-data
 
 +-------------------------+-------------------------------------------+
 | $LEPHAREDIR/vega/ :     | SEDs for reference stars:                 |
-+-------------------------+-------------------------------------------+
+|                         |                                           |
 |                         | VegaLCB.dat from Lejeune et al., (1997)   |
-+-------------------------+-------------------------------------------+
+|                         |                                           |
 |                         | BD\ :math:`+17^{\circ}4708` from Oke &    |
 |                         | Gunn, (1983)                              |
 +-------------------------+-------------------------------------------+
@@ -2425,72 +2414,96 @@ Appendix A : Content of LEPHARE-data
 +-------------------------+-------------------------------------------+
 | $LEPHAREDIR/opa/ :      | Lyman absorption files produced by        |
 |                         | intergalactic medium as function          |
-+-------------------------+-------------------------------------------+
 |                         | of redshift from Madau (1995).            |
+|                         |                                           |
+|                         | Meiskin also included.                    |
 +-------------------------+-------------------------------------------+
 | $LEPHAREDIR/filt/ :     | individual filter response curves sorted  |
 |                         | by directories:                           |
-+-------------------------+-------------------------------------------+
+|                         |                                           |
 |                         | (ex : ./std/\*.pb, ./sdss/\*.pb,          |
 |                         | ./hst/\*.pb, ...)                         |
 +-------------------------+-------------------------------------------+
 | $LEPHAREDIR/sed/STAR/:  | SED files for STARS sorted by             |
 |                         | directories:                              |
-+-------------------------+-------------------------------------------+
+|                         |                                           |
 |                         | ./BD/\*.sed : Brown Dwarves and low mass  |
 |                         | stars from Chabrier & Baraffe (2000)      |
-+-------------------------+-------------------------------------------+
+|                         |                                           |
+|                         | ./BD_NEW/\*.sed : a more complete         |
+|                         | Brown Dwarves library used in             |
+|                         | Kauffmann et al. 2022.                    |
+|                         |                                           |
+|                         |                                           |
 |                         | ./PICKLES/\*.sed: Atlas from Pickles      |
 |                         | (1998)                                    |
-+-------------------------+-------------------------------------------+
+|                         |                                           |
 |                         | ./WD/\*.sed : 4 White dwarves from IRAF   |
 |                         | ??                                        |
 +-------------------------+-------------------------------------------+
 | $LEPHAREDIR/sed/QSO/:   | SED files for QSO                         |
-+-------------------------+-------------------------------------------+
+|                         |                                           |
 |                         | ./qsol.dat : composite template from      |
 |                         | Cristiani (?)                             |
-+-------------------------+-------------------------------------------+
+|                         |                                           |
 |                         | ./qso-\*.dat: SEDs based on simulated     |
 |                         | slope and strengthes of emission          |
-+-------------------------+-------------------------------------------+
+|                         |                                           |
 |                         | lines (Warren ?) (see README.model_qso)   |
-+-------------------------+-------------------------------------------+
+|                         |                                           |
 |                         | ./a\*.sed : SEDs from Eva Hatziminaoglou  |
 |                         | (?)                                       |
 +-------------------------+-------------------------------------------+
 | $LEPHAREDIR/sed/GAL/:   | SED files for GALAXY sorted by            |
 |                         | directories:                              |
-+-------------------------+-------------------------------------------+
+|                         |                                           |
 |                         | CWW_KINNEY/\*.sed: observed SED by        |
 |                         | Coleman etal(1980)                        |
-+-------------------------+-------------------------------------------+
 |                         | + 2 starburst from Kinney (1996) extended |
-|                         | in UV and IR by GISSEL                    |
-+-------------------------+-------------------------------------------+
-|                         | CE/\*.sed : 72 SEDs based on              |
-|                         | interpolation between the 4 CWW SEDS      |
-+-------------------------+-------------------------------------------+
-|                         | + 3 young star-forming galaxies from      |
-|                         | GISSEL (Arnouts et al., 1999)             |
-+-------------------------+-------------------------------------------+
-|                         | 42GISSEL/\*.sed : 42 selected SEDs from   |
-|                         | GISSEL                                    |
-+-------------------------+-------------------------------------------+
-|                         | Additional directories with the other SED |
-|                         | tar-files:                                |
-+-------------------------+-------------------------------------------+
-|                         | GISSEL/\*.sed : 27 theoretical SEDs       |
-|                         | including ages from GISSEL96              |
-+-------------------------+-------------------------------------------+
+|                         | in UV and IR by BC03                      |
+|                         |                                           |
+|                         | CFHTLS_230506/\*.sed :                    | 
+|                         | optimization and interpolation  	      |
+|                         | of CWW_KINNEY library		      |
+|                         | from Ilbert et al.(2006)                  | 
+|                         |                                           |
+|                         | CFHTLS_SED/\*.sed :                       | 
+|                         | optimization and interpolation  	      |
+|                         | of CWW_KINNEY library		      |
+|                         | from Arnouts et al.(2007)                 | 
+|                         |                                           |
+|                         | COSMOS_SED/\*.sed :                       | 
+|                         | from Polletta 2007 and BC03  	      |
+|                         | Set of templates 	   	              |
+|                         | from Ilbert et al.(2009)                  | 
+|                         |                                           |
+|                         | BC03_CHAB/: generated with BC03           | 
+|                         | with exponentially declining SFH   	      |
+|                         | and Chabrier 03 IMF 	              |
+|                         |                                           |
+|                         | BC03_CHAB_DELAYED/: generated with BC03   | 
+|                         | with delayed SFH        	              |
+|                         | and Chabrier 03 IMF 	              |
+|                         |                                           |
 |                         | PEGASE2/\*.sed : SEDs including ages from |
 |                         | PEGASE2 (Fioc et al., 2000)               |
+|                         |                                           |
+|                         | CHARY_ELBAZ/: FIR library                 |
+|                         |                                           |
+|                         | DALE/: FIR library                        |
+|                         |                                           |
+|                         | LAGACHE/: FIR library                     |
+|                         |                                           |
+|                         | MAGDIS/: FIR library                      |
+|                         |                                           |
 +-------------------------+-------------------------------------------+
-|                         | HYPERZ/\*.sed : SEDs from the HYPERZ      |
-|                         | package (Bolzonella et al., 2000)         |
-+-------------------------+-------------------------------------------+
-| $LEPHAREDIR/tools/ :    | macros for plotting filterset             |
-|                         | (filterplot) and extracted SED (spec.sm)  |
+| $LEPHAREDIR/tools/ :    | useful tools                              |
+|                         |                                           |
+|                         | spec.py: plot the .spec files             |
+|                         |                                           |
+|                         | context.py: compute the context           |
+|                         |                                           |
+|                         | cat_manip_lph++.py: help preparing input  |
 +-------------------------+-------------------------------------------+
 | $LEPHAREDIR/examples/ : | extensive list of tests/commands with     |
 |                         | COSMOS.                                   |
