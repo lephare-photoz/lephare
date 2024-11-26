@@ -44,7 +44,7 @@ Structure of the code
 
 The structure of the package is illustrated in :ref:`Fig.2 <fig-structure>`.
 
-The executables are stored in your default ``bin`` directory when installing the code using ``pip install``. They should be in your PATH and you shouldn't have to take care of that. If you want to know where the executables are located, try ``which setolib` in your prompt.
+The executables are stored in your default ``bin`` directory when installing the code using ``pip install``. They should be in your PATH and you shouldn't have to take care of that. If you want to know where the executables are located, try ``which setolib`` in your prompt.
 
 If you have installed the code in developper mode, i.e. by cloning the code from the `lephare github repository <https://github.com/lephare-photoz/lephare>`_, the ``C++`` source codes are located in ``LEPHARE/src/lib/`` and the python scripts are in ``LEPHARE/src/lephare/``.
 
