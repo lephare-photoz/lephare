@@ -33,6 +33,10 @@ static unordered_map<string, int> maptype = {
     {"AGE", 5},     {"COL1", 6},    {"COL2", 7},   {"MREF", 8},  {"MIN_ZG", 9},
     {"MIN_ZQ", 10}, {"BAY_ZG", 11}, {"BAY_ZQ", 12}};
 
+//! @class onesource
+/*!
+represents an object from a catalogue, and manages its fitting to an SED.
+*/
 class onesource {
  private:
  public:
