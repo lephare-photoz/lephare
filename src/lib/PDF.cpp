@@ -297,13 +297,15 @@ pair<double, double> PDF::credible_interval(float level, double val) {
   // return an empty interval.
   // Likewise when level <= 0, which is not a meaningful value.
   if (val < scaleMin || val >= scaleMax || level <= 0.) {
-    return make_pair(val, val);
+    // return make_pair(val, val);
+    return make_pair(scaleMin, scaleMax);
   }
 
   // if levels given in percentage
   if (level > 1.) level /= 100.;
   // we assume that level>1 means level provided as a percentage
   // but this means that now level should be <1
+
   if (level > 1.) return make_pair(scaleMin, scaleMax);
 
   // Compute the full cumulant
@@ -318,6 +320,7 @@ pair<double, double> PDF::credible_interval(float level, double val) {
   // normalize if cumulative defined
   if (cumulant.back() <= 0) {
     return make_pair(xaxis.front(), xaxis.back());
+    return make_pair(scaleMin, scaleMax);
   } else {
     for (auto &c : cumulant) c /= cumulant.back();
   }
@@ -334,14 +337,16 @@ pair<double, double> PDF::credible_interval(float level, double val) {
   double cum_val = cum_lo + (cum_hi - cum_lo) /
                                 (xaxis[idx_hi] - xaxis[idx_lo]) *
                                 (val - xaxis[idx_lo]);
-
+  
   // - Use cumulant to compute integral from minimum x value to the mode
   double cumul_left = cum_val;
   // - Use cumulant to compute integral from the mode to the end
   double cumul_right = 1. - cumul_left;
 
+  
   // Define the limits, taking into account the asymetry of the PDF
   double lowerLevel, upperLevel;
+
   // If integral of the PDF above the mode is higher than level/2 and lower
   // than 0.5, enough area on each side
   if (cumul_right >= level / 2. && cumul_left >= level / 2.) {
@@ -360,30 +365,33 @@ pair<double, double> PDF::credible_interval(float level, double val) {
     upperLevel = level;
     lowerLevel = 0.0;
   }
-
+  
   // Iterator pointing on the first item that has upperLevel < item
   bound_right_id = upper_bound(cumulant.begin(), cumulant.end(), upperLevel);
   size_t indR = bound_right_id - cumulant.begin();
   // Linear interpolation - right case
-  if (xaxis[indR - 1] < upperLevel) {
+  if (cumulant[indR - 1] < upperLevel) {
     // args in reverse order y, y1, x1, y2, x2, in order to get x instead of y
     result.second = linear_interp(upperLevel, cumulant[indR - 1],
                                   xaxis[indR - 1], cumulant[indR], xaxis[indR]);
   } else {
-    result.second = xaxis[indR - 1];
+    cout << "problem indR no interp " << indR << " " <<  cumulant[indR - 1] << " " <<  cumulant[indR] << " " << upperLevel << " " <<  xaxis[indR-1] << " " <<  xaxis[indR] << " " << val  <<  " " << scaleMin << " " << scaleMax << endl;
+    result.second = xaxis[indR-1];
   }
   // Linear interpolation - left case
   bound_left_id = upper_bound(cumulant.begin(), cumulant.end(), lowerLevel);
   size_t indL = bound_left_id - cumulant.begin();
-  if (xaxis[indL - 1] < lowerLevel) {
+  if (cumulant[indL - 1] < lowerLevel) {
     result.first = linear_interp(lowerLevel, cumulant[indL - 1],
                                  xaxis[indL - 1], cumulant[indL], xaxis[indL]);
   } else {
+    cout << "problem indL no interp " << indL << " " <<  cumulant[indL - 1] << " " <<  cumulant[indL] << " " << lowerLevel << " " <<  xaxis[indL-1] << " " <<  xaxis[indL] << " " << val <<  " " << scaleMin << " " << scaleMax << endl;
     result.first = xaxis[indL - 1];
   }
 
   return result;
 }
+
 
 /*
 find the xaxis value corresponding to a level in the cumulative function
