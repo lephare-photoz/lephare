@@ -5,8 +5,6 @@ LePHARE is a code for estimating galaxy redshifts and physical parameters using 
 
 The code documentation, including how to install it and to get started, can be found [here](https://lephare.readthedocs.io/).
 
-**IMPORTANT!** The current repository is under development. If you wish to use LePHARE for science work, please download it from the [currently stable repository](https://gitlab.lam.fr/Galaxies/LEPHARE/).
-
 # Requests and help
 
 If you need help with the code, or if you have feature requests, please use the github issue system to let us know.

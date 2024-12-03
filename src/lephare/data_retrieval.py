@@ -87,7 +87,7 @@ def _check_registry_is_latest_version(remote_registry_url, local_registry_file):
     local_registry_hash = pooch.file_hash(local_registry_file, alg="sha256")
     remote_hash_url = os.path.splitext(remote_registry_url)[0] + "_hash.sha256"
 
-    remote_hash_response = requests.get(remote_hash_url, timeout=60)
+    remote_hash_response = requests.get(remote_hash_url, headers={"User-Agent": "LePHARE"}, timeout=60)
     remote_hash_response.raise_for_status()  # Raise exceptions for non-200 status codes
 
     return remote_hash_response.text.strip() == local_registry_hash
@@ -124,7 +124,7 @@ def download_registry_from_github(url="", outfile=""):
         return
 
     # Download the registry file
-    response = requests.get(url, timeout=120)
+    response = requests.get(url, headers={"User-Agent": "LePHARE"}, timeout=120)
     response.raise_for_status()  # Raise exceptions for non-200 status codes
 
     with open(outfile, "w", encoding="utf-8") as file:
@@ -244,7 +244,7 @@ def _create_directories_from_files(file_names):
             print(f"Created directory: {directory}")
 
 
-def download_file(retriever, file_name, ignore_registry=False):
+def download_file(retriever, file_name, ignore_registry=False, downloader=None):
     """Download a file using the retriever, optionally ignoring the registry.
 
     Parameters
@@ -255,12 +255,16 @@ def download_file(retriever, file_name, ignore_registry=False):
         The name of the file to download.
     ignore_registry : bool
         If True, download the file without checking its hash against the registry.
+    downloader : pooch.HTTPDownloader
+        The downloader is required to set the user for building on readthedocs
 
     Returns
     -------
     str
         The path to the downloaded file.
     """
+    if downloader is None:
+        downloader = pooch.HTTPDownloader(headers={"User-Agent": "LePHARE"})
     if ignore_registry:
         print(f"Downloading without registry: {file_name}...")
         return pooch.retrieve(
@@ -268,9 +272,14 @@ def download_file(retriever, file_name, ignore_registry=False):
             known_hash=None,
             fname=file_name,
             path=retriever.path,
+            # The following may now be required by GitHub
+            downloader=downloader,
         )
     else:
-        return retriever.fetch(file_name)
+        return retriever.fetch(
+            file_name,
+            downloader=downloader,
+        )
 
 
 def download_all_files(retriever, file_names, ignore_registry=False, retry=MAX_RETRY_ATTEMPTS):
