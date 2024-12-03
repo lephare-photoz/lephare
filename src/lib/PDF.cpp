@@ -296,9 +296,9 @@ pair<double, double> PDF::credible_interval(float level, double val) {
   // e.g. when BC03 is not used (no physical parameter estimation), and thus we
   // return an empty interval.
   // Likewise when level <= 0, which is not a meaningful value.
+  // When the value is not meaningful (e.g. -99), put the same value for the interval
   if (val < scaleMin || val >= scaleMax || level <= 0.) {
-    // return make_pair(val, val);
-    return make_pair(scaleMin, scaleMax);
+    return make_pair(val, val);
   }
 
   // if levels given in percentage
@@ -306,11 +306,14 @@ pair<double, double> PDF::credible_interval(float level, double val) {
   // we assume that level>1 means level provided as a percentage
   // but this means that now level should be <1
 
+  // If level still not consistent with the expected value, put the full
+  // range as credible interval
   if (level > 1.) return make_pair(scaleMin, scaleMax);
 
   // Compute the full cumulant
   vector<double> cumulant;
   double tmp = 0;
+  // put the first item at 0
   cumulant.push_back(0.0);
   for (size_t k = 0; k < vsize - 1; k++) {
     tmp += (xaxis[k + 1] - xaxis[k]) * (vPDF[k + 1] + vPDF[k]) / 2.;
@@ -320,7 +323,6 @@ pair<double, double> PDF::credible_interval(float level, double val) {
   // normalize if cumulative defined
   if (cumulant.back() <= 0) {
     return make_pair(xaxis.front(), xaxis.back());
-    return make_pair(scaleMin, scaleMax);
   } else {
     for (auto &c : cumulant) c /= cumulant.back();
   }
@@ -355,13 +357,13 @@ pair<double, double> PDF::credible_interval(float level, double val) {
     // Case with the integral between the min and the mode which is lower
     // than level/2
   } else if (cumul_right <= level / 2.) {
-    // Integrate on the right in order to encompass 99.9% of the PDF
+    // Integrate on the right in order to encompass the full PDF
     upperLevel = 1.;
     lowerLevel = 1. - level;
     // Case with the integral between the min and the mode which is lower
     // than level/2
   } else {
-    // Integrate on the left, leaving only 0.1% below the lower limit
+    // Integrate on the left, leaving only 0% below the lower limit
     upperLevel = level;
     lowerLevel = 0.0;
   }
@@ -370,12 +372,12 @@ pair<double, double> PDF::credible_interval(float level, double val) {
   bound_right_id = upper_bound(cumulant.begin(), cumulant.end(), upperLevel);
   size_t indR = bound_right_id - cumulant.begin();
   // Linear interpolation - right case
+  // Chreck first that nothing strange happens and that we can do the interpolation
   if (cumulant[indR - 1] < upperLevel) {
     // args in reverse order y, y1, x1, y2, x2, in order to get x instead of y
     result.second = linear_interp(upperLevel, cumulant[indR - 1],
                                   xaxis[indR - 1], cumulant[indR], xaxis[indR]);
   } else {
-    cout << "problem indR no interp " << indR << " " <<  cumulant[indR - 1] << " " <<  cumulant[indR] << " " << upperLevel << " " <<  xaxis[indR-1] << " " <<  xaxis[indR] << " " << val  <<  " " << scaleMin << " " << scaleMax << endl;
     result.second = xaxis[indR-1];
   }
   // Linear interpolation - left case
@@ -385,7 +387,6 @@ pair<double, double> PDF::credible_interval(float level, double val) {
     result.first = linear_interp(lowerLevel, cumulant[indL - 1],
                                  xaxis[indL - 1], cumulant[indL], xaxis[indL]);
   } else {
-    cout << "problem indL no interp " << indL << " " <<  cumulant[indL - 1] << " " <<  cumulant[indL] << " " << lowerLevel << " " <<  xaxis[indL-1] << " " <<  xaxis[indL] << " " << val <<  " " << scaleMin << " " << scaleMax << endl;
     result.first = xaxis[indL - 1];
   }
 
