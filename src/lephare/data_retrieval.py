@@ -159,7 +159,7 @@ def read_list_file(list_file, prefix=""):
 
     # Check if the list_file is a URL
     if urlparse(list_file).scheme in ("http", "https"):
-        response = requests.get(list_file, timeout=60)
+        response = requests.get(list_file, headers={"User-Agent": "LePHARE"}, timeout=60)
         response.raise_for_status()
         content = response.text
     else:
