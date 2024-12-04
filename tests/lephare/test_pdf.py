@@ -222,6 +222,25 @@ def test_credible_interval2():
             assert lo == pytest.approx(2 - np.sqrt(3 * level + 1))
 
 
+def test_credible_interval3():
+    # this is a case that caused problems in the past
+    pdf = lp.PDF(3, 12.95, 200)
+    yvals = np.zeros_like(pdf.xaxis)
+    yvals[[119, 122, 123, 124, 126, 127]] = [
+        1.90009e01,
+        5.56300e-01,
+        3.54100e-01,
+        8.18000e-02,
+        6.70000e-03,
+        3.00000e-04,
+    ]
+
+    pdf.setYvals(yvals, is_chi2=False)
+    a, b = pdf.credible_interval(0.68, 8.9526)
+    assert a == pytest.approx(8.9168, 1.0e-4)
+    assert b == pytest.approx(8.9884, 1.0e-4)
+
+
 def test_levelcumu2x():
     pdf = lp.PDF(0, 1, 1000)
     pdf.setYvals(np.linspace(2, 1, len(pdf.xaxis)), is_chi2=False)
