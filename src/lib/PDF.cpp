@@ -41,8 +41,11 @@ pair<double, double> quadratic_extremum(double x1, double x2, double x3,
  CONSTRUCTOR OF THE PDF
 */
 PDF::PDF(const double min, const double max, const size_t size) {
-  // by construction
-  scaleLinear = 1;
+  if (size <= 0 || min >= max)
+    throw std::invalid_argument(
+        "Invalid argument : size must be greater than 0, and max must be "
+        "greater than min.");
+
   scaleMin = min;
   scaleMax = max;
   vsize = size;
@@ -64,7 +67,7 @@ PDF::PDF(const double min, const double max, const size_t size) {
 /*
  NORMALIZATION
 */
-void PDF::normalization() {
+double PDF::normalization() {
   double somme = 0.;
 
   // Integral of the PDF
@@ -79,7 +82,18 @@ void PDF::normalization() {
     }
   }
 
-  return;
+  return somme;
+}
+
+vector<double> PDF::cumulant() {
+  vector<double> cumulant;
+  double tmp = 0.;
+  cumulant.push_back(0.0);
+  for (size_t k = 0; k < vsize - 1; k++) {
+    tmp += (xaxis[k + 1] - xaxis[k]) * (vPDF[k + 1] + vPDF[k]) / 2.;
+    cumulant.push_back(tmp);
+  }
+  return cumulant;
 }
 
 /*
@@ -372,7 +386,6 @@ pair<double, double> PDF::credible_interval(float level, double val) {
   bound_right_id = upper_bound(cumulant.begin(), cumulant.end(), upperLevel);
   size_t indR = bound_right_id - cumulant.begin();
   // Linear interpolation - right case
-  // Chreck first that nothing strange happens and that we can do the interpolation
   if (cumulant[indR - 1] < upperLevel) {
     // args in reverse order y, y1, x1, y2, x2, in order to get x instead of y
     result.second = linear_interp(upperLevel, cumulant[indR - 1],

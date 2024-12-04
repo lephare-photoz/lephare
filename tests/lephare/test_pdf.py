@@ -63,6 +63,20 @@ def test_pdf():
     assert test_pdf.size() == 10
     assert len(test_pdf.chi2) == 10
     # testing bad input
+    with pytest.raises(ValueError):
+        test_pdf = lp.PDF(0, 3, 0)
+    with pytest.raises(ValueError):
+        test_pdf = lp.PDF(3, 0, 10)
+
+
+def test_normalization():
+    test_pdf = lp.PDF(0, 3.0, 101)
+    yvals = np.linspace(0, 3.0, 101)
+    test_pdf.setYvals(yvals, is_chi2=False)
+    integral = test_pdf.normalization()
+    assert integral == pytest.approx(4.5)
+    integral2 = test_pdf.normalization()
+    assert integral2 == pytest.approx(1)
 
 
 def test_index():
@@ -179,6 +193,58 @@ def test_credible_interval():
                     assert a == pytest.approx(1 - np.sqrt(2 * level))
                 else:
                     assert a == pytest.approx(-1 + np.sqrt(2 - 2 * level))
+
+
+def test_credible_interval2():
+    pdf = lp.PDF(0, 1, 1000)
+    pdf.setYvals(np.linspace(2, 1, len(pdf.xaxis)), is_chi2=False)
+
+    # symetric case
+    v = 0.5
+    for level in [0.01, 0.1, 0.2, 0.34, 0.5]:
+        lo, up = pdf.credible_interval(level, v)
+        assert lo == pytest.approx(2 - np.sqrt((2 - v) ** 2 + 1.5 * level), 1.0e-4)
+        assert up == pytest.approx(2 - np.sqrt((2 - v) ** 2 - 1.5 * level), 1.0e-4)
+
+    # asymetric right case
+    v = 0.1
+    for level in [0.01, 0.1, 0.2, 0.34, 0.5]:
+        lo, up = pdf.credible_interval(level, v)
+        if 2 - np.sqrt((2 - v) ** 2 + 1.5 * level) < 0:
+            assert lo == 0.0
+            assert up == pytest.approx(2 - np.sqrt(4 - 3 * level), 1.0e-4)
+
+    v = 0.9
+    for level in [0.01, 0.1, 0.2, 0.34, 0.5]:
+        lo, up = pdf.credible_interval(level, v)
+        if 0.5 * (2 - v) ** 2 - 0.5 > 1:
+            assert up == 0.0
+            assert lo == pytest.approx(2 - np.sqrt(3 * level + 1))
+
+
+def test_credible_interval3():
+    # this is a case that caused problems in the past
+    pdf = lp.PDF(3, 12.95, 200)
+    yvals = np.zeros_like(pdf.xaxis)
+    yvals[[119, 122, 123, 124, 126, 127]] = [
+        1.90009e01,
+        5.56300e-01,
+        3.54100e-01,
+        8.18000e-02,
+        6.70000e-03,
+        3.00000e-04,
+    ]
+
+    pdf.setYvals(yvals, is_chi2=False)
+    a, b = pdf.credible_interval(0.68, 8.9526)
+    assert a == pytest.approx(8.9168, 1.0e-4)
+    assert b == pytest.approx(8.9884, 1.0e-4)
+
+
+def test_levelcumu2x():
+    pdf = lp.PDF(0, 1, 1000)
+    pdf.setYvals(np.linspace(2, 1, len(pdf.xaxis)), is_chi2=False)
+    assert pdf.levelCumu2x(0.5) == pytest.approx(2 - np.sqrt(5 / 2))
 
 
 def test_improve_extremum():
