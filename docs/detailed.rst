@@ -28,7 +28,7 @@ When running the code using command lines in your Unix shell, these four steps n
   
 
 
-.. figure:: figures/LePHARE_skim.png
+.. figure:: figures/lephare_skim.png
   :width: 700
   :alt: Basic run
   :name: fig-skim
