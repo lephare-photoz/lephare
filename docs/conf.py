@@ -62,6 +62,9 @@ master_doc = "index"
 html_show_sourcelink = False
 # Remove namespaces from class/method signatures
 add_module_names = False
+# Use the custom css
+html_static_path = ["_static"]
+html_css_files = ["custom.css"]
 
 autoapi_type = "python"
 autoapi_dirs = ["../src"]

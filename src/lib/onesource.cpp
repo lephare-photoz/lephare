@@ -917,7 +917,7 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
         object_type nlibloc = sed->nlib;
 
         // Marginalization for the galaxies
-        if (nlibloc == 0) {
+        if (nlibloc == object_type::GAL) {
           // probability exp(-chi2/2), but multiplied by a common factor
           // exp(-chi2_min/2) for the same object Since the the PDF is
           // normalized later, this factor vanishes. It allows to compute
