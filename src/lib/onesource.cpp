@@ -1014,7 +1014,7 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
           }
         }
       }
-    
+
       // Find the minimum for each redshift step by collapsing the threads
 #pragma omp for
       for (int i = 0; i < dimzg; i++) {
@@ -1023,12 +1023,12 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
         auto &loc0ind = locInd[0][i];
         auto &loc1ind = locInd[1][i];
         for (int j = 0; j < number_threads; j++) {
-          // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] /
-          // 5:["AGE"] / 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] /
-          // 10:["MIN_ZQ"] / 11:["BAY_ZG"] / 11:["BAY_ZQ"] look for the new
-          // minimum among the threads / Galaxies
-          #pragma omp critical
-	  {
+// 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] /
+// 5:["AGE"] / 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] /
+// 10:["MIN_ZQ"] / 11:["BAY_ZG"] / 11:["BAY_ZQ"] look for the new
+// minimum among the threads / Galaxies
+#pragma omp critical
+          {
             if (pdfminzg.chi2[i] > loc0chi2[j]) {
               pdfminzg.chi2[i] = loc0chi2[j];
               pdfminzg.ind[i] = loc0ind[j];
@@ -1038,18 +1038,18 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
               pdfminzq.chi2[i] = loc1chi2[j];
               pdfminzq.ind[i] = loc1ind[j];
             }
-	  }
+          }
         }
       }
     }
 
 #ifdef _OPENMP
-   }
+  }
   // double end = omp_get_wtime();
   // cout << endl << "Times to run the OpenMP code in sec: " <<  end-start
   // <<endl;
 #endif
-  
+
   // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] / 5:["AGE"] /
   // 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] / 10:["MIN_ZQ"] /
   // 11:["BAY_ZG"] / 12:["BAY_ZQ"] Put back 1 dimension array into PDF objects
@@ -1638,7 +1638,7 @@ void onesource::uncertaintiesBay() {
     interv = pdfmap[0].credible_interval(confLev[k], massmed[0]);
     massmed.push_back(interv.first);
     massmed.push_back(interv.second);
-    
+
     // SFR for galaxies
     interv = pdfmap[1].credible_interval(confLev[k], SFRmed[0]);
     SFRmed.push_back(interv.first);
