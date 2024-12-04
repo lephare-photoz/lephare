@@ -14,10 +14,15 @@
 
 using namespace std;
 
-/// Class object implementing a probability density function
+//! @class PDF
+/*!
+Implement a probability density function.
+In order to avoid duplicating code, this class is also able to
+store the chi2 curve. By construction the xaxis of the pdf is linearly
+sampled.
+*/
 class PDF {
  private:
-  bool scaleLinear = 1;
   double scaleStep = -99, invScaleStep = -99;
   double scaleMin = 0, scaleMax = 0;
 
@@ -28,21 +33,41 @@ class PDF {
   vector<double> chi2, xaxis, secondX, secondP;
   vector<int> ind, secondInd;
 
-  // Prototype
-  PDF() { ; }  // necessary for the pdfmap in the onesource constructor
-  PDF(const double min, const double max,
-      const size_t size);  ///< initialize the pdf with minimal value, maximal
-                           ///< value, and total number of points.
+  //! Empty constructor, needed by \ref onesource constructor
+  PDF() { ; }
+
+  //! Standard constructor
+  /*!
+    \param min start value for the x axis
+    \param max end value for the x axis
+    \param size number of points on the x axis grid
+    The resulting points on the grid are thus : \f$x[k] = min +
+    k\frac{max-min}{size-1}\f$
+  */
+  PDF(const double min, const double max, const size_t size);
+
+  //! Destructor. Clear internal vectors xaxis, vPDF, chi2.
   ~PDF() {
     vPDF.clear();
     chi2.clear();
     xaxis.clear();
   }
 
-  void normalization();  ///< normalize the pdf to 1.
-  void chi2toPDF();      ///< compute \f$\exp(-\chi^2/2)\f$ from the vector of
-                         ///< \f$\chi^2\f$ values
-  int chi2mini();        ///< index of the minimum \f$\chi^2\f$ value
+  //! Normalize the vPDF vector to 1.
+  /*!
+    A simple trapezoidal rule is used.
+   */
+  double normalization();
+
+  vector<double> cumulant();
+
+  /*!
+    Compute \f$e^{-\chi^2/2}\f$ from the vector
+    of \f$\chi^2\f$ values chi2.
+  */
+  void chi2toPDF();
+
+  int chi2mini();  ///< index of the minimum \f$\chi^2\f$ value
   double
   int_parab();  ///< compute the local \f$\chi^2\f$ by parabolic interpolation
   pair<double, double> uncMin(

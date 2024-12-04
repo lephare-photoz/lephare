@@ -397,7 +397,8 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
   bool mabsAGNprior = (priorLib[2] < 0 && priorLib[3] < 0);
 
   // parrallellize over each SED
-  vector<double> chi2loc(fulllib.size(), 1.e9), dmloc(fulllib.size(), -999.);
+  vector<double> chi2loc(fulllib.size(), HIGH_CHI2),
+      dmloc(fulllib.size(), -999.);
   size_t il;
 #ifdef _OPENMP
   // double start = omp_get_wtime();
@@ -415,7 +416,7 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
       // index to be considered because of ZFIX=YES
       il = va[i];
       // Initialize
-      chi2loc[il] = 1.e9;
+      chi2loc[il] = HIGH_CHI2;
       dmloc[il] = -999.;
 
       // Measurement of scaling factor dm only with (fobs>flim), dchi2/ddm = 0
@@ -440,7 +441,7 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
       if (nbul > 0) {
         for (size_t k = 0; k < imagm; k++) {
           if ((dmloc[il] * busul[k] * flux[il][k]) > ab[k] && busnorma[k] == 1)
-            chi2loc[il] = 1.e9;
+            chi2loc[il] = HIGH_CHI2;
         }
       }
 
@@ -460,10 +461,10 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
         if (reds < 1.e-10) abs_mag = abs_mag - funz0;
         // Galaxy rejection
         if ((abs_mag <= priorLib[0] || abs_mag >= priorLib[1]) && libtype == 0)
-          chi2loc[il] = 1.e9;
+          chi2loc[il] = HIGH_CHI2;
         // AGN rejection
         if ((abs_mag <= priorLib[2] || abs_mag >= priorLib[3]) && libtype == 1)
-          chi2loc[il] = 1.e9;
+          chi2loc[il] = HIGH_CHI2;
       }
       // Prior N(z)
       if (bp[0] >= 0 && libtype == 0) {
@@ -706,7 +707,7 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
 #ifdef _OPENMP
   number_threads = omp_get_max_threads();
 #endif
-  vector<double> locChi2(number_threads, 1.e9);
+  vector<double> locChi2(number_threads, HIGH_CHI2);
   vector<int> locInd(number_threads, -1);
 
   // Compute some quantities linked to ab and sab to save computational time in
@@ -831,7 +832,8 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
   // Do a local minimisation per thread (store chi2 and index) dim 1: type, dim
   // 2: thread, 3: index of the redshift grid
   vector<vector<vector<double>>> locChi2(
-      3, vector<vector<double>>(dimzg, vector<double>(number_threads, 1.e9)));
+      3,
+      vector<vector<double>>(dimzg, vector<double>(number_threads, HIGH_CHI2)));
   vector<vector<vector<int>>> locInd(
       3, vector<vector<int>>(dimzg, vector<int>(number_threads, -1)));
 
@@ -909,10 +911,10 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
     // Loop over all SEDs, which is parallelized
     for (size_t i = 0; i < va.size(); i++) {
       size_t il = va[i];
-
+      SED *sed = fulllib[il];
       // Check that the model has a defined probability
-      if (fulllib[il]->chi2 < HIGH_CHI2) {
-        object_type nlibloc = fulllib[il]->nlib;
+      if (sed->chi2 < HIGH_CHI2) {
+        object_type nlibloc = sed->nlib;
 
         // Marginalization for the galaxies
         if (nlibloc == object_type::GAL) {
@@ -920,16 +922,16 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
           // exp(-chi2_min/2) for the same object Since the the PDF is
           // normalized later, this factor vanishes. It allows to compute
           // probabities with chi2>>1000 (not feasible with double type)
-          prob = exp(-0.5 * (fulllib[il]->chi2 - chimin[0]));
+          prob = exp(-0.5 * (sed->chi2 - chimin[0]));
           // photo-z PDF of galaxies
           // Sum the proba to marginalize
-          pos = pdfbayzg.index(fulllib[il]->red);
+          pos = pdfbayzg.index(sed->red);
           PDFzloc[pos] += prob;
 
           // If able to determine a normalisation and get a the mass (assume
           // that the other are feasible in this case)
-          double dmloc = fulllib[il]->dm;
-          double massloc = fulllib[il]->mass;
+          double dmloc = sed->dm;
+          double massloc = sed->mass;
           if (dmloc > 0 && massloc > 0) {
             // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] /
             // 5:["AGE"] / 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] /
@@ -939,20 +941,20 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
             PDFmassloc[pos] += prob;
 
             // SFR PDF of galaxies
-            pos = pdfsfr.index(LOG10D(fulllib[il]->sfr * dmloc));
+            pos = pdfsfr.index(LOG10D(sed->sfr * dmloc));
             PDFSFRloc[pos] += prob;
 
             // sSFR PDF of galaxies
-            pos = pdfssfr.index(LOG10D(fulllib[il]->ssfr));
+            pos = pdfssfr.index(LOG10D(sed->ssfr));
             PDFsSFRloc[pos] += prob;
 
             // Age PDF of galaxies
-            pos = pdfage.index(LOG10D(fulllib[il]->age));
+            pos = pdfage.index(LOG10D(sed->age));
             PDFAgeloc[pos] += prob;
 
             // Ldust PDF of galaxies, ltir already in log
-            if (fulllib[il]->ltir >= 0) {
-              pos = pdfldust.index(fulllib[il]->ltir + log10(dmloc));
+            if (sed->ltir >= 0) {
+              pos = pdfldust.index(sed->ltir + log10(dmloc));
               PDFLdustloc[pos] += prob;
             }
           }
@@ -960,7 +962,7 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
           // Only if we need an analysis of the colors
           if (colAnalysis) {
             // Retrieved the corresponding SED at z=0
-            rfSED = fulllib[fulllib[il]->index_z0];
+            rfSED = fulllib[sed->index_z0];
 
             // First rest-frame color
             col1 = rfSED->mag[fltColRF[0] - 1] - rfSED->mag[fltColRF[1] - 1];
@@ -979,10 +981,10 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
 
           // marginalization for the QSO
         } else if (nlibloc == object_type::QSO) {
-          prob = exp(-0.5 * (fulllib[il]->chi2 - chimin[1]));
+          prob = exp(-0.5 * (sed->chi2 - chimin[1]));
 
           // photo-z PDF of QSO
-          pos = pdfbayzq.index(fulllib[il]->red);
+          pos = pdfbayzq.index(sed->red);
           PDFzqloc[pos] += prob;
         }
       }
@@ -996,13 +998,14 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
 #pragma omp for schedule(static, 10000)
       for (size_t i = 0; i < va.size(); i++) {
         size_t il = va[i];
+        SED *sed = fulllib[il];
         // Index of the considered redshift into the PDF
-        double chi2loc = fulllib[il]->chi2;
+        double chi2loc = sed->chi2;
         if (chi2loc < HIGH_CHI2) {
           // 11: BAYZG
-          int poszloc = pdfbayzg.index(fulllib[il]->red);
-          int nlibloc = fulllib[il]->nlib;
-          int indloc = fulllib[il]->index;
+          int poszloc = pdfbayzg.index(sed->red);
+          object_type nlibloc = sed->nlib;
+          int indloc = sed->index;
           // If local minimum inside the thread, store the new minimum for the
           // thread
           if (locChi2[nlibloc][poszloc][thread_id] > chi2loc) {
@@ -1020,18 +1023,21 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
         auto &loc0ind = locInd[0][i];
         auto &loc1ind = locInd[1][i];
         for (int j = 0; j < number_threads; j++) {
-          // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] /
-          // 5:["AGE"] / 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] /
-          // 10:["MIN_ZQ"] / 11:["BAY_ZG"] / 11:["BAY_ZQ"] look for the new
-          // minimum among the threads / Galaxies
-          if (pdfminzg.chi2[i] > loc0chi2[j]) {
-            pdfminzg.chi2[i] = loc0chi2[j];
-            pdfminzg.ind[i] = loc0ind[j];
-          }
-          // look for the new minimum among the threads / AGN
-          if (pdfminzq.chi2[i] > loc1chi2[j]) {
-            pdfminzq.chi2[i] = loc1chi2[j];
-            pdfminzq.ind[i] = loc1ind[j];
+// 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] /
+// 5:["AGE"] / 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] /
+// 10:["MIN_ZQ"] / 11:["BAY_ZG"] / 11:["BAY_ZQ"] look for the new
+// minimum among the threads / Galaxies
+#pragma omp critical
+          {
+            if (pdfminzg.chi2[i] > loc0chi2[j]) {
+              pdfminzg.chi2[i] = loc0chi2[j];
+              pdfminzg.ind[i] = loc0ind[j];
+            }
+            // look for the new minimum among the threads / AGN
+            if (pdfminzq.chi2[i] > loc1chi2[j]) {
+              pdfminzq.chi2[i] = loc1chi2[j];
+              pdfminzq.ind[i] = loc1ind[j];
+            }
           }
         }
       }
@@ -1089,18 +1095,19 @@ void onesource::generatePDF_IR(vector<SED *> &fulllib) {
 #endif
 
     // Loop over all SEDs
-    for (vector<SED *>::iterator it = fulllib.begin(); it < fulllib.end();
+    for (vector<SED *>::const_iterator it = fulllib.begin(); it < fulllib.end();
          ++it) {
-      double prob = exp(-0.5 * ((*it)->chi2 - chiminIR));
+      const SED *sed = *it;
+      double prob = exp(-0.5 * (sed->chi2 - chiminIR));
 
       // Check that the model has a defined probability
-      if ((*it)->chi2 >= 0 && (*it)->chi2 < HIGH_CHI2) {
+      if (sed->chi2 >= 0 && sed->chi2 < HIGH_CHI2) {
         // If able to determine a normalisation
-        if ((*it)->dm > 0) {
+        if (sed->dm > 0) {
           // LIR PDF of galaxies, ltir already in log
-          if ((*it)->ltir > 0) {
+          if (sed->ltir > 0) {
             // Index of the considered library age into the PDF
-            int pos = pdfmap[4].index((*it)->ltir + log10((*it)->dm));
+            int pos = pdfmap[4].index(sed->ltir + log10(sed->dm));
             // Sum the proba to marginalize
             PDFlirloc[pos] += prob;
           }
@@ -1689,7 +1696,7 @@ void onesource::secondpeak(vector<SED *> &fulllib, const double dz_win,
   pdfmap[9].secondMax(dz_win);
   // Default measurement
   zsec = -99.9;
-  zsecChi2 = 1.e9;
+  zsecChi2 = HIGH_CHI2;
   zsecEbv = -99.;
   zsecExtlaw = -99;
   zsecScale = -99.;

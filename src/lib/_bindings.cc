@@ -421,6 +421,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("get_maxid", &PDF::get_maxid)
       .def("secondMax", &PDF::secondMax)
       .def("size", &PDF::size)
+      .def("cumulant", &PDF::cumulant)
       .def("levelCumu2x", &PDF::levelCumu2x)
       .def("credible_interval", &PDF::credible_interval)
       .def("confidence_interval", &PDF::confidence_interval)
