@@ -379,7 +379,7 @@ pair<double, double> PDF::credible_interval(float level, double val) {
   bound_right_id = upper_bound(cumulant.begin(), cumulant.end(), upperLevel);
   size_t indR = bound_right_id - cumulant.begin();
   // Linear interpolation - right case
-  if (xaxis[indR - 1] < upperLevel) {
+  if (cumulant[indR - 1] < upperLevel) {
     // args in reverse order y, y1, x1, y2, x2, in order to get x instead of y
     result.second = linear_interp(upperLevel, cumulant[indR - 1],
                                   xaxis[indR - 1], cumulant[indR], xaxis[indR]);
@@ -389,7 +389,7 @@ pair<double, double> PDF::credible_interval(float level, double val) {
   // Linear interpolation - left case
   bound_left_id = upper_bound(cumulant.begin(), cumulant.end(), lowerLevel);
   size_t indL = bound_left_id - cumulant.begin();
-  if (xaxis[indL - 1] < lowerLevel) {
+  if (cumulant[indL - 1] < lowerLevel) {
     result.first = linear_interp(lowerLevel, cumulant[indL - 1],
                                  xaxis[indL - 1], cumulant[indL], xaxis[indL]);
   } else {
