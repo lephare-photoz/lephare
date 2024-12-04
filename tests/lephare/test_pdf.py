@@ -57,6 +57,16 @@ def test_quadratic_extremum():
     assert ym == pytest.approx(yt)
 
 
+def test_int_parab():
+    pdf = lp.PDF(0, 1, 10)
+    yvals = np.linspace(0.0, 1.0, 10)
+    pdf.setYvals(yvals, is_chi2=True)
+    assert pdf.int_parab() == 0.0
+    yvals = np.linspace(1.0, 0.0, 10)
+    pdf.setYvals(yvals, is_chi2=True)
+    assert pdf.int_parab() == 1.0
+
+
 def test_pdf():
     """Basic test to ensure we can instantiate a PDF object."""
     test_pdf = lp.PDF(0, 3, 10)
@@ -77,6 +87,14 @@ def test_normalization():
     assert integral == pytest.approx(4.5)
     integral2 = test_pdf.normalization()
     assert integral2 == pytest.approx(1)
+
+
+def test_cumulant():
+    pdf = lp.PDF(0.0, 1.0, 10)
+    yvals = np.ones_like(pdf.xaxis)
+    pdf.setYvals(yvals, is_chi2=False)
+    cumulant = pdf.cumulant()
+    np.testing.assert_almost_equal(cumulant, np.linspace(0, 1, 10))
 
 
 def test_index():
