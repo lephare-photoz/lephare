@@ -138,6 +138,13 @@ void Mag::open_files() {
     if (!sdatOut) {
       throw invalid_argument("Can't open file " + datFile);
     }
+
+    if (allFlt.size() != 0) {
+      for (const auto f : allFlt) {
+        sdatOut << "#" << f.name << "\n";
+      }
+    }
+
     // header of the .dat file
     switch (object) {
       case object_type::GAL:
