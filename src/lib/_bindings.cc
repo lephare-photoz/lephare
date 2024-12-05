@@ -33,6 +33,12 @@ void applySEDLibTemplate(modT &m, std::string name) {
 }
 
 PYBIND11_MODULE(_lephare, mod) {
+  /*object_type enum for python*/
+  py::enum_<object_type>(mod, "object_type")
+      .value("GAL", object_type::GAL)
+      .value("QSO", object_type::QSO)
+      .value("STAR", object_type::STAR);
+
   /******** CLASS ONEELLAMBDA *********/
   py::class_<oneElLambda>(mod, "oneElLambda")
       .def(py::init<double, double, int>(), py::arg("lambin"), py::arg("valin"),
@@ -152,6 +158,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("nummod", &SED::nummod)
       .def_readonly("mag", &SED::mag)
       .def_readwrite("index_z0", &SED::index_z0)
+      .def("string_to_object", &SED::string_to_object)
       .def("is_gal", &SED::is_gal)
       .def("is_star", &SED::is_star)
       .def("is_qso", &SED::is_qso)
