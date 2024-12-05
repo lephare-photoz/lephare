@@ -157,7 +157,7 @@ void Mag::open_files() {
     }
   }
 
-  cout << " All files opened " << endl;
+  if (verbose) cout << " All files opened " << endl;
 }
 
 // open the opacity files
