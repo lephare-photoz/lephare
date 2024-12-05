@@ -21,7 +21,8 @@
 /// magnitudes
 class Mag {
  protected:
-  string config, typ;
+  object_type object;
+  string config;
   cosmo lcdm;
   string filtFile, magtyp;
   bool outasc, verbose;

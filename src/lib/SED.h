@@ -78,9 +78,37 @@ class SED {
     fac_line = p.fac_line;
     distMod = p.distMod;
   };
+
+  //! Convert string to object_type
+  /*!
+    \param type String starting with either g, q, or s,
+    in either lower or upper case. If it is not the case,
+    throw invalid argument exception.
+
+    \return object_type corresponding to input, if valid.
+   */
+  inline static object_type string_to_object(const string &type) {
+    char t = toupper(type[0]);
+    if (t == 'S') {
+      return STAR;
+    } else if (t == 'Q') {
+      return QSO;
+    } else if (t == 'G') {
+      return GAL;
+    } else {
+      throw invalid_argument("Object type not recognized: " + type);
+    }
+  }
+
+  //! Return true if SED is of object_type GAL, false if not
   bool is_gal() { return nlib == GAL ? true : false; }
+
+  //! Return true if SED is of object_type QSO, false if not
   bool is_qso() { return nlib == QSO ? true : false; }
+
+  //! Return true if SED is of object_type STAR, false if not
   bool is_star() { return nlib == STAR ? true : false; }
+
   virtual ~SED();
   ///\brief Read sedFile assumed to be ASCII and build the #lamb_flux vector of
   /// oneElLambda elements.
@@ -147,6 +175,7 @@ class SED {
     }
     writeSED(sbinOut, sphysOut, sdocOut);
   };
+
   virtual void writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
                         vector<flt> allFilters, string magtyp) {};
 

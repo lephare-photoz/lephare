@@ -29,16 +29,7 @@ SED::SED(const string nameC, int nummodC, string type) {
   nummod = nummodC;  // number of the model in the list
 
   // Define nlib to have the type as an interger GAL=0, QSO=1, STAR=2
-  char t = toupper(type[0]);
-  if (t == 'S') {
-    nlib = STAR;
-  } else if (t == 'Q') {
-    nlib = QSO;
-  } else if (t == 'G') {
-    nlib = GAL;
-  } else {
-    throw invalid_argument("Object type not recognized: " + type);
-  }
+  nlib = string_to_object(type);
 
   has_emlines = false;
   idAge = 0;     // index of the age into the SED

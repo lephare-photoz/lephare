@@ -27,7 +27,7 @@ Mag::Mag(keymap &key_analysed) {
   config = key_analysed["c"].value;
 
   // type of source which is read (Galaxy G, QSO Q, Star S)
-  typ = key_analysed["t"].value;
+  object = SED::string_to_object(key_analysed["t"].value);
 
   // Instantiate cosmology
   double h0 = (key_analysed["COSMOLOGY"].split_double("70", 3))[0];
@@ -139,10 +139,22 @@ void Mag::open_files() {
       throw invalid_argument("Can't open file " + datFile);
     }
     // header of the .dat file
-    sdatOut
-        << "# model ext_law E(B-V) L_T(IR) redshift dist_modulus age record "
-           "N_filt magnitude_vector kcorr_vector em_lines_fluxes_vector "
-        << endl;
+    switch (object) {
+      case object_type::GAL:
+        sdatOut
+            << "# model ext_law E(B-V) L_T(IR) redshift dist_modulus age "
+               "N_filt magnitude[N_filt] kcorr[N_filt] em_lines_fluxes[N_filt] "
+            << endl;
+        break;
+      case object_type::QSO:
+        sdatOut << "# model ext_law E(B-V) L_T(IR) redshift dist_modulus age "
+                   "N_filt magnitude[N_filt] kcorr[N_filt] "
+                << endl;
+        break;
+      case object_type::STAR:
+        sdatOut << "# model N_filt magnitude[N_filt]" << endl;
+        break;
+    }
   }
 
   cout << " All files opened " << endl;
@@ -336,12 +348,16 @@ void Mag::print_info() {
 // Write the documentation in the GALAXY/QSO/STAR case
 void Mag::write_doc() {
   sdocOut << "CONFIG_FILE    " << config << endl;
-  if (typ[0] == 'G' || typ[0] == 'g') {
-    sdocOut << "LIB_TYPE  GALAXY" << endl;
-  } else if (typ[0] == 'Q' || typ[0] == 'q') {
-    sdocOut << "LIB_TYPE  QSO" << endl;
-  } else if (typ[0] == 'S' || typ[0] == 's') {
-    sdocOut << "LIB_TYPE  STAR" << endl;
+  switch (object) {
+    case object_type::GAL:
+      sdocOut << "LIB_TYPE  GALAXY" << endl;
+      break;
+    case object_type::QSO:
+      sdocOut << "LIB_TYPE  QSO" << endl;
+      break;
+    case object_type::STAR:
+      sdocOut << "LIB_TYPE  STAR" << endl;
+      break;
   }
   sdocOut << "LIB_NAME      " << lib << endl;
   sdocOut << "FILTER_FILE     " << filtFile << endl;
