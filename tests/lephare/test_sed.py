@@ -1,11 +1,27 @@
 import os
 import tempfile
 
+import lephare as lp
 import numpy as np
+import pytest
 from lephare import QSOSED, SED, GalSED, StarSED, flt
 
 TESTDIR = os.path.abspath(os.path.dirname(__file__))
 TESTDATADIR = os.path.join(TESTDIR, "../data")
+
+
+def test_string_to_object():
+    for t in ["s", "S", "sOap", "STAR"]:
+        a = lp.SED.string_to_object(t)
+        assert a == lp.object_type.STAR
+    for t in ["g", "G", "GAGA", "GAL"]:
+        a = lp.SED.string_to_object(t)
+        assert a == lp.object_type.GAL
+    for t in ["q", "Q", "QUASI", "QSO"]:
+        a = lp.SED.string_to_object(t)
+        assert a == lp.object_type.QSO
+    with pytest.raises(ValueError):
+        _ = lp.SED.string_to_object("wrong")
 
 
 def test_sed_constructors():

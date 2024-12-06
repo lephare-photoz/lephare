@@ -25,6 +25,7 @@ mag_gal_config_keys = [
     "EM_LINES",
     "EM_DISPERSION",
     "ADD_DUSTEM",
+    "VERBOSE",
 ]
 
 
