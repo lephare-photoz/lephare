@@ -373,9 +373,9 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
 #ifdef _OPENMP
   number_threads = omp_get_max_threads();
 #endif
-  vector<vector<double>> chi2_vals(3,
-                                   vector<double>(number_threads, HIGH_CHI2));
-  vector<vector<int>> chi2_idx(3, vector<int>(number_threads, -1));
+  vector<vector<double>> chi2_vals(number_threads,
+                                   vector<double>(3, HIGH_CHI2));
+  vector<vector<int>> chi2_idx(number_threads, vector<int>(3, -1));
 
   // Compute some quantities linked to ab and sab to save computational time in
   // the fit. invsab = busnorma / sab busnorma here ensures that all the
@@ -477,9 +477,9 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
       // keep track of the minimum chi2 for each object type, over the threads
       if (chi2loc[i] < HIGH_CHI2) {
         object_type type = sed->get_object_type();
-        if (chi2_vals[type][thread_id] > chi2loc[i]) {
-          chi2_vals[type][thread_id] = chi2loc[i];
-          chi2_idx[type][thread_id] = sed->index;
+        if (chi2_vals[thread_id][type] > chi2loc[i]) {
+          chi2_vals[thread_id][type] = chi2loc[i];
+          chi2_idx[thread_id][type] = sed->index;
         }
       }
 
@@ -500,9 +500,9 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
   for (int k = 0; k < 3; k++) {
     for (int j = 0; j < number_threads; j++) {
       // Minimum over the full redshift range for the galaxies
-      if (chimin[k] > chi2_vals[k][j]) {
-        chimin[k] = chi2_vals[k][j];
-        indmin[k] = chi2_idx[k][j];
+      if (chimin[k] > chi2_vals[j][k]) {
+        chimin[k] = chi2_vals[j][k];
+        indmin[k] = chi2_idx[j][k];
       }
     }
   }
