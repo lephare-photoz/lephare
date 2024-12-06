@@ -132,7 +132,8 @@ void onesource::fltUsed(const long gbcont, const long contforb,
     // Count the bands used as upper-limits
     if (busul[k] == 1) nbul++;
   }
-  if (nf == 0) cout << "WARNING: No scaling --> No z " << spec << endl;
+  if (nf == 0 && verbose)
+    cout << "WARNING: No scaling --> No z " << spec << endl;
 }
 
 /*
@@ -646,8 +647,7 @@ double onesource::nzprior(const double luv, const double lnir,
 void onesource::rm_discrepant(vector<SED *> &fulllib,
                               const vector<vector<double>> &flux,
                               const vector<size_t> &va, const double funz0,
-                              const array<int, 2> bp, double thresholdChi2,
-                              bool verbose) {
+                              const array<int, 2> bp, double thresholdChi2) {
   size_t imagm = busnorma.size();
   double newmin, improvedChi2;
   // Start with the best chi2 among the libraries
@@ -749,8 +749,9 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
         // Check that the normalisation should be computed (if the scaling
         // should be free)
         if (nbusIR < 1) {
-          cout << "WARNING: No scaling in IR " << spec << " " << nbusIR << " "
-               << endl;
+          if (verbose)
+            cout << "WARNING: No scaling in IR " << spec << " " << nbusIR << " "
+                 << endl;
         } else {
           dmloc = avmago / avmagt;
         }

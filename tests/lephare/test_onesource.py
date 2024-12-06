@@ -26,6 +26,14 @@ def test_onesource_creation():
     assert np.array_equal(src.imasmin, [-99, -99, -99])
 
 
+def test_verbosity():
+    src = onesource()
+    src.set_verbosity(True)
+    assert src.get_verbosity()
+    src.set_verbosity(False)
+    assert not src.get_verbosity()
+
+
 def test_onesource_set_priors():
     src = onesource()
     src.setPriors([0.0, 1000.0], [0, 1000])

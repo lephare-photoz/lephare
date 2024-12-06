@@ -959,6 +959,7 @@ vector<onesource *> PhotoZ::read_autoadapt_sources() {
     if (check_first_char(line)) {
       // Construct one objet
       onesource *oneObj = yield(nobj, line);
+      oneObj->set_verbosity(verbose);
 
       // Keep only sources with a spectroscopic redshift
       if (oneObj->zs > adzmin && oneObj->zs < adzmax) {
@@ -1413,6 +1414,7 @@ vector<onesource *> PhotoZ::read_photoz_sources() {
 
       // Generate one objet
       onesource *oneObj = yield(nobj, line);
+      oneObj->set_verbosity(verbose);
 
       // Use zspec from external file
       // open the external file with zspec
@@ -1601,8 +1603,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
     oneObj->fit(fullLib, flux, valid, funz0, bp);
     // Try to remove some bands to improve the chi2, only as long as the chi2 is
     // above a threshold
-    oneObj->rm_discrepant(fullLib, flux, valid, funz0, bp, thresholdChi2,
-                          verbose);
+    oneObj->rm_discrepant(fullLib, flux, valid, funz0, bp, thresholdChi2);
     // Generate the marginalized PDF (z+physical parameters) from the chi2
     // stored in each SED
     oneObj->generatePDF(fullLib, valid, fltColRF, fltREF, zfix);

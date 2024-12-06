@@ -39,6 +39,8 @@ represents an object from a catalogue, and manages its fitting to an SED.
 */
 class onesource {
  private:
+  bool verbose;
+
  public:
   //{"MASS_BEST","SFR_BEST","SSFR_BEST","LDUST_BEST","LUM_TIR_BEST","AGE_BEST","EBV_BEST","EXTLAW_BEST","LUM_NUV_BEST","LUM_R_BEST","LUM_K_BEST",}
   unordered_map<string, double> results = {
@@ -160,6 +162,17 @@ class onesource {
     busnorma.clear();
   }
 
+  //! Set verbosity
+  /*!
+    @param v bool specifying whether output should be verbose or not.
+   */
+  inline void set_verbosity(const bool v) { verbose = v; }
+  //! Get verbosity
+  /*!
+    @return bool specifying whether output is verbose or not.
+   */
+  inline bool get_verbosity() const { return verbose; }
+
   // Prototype
   void readsource(const string &identifier, const vector<double> vals,
                   const vector<double> err_vals, const long context,
@@ -184,8 +197,7 @@ class onesource {
                  const array<int, 2> bp);
   void rm_discrepant(vector<SED *> &fulllib, const vector<vector<double>> &flux,
                      const vector<size_t> &valid, const double funz0,
-                     const array<int, 2> bp, double thresholdChi2,
-                     bool verbose);
+                     const array<int, 2> bp, double thresholdChi2);
   void write_out(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
                  ofstream &stout, vector<string> outkeywords);
   void write_pdz_header(vector<string> pdztype,
