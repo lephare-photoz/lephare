@@ -108,6 +108,9 @@ class SED {
     }
   }
 
+  //! Return the object type
+  object_type get_object_type() const { return nlib; }
+
   //! Return true if SED is of object_type GAL, false if not
   bool is_gal() { return nlib == GAL ? true : false; }
 
