@@ -17,6 +17,7 @@
 #include "onesource.h"
 #include "opa.h"
 
+//! types of object that LePHARE can treat distinctively
 enum object_type { GAL, QSO, STAR };
 
 /*
@@ -35,9 +36,16 @@ class SED {
   string name;
   bool has_emlines;  ///< True if the emission lines have been computed, false
                      ///< if not
-  int nummod;
+
+  //! object type of the SED
   object_type nlib;
-  int index, index_z0, posz = -1;
+
+  int nummod,    ///< index in the initial list of rest frame SEDs
+      index,     ///< index in the full list of SED, redshifted, and modified by
+                 ///< extinction, etc...
+      index_z0;  ///< index in the full list of SEDs corresponding to the z=0
+                 ///< version of the current SED.
+
   double red, chi2 = HIGH_CHI2, dm, lnir, luv, lopt, inter;
   double mass, age, sfr, ssfr,
       ltir;  // need to put it out of GalSED since used in the PDF without
@@ -99,6 +107,9 @@ class SED {
       throw invalid_argument("Object type not recognized: " + type);
     }
   }
+
+  //! Return the object type
+  object_type get_object_type() const { return nlib; }
 
   //! Return true if SED is of object_type GAL, false if not
   bool is_gal() { return nlib == GAL ? true : false; }
