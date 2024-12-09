@@ -832,10 +832,12 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
   // Do a local minimisation per thread (store chi2 and index) dim 1: type, dim
   // 2: thread, 3: index of the redshift grid
   vector<vector<vector<double>>> locChi2(
-      3,
-      vector<vector<double>>(dimzg, vector<double>(number_threads, HIGH_CHI2)));
+     number_threads,
+     vector<vector<double>>(3, vector<double>(dimzg, HIGH_CHI2)));
   vector<vector<vector<int>>> locInd(
-      3, vector<vector<int>>(dimzg, vector<int>(number_threads, -1)));
+     number_threads,
+     vector<vector<int>>(3, vector<int>(dimzg, -1)));
+
 
   // to create the marginalized PDF
   int pos = 0;
@@ -1008,9 +1010,9 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
           int indloc = sed->index;
           // If local minimum inside the thread, store the new minimum for the
           // thread
-          if (locChi2[nlibloc][poszloc][thread_id] > chi2loc) {
-            locChi2[nlibloc][poszloc][thread_id] = chi2loc;
-            locInd[nlibloc][poszloc][thread_id] = indloc;
+          if (locChi2[thread_id][nlibloc][poszloc] > chi2loc) {
+            locChi2[thread_id][nlibloc][poszloc] = chi2loc;
+            locInd[thread_id][nlibloc][poszloc] = indloc;
           }
         }
       }
@@ -1018,10 +1020,6 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
       // Find the minimum for each redshift step by collapsing the threads
 #pragma omp for
       for (int i = 0; i < dimzg; i++) {
-        auto &loc0chi2 = locChi2[0][i];
-        auto &loc1chi2 = locChi2[1][i];
-        auto &loc0ind = locInd[0][i];
-        auto &loc1ind = locInd[1][i];
         for (int j = 0; j < number_threads; j++) {
 // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] /
 // 5:["AGE"] / 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] /
@@ -1029,14 +1027,14 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
 // minimum among the threads / Galaxies
 #pragma omp critical
           {
-            if (pdfminzg.chi2[i] > loc0chi2[j]) {
-              pdfminzg.chi2[i] = loc0chi2[j];
-              pdfminzg.ind[i] = loc0ind[j];
+            if (pdfminzg.chi2[i] > locChi2[j][0][i]) {
+              pdfminzg.chi2[i] = locChi2[j][0][i];
+              pdfminzg.ind[i] =  locInd[j][0][i];
             }
             // look for the new minimum among the threads / AGN
-            if (pdfminzq.chi2[i] > loc1chi2[j]) {
-              pdfminzq.chi2[i] = loc1chi2[j];
-              pdfminzq.ind[i] = loc1ind[j];
+            if (pdfminzq.chi2[i] > locChi2[j][1][i]) {
+              pdfminzq.chi2[i] = locChi2[j][1][i];
+              pdfminzq.ind[i] = locInd[j][1][i];
             }
           }
         }
