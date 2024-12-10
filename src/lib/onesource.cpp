@@ -832,12 +832,10 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
   // Do a local minimisation per thread (store chi2 and index) dim 1: type, dim
   // 2: thread, 3: index of the redshift grid
   vector<vector<vector<double>>> locChi2(
-     number_threads,
-     vector<vector<double>>(3, vector<double>(dimzg, HIGH_CHI2)));
+      number_threads,
+      vector<vector<double>>(3, vector<double>(dimzg, HIGH_CHI2)));
   vector<vector<vector<int>>> locInd(
-     number_threads,
-     vector<vector<int>>(3, vector<int>(dimzg, -1)));
-
+      number_threads, vector<vector<int>>(3, vector<int>(dimzg, -1)));
 
   // to create the marginalized PDF
   int pos = 0;
@@ -1029,7 +1027,7 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
           {
             if (pdfminzg.chi2[i] > locChi2[j][0][i]) {
               pdfminzg.chi2[i] = locChi2[j][0][i];
-              pdfminzg.ind[i] =  locInd[j][0][i];
+              pdfminzg.ind[i] = locInd[j][0][i];
             }
             // look for the new minimum among the threads / AGN
             if (pdfminzq.chi2[i] > locChi2[j][1][i]) {
