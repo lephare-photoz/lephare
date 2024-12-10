@@ -132,7 +132,8 @@ void onesource::fltUsed(const long gbcont, const long contforb,
     // Count the bands used as upper-limits
     if (busul[k] == 1) nbul++;
   }
-  if (nf == 0) cout << "WARNING: No scaling --> No z " << spec << endl;
+  if (nf == 0 && verbose)
+    cout << "WARNING: No scaling --> No z " << spec << endl;
 }
 
 /*
@@ -373,8 +374,9 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
 #ifdef _OPENMP
   number_threads = omp_get_max_threads();
 #endif
-  vector<vector<double>> locChi2(3, vector<double>(number_threads, HIGH_CHI2));
-  vector<vector<int>> locInd(3, vector<int>(number_threads, -1));
+  vector<vector<double>> chi2_vals(number_threads,
+                                   vector<double>(3, HIGH_CHI2));
+  vector<vector<int>> chi2_idx(number_threads, vector<int>(3, -1));
 
   // Compute some quantities linked to ab and sab to save computational time in
   // the fit. invsab = busnorma / sab busnorma here ensures that all the
@@ -399,12 +401,12 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
   // parrallellize over each SED
   vector<double> chi2loc(fulllib.size(), HIGH_CHI2),
       dmloc(fulllib.size(), -999.);
-  size_t il;
+
 #ifdef _OPENMP
   // double start = omp_get_wtime();
 #pragma omp parallel shared(fulllib)                                    \
     firstprivate(s2n, invsab, invsabSq, abinvsabSq, imagm, nbul, busul, \
-                     priorLib, number_threads, thread_id) private(il)
+                     priorLib, number_threads, thread_id)
   {
     // Catch the name of the local thread in the parrallelisation
     thread_id = omp_get_thread_num();
@@ -412,36 +414,36 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
 
     // Compute normalisation and chi2
 #pragma omp for schedule(static, 10000)
-    for (size_t i = 0; i < va.size(); i++) {
+    for (size_t v = 0; v < va.size(); v++) {
       // index to be considered because of ZFIX=YES
-      il = va[i];
+      size_t i = va[v];
       // Initialize
-      chi2loc[il] = HIGH_CHI2;
-      dmloc[il] = -999.;
+      chi2loc[i] = HIGH_CHI2;
+      dmloc[i] = -999.;
 
       // Measurement of scaling factor dm only with (fobs>flim), dchi2/ddm = 0
       double avmago = 0., avmagt = 0.;
       for (size_t k = 0; k < imagm; k++) {
-        double fluxin = flux[il][k];
+        double fluxin = flux[i][k];
         avmago += fluxin * abinvsabSq[k];
         avmagt += fluxin * fluxin * invsabSq[k];
       }
       // Normalisation
-      if (avmagt > 0) dmloc[il] = avmago / avmagt;
+      if (avmagt > 0) dmloc[i] = avmago / avmagt;
 
       // Measurement of chi^2
-      chi2loc[il] = 0;
+      chi2loc[i] = 0;
       for (size_t k = 0; k < imagm; k++) {
-        double inter = s2n[k] - dmloc[il] * flux[il][k] * invsab[k];
-        chi2loc[il] += inter * inter;
+        double inter = s2n[k] - dmloc[i] * flux[i][k] * invsab[k];
+        chi2loc[i] += inter * inter;
       }
 
       // Upper-limits. Check first if some bands have upper-limits, before
       // applying the condition
       if (nbul > 0) {
         for (size_t k = 0; k < imagm; k++) {
-          if ((dmloc[il] * busul[k] * flux[il][k]) > ab[k] && busnorma[k] == 1)
-            chi2loc[il] = HIGH_CHI2;
+          if ((dmloc[i] * busul[k] * flux[i][k]) > ab[k] && busnorma[k] == 1)
+            chi2loc[i] = HIGH_CHI2;
         }
       }
 
@@ -449,44 +451,42 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
       // Abs mag rejection
       double reds;
       int libtype;
-      reds = (fulllib[il])->red;
-      libtype = (fulllib[il])->nlib;
+      SED *sed = fulllib[i];
+      reds = sed->red;
+      libtype = sed->nlib;
       // Abs Magnitude from model @ z=0 for rejection for galaxies and AGN
       if ((mabsGALprior && libtype == 0) || (mabsAGNprior && libtype == 1)) {
         // predicted magnitudes within the babs filter renormalized by the
         // scaling
         double abs_mag;
-        abs_mag = (fulllib[il])->mag0 - 2.5 * log10(dmloc[il]);
+        abs_mag = sed->mag0 - 2.5 * log10(dmloc[i]);
         // specific case when the redshift is 0
         if (reds < 1.e-10) abs_mag = abs_mag - funz0;
         // Galaxy rejection
         if ((abs_mag <= priorLib[0] || abs_mag >= priorLib[1]) && libtype == 0)
-          chi2loc[il] = HIGH_CHI2;
+          chi2loc[i] = HIGH_CHI2;
         // AGN rejection
         if ((abs_mag <= priorLib[2] || abs_mag >= priorLib[3]) && libtype == 1)
-          chi2loc[il] = HIGH_CHI2;
+          chi2loc[i] = HIGH_CHI2;
       }
       // Prior N(z)
       if (bp[0] >= 0 && libtype == 0) {
-        double pweight =
-            nzprior((fulllib[il])->luv, (fulllib[il])->lnir, reds, bp);
-        chi2loc[il] = chi2loc[il] - 2. * log(pweight);
+        double pweight = nzprior(sed->luv, sed->lnir, reds, bp);
+        chi2loc[i] = chi2loc[i] - 2. * log(pweight);
       }
 
-      // keep the minimum chi2
-      if (chi2loc[il] < HIGH_CHI2) {
-        int nlibloc = (fulllib[il])->nlib;
-        // If local minimum inside the thread, store the new minimum for the
-        // thread done per type s (0 gal, 1 AGN, 2 stars)
-        if (locChi2[nlibloc][thread_id] > chi2loc[il]) {
-          locChi2[nlibloc][thread_id] = chi2loc[il];
-          locInd[nlibloc][thread_id] = (fulllib[il])->index;
+      // keep track of the minimum chi2 for each object type, over the threads
+      if (chi2loc[i] < HIGH_CHI2) {
+        object_type type = sed->get_object_type();
+        if (chi2_vals[thread_id][type] > chi2loc[i]) {
+          chi2_vals[thread_id][type] = chi2loc[i];
+          chi2_idx[thread_id][type] = sed->index;
         }
       }
 
       // Write the chi2
-      fulllib[il]->chi2 = chi2loc[il];
-      fulllib[il]->dm = dmloc[il];
+      sed->chi2 = chi2loc[i];
+      sed->dm = dmloc[i];
     }
 
 #ifdef _OPENMP
@@ -501,9 +501,9 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
   for (int k = 0; k < 3; k++) {
     for (int j = 0; j < number_threads; j++) {
       // Minimum over the full redshift range for the galaxies
-      if (chimin[k] > locChi2[k][j]) {
-        chimin[k] = locChi2[k][j];
-        indmin[k] = locInd[k][j];
+      if (chimin[k] > chi2_vals[j][k]) {
+        chimin[k] = chi2_vals[j][k];
+        indmin[k] = chi2_idx[j][k];
       }
     }
   }
@@ -647,8 +647,7 @@ double onesource::nzprior(const double luv, const double lnir,
 void onesource::rm_discrepant(vector<SED *> &fulllib,
                               const vector<vector<double>> &flux,
                               const vector<size_t> &va, const double funz0,
-                              const array<int, 2> bp, double thresholdChi2,
-                              bool verbose) {
+                              const array<int, 2> bp, double thresholdChi2) {
   size_t imagm = busnorma.size();
   double newmin, improvedChi2;
   // Start with the best chi2 among the libraries
@@ -750,8 +749,9 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
         // Check that the normalisation should be computed (if the scaling
         // should be free)
         if (nbusIR < 1) {
-          cout << "WARNING: No scaling in IR " << spec << " " << nbusIR << " "
-               << endl;
+          if (verbose)
+            cout << "WARNING: No scaling in IR " << spec << " " << nbusIR << " "
+                 << endl;
         } else {
           dmloc = avmago / avmagt;
         }
@@ -832,10 +832,10 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
   // Do a local minimisation per thread (store chi2 and index) dim 1: type, dim
   // 2: thread, 3: index of the redshift grid
   vector<vector<vector<double>>> locChi2(
-      3,
-      vector<vector<double>>(dimzg, vector<double>(number_threads, HIGH_CHI2)));
+      number_threads,
+      vector<vector<double>>(3, vector<double>(dimzg, HIGH_CHI2)));
   vector<vector<vector<int>>> locInd(
-      3, vector<vector<int>>(dimzg, vector<int>(number_threads, -1)));
+      number_threads, vector<vector<int>>(3, vector<int>(dimzg, -1)));
 
   // to create the marginalized PDF
   int pos = 0;
@@ -914,7 +914,7 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
       SED *sed = fulllib[il];
       // Check that the model has a defined probability
       if (sed->chi2 < HIGH_CHI2) {
-        object_type nlibloc = sed->nlib;
+        object_type nlibloc = sed->get_object_type();
 
         // Marginalization for the galaxies
         if (nlibloc == object_type::GAL) {
@@ -1004,13 +1004,13 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
         if (chi2loc < HIGH_CHI2) {
           // 11: BAYZG
           int poszloc = pdfbayzg.index(sed->red);
-          object_type nlibloc = sed->nlib;
+          object_type nlibloc = sed->get_object_type();
           int indloc = sed->index;
           // If local minimum inside the thread, store the new minimum for the
           // thread
-          if (locChi2[nlibloc][poszloc][thread_id] > chi2loc) {
-            locChi2[nlibloc][poszloc][thread_id] = chi2loc;
-            locInd[nlibloc][poszloc][thread_id] = indloc;
+          if (locChi2[thread_id][nlibloc][poszloc] > chi2loc) {
+            locChi2[thread_id][nlibloc][poszloc] = chi2loc;
+            locInd[thread_id][nlibloc][poszloc] = indloc;
           }
         }
       }
@@ -1018,10 +1018,6 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
       // Find the minimum for each redshift step by collapsing the threads
 #pragma omp for
       for (int i = 0; i < dimzg; i++) {
-        auto &loc0chi2 = locChi2[0][i];
-        auto &loc1chi2 = locChi2[1][i];
-        auto &loc0ind = locInd[0][i];
-        auto &loc1ind = locInd[1][i];
         for (int j = 0; j < number_threads; j++) {
 // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] /
 // 5:["AGE"] / 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] /
@@ -1029,14 +1025,14 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
 // minimum among the threads / Galaxies
 #pragma omp critical
           {
-            if (pdfminzg.chi2[i] > loc0chi2[j]) {
-              pdfminzg.chi2[i] = loc0chi2[j];
-              pdfminzg.ind[i] = loc0ind[j];
+            if (pdfminzg.chi2[i] > locChi2[j][0][i]) {
+              pdfminzg.chi2[i] = locChi2[j][0][i];
+              pdfminzg.ind[i] = locInd[j][0][i];
             }
             // look for the new minimum among the threads / AGN
-            if (pdfminzq.chi2[i] > loc1chi2[j]) {
-              pdfminzq.chi2[i] = loc1chi2[j];
-              pdfminzq.ind[i] = loc1ind[j];
+            if (pdfminzq.chi2[i] > locChi2[j][1][i]) {
+              pdfminzq.chi2[i] = locChi2[j][1][i];
+              pdfminzq.ind[i] = locInd[j][1][i];
             }
           }
         }
@@ -2288,7 +2284,7 @@ void onesource::writeFullChi(vector<SED *> &fulllib) {
     // Normalisation
     sca = fulllib[k]->dm;
     // Write
-    stochi << fulllib[k]->nlib << " ";
+    stochi << fulllib[k]->get_object_type() << " ";
     stochi << fulllib[k]->red << " ";
     stochi << fulllib[k]->nummod << " ";
     stochi << fulllib[k]->age << " ";

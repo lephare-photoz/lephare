@@ -24,22 +24,31 @@ def test_string_to_object():
         _ = lp.SED.string_to_object("wrong")
 
 
+def sed_get_object_type():
+    sed = SED("dummy", 0, "GAL")
+    assert sed.get_object_type == lp.object_type.GAL
+    sed = SED("dummy", 0, "QSO")
+    assert sed.get_object_type == lp.object_type.QSO
+    sed = SED("dummy", 0, "STAR")
+    assert sed.get_object_type == lp.object_type.STAR
+
+
 def test_sed_constructors():
-    sed = SED("toto", 10, "GAL")
-    assert sed.name == "toto"
+    sed = SED("dummy", 10, "GAL")
+    assert sed.name == "dummy"
     assert sed.nummod == 10
     assert sed.is_gal()
     sed2 = StarSED(sed)
     assert sed2.is_star()
-    assert sed2.name == "toto"
+    assert sed2.name == "dummy"
     assert sed2.nummod == 10
     sed2 = QSOSED(sed)
     assert sed2.is_qso()
-    assert sed2.name == "toto"
+    assert sed2.name == "dummy"
     assert sed2.nummod == 10
     sed2 = GalSED(sed)
     assert sed2.is_gal()
-    assert sed2.name == "toto"
+    assert sed2.name == "dummy"
     assert sed2.nummod == 10
 
 

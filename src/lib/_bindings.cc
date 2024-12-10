@@ -322,6 +322,8 @@ PYBIND11_MODULE(_lephare, mod) {
            static_cast<void (onesource::*)(
                const string &, const vector<double>, const vector<double>,
                const long, const double, const string)>(&onesource::readsource))
+      .def("set_verbosity", &onesource::set_verbosity)
+      .def("get_verbosity", &onesource::get_verbosity)
       .def("fltUsed", &onesource::fltUsed)
       .def("convertFlux", &onesource::convertFlux)
       .def("convertMag", &onesource::convertMag)
