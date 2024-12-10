@@ -418,6 +418,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   /* Create a 2D array with the predicted flux.
   Done to improve the performance in the fit*/
   flux.resize(fullLib.size(), vector<double>(imagm, 0.));
+  zLib.resize(fullLib.size(), -99.);
   fluxIR.resize(fullLibIR.size(), vector<double>(imagm, 0.));
 // Convert the magnitude library in flux
 #ifdef _OPENMP
@@ -429,6 +430,8 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
     for (size_t k = 0; k < allFilters.size(); k++) {
       flux[i][k] = pow(10., -0.4 * (fullLib[i]->mag[k] + 48.6));
     }
+    // create a vector with the redshift of the library
+    zLib[i] = fullLib[i]->red;
   }
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
@@ -1020,7 +1023,7 @@ std::tuple<vector<double>, vector<double>> PhotoZ::run_autoadapt(
         oneObj->closest_red = gridz[indexz(oneObj->zs, gridz)];
         // Select the valid index of the library in case of ZFIX=YES to save
         // computational time
-        valid = oneObj->validLib(fullLib, zfix, oneObj->zs);
+        valid = oneObj->validLib(zLib, zfix, oneObj->zs);
         // Fit the source at the spec-z value
         oneObj->fit(fullLib, flux, valid, funz0, bp);
         // Interpolation of the predicted magnitudes, scaling at zs, checking
@@ -1598,7 +1601,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
     oneObj->setPriors(magabsB, magabsF);
     // Select the valid index of the library in case of ZFIX=YES to save
     // computational time
-    valid = oneObj->validLib(fullLib, zfix, oneObj->zs);
+    valid = oneObj->validLib(zLib, zfix, oneObj->zs);
     // Core of the program: compute the chi2
     oneObj->fit(fullLib, flux, valid, funz0, bp);
     // Try to remove some bands to improve the chi2, only as long as the chi2 is
