@@ -186,7 +186,7 @@ class onesource {
   void convertFlux(const string &catmag, const vector<flt> allFilters);
   void rescale_flux_errors(const vector<double> min_err,
                            const vector<double> fac_err);
-  vector<size_t> validLib(vector<SED *> &fulllib, const bool &zfix,
+  vector<size_t> validLib(const vector<double> &zLib, const bool &zfix,
                           const double &consideredZ);
   void fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
            const vector<size_t> &valid, const double &funz0,

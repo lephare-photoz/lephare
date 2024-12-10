@@ -260,17 +260,17 @@ void onesource::adapt_mag(vector<double> a0, vector<double> a1) {
 /*
  RETURN THE INDEX OF THE LIBRARY TO BE CONSIDERED (MAINLY ZFIX CASE)
 */
-vector<size_t> onesource::validLib(vector<SED *> &thelib, const bool &zfix,
+vector<size_t> onesource::validLib(const vector<double> &zLib, const bool &zfix,
                                    const double &consideredZ) {
   vector<size_t> val;
   // Condition with the redshift set ZFIX YES
   if (zfix) {
-    for (size_t i = 0; i < thelib.size(); i++) {
-      if ((thelib[i])->red == closest_red) val.push_back(i);
+    for (size_t i = 0; i < zLib.size(); i++) {
+      if (zLib[i] == closest_red) val.push_back(i);
     }
   } else {
     // If not fixed redshift, use everything
-    for (size_t i = 0; i < thelib.size(); i++) val.push_back(i);
+    for (size_t i = 0; i < zLib.size(); i++) val.push_back(i);
   }
 
   return val;
