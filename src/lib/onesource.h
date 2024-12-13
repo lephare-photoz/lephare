@@ -18,6 +18,7 @@
 #include "flt.h"  // filter class
 #include "globals.h"
 #include "opa.h"
+#include <omp.h>
 
 using namespace std;
 
@@ -100,6 +101,7 @@ class onesource {
     imasminIR = -99;
     nbused = 0;
     pos = 0;
+    
   }
 
   // Need to initialize the PDF in the constructor after the ":"
