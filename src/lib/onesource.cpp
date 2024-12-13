@@ -410,7 +410,7 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
     // Catch the name of the local thread in the parrallelisation
     thread_id = omp_get_thread_num();
 #endif
-   
+
     // Compute normalisation and chi2
 #pragma omp for schedule(static, 10000)
     for (size_t v = 0; v < va.size(); v++) {
@@ -516,7 +516,7 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
   return;
 }
 
- 
+
 void onesource::compute_best_fit_physical_quantities(vector<SED *> &fulllib) {
   // Best fit values for GAL physical parameters
   if (indmin[0] >= 0 && dmmin[0] > 0) {

@@ -414,7 +414,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   if (filtNameAdd != "none" && filtNameAdd != "NONE") {
     allFiltersAdd = read_doc_filters(filtNameAdd);
   }
-  
+
   /* Create a 2D array with the predicted flux.
   Done to improve the performance in the fit*/
   flux.resize(fullLib.size(), vector<double>(imagm, 0.));
@@ -1606,11 +1606,11 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
     oneObj->fit(fullLib, flux, valid, funz0, bp);
     // Try to remove some bands to improve the chi2, only as long as the chi2 is
     // above a threshold
-     oneObj->rm_discrepant(fullLib, flux, valid, funz0, bp, thresholdChi2);
+    oneObj->rm_discrepant(fullLib, flux, valid, funz0, bp, thresholdChi2);
     // Generate the marginalized PDF (z+physical parameters) from the chi2
     // stored in each SED
     oneObj->generatePDF(fullLib, valid, fltColRF, fltREF, zfix);
-   // Interpolation of Z_BEST and ZQ_BEST (zmin) via Chi2 curves, put z-spec if
+    // Interpolation of Z_BEST and ZQ_BEST (zmin) via Chi2 curves, put z-spec if
     // ZFIX YES  (only gal for the moment)
     oneObj->interp(zfix, zintp, lcdm);
     // Uncertainties from the minimum chi2 + delta chi2
@@ -1658,7 +1658,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
     }
     // compute physical quantities for the best fit GAL solution
     oneObj->compute_best_fit_physical_quantities(fullLib);
-   
+
   }
   return;
 }
