@@ -115,6 +115,12 @@ double cosmo::time(double z) const {
   return timy;
 }
 
+double cosmo::flux_rescaling(double z, double target_z) const {
+  double current_dm = distMod(z);
+  double target_dm = distMod(target_z);
+  return POW10D(0.4 * (target_dm - current_dm));
+}
+
 // Two possible grid in redshift : linear or in (1+z)
 // Possible now to define a minimum redshift to be considered
 vector<double> zgrid(int gridType, double dz, double zmin, double &zmax) {
