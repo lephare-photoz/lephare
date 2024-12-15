@@ -207,7 +207,20 @@ class onesource {
                  unordered_map<string, ofstream> &stpdz);
   void convertMag();
   void keepOri();
-  void interp(const bool zfix, const bool zintp, cosmo lcdm);
+
+  //! Update the solution of the fit based on execution flags
+  /*!
+    \param zfix bool that sets whether to set solution to a given redshift,
+    typically a true or spectroscopic redshift \param zintp bool that sets
+    whether to improve the determination of the minimum on the chi2 curve, using
+    the method PDF::int_parabL
+
+    \param[out] zmin and dmmin are reevaluated, for types GAL and QSO
+
+    Note that zfix and zintp are not supposed to both be set. In case it
+    happens, zintp is discarded here.
+   */
+  void interp(const bool zfix, const bool zintp, const cosmo &lcdm);
   void uncertaintiesMin();
   void uncertaintiesBay();
   void secondpeak(vector<SED *> &fulllib, const double dz_win,
