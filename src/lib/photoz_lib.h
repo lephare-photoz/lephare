@@ -33,10 +33,10 @@ class PhotoZ {
   vector<int> bapp, bappOp, pdz_fabs, emMod;
   cosmo lcdm;
   vector<size_t> valid;
-  vector<double> zLib;
 
  public:
   vector<vector<double>> flux, fluxIR;
+  vector<double> zLib;
   vector<SED *> fullLib, fullLibIR, lightLib;
   vector<flt> allFilters;
   vector<double> gridz;
