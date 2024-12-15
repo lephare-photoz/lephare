@@ -1023,7 +1023,7 @@ std::tuple<vector<double>, vector<double>> PhotoZ::run_autoadapt(
         oneObj->closest_red = gridz[indexz(oneObj->zs, gridz)];
         // Select the valid index of the library in case of ZFIX=YES to save
         // computational time
-        valid = oneObj->validLib(zLib, zfix, oneObj->zs);
+        valid = oneObj->validLib(zLib, zfix);
         // Fit the source at the spec-z value
         oneObj->fit(fullLib, flux, valid, funz0, bp);
         // Interpolation of the predicted magnitudes, scaling at zs, checking
@@ -1604,7 +1604,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
     oneObj->closest_red = gridz[indexz(oneObj->zs, gridz)];
     // Select the valid index of the library in case of ZFIX=YES to save
     // computational time
-    valid = oneObj->validLib(zLib, zfix, oneObj->zs);
+    valid = oneObj->validLib(zLib, zfix);
     // Core of the program: compute the chi2
     oneObj->fit(fullLib, flux, valid, funz0, bp);
     // Try to remove some bands to improve the chi2, only as long as the chi2 is

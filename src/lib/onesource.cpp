@@ -260,12 +260,15 @@ void onesource::adapt_mag(vector<double> a0, vector<double> a1) {
 /*
  RETURN THE INDEX OF THE LIBRARY TO BE CONSIDERED (MAINLY ZFIX CASE)
 */
-vector<size_t> onesource::validLib(const vector<double> &zLib, const bool &zfix,
-                                   const double &consideredZ) {
+vector<size_t> onesource::validLib(const vector<double> &zLib,
+                                   const bool &zfix) {
   vector<size_t> val;
   // Condition with the redshift set ZFIX YES
   if (zfix) {
     for (size_t i = 0; i < zLib.size(); i++) {
+      // closest_red is one of the zgrid, and so are the zLib[i],
+      // so the strict equality, though fragile for floating points,
+      // should be ok.
       if (zLib[i] == closest_red) val.push_back(i);
     }
   } else {

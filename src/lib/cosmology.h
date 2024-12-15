@@ -46,18 +46,19 @@ class cosmo {
     return output;
   }
 
-  //!
+  //! Return the scaling factor that brings a flux from one value to another,
+  //! based only on a change of redshift.
   /*!
     \param z Current redshift
-    \param target_z Target redshift
+    \param z_t Target redshift
 
     \return flux scale factor corresponding to a distance change
-    from \f$z\f$ to \f$target_z\f$ :
-    \f$ scale = 10^{0.4(dm(target_z)-dm(z))}\f$
+    from \f$z\f$ to \f$z_t\f$ :
+    \f$ scale = 10^{0.4(dm(z_t)-dm(z))}\f$
     where \f$dm\f$ is the distance modulus for a given redshift and is obtained
     calling the function cosmo::distMod.
   */
-  double flux_rescaling(double z, double target_z) const;
+  double flux_rescaling(double z, double z_t) const;
 };
 
 vector<double> zgrid(int gridType, double dz, double zmin, double &zmax);

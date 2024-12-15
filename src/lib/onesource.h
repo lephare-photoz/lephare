@@ -59,7 +59,10 @@ class onesource {
   vector<int> busnorma, busul, busfir, bscfir, absfilt;
   string spec, str_inp;
   int pos, nbused, nbul, nbusIR, indminSec, indminIR;
-  double zs, dm, consiz, closest_red;
+  double zs, dm, consiz;
+  /// The closest redshift to a true/spectro redshift, when provided with
+  /// the source, in the grid of redshift used for the fit.
+  double closest_red;
   array<double, 3> zmin, chimin, dmmin;
   array<int, 3> indmin, imasmin;
   double zminIR, chiminIR, dmminIR, imasminIR;
@@ -186,8 +189,19 @@ class onesource {
   void convertFlux(const string &catmag, const vector<flt> allFilters);
   void rescale_flux_errors(const vector<double> min_err,
                            const vector<double> fac_err);
-  vector<size_t> validLib(const vector<double> &zLib, const bool &zfix,
-                          const double &consideredZ);
+
+  //! Return the indexes over zlib vector on which to run the fit
+  /*!
+    \param zlib The vector of redshifts of each template in the full library, in
+    the same order \param zfix If true only take indexes of the templates whose
+    redshifts are the closest to the true/spectro z. onesource::closest_red
+    needs to have been set, else the the return vector will contain all the
+    indexes, as closest_red is initialized to a negative unphysical value.
+
+    \return Vector of indexes to be used on the full library.
+   */
+  vector<size_t> validLib(const vector<double> &zLib, const bool &zfix);
+
   void fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
            const vector<size_t> &valid, const double &funz0,
            const array<int, 2> &bp);
