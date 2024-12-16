@@ -262,9 +262,12 @@ void onesource::adapt_mag(vector<double> a0, vector<double> a1) {
 */
 vector<size_t> onesource::validLib(const vector<double> &zLib,
                                    const bool &zfix) {
+
+
   vector<size_t> val;
   // Condition with the redshift set ZFIX YES
   if (zfix) {
+    vector<size_t> val;
     for (size_t i = 0; i < zLib.size(); i++) {
       // closest_red is one of the zgrid, and so are the zLib[i],
       // so the strict equality, though fragile for floating points,
@@ -273,7 +276,18 @@ vector<size_t> onesource::validLib(const vector<double> &zLib,
     }
   } else {
     // If not fixed redshift, use everything
-    for (size_t i = 0; i < zLib.size(); i++) val.push_back(i);
+    val.resize(zLib.size());
+    #ifdef _OPENMP
+    #pragma omp parallel 
+    {
+    #endif
+     #pragma omp for schedule(static, 10000)
+     for (size_t i = 0; i < zLib.size(); i++) {
+       val[i]=i;
+     }
+    #ifdef _OPENMP
+    }
+    #endif
   }
 
   return val;
