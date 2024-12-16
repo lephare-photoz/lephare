@@ -269,22 +269,22 @@ vector<size_t> onesource::validLib(const vector<double> &zLib,
   if (zfix) {
     for (size_t i = 0; i < zLib.size(); i++) {
       // Keep only the index corresponding to the closest redshift in the grid
-      if (abs(zLib[i]-closest_red)<1.e-10) val.push_back(i);
+      if (abs(zLib[i] - closest_red) < 1.e-10) val.push_back(i);
     }
   } else {
     // If not fixed redshift, use everything
     val.resize(zLib.size());
-    #ifdef _OPENMP
-    #pragma omp parallel 
+#ifdef _OPENMP
+#pragma omp parallel 
     {
-    #endif
-     #pragma omp for schedule(static, 10000)
+#endif
+#pragma omp for schedule(static, 10000)
      for (size_t i = 0; i < zLib.size(); i++) {
        val[i]=i;
      }
-    #ifdef _OPENMP
+#ifdef _OPENMP
     }
-    #endif
+#endif
   }
 
   return val;
@@ -414,7 +414,7 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
 
 #ifdef _OPENMP
   // double start = omp_get_wtime();
-#pragma omp parallel shared(fulllib)				\
+#pragma omp parallel shared(fulllib)			        	\
     firstprivate(s2n, invsab, invsabSq, abinvsabSq, imagm, nbul, busul, \
                      priorLib, number_threads, thread_id)
   {
@@ -430,7 +430,7 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
 
       // Measurement of scaling factor dm only with (fobs>flim), dchi2/ddm = 0
       double avmago = 0., avmagt = 0.;
-      double dmloc=-999.;
+      double dmloc = -999.;
       for (size_t k = 0; k < imagm; k++) {
         double fluxin = flux[i][k];
         avmago += fluxin * abinvsabSq[k];

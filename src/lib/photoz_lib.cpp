@@ -1606,17 +1606,17 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
     // computational time
     valid = oneObj->validLib(zLib, zfix);
     // Core of the program: compute the chi2
-     oneObj->fit(fullLib, flux, valid, funz0, bp);
+    oneObj->fit(fullLib, flux, valid, funz0, bp);
     // Try to remove some bands to improve the chi2, only as long as the chi2 is
     // above a threshold
     oneObj->rm_discrepant(fullLib, flux, valid, funz0, bp, thresholdChi2);
-     // Generate the marginalized PDF (z+physical parameters) from the chi2
+    // Generate the marginalized PDF (z+physical parameters) from the chi2
     // stored in each SED
-     oneObj->generatePDF(fullLib, valid, fltColRF, fltREF, zfix);
+    oneObj->generatePDF(fullLib, valid, fltColRF, fltREF, zfix);
     // Interpolation of Z_BEST and ZQ_BEST (zmin) via Chi2 curves, put z-spec if
     // ZFIX YES  (only gal for the moment)
-    if (zfix || zintp)  oneObj->interp(zfix, zintp, lcdm);
-   // Uncertainties from the minimum chi2 + delta chi2
+    if (zfix || zintp) oneObj->interp(zfix, zintp, lcdm);
+    // Uncertainties from the minimum chi2 + delta chi2
     oneObj->uncertaintiesMin();
     // Uncertainties from the bayesian method, centered on the median
     oneObj->uncertaintiesBay();

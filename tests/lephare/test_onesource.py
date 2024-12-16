@@ -43,5 +43,15 @@ def test_onesource_set_priors():
 def test_validlib():
     s = onesource()
     s.closest_red = 0.15
-    assert s.validLib([0, 0.05, 0.15, 0.2, 0, 0.05, 0.15, 0.2, ], True) == [2,6]
+    assert s.validLib([
+        0,
+        0.05,
+        0.15,
+        0.2,
+        0,
+        0.05,
+        0.15,
+        0.2,
+    ], True,
+    ) == [2,6]
     assert s.validLib([0, 0.05, 0.15, 0.2], False) == [0, 1, 2, 3]
