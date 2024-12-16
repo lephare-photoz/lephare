@@ -182,9 +182,10 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   // Z_INTERP redshift interpolation between library Z-STEP
   zintp = key_analysed["Z_INTERP"].split_bool("NO", 1)[0];
 
-  // Z_METHOD compute the absolute magnitude at a given redshift solution ML or
+  // Z_METHOD compute the absolute magnitude at a given redshift solution MED or
   // BEST - BEST by default
-  methz = ((key_analysed["Z_METHOD"]).split_string("BEST", 1))[0];
+  string tmp = ((key_analysed["Z_METHOD"]).split_string("BEST", 1))[0];
+  methz = (tmp[0] == 'M' || tmp[0] == 'm') ? true : false;
 
   /* search for secondary solution  */
 
@@ -322,7 +323,8 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   outputHeader += "# NZ_PRIOR               : " + to_string(bp[0]) + ' ' +
                   to_string(bp[1]) + '\n';
   outputHeader += "# Z_INTERP               : " + bool2string(zintp) + '\n';
-  outputHeader += "# Z_METHOD               : " + methz + '\n';
+  outputHeader +=
+      "# Z_METHOD               : " + string(methz ? "MED" : "BEST") + '\n';
   outputHeader += "# PROB_INTZ              : ";
   for (int k = 0; k < npdz; k++) {
     outputHeader += to_string(int_pdz[k]) + ' ';
@@ -1631,7 +1633,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
     oneObj->considered_red(zfix, methz);
     // If use the median of the PDF for the abs mag, etc, need to redo the fit
     // Need to redo the fit to get the right scaling. It would change ZMIN, etc
-    if ((methz[0] == 'M' || methz[0] == 'm') && (!zfix)) {
+    if (methz && (!zfix)) {
       oneObj->chimin[0] = 1.e9;
       oneObj->closest_red = gridz[indexz(oneObj->zgmed[0], gridz)];
       oneObj->fit(fullLib, flux, valid, funz0, bp);
