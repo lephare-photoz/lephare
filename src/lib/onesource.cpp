@@ -267,12 +267,9 @@ vector<size_t> onesource::validLib(const vector<double> &zLib,
   vector<size_t> val;
   // Condition with the redshift set ZFIX YES
   if (zfix) {
-    vector<size_t> val;
     for (size_t i = 0; i < zLib.size(); i++) {
-      // closest_red is one of the zgrid, and so are the zLib[i],
-      // so the strict equality, though fragile for floating points,
-      // should be ok.
-      if (zLib[i] == closest_red) val.push_back(i);
+      // Keep only the index corresponding to the closest redshift in the grid
+      if (abs(zLib[i]-closest_red)<1.e-10) val.push_back(i);
     }
   } else {
     // If not fixed redshift, use everything
