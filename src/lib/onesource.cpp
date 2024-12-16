@@ -280,7 +280,7 @@ vector<size_t> onesource::validLib(const vector<double> &zLib,
 #endif
 #pragma omp for schedule(static, 10000)
       for (size_t i = 0; i < zLib.size(); i++) {
-        val[i]=i;
+        val[i] = i;
       }
 #ifdef _OPENMP
     }
