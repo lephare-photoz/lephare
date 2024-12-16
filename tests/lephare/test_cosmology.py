@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from lephare import cosmo, indexz, zgrid
 
 
@@ -58,3 +59,13 @@ def test_cosmology_indexz():
     assert indexz(2.5, grid) == 2
     # test value smaller and close to a grid value
     assert indexz(2.9, grid) == 2
+
+
+def test_flux_rescaling():
+    c = cosmo()
+    z1 = 0.1
+    dm1 = c.distMod(z1)
+    z2 = 0.2
+    dm2 = c.distMod(z2)
+    assert c.flux_rescaling(z1, z1) == 1.0
+    assert c.flux_rescaling(z1, z2) == pytest.approx(np.power(10, 0.4 * (dm2 - dm1)))

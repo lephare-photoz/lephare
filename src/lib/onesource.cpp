@@ -260,12 +260,15 @@ void onesource::adapt_mag(vector<double> a0, vector<double> a1) {
 /*
  RETURN THE INDEX OF THE LIBRARY TO BE CONSIDERED (MAINLY ZFIX CASE)
 */
-vector<size_t> onesource::validLib(const vector<double> &zLib, const bool &zfix,
-                                   const double &consideredZ) {
+vector<size_t> onesource::validLib(const vector<double> &zLib,
+                                   const bool &zfix) {
   vector<size_t> val;
   // Condition with the redshift set ZFIX YES
   if (zfix) {
     for (size_t i = 0; i < zLib.size(); i++) {
+      // closest_red is one of the zgrid, and so are the zLib[i],
+      // so the strict equality, though fragile for floating points,
+      // should be ok.
       if (zLib[i] == closest_red) val.push_back(i);
     }
   } else {
@@ -1543,31 +1546,24 @@ void onesource::interp_lib(vector<SED *> &fulllib, const int imagm,
 /*
  REDSHIFT INTERPOLATION  if  ZINTP=true
 */
-void onesource::interp(const bool zfix, const bool zintp, cosmo lcdm) {
-  // keep distance modulus before interpolation
-  double distGbef = lcdm.distMod(zmin[0]);
-  double distQbef = lcdm.distMod(zmin[1]);
-
-  // If zfix=yes, use the spec-z as best value
+void onesource::interp(const bool zfix, const bool zintp, const cosmo &lcdm) {
   if (zfix) {
-    // Modify the zmin for the galaxy
+    dmmin[0] *= lcdm.flux_rescaling(zmin[0], zs);
     zmin[0] = zs;
+    dmmin[1] *= lcdm.flux_rescaling(zmin[1], zs);
     zmin[1] = zs;
-  } else {
-    // If zfix=no but an interpolation is required
-    if (zintp) {
-      // The new zmin is coming from the PDF, the one with the minimum chi2
-      zmin[0] = pdfmap[9].int_parab();   // Galaxies
-      zmin[1] = pdfmap[10].int_parab();  // AGN
-    }
+    return;
   }
 
-  // Need to rescale the normalisation accoring to the new redshift
-  // distance modulus after interpolation
-  double distGaft = lcdm.distMod(zmin[0]);
-  double distQaft = lcdm.distMod(zmin[1]);
-  dmmin[0] = dmmin[0] * pow(10., (0.4 * (distGaft - distGbef)));
-  dmmin[1] = dmmin[1] * pow(10., (0.4 * (distQaft - distQbef)));
+  if (zintp) {
+    double target_z_gal = pdfmap[9].int_parab();
+    double target_z_qso = pdfmap[10].int_parab();
+    dmmin[0] *= lcdm.flux_rescaling(zmin[0], target_z_gal);
+    zmin[0] = target_z_gal;
+    dmmin[1] *= lcdm.flux_rescaling(zmin[1], target_z_qso);
+    zmin[1] = target_z_qso;
+    return;
+  }
 }
 
 /*

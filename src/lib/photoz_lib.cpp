@@ -1023,7 +1023,7 @@ std::tuple<vector<double>, vector<double>> PhotoZ::run_autoadapt(
         oneObj->closest_red = gridz[indexz(oneObj->zs, gridz)];
         // Select the valid index of the library in case of ZFIX=YES to save
         // computational time
-        valid = oneObj->validLib(zLib, zfix, oneObj->zs);
+        valid = oneObj->validLib(zLib, zfix);
         // Fit the source at the spec-z value
         oneObj->fit(fullLib, flux, valid, funz0, bp);
         // Interpolation of the predicted magnitudes, scaling at zs, checking
@@ -1596,23 +1596,28 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
     // Correct the observed magnitudes and fluxes with the coefficients found by
     // auto-adapt
     if (autoadapt) oneObj->adapt_mag(a0, a1);
-    oneObj->closest_red = gridz[indexz(oneObj->zs, gridz)];
     // set the prior on the redshift, abs mag, ebv, etc on the object
     oneObj->setPriors(magabsB, magabsF);
+    // set the z in the grid closest to the true/spectro z in the catalogue
+    // this only makes sense for ZFIX=YES and if this true/spectro z is provided
+    // in the catalogue
+    oneObj->closest_red = gridz[indexz(oneObj->zs, gridz)];
     // Select the valid index of the library in case of ZFIX=YES to save
     // computational time
-    valid = oneObj->validLib(zLib, zfix, oneObj->zs);
+    valid = oneObj->validLib(zLib, zfix);
     // Core of the program: compute the chi2
     oneObj->fit(fullLib, flux, valid, funz0, bp);
     // Try to remove some bands to improve the chi2, only as long as the chi2 is
     // above a threshold
     oneObj->rm_discrepant(fullLib, flux, valid, funz0, bp, thresholdChi2);
+    // Interpolation of Z_BEST and ZQ_BEST (zmin) via Chi2 curves, put z-spec if
+    // ZFIX YES  (only gal for the moment)
+    if (zfix || zintp) {
+      oneObj->interp(zfix, zintp, lcdm);
+    }
     // Generate the marginalized PDF (z+physical parameters) from the chi2
     // stored in each SED
     oneObj->generatePDF(fullLib, valid, fltColRF, fltREF, zfix);
-    // Interpolation of Z_BEST and ZQ_BEST (zmin) via Chi2 curves, put z-spec if
-    // ZFIX YES  (only gal for the moment)
-    oneObj->interp(zfix, zintp, lcdm);
     // Uncertainties from the minimum chi2 + delta chi2
     oneObj->uncertaintiesMin();
     // Uncertainties from the bayesian method, centered on the median
