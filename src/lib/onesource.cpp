@@ -275,13 +275,13 @@ vector<size_t> onesource::validLib(const vector<double> &zLib,
     // If not fixed redshift, use everything
     val.resize(zLib.size());
 #ifdef _OPENMP
-#pragma omp parallel 
+#pragma omp parallel
     {
 #endif
 #pragma omp for schedule(static, 10000)
-     for (size_t i = 0; i < zLib.size(); i++) {
-       val[i]=i;
-     }
+      for (size_t i = 0; i < zLib.size(); i++) {
+        val[i]=i;
+      }
 #ifdef _OPENMP
     }
 #endif
@@ -414,7 +414,7 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
 
 #ifdef _OPENMP
   // double start = omp_get_wtime();
-#pragma omp parallel shared(fulllib)			        	\
+#pragma omp parallel shared(fulllib)                                    \
     firstprivate(s2n, invsab, invsabSq, abinvsabSq, imagm, nbul, busul, \
                      priorLib, number_threads, thread_id)
   {
