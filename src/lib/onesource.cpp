@@ -415,12 +415,9 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
   bool mabsGALprior = (priorLib[0] < 0 && priorLib[1] < 0);
   bool mabsAGNprior = (priorLib[2] < 0 && priorLib[3] < 0);
 
-  // parrallellize over each SED
-  vector<double> chi2loc(va.size()), dmloc(va.size());
-
 #ifdef _OPENMP
   // double start = omp_get_wtime();
-#pragma omp parallel shared(fulllib,dmloc,chi2loc)				\
+#pragma omp parallel shared(fulllib)				\
     firstprivate(s2n, invsab, invsabSq, abinvsabSq, imagm, nbul, busul, \
                      priorLib, number_threads, thread_id)
   {
@@ -436,27 +433,28 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
 
       // Measurement of scaling factor dm only with (fobs>flim), dchi2/ddm = 0
       double avmago = 0., avmagt = 0.;
+      double dmloc=-999.;
       for (size_t k = 0; k < imagm; k++) {
         double fluxin = flux[i][k];
         avmago += fluxin * abinvsabSq[k];
         avmagt += fluxin * fluxin * invsabSq[k];
       }
       // Normalisation
-      if (avmagt > 0) dmloc[v] = avmago / avmagt; else dmloc[v] = -999.;
+      if (avmagt > 0) dmloc = avmago / avmagt;
 
       // Measurement of chi^2
-      chi2loc[v] = 0;
+      double chi2loc = 0;
       for (size_t k = 0; k < imagm; k++) {
-        double inter = s2n[k] - dmloc[v] * flux[i][k] * invsab[k];
-        chi2loc[v] += inter * inter;
+        double inter = s2n[k] - dmloc * flux[i][k] * invsab[k];
+        chi2loc += inter * inter;
       }
 
       // Upper-limits. Check first if some bands have upper-limits, before
       // applying the condition
       if (nbul > 0) {
         for (size_t k = 0; k < imagm; k++) {
-          if ((dmloc[v] * busul[k] * flux[i][k]) > ab[k] && busnorma[k] == 1)
-            chi2loc[v] = HIGH_CHI2;
+          if ((dmloc * busul[k] * flux[i][k]) > ab[k] && busnorma[k] == 1)
+            chi2loc = HIGH_CHI2;
         }
       }
 
@@ -472,34 +470,34 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
         // predicted magnitudes within the babs filter renormalized by the
         // scaling
         double abs_mag;
-        abs_mag = sed->mag0 - 2.5 * log10(dmloc[v]);
+        abs_mag = sed->mag0 - 2.5 * log10(dmloc);
         // specific case when the redshift is 0
         if (reds < 1.e-10) abs_mag = abs_mag - funz0;
         // Galaxy rejection
         if ((abs_mag <= priorLib[0] || abs_mag >= priorLib[1]) && libtype == 0)
-          chi2loc[v] = HIGH_CHI2;
+          chi2loc = HIGH_CHI2;
         // AGN rejection
         if ((abs_mag <= priorLib[2] || abs_mag >= priorLib[3]) && libtype == 1)
-          chi2loc[v] = HIGH_CHI2;
+          chi2loc = HIGH_CHI2;
       }
       // Prior N(z)
       if (bp[0] >= 0 && libtype == 0) {
         double pweight = nzprior(sed->luv, sed->lnir, reds, bp);
-        chi2loc[v] = chi2loc[v] - 2. * log(pweight);
+        chi2loc = chi2loc - 2. * log(pweight);
       }
 
       // keep track of the minimum chi2 for each object type, over the threads
-      if (chi2loc[v] < HIGH_CHI2) {
+      if (chi2loc < HIGH_CHI2) {
         object_type type = sed->get_object_type();
-        if (chi2_vals[thread_id][type] > chi2loc[v]) {
-          chi2_vals[thread_id][type] = chi2loc[v];
+        if (chi2_vals[thread_id][type] > chi2loc) {
+          chi2_vals[thread_id][type] = chi2loc;
           chi2_idx[thread_id][type] = sed->index;
         }
       }
 
       // Write the chi2
-      sed->chi2 = chi2loc[v];
-      sed->dm = dmloc[v];
+      sed->chi2 = chi2loc;
+      sed->dm = dmloc;
     }
 
 #ifdef _OPENMP
