@@ -1617,9 +1617,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
     oneObj->generatePDF(fullLib, valid, fltColRF, fltREF, zfix);
     // Interpolation of Z_BEST and ZQ_BEST (zmin) via Chi2 curves, put z-spec if
     // ZFIX YES  (only gal for the moment)
-    if (zfix || zintp) {
-      oneObj->interp(zfix, zintp, lcdm);
-    }
+    if (zfix || zintp) oneObj->interp(zfix, zintp, lcdm);
     // Uncertainties from the minimum chi2 + delta chi2
     oneObj->uncertaintiesMin();
     // Uncertainties from the bayesian method, centered on the median
