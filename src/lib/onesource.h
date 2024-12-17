@@ -180,7 +180,7 @@ class onesource {
   void readsource(const string &identifier, const vector<double> vals,
                   const vector<double> err_vals, const long context,
                   const double z_spec, const string additional_input);
-  void considered_red(const bool zfix, const string methz);
+  void considered_red(const bool zfix, const bool methz);
   void setPriors(const array<double, 2> magabsB,
                  const array<double, 2> magabsF);
   void fltUsed(const long gbcont, const long contforb, const int imagm);

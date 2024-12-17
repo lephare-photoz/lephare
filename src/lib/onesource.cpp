@@ -44,10 +44,10 @@ void onesource::readsource(const string &identifier, const vector<double> vals,
 /*
  Fixed the redshift considered for abs mag, etc depending on the option
 */
-void onesource::considered_red(const bool zfix, const string methz) {
+void onesource::considered_red(const bool zfix, const bool methz) {
   // if zfix is not fixed
   if (!zfix) {
-    if (methz[0] == 'M' || methz[0] == 'm') {
+    if (methz) {
       // if considered redshift is the median of the PDF
       consiz = zgmed[0];
     } else {

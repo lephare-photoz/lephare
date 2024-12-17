@@ -30,8 +30,9 @@ def test_load_sed_list(test_data_dir):
     assert os.path.exists(os.path.join(test_dir, "../data/sed/QSO/ONE_SED/ONE_SED.list"))
     # Check the sed is there
     assert os.path.exists(os.path.join(test_dir, "../data/sed/QSO/ONE_SED/o5v.sed.ext"))
-    # Clear the copied folder
+    # Clear the copied folders
     shutil.rmtree(os.path.join(test_dir, "../tmp/seds"))
+    shutil.rmtree(os.path.join(test_dir, "../data/sed/QSO/ONE_SED"))
 
 
 def test_all_types_to_keymap():

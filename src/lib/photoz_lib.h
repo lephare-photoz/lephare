@@ -22,8 +22,15 @@ class PhotoZ {
   double fir_lmin, fir_cont, fir_scale;
   bool verbose;
   array<double, 2> magabsB, magabsF, zrange, ebvrange;
-  bool outchi, zintp, zfix;
-  string cat, methz, typm, catmag, cattyp, zmulti, outf, outsp, outpdz, outpdm;
+  bool outchi,  /// Whether or not to output th chi2 values in ascii
+      zintp,    /// Whether or not to interpolate the z solution from the grid
+                /// result
+      zfix,     /// Whether or not to run with a fixed redshift, typically the
+                /// true/spectro z
+      methz;    /// If true, set z to the MEDIAN solution rather than the BEST
+                /// solution, when computing physical parameters.
+
+  string cat, typm, catmag, cattyp, zmulti, outf, outsp, outpdz, outpdm;
   vector<double> shifts0, shifts1, min_err, fac_err, int_pdz, zbmin, zbmax;
   vector<flt> allFiltersAdd;
   vector<vector<int>> goodFlt;
