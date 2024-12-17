@@ -262,8 +262,6 @@ void onesource::adapt_mag(vector<double> a0, vector<double> a1) {
 */
 vector<size_t> onesource::validLib(const vector<double> &zLib,
                                    const bool &zfix) {
-
-
   vector<size_t> val;
   // Condition with the redshift set ZFIX YES
   if (zfix) {
@@ -528,7 +526,6 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
   return;
 }
 
-
 void onesource::compute_best_fit_physical_quantities(vector<SED *> &fulllib) {
   // Best fit values for GAL physical parameters
   if (indmin[0] >= 0 && dmmin[0] > 0) {
@@ -555,9 +552,6 @@ void onesource::compute_best_fit_physical_quantities(vector<SED *> &fulllib) {
   }
   return;
 }
-
-
-
 
 /*
   Use prior info on N(z) as a function of magnitude (Iband) and of the type.
@@ -660,7 +654,6 @@ void onesource::rm_discrepant(vector<SED *> &fulllib,
                               const vector<vector<double>> &flux,
                               const vector<size_t> &va, const double funz0,
                               const array<int, 2> bp, double thresholdChi2) {
-
   size_t imagm = busnorma.size();
   double newmin, improvedChi2;
   // Start with the best chi2 among the libraries
