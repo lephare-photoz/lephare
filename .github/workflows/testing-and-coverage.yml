@@ -43,7 +43,7 @@ jobs:
 
     - name: Collect C++ coverage
       run: |
-        geninfo --ignore-errors gcov build
+        geninfo --ignore-errors mismatch --ignore-errors gcov build
         lcov --output-file coverage.cpp --capture --directory build
         lcov --output-file coverage.cpp --extract coverage.cpp $PWD/src/"*"
         cat coverage.lcov coverage.cpp > coverage.txt
