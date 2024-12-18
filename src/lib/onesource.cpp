@@ -735,7 +735,7 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
 #pragma omp for schedule(static, 10000)
     // Loop over all SEDs from the library
     for (size_t i = 0; i < fulllibIR.size(); i++) {
-      if (fulllibIR[i]->red == closest_red) {
+      if (abs(fulllibIR[i]->red - closest_red) < 1.e-10) {
         // Difference between the distance modulus at the redshift of the
         // library and the finel one considered
         double dmcor;

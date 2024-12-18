@@ -1634,6 +1634,8 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
     if (methz && (!zfix)) {
       oneObj->chimin[0] = 1.e9;
       oneObj->closest_red = gridz[indexz(oneObj->zgmed[0], gridz)];
+      // Select the valid index of the library corresponding to zgmed
+      valid = oneObj->validLib(zLib, true);
       oneObj->fit(fullLib, flux, valid, funz0, bp);
     }
     // Interpolation at the new redshift  (only gal for the moment)
