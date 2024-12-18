@@ -52,17 +52,18 @@ PYBIND11_MODULE(_lephare, mod) {
 
   /******** CLASS COSMOLOGY*********/
   py::class_<cosmo>(mod, "cosmo")
-      .def(py::init<double, double, double>(), py::arg("h0") = 70,
-           py::arg("om0") = 0.3, py::arg("l0") = 0.7, "standard constructor")
-      .def("distMod", &cosmo::distMod, py::arg("z"))
-      .def("distMet", &cosmo::distMet, py::arg("z"))
-      .def("time", &cosmo::time, py::arg("z"))
-      .def("distMod", py::vectorize(&cosmo::distMod))
-      .def("distMet", py::vectorize(&cosmo::distMet))
-      .def("time", py::vectorize(&cosmo::time))
-      .def("flux_rescaling", &cosmo::flux_rescaling);
-  mod.def("zgrid", &zgrid);
-  mod.def("indexz", &indexz);
+      .def(py::init<double, double, double>(), "Standard constructor",
+           py::arg("h0") = 70, py::arg("om0") = 0.3, py::arg("l0") = 0.7)
+      .def("distMod", py::vectorize(&cosmo::distMod),
+           "Compute distance modulus given redshift z.", py::arg("z"))
+      .def("distMet", py::vectorize(&cosmo::distMet),
+           "Compute metric distance given redshift z.", py::arg("z"))
+      .def("time", py::vectorize(&cosmo::time), "Compute time at redshift z.",
+           py::arg("z"))
+      .def("flux_rescaling", &cosmo::flux_rescaling, "Compute flux rescaling.");
+
+  mod.def("zgrid", &zgrid, "Generate a redshift grid.");
+  mod.def("indexz", &indexz, "Get the index for a redshift value.");
 
   /******** CLASS OPA *********/
   py::class_<opa>(mod, "opa")
