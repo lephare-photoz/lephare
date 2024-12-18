@@ -59,7 +59,8 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("time", &cosmo::time, py::arg("z"))
       .def("distMod", py::vectorize(&cosmo::distMod))
       .def("distMet", py::vectorize(&cosmo::distMet))
-      .def("time", py::vectorize(&cosmo::time));
+      .def("time", py::vectorize(&cosmo::time))
+      .def("flux_rescaling", &cosmo::flux_rescaling);
   mod.def("zgrid", &zgrid);
   mod.def("indexz", &indexz);
 
@@ -272,6 +273,8 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("fluxIR", &PhotoZ::fluxIR)
       .def_readonly("imagm", &PhotoZ::imagm)
       .def_readonly("fullLib", &PhotoZ::fullLib)
+      .def_readonly("zLib", &PhotoZ::zLib)
+      .def_readonly("flux", &PhotoZ::flux)
       .def_readonly("fullLibIR", &PhotoZ::fullLibIR)
       .def_readonly("allFilters", &PhotoZ::allFilters)
       .def_readonly("gridz", &PhotoZ::gridz)

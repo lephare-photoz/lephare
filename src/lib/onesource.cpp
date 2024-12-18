@@ -44,10 +44,10 @@ void onesource::readsource(const string &identifier, const vector<double> vals,
 /*
  Fixed the redshift considered for abs mag, etc depending on the option
 */
-void onesource::considered_red(const bool zfix, const string methz) {
+void onesource::considered_red(const bool zfix, const bool methz) {
   // if zfix is not fixed
   if (!zfix) {
-    if (methz[0] == 'M' || methz[0] == 'm') {
+    if (methz) {
       // if considered redshift is the median of the PDF
       consiz = zgmed[0];
     } else {
@@ -260,17 +260,29 @@ void onesource::adapt_mag(vector<double> a0, vector<double> a1) {
 /*
  RETURN THE INDEX OF THE LIBRARY TO BE CONSIDERED (MAINLY ZFIX CASE)
 */
-vector<size_t> onesource::validLib(vector<SED *> &thelib, const bool &zfix,
-                                   const double &consideredZ) {
+vector<size_t> onesource::validLib(const vector<double> &zLib,
+                                   const bool &zfix) {
   vector<size_t> val;
   // Condition with the redshift set ZFIX YES
   if (zfix) {
-    for (size_t i = 0; i < thelib.size(); i++) {
-      if ((thelib[i])->red == closest_red) val.push_back(i);
+    for (size_t i = 0; i < zLib.size(); i++) {
+      // Keep only the index corresponding to the closest redshift in the grid
+      if (abs(zLib[i] - closest_red) < 1.e-10) val.push_back(i);
     }
   } else {
     // If not fixed redshift, use everything
-    for (size_t i = 0; i < thelib.size(); i++) val.push_back(i);
+    val.resize(zLib.size());
+#ifdef _OPENMP
+#pragma omp parallel
+    {
+#endif
+#pragma omp for schedule(static, 10000)
+      for (size_t i = 0; i < zLib.size(); i++) {
+        val[i] = i;
+      }
+#ifdef _OPENMP
+    }
+#endif
   }
 
   return val;
@@ -398,10 +410,6 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
   bool mabsGALprior = (priorLib[0] < 0 && priorLib[1] < 0);
   bool mabsAGNprior = (priorLib[2] < 0 && priorLib[3] < 0);
 
-  // parrallellize over each SED
-  vector<double> chi2loc(fulllib.size(), HIGH_CHI2),
-      dmloc(fulllib.size(), -999.);
-
 #ifdef _OPENMP
   // double start = omp_get_wtime();
 #pragma omp parallel shared(fulllib)                                    \
@@ -417,33 +425,31 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
     for (size_t v = 0; v < va.size(); v++) {
       // index to be considered because of ZFIX=YES
       size_t i = va[v];
-      // Initialize
-      chi2loc[i] = HIGH_CHI2;
-      dmloc[i] = -999.;
 
       // Measurement of scaling factor dm only with (fobs>flim), dchi2/ddm = 0
       double avmago = 0., avmagt = 0.;
+      double dmloc = -999.;
       for (size_t k = 0; k < imagm; k++) {
         double fluxin = flux[i][k];
         avmago += fluxin * abinvsabSq[k];
         avmagt += fluxin * fluxin * invsabSq[k];
       }
       // Normalisation
-      if (avmagt > 0) dmloc[i] = avmago / avmagt;
+      if (avmagt > 0) dmloc = avmago / avmagt;
 
       // Measurement of chi^2
-      chi2loc[i] = 0;
+      double chi2loc = 0;
       for (size_t k = 0; k < imagm; k++) {
-        double inter = s2n[k] - dmloc[i] * flux[i][k] * invsab[k];
-        chi2loc[i] += inter * inter;
+        double inter = s2n[k] - dmloc * flux[i][k] * invsab[k];
+        chi2loc += inter * inter;
       }
 
       // Upper-limits. Check first if some bands have upper-limits, before
       // applying the condition
       if (nbul > 0) {
         for (size_t k = 0; k < imagm; k++) {
-          if ((dmloc[i] * busul[k] * flux[i][k]) > ab[k] && busnorma[k] == 1)
-            chi2loc[i] = HIGH_CHI2;
+          if ((dmloc * busul[k] * flux[i][k]) > ab[k] && busnorma[k] == 1)
+            chi2loc = HIGH_CHI2;
         }
       }
 
@@ -459,34 +465,34 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
         // predicted magnitudes within the babs filter renormalized by the
         // scaling
         double abs_mag;
-        abs_mag = sed->mag0 - 2.5 * log10(dmloc[i]);
+        abs_mag = sed->mag0 - 2.5 * log10(dmloc);
         // specific case when the redshift is 0
         if (reds < 1.e-10) abs_mag = abs_mag - funz0;
         // Galaxy rejection
         if ((abs_mag <= priorLib[0] || abs_mag >= priorLib[1]) && libtype == 0)
-          chi2loc[i] = HIGH_CHI2;
+          chi2loc = HIGH_CHI2;
         // AGN rejection
         if ((abs_mag <= priorLib[2] || abs_mag >= priorLib[3]) && libtype == 1)
-          chi2loc[i] = HIGH_CHI2;
+          chi2loc = HIGH_CHI2;
       }
       // Prior N(z)
       if (bp[0] >= 0 && libtype == 0) {
         double pweight = nzprior(sed->luv, sed->lnir, reds, bp);
-        chi2loc[i] = chi2loc[i] - 2. * log(pweight);
+        chi2loc = chi2loc - 2. * log(pweight);
       }
 
       // keep track of the minimum chi2 for each object type, over the threads
-      if (chi2loc[i] < HIGH_CHI2) {
+      if (chi2loc < HIGH_CHI2) {
         object_type type = sed->get_object_type();
-        if (chi2_vals[thread_id][type] > chi2loc[i]) {
-          chi2_vals[thread_id][type] = chi2loc[i];
+        if (chi2_vals[thread_id][type] > chi2loc) {
+          chi2_vals[thread_id][type] = chi2loc;
           chi2_idx[thread_id][type] = sed->index;
         }
       }
 
       // Write the chi2
-      sed->chi2 = chi2loc[i];
-      sed->dm = dmloc[i];
+      sed->chi2 = chi2loc;
+      sed->dm = dmloc;
     }
 
 #ifdef _OPENMP
@@ -729,7 +735,7 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
 #pragma omp for schedule(static, 10000)
     // Loop over all SEDs from the library
     for (size_t i = 0; i < fulllibIR.size(); i++) {
-      if (fulllibIR[i]->red == closest_red) {
+      if (abs(fulllibIR[i]->red - closest_red) < 1.e-10) {
         // Difference between the distance modulus at the redshift of the
         // library and the finel one considered
         double dmcor;
@@ -1542,31 +1548,24 @@ void onesource::interp_lib(vector<SED *> &fulllib, const int imagm,
 /*
  REDSHIFT INTERPOLATION  if  ZINTP=true
 */
-void onesource::interp(const bool zfix, const bool zintp, cosmo lcdm) {
-  // keep distance modulus before interpolation
-  double distGbef = lcdm.distMod(zmin[0]);
-  double distQbef = lcdm.distMod(zmin[1]);
-
-  // If zfix=yes, use the spec-z as best value
+void onesource::interp(const bool zfix, const bool zintp, const cosmo &lcdm) {
   if (zfix) {
-    // Modify the zmin for the galaxy
+    dmmin[0] *= lcdm.flux_rescaling(zmin[0], zs);
     zmin[0] = zs;
+    dmmin[1] *= lcdm.flux_rescaling(zmin[1], zs);
     zmin[1] = zs;
-  } else {
-    // If zfix=no but an interpolation is required
-    if (zintp) {
-      // The new zmin is coming from the PDF, the one with the minimum chi2
-      zmin[0] = pdfmap[9].int_parab();   // Galaxies
-      zmin[1] = pdfmap[10].int_parab();  // AGN
-    }
+    return;
   }
 
-  // Need to rescale the normalisation accoring to the new redshift
-  // distance modulus after interpolation
-  double distGaft = lcdm.distMod(zmin[0]);
-  double distQaft = lcdm.distMod(zmin[1]);
-  dmmin[0] = dmmin[0] * pow(10., (0.4 * (distGaft - distGbef)));
-  dmmin[1] = dmmin[1] * pow(10., (0.4 * (distQaft - distQbef)));
+  if (zintp) {
+    double target_z_gal = pdfmap[9].int_parab();
+    double target_z_qso = pdfmap[10].int_parab();
+    dmmin[0] *= lcdm.flux_rescaling(zmin[0], target_z_gal);
+    zmin[0] = target_z_gal;
+    dmmin[1] *= lcdm.flux_rescaling(zmin[1], target_z_qso);
+    zmin[1] = target_z_qso;
+    return;
+  }
 }
 
 /*

@@ -182,9 +182,10 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   // Z_INTERP redshift interpolation between library Z-STEP
   zintp = key_analysed["Z_INTERP"].split_bool("NO", 1)[0];
 
-  // Z_METHOD compute the absolute magnitude at a given redshift solution ML or
+  // Z_METHOD compute the absolute magnitude at a given redshift solution MED or
   // BEST - BEST by default
-  methz = ((key_analysed["Z_METHOD"]).split_string("BEST", 1))[0];
+  string tmp = ((key_analysed["Z_METHOD"]).split_string("BEST", 1))[0];
+  methz = (tmp[0] == 'M' || tmp[0] == 'm') ? true : false;
 
   /* search for secondary solution  */
 
@@ -322,7 +323,8 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   outputHeader += "# NZ_PRIOR               : " + to_string(bp[0]) + ' ' +
                   to_string(bp[1]) + '\n';
   outputHeader += "# Z_INTERP               : " + bool2string(zintp) + '\n';
-  outputHeader += "# Z_METHOD               : " + methz + '\n';
+  outputHeader +=
+      "# Z_METHOD               : " + string(methz ? "MED" : "BEST") + '\n';
   outputHeader += "# PROB_INTZ              : ";
   for (int k = 0; k < npdz; k++) {
     outputHeader += to_string(int_pdz[k]) + ' ';
@@ -418,6 +420,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   /* Create a 2D array with the predicted flux.
   Done to improve the performance in the fit*/
   flux.resize(fullLib.size(), vector<double>(imagm, 0.));
+  zLib.resize(fullLib.size(), -99.);
   fluxIR.resize(fullLibIR.size(), vector<double>(imagm, 0.));
 // Convert the magnitude library in flux
 #ifdef _OPENMP
@@ -429,6 +432,8 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
     for (size_t k = 0; k < allFilters.size(); k++) {
       flux[i][k] = pow(10., -0.4 * (fullLib[i]->mag[k] + 48.6));
     }
+    // create a vector with the redshift of the library
+    zLib[i] = fullLib[i]->red;
   }
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
@@ -1020,7 +1025,7 @@ std::tuple<vector<double>, vector<double>> PhotoZ::run_autoadapt(
         oneObj->closest_red = gridz[indexz(oneObj->zs, gridz)];
         // Select the valid index of the library in case of ZFIX=YES to save
         // computational time
-        valid = oneObj->validLib(fullLib, zfix, oneObj->zs);
+        valid = oneObj->validLib(zLib, zfix);
         // Fit the source at the spec-z value
         oneObj->fit(fullLib, flux, valid, funz0, bp);
         // Interpolation of the predicted magnitudes, scaling at zs, checking
@@ -1593,12 +1598,15 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
     // Correct the observed magnitudes and fluxes with the coefficients found by
     // auto-adapt
     if (autoadapt) oneObj->adapt_mag(a0, a1);
-    oneObj->closest_red = gridz[indexz(oneObj->zs, gridz)];
     // set the prior on the redshift, abs mag, ebv, etc on the object
     oneObj->setPriors(magabsB, magabsF);
+    // set the z in the grid closest to the true/spectro z in the catalogue
+    // this only makes sense for ZFIX=YES and if this true/spectro z is provided
+    // in the catalogue
+    oneObj->closest_red = gridz[indexz(oneObj->zs, gridz)];
     // Select the valid index of the library in case of ZFIX=YES to save
     // computational time
-    valid = oneObj->validLib(fullLib, zfix, oneObj->zs);
+    valid = oneObj->validLib(zLib, zfix);
     // Core of the program: compute the chi2
     oneObj->fit(fullLib, flux, valid, funz0, bp);
     // Try to remove some bands to improve the chi2, only as long as the chi2 is
@@ -1609,7 +1617,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
     oneObj->generatePDF(fullLib, valid, fltColRF, fltREF, zfix);
     // Interpolation of Z_BEST and ZQ_BEST (zmin) via Chi2 curves, put z-spec if
     // ZFIX YES  (only gal for the moment)
-    oneObj->interp(zfix, zintp, lcdm);
+    if (zfix || zintp) oneObj->interp(zfix, zintp, lcdm);
     // Uncertainties from the minimum chi2 + delta chi2
     oneObj->uncertaintiesMin();
     // Uncertainties from the bayesian method, centered on the median
@@ -1623,9 +1631,11 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
     oneObj->considered_red(zfix, methz);
     // If use the median of the PDF for the abs mag, etc, need to redo the fit
     // Need to redo the fit to get the right scaling. It would change ZMIN, etc
-    if ((methz[0] == 'M' || methz[0] == 'm') && (!zfix)) {
+    if (methz && (!zfix)) {
       oneObj->chimin[0] = 1.e9;
       oneObj->closest_red = gridz[indexz(oneObj->zgmed[0], gridz)];
+      // Select the valid index of the library corresponding to zgmed
+      valid = oneObj->validLib(zLib, true);
       oneObj->fit(fullLib, flux, valid, funz0, bp);
     }
     // Interpolation at the new redshift  (only gal for the moment)
