@@ -203,20 +203,23 @@ void SEDLib<T>::open_output_files() {
   docFile = lepharework + "/lib_bin/" + libOut + ".doc";
   sdocOut.open(docFile.c_str());
   if (!sdocOut) {
-    throw invalid_argument("Can't open doc file of the SED library in " + docFile);
+    throw invalid_argument("Can't open doc file of the SED library in " +
+                           docFile);
   }
 
   binFile = lepharework + "/lib_bin/" + libOut + ".bin";
   sbinOut.open(binFile.c_str(), ios::binary | ios::out);
   if (!sbinOut) {
-    throw invalid_argument("Can't open binary file of the SED library in " + binFile);
+    throw invalid_argument("Can't open binary file of the SED library in " +
+                           binFile);
   }
 
   if (typ == "GAL") {
     physFile = lepharework + "/lib_bin/" + libOut + ".phys";
     sphysOut.open(physFile.c_str());
     if (!sphysOut) {
-      throw invalid_argument("Can't open phys file of the SED library in " + physFile);
+      throw invalid_argument("Can't open phys file of the SED library in " +
+                             physFile);
     }
   }
 }
@@ -239,7 +242,8 @@ void SEDLib<T>::read_model_list() {
   // open the template list file into a stream
   smod.open(modList.c_str());
   if (!smod) {
-    throw invalid_argument("Can't open file with the list of SED to be used " + modList);
+    throw invalid_argument("Can't open file with the list of SED to be used " +
+                           modList);
   }
 
   // Take the template list line by line
@@ -290,7 +294,8 @@ void SEDLib<T>::read_age(string ageFich) {
     sage.open(ageFile.c_str());
     // Check if file has opened properly
     if (!sage) {
-      cerr << "Can't open file with the ages to be selected " << ageFile << endl;
+      cerr << "Can't open file with the ages to be selected " << ageFile
+           << endl;
       cerr << "No selection by age. " << endl;
       // throw "Failing opening ",ageFile.c_str();
     }

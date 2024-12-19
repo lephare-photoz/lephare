@@ -114,7 +114,8 @@ void SED::read(const string &sedFile) {
   // open the SED template file into a stream
   ssed.open(sedFile.c_str());
   if (!ssed) {
-    throw invalid_argument("Can't open the file with the list of SED to be used " + sedFile);
+    throw invalid_argument(
+        "Can't open the file with the list of SED to be used " + sedFile);
   }
 
   // Take the stream line by line

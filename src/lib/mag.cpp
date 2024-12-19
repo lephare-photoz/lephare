@@ -107,7 +107,8 @@ void Mag::open_files() {
   ssedIn.open(sedlibFile.c_str(), ios::binary);
   // Check if file is opened
   if (!ssedIn) {
-    throw invalid_argument("Can't open binary file compiling all SEDs " + sedlibFile);
+    throw invalid_argument("Can't open binary file compiling all SEDs " +
+                           sedlibFile);
   }
 
   // Name of the input SED doc file
@@ -118,7 +119,8 @@ void Mag::open_files() {
   sdocOut.open(docFile.c_str());
   // Check if file is opened
   if (!sdocOut) {
-    throw invalid_argument("Can't open the doc file compiling all SEDs " + docFile);
+    throw invalid_argument("Can't open the doc file compiling all SEDs " +
+                           docFile);
   }
 
   // Name of the output binary and doc files, open it in binary
@@ -126,7 +128,8 @@ void Mag::open_files() {
   sbinOut.open(binOutFile.c_str(), ios::binary | ios::out);
   // Check if file is opened
   if (!sbinOut) {
-    throw invalid_argument("Can't open the binary file with the predicted flux " + binOutFile);
+    throw invalid_argument(
+        "Can't open the binary file with the predicted flux " + binOutFile);
   }
 
   // Open an ascii file to store the predicted magnitudes
@@ -136,7 +139,8 @@ void Mag::open_files() {
     sdatOut.open(datFile.c_str());
     // Check if file is opened
     if (!sdatOut) {
-      throw invalid_argument("Can't open the ascii file with the predicted flux " + datFile);
+      throw invalid_argument(
+          "Can't open the ascii file with the predicted flux " + datFile);
     }
 
     sdatOut << "# Filter list: \n";
@@ -250,7 +254,8 @@ void Mag::read_flt(const string &inputfile) {
   sfiltIn.open(inputfile.c_str());
   // Check if file is opened
   if (!sfiltIn) {
-    throw invalid_argument("Can't open file compiling all filters in " + inputfile);
+    throw invalid_argument("Can't open file compiling all filters in " +
+                           inputfile);
   }
 
   string dummy;

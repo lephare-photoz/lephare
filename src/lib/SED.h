@@ -172,16 +172,19 @@ class SED {
     ofstream sdocOut, sphysOut, sbinOut;
     sdocOut.open(docFile.c_str());
     if (!sdocOut) {
-      throw invalid_argument("Can't open doc file compiling the SED " + docFile);
+      throw invalid_argument("Can't open doc file compiling the SED " +
+                             docFile);
     }
     sbinOut.open(binFile.c_str(), ios::binary | ios::out);
     if (!sbinOut) {
-      throw invalid_argument("Can't open binary file compiling the SED " + binFile);
+      throw invalid_argument("Can't open binary file compiling the SED " +
+                             binFile);
     }
     if (nlib == GAL) {
       sphysOut.open(physFile.c_str());
       if (!sphysOut) {
-        throw invalid_argument("Can't open physical para file associated to SED " + physFile);
+        throw invalid_argument(
+            "Can't open physical para file associated to SED " + physFile);
       }
     }
     writeSED(sbinOut, sphysOut, sdocOut);
@@ -194,7 +197,8 @@ class SED {
     ifstream sbinIn;
     sbinIn.open(fname.c_str(), ios::binary);
     if (!sbinIn) {
-      throw invalid_argument("Can't open the binary file compiling the SED " + fname);
+      throw invalid_argument("Can't open the binary file compiling the SED " +
+                             fname);
     }
     readSEDBin(sbinIn);
   }

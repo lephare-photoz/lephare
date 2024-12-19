@@ -457,7 +457,8 @@ void write_output_filter(string &filtfile, string &filtdoc,
   stfiltdoc.open(filtdoc.c_str());
   // Check if file is opened
   if (!stfiltdoc) {
-    throw invalid_argument("Can't open doc file compiling all filters " + filtdoc);
+    throw invalid_argument("Can't open doc file compiling all filters " +
+                           filtdoc);
   }
 
   // documentation on the screen
