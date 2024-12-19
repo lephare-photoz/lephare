@@ -1,7 +1,5 @@
 import time
 
-import numpy as np
-
 from lephare._lephare import (  # , read_lib, read_doc_filters, readOutKeywords, GalMag, bestFilter, maxkcolor
     GalMag,
     PhotoZ,

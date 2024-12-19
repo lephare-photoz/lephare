@@ -41,7 +41,8 @@ SED::SED(const string nameC, int nummodC, string type) {
   sfr = -999;    // SFR (Mo/yr)
   ltir = -999;   // Int_8um^1000um    L_lbda . dlbda    in Log unit Lo
   ebv = 0.;      // E(B-V) applied to the SED
-  extlawId = 0;  // index of the extinction law when dust attenuation has been applied
+  extlawId =
+      0;  // index of the extinction law when dust attenuation has been applied
   chi2 = HIGH_CHI2;  // chi2 of the fit
   dm = -999.;        // Rescaling of the template
   distMod = 0;
@@ -1632,7 +1633,7 @@ void GalSED::writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
     // Write output
     ofsDat << setw(6) << nummod << " ";
     // start the numbering of attenuation curves at 1 in output
-    ofsDat << setw(3) << extlawId+1 << " ";
+    ofsDat << setw(3) << extlawId + 1 << " ";
     ofsDat << setw(3) << ebv << " ";
     ofsDat << setw(12) << ltir << " ";
     ofsDat << setw(5) << red << " ";
@@ -1894,7 +1895,7 @@ void QSOSED::writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
     // Write output
     ofsDat << setw(6) << nummod << " ";
     // start the numbering of attenuation curves at 1 in output
-    ofsDat << setw(3) << extlawId+1 << " ";
+    ofsDat << setw(3) << extlawId + 1 << " ";
     ofsDat << setw(3) << ebv << " ";
     ofsDat << setw(5) << red << " ";
     ofsDat << setw(12) << distMod << " ";
