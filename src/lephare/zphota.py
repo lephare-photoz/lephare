@@ -1,7 +1,5 @@
 import time
 
-import numpy as np
-
 from lephare._lephare import (  # , read_lib, read_doc_filters, readOutKeywords, GalMag, bestFilter, maxkcolor
     GalMag,
     PhotoZ,
@@ -102,9 +100,6 @@ class Zphota(Runner):
         if autoadapt:
             adapt_srcs = photoz.read_autoadapt_sources()
             a0, a1 = photoz.run_autoadapt(adapt_srcs)
-            offsets = ",".join(np.array(a0).astype(str))
-            offsets = "# Offsets from auto-adapt: " + offsets + "\n"
-            photoz.outputHeader += offsets
         else:
             a0 = []
             a1 = []

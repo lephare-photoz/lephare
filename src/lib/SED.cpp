@@ -114,7 +114,8 @@ void SED::read(const string &sedFile) {
   // open the SED template file into a stream
   ssed.open(sedFile.c_str());
   if (!ssed) {
-    throw invalid_argument("Can't open SED file " + sedFile);
+    throw invalid_argument(
+        "Can't open the file with the list of SED to be used " + sedFile);
   }
 
   // Take the stream line by line
@@ -1631,7 +1632,8 @@ void GalSED::writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
   if (outasc) {
     // Write output
     ofsDat << setw(6) << nummod << " ";
-    ofsDat << setw(3) << extlawId << " ";
+    // start the numbering of attenuation curves at 1 in output
+    ofsDat << setw(3) << extlawId + 1 << " ";
     ofsDat << setw(3) << ebv << " ";
     ofsDat << setw(12) << ltir << " ";
     ofsDat << setw(5) << red << " ";
@@ -1892,7 +1894,8 @@ void QSOSED::writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
   if (outasc) {
     // Write output
     ofsDat << setw(6) << nummod << " ";
-    ofsDat << setw(3) << extlawId << " ";
+    // start the numbering of attenuation curves at 1 in output
+    ofsDat << setw(3) << extlawId + 1 << " ";
     ofsDat << setw(3) << ebv << " ";
     ofsDat << setw(5) << red << " ";
     ofsDat << setw(12) << distMod << " ";

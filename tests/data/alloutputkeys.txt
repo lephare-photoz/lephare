@@ -32,7 +32,6 @@ LUM_R_BEST              float         results["LUM_R_BEST"]
 LUM_K_BEST              float         results["LUM_K_BEST"]
 LUM_TIR_BEST            float         results["LUM_TIR_BEST"]
 MOD_BEST                int           imasmin[0]
-#PDZ_BEST
 CHI_BEST                float         chimin[0]
 SCALE_BEST              float         dmmin[0]
 CONTEXT                 long          cont
@@ -89,9 +88,6 @@ LUM_TIR_SUP		float         LIRmed[2]
 MASS_MED                float         massmed[0]
 MASS_INF		float         massmed[1]
 MASS_SUP		float         massmed[2]
-#EBV_MED                 float         med[0]
-#EBV_INF                 float         med[1]
-#EBV_SUP                 float         med[2]
 SFR_MED                 float         SFRmed[0]
 SFR_INF			float         SFRmed[1]
 SFR_SUP			float         SFRmed[2]
@@ -126,7 +122,6 @@ EM_EW_OIIIB             float         results_emission_lines["EM_FLUX_LYA"]
 EM_EW_HA                float         results_emission_lines["EM_FLUX_LYA"]
 EM_EW_SIIIA             float         results_emission_lines["EM_FLUX_LYA"]
 EM_EW_SIIIB             float         results_emission_lines["EM_FLUX_LYA"]
-#MABS_FLUX
 MABS_FILT()             float         absfilt
 K_COR()                 float         kap
 MAG_ABS()               float         mabs
