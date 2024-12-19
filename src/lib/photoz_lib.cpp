@@ -319,8 +319,8 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
                   to_string(magabsF[0]) + '\n';
   outputHeader += "# MAG_ABS_AGN            : " + to_string(magabsB[1]) + ' ' +
                   to_string(magabsF[1]) + '\n';
-  outputHeader += "# MAG_REF                : " + to_string(babs) + '\n';
-  outputHeader += "# NZ_PRIOR               : " + to_string(bp[0]) + ' ' +
+  outputHeader += "# MAG_REF                : " + to_string(babs + 1) + '\n';
+  outputHeader += "# NZ_PRIOR               : " + to_string(bp[0] + 1) + ' ' +
                   to_string(bp[1]) + '\n';
   outputHeader += "# Z_INTERP               : " + bool2string(zintp) + '\n';
   outputHeader +=
@@ -339,7 +339,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   outputHeader += '\n';
   outputHeader += "# MABS_REF               : ";
   for (int k = 0; k < nbapp; k++) {
-    outputHeader += to_string(bapp[k]) + ' ';
+    outputHeader += to_string(bapp[k] + 1) + ' ';
   };
   outputHeader += '\n';
   // AUTO-ADAPT
@@ -351,7 +351,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   // Need to substract one because the convention in the .para file start at 1,
   // but 0 in the code
   fl_auto--;
-  outputHeader += "# ADAPT_BAND             : " + to_string(fl_auto) + '\n';
+  outputHeader += "# ADAPT_BAND             : " + to_string(fl_auto + 1) + '\n';
   // ADAPT_LIM limit for the selection in auto-adapt
   auto_thresmin = ((key_analysed["ADAPT_LIM"]).split_double("15", 2))[0];
   auto_thresmax = ((key_analysed["ADAPT_LIM"]).split_double("35", 2))[1];
