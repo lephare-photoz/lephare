@@ -31,7 +31,7 @@ void ext::read(string extFile) {
   sext.open(extFile.c_str());
   // Check if file is opened
   if (!sext) {
-    throw invalid_argument("Can't open file " + extFile);
+    throw invalid_argument("Can't open file with the attenuation curve in " + extFile);
   }
 
   // Take the stream line by line
