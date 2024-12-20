@@ -72,7 +72,7 @@ def prepare(config, star_config=None, gal_config=None, qso_config=None):
         mag_output = os.path.join(os.environ["LEPHAREWORK"], "lib_mag", mag_out_name)
         # Run sedtolib
         sedlib = lp.Sedtolib(config_keymap=updated_config)
-        list_loc = os.path.join(lp.LEPHAREDIR, updated_config[f"{object_type}_SED"].value)
+        list_loc = updated_config[f"{object_type}_SED"].value
         sedtolib_kwargs = {f"{object_type.lower()}_sed": list_loc}
         print(sedtolib_kwargs)
         sedlib.run(typ=object_type, **sedtolib_kwargs)
