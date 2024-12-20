@@ -73,12 +73,9 @@ def prepare(config, star_config=None, gal_config=None, qso_config=None):
         # Run sedtolib
         sedlib = lp.Sedtolib(config_keymap=updated_config)
         list_loc = updated_config[f"{object_type}_SED"].value
-        print("LISTEEEEE AVANT ", list_loc, list_loc.find("sed/"))
         # if find sed/ in the path, assume it is in lephare-data and not an absolute path
         if list_loc.find("sed/") >= 0:
             list_loc = os.path.join(lp.LEPHAREDIR, list_loc)
-            print("Why ", lp.LEPHAREDIR)
-        print("LISTEEEEE ", list_loc)
         sedtolib_kwargs = {f"{object_type.lower()}_sed": list_loc}
         print(sedtolib_kwargs)
         sedlib.run(typ=object_type, **sedtolib_kwargs)
