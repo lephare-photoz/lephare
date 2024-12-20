@@ -409,11 +409,12 @@ def config_to_required_files(keymap, base_url=None):
     sed_keys = ["STAR_SED", "GAL_SED", "QSO_SED"]
     for key in sed_keys:
         try:
-            # If find sed/ in the path, assume the list is present in lephare-data and try to retreive the files
+            # If find sed/ in the path, assume the list is present in lephare-data
+            # and try to retreive the files
             list_file = keymap[key].value
             # Remove the beginning of the path before sed/
-            if(list_file.find("sed/")):
-              list_file = (list_file[list_file.find("sed/"):]).strip()              
+            if list_file.find("sed/") > 0:
+                list_file = (list_file[list_file.find("sed/") :]).strip()
             required_files += [list_file]
             # Add the url to retrieve the files
             list_file = base_url + list_file
