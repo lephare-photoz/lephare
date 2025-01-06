@@ -34,7 +34,7 @@ void flt::read(const string &fltFile) {
   // open the filter file into a stream
   sflt.open(fltFile.c_str());
   if (!(sflt)) {
-    throw invalid_argument("Can't open file " + fltFile);
+    throw invalid_argument("Can't open filter file " + fltFile);
   }
 
   // Take the stream line by line
@@ -452,12 +452,13 @@ void write_output_filter(string &filtfile, string &filtdoc,
   stfiltfile.open(filtfile.c_str());
   // Check if file is opened
   if (!stfiltfile) {
-    throw invalid_argument("Can't open file " + filtfile);
+    throw invalid_argument("Can't open file compiling all filters " + filtfile);
   }
   stfiltdoc.open(filtdoc.c_str());
   // Check if file is opened
   if (!stfiltdoc) {
-    throw invalid_argument("Can't open file " + filtdoc);
+    throw invalid_argument("Can't open doc file compiling all filters " +
+                           filtdoc);
   }
 
   // documentation on the screen

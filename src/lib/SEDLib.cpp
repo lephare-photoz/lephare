@@ -43,11 +43,11 @@ vector<GalSED> readBC03(string sedFile, int nummod, string type,
   // conversion  from Lum {Lo/A} to flux {erg/cm2/s/A}: fluxconv = 3.197e-07
   double convol = Lsol / (4 * pi * 100 * pow(pc, 2));
 
-  // open the filter file into a stream
+  // open the SED file into a stream
   ssed.open(sedFile.c_str());
   // Check if file is opened
   if (!ssed) {
-    throw invalid_argument("Can't open file " + sedFile);
+    throw invalid_argument("Can't open the BC03 file " + sedFile);
   }
 
   // Number of ages and read the ages

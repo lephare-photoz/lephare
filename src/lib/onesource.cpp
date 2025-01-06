@@ -542,7 +542,9 @@ void onesource::compute_best_fit_physical_quantities(vector<SED *> &fulllib) {
     double age = best_gal_sed->age;
     results["AGE_BEST"] = (age != INVALID_PHYS) ? LOG10D(age) : INVALID_PHYS;
     results["EBV_BEST"] = best_gal_sed->ebv;
-    results["EXTLAW_BEST"] = best_gal_sed->extlawId;
+    // Add +1 to have the first dust attenuation curve starting at 1 in the
+    // output
+    results["EXTLAW_BEST"] = best_gal_sed->extlawId + 1;
     results["LUM_NUV_BEST"] =
         best_gal_sed->luv + LOG10D(3.e18 * 400 / pow(2300, 2) * tmp2);
     results["LUM_R_BEST"] =
@@ -1363,9 +1365,10 @@ void onesource::write_out(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
     // ABSOLUTE MAGNITUDES
     stout.setf(ios::fixed);
     stout.precision(0);  // Integer:
+    // Add +1 to the filter to have the first filter starting at 1 in the output
     if (outkey == "MABS_FILT()") {
       for (size_t l = 0; l < absfilt.size(); l++)
-        stout << setw(4) << absfilt[l] << " ";
+        stout << setw(4) << absfilt[l] + 1 << " ";
     }
     stout.setf(ios::fixed, ios::floatfield);
     stout.precision(3);  // Float:
