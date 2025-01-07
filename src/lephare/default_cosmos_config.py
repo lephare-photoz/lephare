@@ -45,7 +45,7 @@ default_cosmos_config = {
     "GAL_LIB": "LIB_CE",
     "GAL_LIB_IN": "LIB_CE",
     "GAL_LIB_OUT": "CE_COSMOS",
-    "GAL_SED": f"{lp.LEPHAREDIR}/examples/COSMOS_MOD.list",
+    "GAL_SED": f"{lp.LEPHAREDIR}/sed/GAL/COSMOS_SED/COSMOS_MOD.list",
     "GLB_CONTEXT": "0",
     "INP_TYPE": "F",
     "LIB_ASCII": "NO",
