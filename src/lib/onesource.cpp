@@ -258,37 +258,6 @@ void onesource::adapt_mag(vector<double> a0, vector<double> a1) {
 }
 
 /*
- RETURN THE INDEX OF THE LIBRARY TO BE CONSIDERED (MAINLY ZFIX CASE)
-*/
-vector<size_t> onesource::validLib(const vector<double> &zLib,
-                                   const bool &zfix) {
-  vector<size_t> val;
-  // Condition with the redshift set ZFIX YES
-  if (zfix) {
-    for (size_t i = 0; i < zLib.size(); i++) {
-      // Keep only the index corresponding to the closest redshift in the grid
-      if (abs(zLib[i] - closest_red) < 1.e-10) val.push_back(i);
-    }
-  } else {
-    // If not fixed redshift, use everything
-    val.resize(zLib.size());
-#ifdef _OPENMP
-#pragma omp parallel
-    {
-#endif
-#pragma omp for schedule(static, 10000)
-      for (size_t i = 0; i < zLib.size(); i++) {
-        val[i] = i;
-      }
-#ifdef _OPENMP
-    }
-#endif
-  }
-
-  return val;
-}
-
-/*
  SUBSTRACT THE STELLAR COMPONENT TO THE FIR OBSERVED FLUXES
 */
 void onesource::substellar(const bool substar, vector<flt> allFilters) {
@@ -706,9 +675,10 @@ void onesource::rm_discrepant(vector<SED *> &fulllib,
  Compute the chi2 for the IR library
 */
 void onesource::fitIR(vector<SED *> &fulllibIR,
-                      const vector<vector<double>> &fluxIR, const int imagm,
+                      const vector<vector<double>> &fluxIR,
+                      const vector<size_t> &va, const int imagm,
                       const string fit_frsc, cosmo lcdm) {
-  int number_threads = 1;
+  int number_threads = 1, thread_id = 0;
 // Do a local minimisation per thread (store chi2 and index)
 // Catch first the number of threads
 #ifdef _OPENMP
@@ -730,74 +700,59 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
 // parrallellize over each SED
 #ifdef _OPENMP
 // double start = omp_get_wtime();
-#pragma omp parallel firstprivate(lcdm) shared(fulllibIR)
+#pragma omp parallel firstprivate(lcdm, thread_id) shared(fulllibIR)
   {
+    // Catch the name of the local thread in the parrallelisation
+    thread_id = omp_get_thread_num();
 #endif
 
 #pragma omp for schedule(static, 10000)
-    // Loop over all SEDs from the library
-    for (size_t i = 0; i < fulllibIR.size(); i++) {
-      if (abs(fulllibIR[i]->red - closest_red) < 1.e-10) {
-        // Difference between the distance modulus at the redshift of the
-        // library and the finel one considered
-        double dmcor;
-        dmcor = pow(10., (0.4 * (lcdm.distMod(fulllibIR[i]->red) -
-                                 lcdm.distMod(consiz))));
+    for (size_t v = 0; v < va.size(); v++) {
+      size_t i = va[v];
+      SED *sed = fulllibIR[i];
+      double dmcor;
+      dmcor = pow(10., (0.4 * (lcdm.distMod(sed->red) - lcdm.distMod(consiz))));
 
-        // normalization
-        // Measurement of scaling factor dm only with (fobs>flim), dchi2/ddm = 0
-        double avmago = 0.0, avmagt = 0.0, dmloc = -99.0;
-        int nbusIR = 0;
-        nbusIR = accumulate(bscfir.begin(), bscfir.end(), 0);
-        for (int k = 0; k < imagm; k++) {
-          double fluxin = fluxIR[i][k];
-          avmago += fluxin * dmcor * bscfir[k] * abinvsabSq[k];
-          avmagt += fluxin * fluxin * dmcor * dmcor * bscfir[k] * invsabSq[k];
-        }
-        // Check that the normalisation should be computed (if the scaling
-        // should be free)
-        if (nbusIR < 1) {
-          if (verbose)
-            cout << "WARNING: No scaling in IR " << spec << " " << nbusIR << " "
-                 << endl;
-        } else {
-          dmloc = avmago / avmagt;
-        }
-        // If one band or no free scale, use directly the scaling from the
-        // template to find the best fit template
-        double dmEff = dmloc;
-        if (nbusIR <= 1 || fit_frsc[0] == 'n' || fit_frsc[0] == 'N')
-          dmEff = 1.0;
-
-        double chi2loc = 0;
-        // Measurement of chi^2
-        for (int k = 0; k < imagm; k++) {
-          double inter = (s2n[k] - (dmEff * fluxIR[i][k] * dmcor * invsab[k]));
-          chi2loc += busfir[k] * inter * inter;
-        }
-        // Associate results to the SED
-        fulllibIR[i]->dm = dmEff;
-        fulllibIR[i]->chi2 = chi2loc;
-
+      // normalization
+      // Measurement of scaling factor dm only with (fobs>flim), dchi2/ddm = 0
+      double avmago = 0.0, avmagt = 0.0, dmloc = -99.0;
+      int nbusIR = 0;
+      nbusIR = accumulate(bscfir.begin(), bscfir.end(), 0);
+      for (int k = 0; k < imagm; k++) {
+        double fluxin = fluxIR[i][k];
+        avmago += fluxin * dmcor * bscfir[k] * abinvsabSq[k];
+        avmagt += fluxin * fluxin * dmcor * dmcor * bscfir[k] * invsabSq[k];
+      }
+      // Check that the normalisation should be computed (if the scaling
+      // should be free)
+      if (nbusIR < 1) {
+        if (verbose)
+          cout << "WARNING: No scaling in IR " << spec << " " << nbusIR << " "
+               << endl;
       } else {
-        fulllibIR[i]->chi2 = HIGH_CHI2;
+        dmloc = avmago / avmagt;
       }
-    }
+      // If one band or no free scale, use directly the scaling from the
+      // template to find the best fit template
+      double dmEff = dmloc;
+      if (nbusIR <= 1 || fit_frsc[0] == 'n' || fit_frsc[0] == 'N') dmEff = 1.0;
 
-    // Catch the name of the local thread in the parallelisation
-    int thread_id = 0;
-#ifdef _OPENMP
-    thread_id = omp_get_thread_num();
-#pragma omp for
-#endif
-    // Loop over all SEDs from the library
-    for (size_t i = 0; i < fulllibIR.size(); i++) {
-      // If local minimum inside the thread, store the new minimum for the
-      // thread done per type s (0 gal, 1 AGN, 2 stars)
-      if (locChi2[thread_id] > fulllibIR[i]->chi2) {
-        locChi2[thread_id] = fulllibIR[i]->chi2;
-        locInd[thread_id] = fulllibIR[i]->index;
+      double chi2loc = 0;
+      // Measurement of chi^2
+      for (int k = 0; k < imagm; k++) {
+        double inter = (s2n[k] - (dmEff * fluxIR[i][k] * dmcor * invsab[k]));
+        chi2loc += busfir[k] * inter * inter;
       }
+
+      // keep track of the minimum chi2 for each object type, over the threads
+      if (locChi2[thread_id] > chi2loc) {
+        locChi2[thread_id] = chi2loc;
+        locInd[thread_id] = sed->index;
+      }
+
+      // Associate results to the SED
+      sed->dm = dmEff;
+      sed->chi2 = chi2loc;
     }
 
 #ifdef _OPENMP
@@ -813,12 +768,13 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
       indminIR = locInd[j];
     }
   }
-  zminIR = fulllibIR[indminIR]->red;
-  dmminIR = fulllibIR[indminIR]->dm;
-  imasminIR = fulllibIR[indminIR]->nummod;
 
-  if (indminIR >= 0)
+  if (indminIR >= 0) {
+    zminIR = fulllibIR[indminIR]->red;
+    dmminIR = fulllibIR[indminIR]->dm;
+    imasminIR = fulllibIR[indminIR]->nummod;
     results["LUM_TIR_BEST"] = fulllibIR[indminIR]->ltir + log10(dmminIR);
+  }
 
   return;
 }

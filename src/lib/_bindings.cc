@@ -291,7 +291,8 @@ PYBIND11_MODULE(_lephare, mod) {
            static_cast<void (PhotoZ::*)(onesource *)>(&PhotoZ::prep_data))
       .def("run_autoadapt", &PhotoZ::run_autoadapt)
       .def("run_photoz", &PhotoZ::run_photoz)
-      .def("write_outputs", &PhotoZ::write_outputs);
+      .def("write_outputs", &PhotoZ::write_outputs)
+      .def("validLib", &PhotoZ::validLib);
   // mod.def("read_lib", [](const string& libName, int ind, vector<int> emMod,
   // int babs) { 			vector<SED*> libFull;
   // int nummodpre[3]; 			string filtname;
@@ -334,7 +335,6 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("keepOri", &onesource::keepOri)
       .def("adapt_mag", &onesource::adapt_mag)
       .def("fit", &onesource::fit)
-      .def("validLib", &onesource::validLib)
       .def("rm_discrepant", &onesource::rm_discrepant)
       .def("generatePDF", &onesource::generatePDF)
       .def("interp", &onesource::interp)
@@ -358,7 +358,6 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("best_spec_vec", &onesource::best_spec_vec)
       .def_readwrite("spec", &onesource::spec)
       .def_readwrite("consiz", &onesource::consiz)
-      .def_readwrite("closest_red", &onesource::closest_red)
       .def_readonly("pos", &onesource::pos)
       .def_readonly("cont", &onesource::cont)
       .def_readonly("pdfmap", &onesource::pdfmap)
