@@ -27,6 +27,7 @@ vector<SED> readSED(string sedFile, string sedFormat, int nummod, string type,
 
 template <class T>
 void runner(SEDLib<T> &sedlib) {
+  cout << "Start Runner SED " << endl;
   // INFO PARAMETERS ON SCREEN AND DOC
   sedlib.print_info();
   // READ THE MODEL LIST

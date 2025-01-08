@@ -108,7 +108,6 @@ template <class T>
 SEDLib<T>::SEDLib(keymap &key_analysed, string config, string t)
     : SEDLib(config, t) {
   path = "/sed/" + typ + "/";
-  // cout<<typ+"_SED"<< " "<<key_analysed[typ+"_SED"]<<endl;
   modList = ((key_analysed[typ + "_SED"]).split_string("SED.list", 1))[0];
   libOut = ((key_analysed[typ + "_LIB"]).split_string("SED.bin", 1))[0];
   fscale = ((key_analysed[typ + "_FSCALE"]).split_double("1", 1))[0];
