@@ -4,6 +4,7 @@
 #include <bitset>
 #include <cmath>
 #include <string>
+#include <vector>
 
 #define MAX_CONTEXT 1024
 #define INVALID_FLUX -9999.0
@@ -38,6 +39,9 @@ bool check_first_char(string maligne);
 double blackbody(double T, double lambda);
 
 int bdincl(int n, long cont, int max);
+
+vector<size_t> indexes_in_vec(const double &value, const vector<double> &vector,
+                              const float &precision);
 
 inline string bool2string(const bool &b) {
   string sb;

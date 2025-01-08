@@ -1005,7 +1005,6 @@ std::tuple<vector<double>, vector<double>> PhotoZ::run_autoadapt(
   a0.assign(imagm, 0.);
   a1.assign(imagm, 0.);
   // Use the spec-z for the adpation
-  const bool zfix = true;
   if (verbose)
     cout << "\n Number of sources read for auto adapt " << adaptSources.size()
          << endl;
@@ -1022,23 +1021,17 @@ std::tuple<vector<double>, vector<double>> PhotoZ::run_autoadapt(
         oneObj->adapt_mag(a0, a1);
         // set the prior on the redshift, abs mag, ebv, etc on the object
         oneObj->setPriors(magabsB, magabsF);
-        // Fixed the redshift considered
-        oneObj->considered_red(zfix, methz);
-        // Select the valid index of the library in case of ZFIX=YES to save
-        // computational time
-        vector<size_t> valid;
-        if (zfix) {
-          valid = validLib(oneObj->zs);
-        } else {
-          valid.resize(fullLib.size());
-          iota(valid.begin(), valid.end(), 0);
-        }
-        // Fit the source at the spec-z value
+
+        // Fit the source at the spec-z value, using only the template with
+        // compatible redshift to zs.
+        auto valid = validLib(oneObj->zs);
         oneObj->fit(fullLib, flux, valid, funz0, bp);
+
         // Interpolation of the predicted magnitudes, scaling at zs, checking
         // first that the fit was sucessfull
         if (oneObj->indmin[0] >= 0) {
-          oneObj->zmin[0] = oneObj->zs;
+          // interp_lib uses consiz to define the position of interpolation
+          oneObj->consiz = oneObj->zs;
           oneObj->interp_lib(fullLib, imagm, lcdm);
         }
         if (verbose)
@@ -1742,19 +1735,9 @@ void PhotoZ::write_outputs(vector<onesource *> sources, const time_t &ti1) {
 }
 
 vector<size_t> PhotoZ::validLib(const double &redshift, const bool &ir) {
-  vector<size_t> val;
   double closest_red = gridz[indexz(redshift, gridz)];
-  // something using   auto vec = ir ? zLibIR : zLib; would be cleaner
-  // but we want to avoid copy. TO DO.
-  if (ir) {
-    for (size_t i = 0; i < zLibIR.size(); i++) {
-      if (abs(zLibIR[i] - closest_red) < 1.e-10) val.push_back(i);
-    }
-  } else {
-    for (size_t i = 0; i < zLib.size(); i++) {
-      if (abs(zLib[i] - closest_red) < 1.e-10) val.push_back(i);
-    }
-  }
+  vector<size_t> result = ir ? indexes_in_vec(closest_red, zLibIR, 1.e-10)
+                             : indexes_in_vec(closest_red, zLib, 1.e-10);
 
-  return val;
+  return result;
 }

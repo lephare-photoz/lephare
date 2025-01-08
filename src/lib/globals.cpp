@@ -132,3 +132,13 @@ int bdincl(int n, long cont, int max) {
   }
   return res;
 }
+
+vector<size_t> indexes_in_vec(const double &value, const vector<double> &vec,
+                              const float &precision) {
+  vector<size_t> result;
+  for (size_t i = 0; i < vec.size(); i++) {
+    if (abs(vec[i] - value) < precision) result.push_back(i);
+  }
+
+  return result;
+}
