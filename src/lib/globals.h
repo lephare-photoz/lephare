@@ -40,7 +40,15 @@ double blackbody(double T, double lambda);
 
 int bdincl(int n, long cont, int max);
 
-vector<size_t> indexes_in_vec(const double &value, const vector<double> &vector,
+//! Return the vector of indexes of values in `vec` that match `value` to the required `precision`.
+/*!
+  \param value input to be compared to the content of `vector`
+  \param vec the input vector of values to be compared to `value`
+  \param precision the precision with which `value` must compare to the entries in `vector`
+  
+  \return the vector of indexes in `vector` of the matching values.
+*/
+vector<size_t> indexes_in_vec(const double &value, const vector<double> &vec,
                               const float &precision);
 
 inline string bool2string(const bool &b) {
