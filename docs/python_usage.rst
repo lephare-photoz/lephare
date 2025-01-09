@@ -30,6 +30,7 @@ They should all be able to run independently following installation.
 
     Minimal full run <notebooks/Minimal_photoz_run>
     Typical use case <notebooks/Typical_use_case>
+    Typical use case: physical parameters <notebooks/Typical_use_case_physicalParameters>
     Detailed run <notebooks/Detailed_run>
     Developer example: Building a list of onesources <notebooks/Building_list_of_onesources>
     Developer example: Example of usage of magSvc <notebooks/Example_of_usage_of_magSvc>
