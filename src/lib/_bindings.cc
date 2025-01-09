@@ -230,25 +230,23 @@ PYBIND11_MODULE(_lephare, mod) {
   applySEDLibTemplate<GalSED>(mod, "GalSEDLib");
 
   /******** CLASS MAG *********/
-#define MAGDEFS(c, n)                                         \
-{                                                             \
-  py::class_<c>(mod, n)                                       \
-      .def(py::init<keymap &>(), py::arg("key_analysed"))     \
-      .def(py::init<>())                                      \
-      .def("open_files", &c::open_files)                      \
-      .def("close_files", &c::close_files)                    \
-      .def("open_opa_files", &c::open_opa_files)              \
-      .def("print_info", &c::print_info)                      \
-      .def("read_ext", &c::read_ext)                          \
-      .def("read_opa", &c::read_opa)                          \
-      .def("read_B12", &c::read_B12)                          \
-      .def("read_flt", &c::read_flt)                          \
-      .def("def_zgrid", &c::def_zgrid)                        \
-      .def("read_SED", &c::read_SED)                          \
-      .def("write_doc", &c::write_doc)                        \
-      .def("make_maglib", &c::make_maglib)                    \
-      .def("write_mag", &c::write_mag);                       \
-}
+#define MAGDEFS(c, n)                                      \
+  (py::class_<c>(mod, n)                                   \
+       .def(py::init<keymap &>(), py::arg("key_analysed")) \
+       .def(py::init<>())                                  \
+       .def("open_files", &c::open_files)                  \
+       .def("close_files", &c::close_files)                \
+       .def("open_opa_files", &c::open_opa_files)          \
+       .def("print_info", &c::print_info)                  \
+       .def("read_ext", &c::read_ext)                      \
+       .def("read_opa", &c::read_opa)                      \
+       .def("read_B12", &c::read_B12)                      \
+       .def("read_flt", &c::read_flt)                      \
+       .def("def_zgrid", &c::def_zgrid)                    \
+       .def("read_SED", &c::read_SED)                      \
+       .def("write_doc", &c::write_doc)                    \
+       .def("make_maglib", &c::make_maglib)                \
+       .def("write_mag", &c::write_mag))
   MAGDEFS(StarMag, "StarMag");
   MAGDEFS(QSOMag, "QSOMag");
   MAGDEFS(GalMag, "GalMag");
