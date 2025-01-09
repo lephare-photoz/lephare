@@ -266,6 +266,7 @@ PYBIND11_MODULE(_lephare, mod) {
   mod.def("LOG10D_FAST", &LOG10D_FAST);
   mod.def("mag2flux", &mag2flux);
   mod.def("flux2mag", &flux2mag);
+  mod.def("indexes_in_vec", &indexes_in_vec);
 
   /******** FUNCTIONS IN PHOTOZ_LIB.H *********/
   py::class_<PhotoZ>(mod, "PhotoZ")
