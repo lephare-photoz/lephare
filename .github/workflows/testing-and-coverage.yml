@@ -43,7 +43,8 @@ jobs:
 
     - name: Collect C++ coverage
       run: |
-        geninfo --ignore-errors gcov --debug build --keep-going --exclude '*_bindings.cc'
+        find build -name '_bindings.cc.gcda' -delete
+        geninfo --ignore-errors gcov --debug build --keep-going --exclude '/home/runner/work/lephare/lephare/src/lib/_bindings.cc'
         lcov --output-file coverage.cpp --capture --directory build
         lcov --output-file coverage.cpp --extract coverage.cpp $PWD/src/"*"
         cat coverage.lcov coverage.cpp > coverage.txt
