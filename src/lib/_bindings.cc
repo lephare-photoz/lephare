@@ -335,6 +335,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("keepOri", &onesource::keepOri)
       .def("adapt_mag", &onesource::adapt_mag)
       .def("fit", &onesource::fit)
+      .def("mode", &onesource::mode)
       .def("rm_discrepant", &onesource::rm_discrepant)
       .def("generatePDF", &onesource::generatePDF)
       .def("interp", &onesource::interp)
