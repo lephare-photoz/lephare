@@ -42,25 +42,6 @@ void onesource::readsource(const string &identifier, const vector<double> vals,
 }
 
 /*
- Fixed the redshift considered for abs mag, etc depending on the option
-*/
-void onesource::considered_red(const bool zfix, const bool methz) {
-  // if zfix is not fixed
-  if (!zfix) {
-    if (methz) {
-      // if considered redshift is the median of the PDF
-      consiz = zgmed[0];
-    } else {
-      // if considered redshift is the minimum of the chi2
-      consiz = zmin[0];
-    }
-  } else {
-    // if considered redshift is the spectroscopic redshift
-    consiz = zs;
-  }
-}
-
-/*
 Set the priors on the redshift min-max, E(B-V) min-max, mass min-max, abs mag
 min-max+filter
 */

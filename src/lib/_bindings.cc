@@ -342,7 +342,6 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("uncertaintiesMin", &onesource::uncertaintiesMin)
       .def("uncertaintiesBay", &onesource::uncertaintiesBay)
       .def("secondpeak", &onesource::secondpeak)
-      .def("considered_red", &onesource::considered_red)
       .def("interp_lib", &onesource::interp_lib)
       .def("absmag", &onesource::absmag)
       .def("limits", &onesource::limits)

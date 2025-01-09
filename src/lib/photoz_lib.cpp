@@ -1629,17 +1629,24 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
     // find the mode of the marginalized PDF and associated uncertainties,
     // centered on the mode
     oneObj->mode();
-    // Fixed the redshift considered for abs mag, etc depending on the option
-    oneObj->considered_red(zfix, methz);
-    // If use the median of the PDF for the abs mag, etc, need to redo the fit
-    // Need to redo the fit to get the right scaling. It would change ZMIN, etc
-    if (methz && (!zfix)) {
+
+    // The rest of the procedure requires that a specific choice be made for the
+    // redshift of GAL solutions, to be considered for computation of physical
+    // quantities, among the following choices: the spectro zs, the best chi2
+    // fit solution zmin[0], or the median solution zgmed[0].
+    if (zfix) {
+      oneObj->consiz = oneObj->zs;
+    } else if (methz) {
+      oneObj->consiz = oneObj->zgmed[0];
       oneObj->chimin[0] = 1.e9;
       // Select the index of the templates that have a redshift closest to zgmed
       // We only work on GAL solutions here
       auto valid = validLib(oneObj->zgmed[0]);
       oneObj->fit(fullLib, flux, valid, funz0, bp);
+    } else {
+      oneObj->consiz = oneObj->zmin[0];
     }
+
     // Interpolation at the new redshift  (only gal for the moment)
     oneObj->interp_lib(fullLib, imagm, lcdm);
     // Compute absolute magnitudes
