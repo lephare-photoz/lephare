@@ -266,6 +266,7 @@ PYBIND11_MODULE(_lephare, mod) {
   mod.def("LOG10D_FAST", &LOG10D_FAST);
   mod.def("mag2flux", &mag2flux);
   mod.def("flux2mag", &flux2mag);
+  mod.def("indexes_in_vec", &indexes_in_vec);
 
   /******** FUNCTIONS IN PHOTOZ_LIB.H *********/
   py::class_<PhotoZ>(mod, "PhotoZ")
@@ -291,7 +292,8 @@ PYBIND11_MODULE(_lephare, mod) {
            static_cast<void (PhotoZ::*)(onesource *)>(&PhotoZ::prep_data))
       .def("run_autoadapt", &PhotoZ::run_autoadapt)
       .def("run_photoz", &PhotoZ::run_photoz)
-      .def("write_outputs", &PhotoZ::write_outputs);
+      .def("write_outputs", &PhotoZ::write_outputs)
+      .def("validLib", &PhotoZ::validLib);
   // mod.def("read_lib", [](const string& libName, int ind, vector<int> emMod,
   // int babs) { 			vector<SED*> libFull;
   // int nummodpre[3]; 			string filtname;
@@ -334,14 +336,13 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("keepOri", &onesource::keepOri)
       .def("adapt_mag", &onesource::adapt_mag)
       .def("fit", &onesource::fit)
-      .def("validLib", &onesource::validLib)
+      .def("mode", &onesource::mode)
       .def("rm_discrepant", &onesource::rm_discrepant)
       .def("generatePDF", &onesource::generatePDF)
       .def("interp", &onesource::interp)
       .def("uncertaintiesMin", &onesource::uncertaintiesMin)
       .def("uncertaintiesBay", &onesource::uncertaintiesBay)
       .def("secondpeak", &onesource::secondpeak)
-      .def("considered_red", &onesource::considered_red)
       .def("interp_lib", &onesource::interp_lib)
       .def("absmag", &onesource::absmag)
       .def("limits", &onesource::limits)
@@ -358,7 +359,6 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("best_spec_vec", &onesource::best_spec_vec)
       .def_readwrite("spec", &onesource::spec)
       .def_readwrite("consiz", &onesource::consiz)
-      .def_readwrite("closest_red", &onesource::closest_red)
       .def_readonly("pos", &onesource::pos)
       .def_readonly("cont", &onesource::cont)
       .def_readonly("pdfmap", &onesource::pdfmap)

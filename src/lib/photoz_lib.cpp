@@ -422,6 +422,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   flux.resize(fullLib.size(), vector<double>(imagm, 0.));
   zLib.resize(fullLib.size(), -99.);
   fluxIR.resize(fullLibIR.size(), vector<double>(imagm, 0.));
+  zLibIR.resize(fullLibIR.size(), -99.);
 // Convert the magnitude library in flux
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
@@ -442,6 +443,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
     for (size_t k = 0; k < allFilters.size(); k++) {
       fluxIR[i][k] = pow(10., -0.4 * (fullLibIR[i]->mag[k] + 48.6));
     }
+    zLibIR[i] = fullLibIR[i]->red;
   }
 }
 
@@ -1003,7 +1005,6 @@ std::tuple<vector<double>, vector<double>> PhotoZ::run_autoadapt(
   a0.assign(imagm, 0.);
   a1.assign(imagm, 0.);
   // Use the spec-z for the adpation
-  const bool zfix = true;
   if (verbose)
     cout << "\n Number of sources read for auto adapt " << adaptSources.size()
          << endl;
@@ -1020,18 +1021,17 @@ std::tuple<vector<double>, vector<double>> PhotoZ::run_autoadapt(
         oneObj->adapt_mag(a0, a1);
         // set the prior on the redshift, abs mag, ebv, etc on the object
         oneObj->setPriors(magabsB, magabsF);
-        // Fixed the redshift considered
-        oneObj->considered_red(zfix, methz);
-        oneObj->closest_red = gridz[indexz(oneObj->zs, gridz)];
-        // Select the valid index of the library in case of ZFIX=YES to save
-        // computational time
-        valid = oneObj->validLib(zLib, zfix);
-        // Fit the source at the spec-z value
+
+        // Fit the source at the spec-z value, using only the template with
+        // compatible redshift to zs.
+        auto valid = validLib(oneObj->zs);
         oneObj->fit(fullLib, flux, valid, funz0, bp);
+
         // Interpolation of the predicted magnitudes, scaling at zs, checking
         // first that the fit was sucessfull
         if (oneObj->indmin[0] >= 0) {
-          oneObj->zmin[0] = oneObj->zs;
+          // interp_lib uses consiz to define the position of interpolation
+          oneObj->consiz = oneObj->zs;
           oneObj->interp_lib(fullLib, imagm, lcdm);
         }
         if (verbose)
@@ -1600,13 +1600,15 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
     if (autoadapt) oneObj->adapt_mag(a0, a1);
     // set the prior on the redshift, abs mag, ebv, etc on the object
     oneObj->setPriors(magabsB, magabsF);
-    // set the z in the grid closest to the true/spectro z in the catalogue
-    // this only makes sense for ZFIX=YES and if this true/spectro z is provided
-    // in the catalogue
-    oneObj->closest_red = gridz[indexz(oneObj->zs, gridz)];
-    // Select the valid index of the library in case of ZFIX=YES to save
-    // computational time
-    valid = oneObj->validLib(zLib, zfix);
+    // If ZFIX=YES select the templates with the closest redshift to zs,
+    // in order to save time.
+    vector<size_t> valid;
+    if (zfix) {
+      valid = validLib(oneObj->zs);
+    } else {
+      valid.resize(fullLib.size());
+      iota(valid.begin(), valid.end(), 0);
+    }
     // Core of the program: compute the chi2
     oneObj->fit(fullLib, flux, valid, funz0, bp);
     // Try to remove some bands to improve the chi2, only as long as the chi2 is
@@ -1627,17 +1629,24 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
     // find the mode of the marginalized PDF and associated uncertainties,
     // centered on the mode
     oneObj->mode();
-    // Fixed the redshift considered for abs mag, etc depending on the option
-    oneObj->considered_red(zfix, methz);
-    // If use the median of the PDF for the abs mag, etc, need to redo the fit
-    // Need to redo the fit to get the right scaling. It would change ZMIN, etc
-    if (methz && (!zfix)) {
+
+    // The rest of the procedure requires that a specific choice be made for the
+    // redshift of GAL solutions, to be considered for computation of physical
+    // quantities, among the following choices: the spectro zs, the best chi2
+    // fit solution zmin[0], or the median solution zgmed[0].
+    if (zfix) {
+      oneObj->consiz = oneObj->zs;
+    } else if (methz) {
+      oneObj->consiz = oneObj->zgmed[0];
       oneObj->chimin[0] = 1.e9;
-      oneObj->closest_red = gridz[indexz(oneObj->zgmed[0], gridz)];
-      // Select the valid index of the library corresponding to zgmed
-      valid = oneObj->validLib(zLib, true);
+      // Select the index of the templates that have a redshift closest to zgmed
+      // We only work on GAL solutions here
+      auto valid = validLib(oneObj->zgmed[0]);
       oneObj->fit(fullLib, flux, valid, funz0, bp);
+    } else {
+      oneObj->consiz = oneObj->zmin[0];
     }
+
     // Interpolation at the new redshift  (only gal for the moment)
     oneObj->interp_lib(fullLib, imagm, lcdm);
     // Compute absolute magnitudes
@@ -1657,9 +1666,11 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
       oneObj->fltUsedIR(fir_cont, fir_scale, imagm, allFilters, fir_lmin);
       // Substract the stellar component to the FIR observed flux
       oneObj->substellar(substar, allFilters);
-      oneObj->closest_red = gridz[indexz(oneObj->consiz, gridz)];
+      // Select in the IR library only the templates with redshifts closest to
+      // consiz
+      auto valid = validLib(oneObj->consiz, true);
       // Fit the SED on FIR data, with the redshift fixed at zmin or zmed
-      oneObj->fitIR(fullLibIR, fluxIR, imagm, fir_frsc, lcdm);
+      oneObj->fitIR(fullLibIR, fluxIR, valid, imagm, fir_frsc, lcdm);
       // Compute the IR luminosities
       oneObj->generatePDF_IR(fullLibIR);
     }
@@ -1728,4 +1739,12 @@ void PhotoZ::write_outputs(vector<onesource *> sources, const time_t &ti1) {
   fullLibIR.clear();
 
   return;
+}
+
+vector<size_t> PhotoZ::validLib(const double &redshift, const bool &ir) {
+  double closest_red = gridz[indexz(redshift, gridz)];
+  vector<size_t> result = ir ? indexes_in_vec(closest_red, zLibIR, 1.e-10)
+                             : indexes_in_vec(closest_red, zLib, 1.e-10);
+
+  return result;
 }

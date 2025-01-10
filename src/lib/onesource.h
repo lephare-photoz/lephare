@@ -60,9 +60,6 @@ class onesource {
   string spec, str_inp;
   int pos, nbused, nbul, nbusIR, indminSec, indminIR;
   double zs, dm, consiz;
-  /// The closest redshift to a true/spectro redshift, when provided with
-  /// the source, in the grid of redshift used for the fit.
-  double closest_red;
   array<double, 3> zmin, chimin, dmmin;
   array<int, 3> indmin, imasmin;
   double zminIR, chiminIR, dmminIR, imasminIR;
@@ -89,7 +86,6 @@ class onesource {
     spec = "1";  // ident
     zs = -99.9;  // spectroscopic redshift
     cont = 0;    // context
-    closest_red = 0.;
     str_inp = ' ';
     for (int k = 0; k < 3; k++) {
       zmin[k] = -99.9;
@@ -180,7 +176,6 @@ class onesource {
   void readsource(const string &identifier, const vector<double> vals,
                   const vector<double> err_vals, const long context,
                   const double z_spec, const string additional_input);
-  void considered_red(const bool zfix, const bool methz);
   void setPriors(const array<double, 2> magabsB,
                  const array<double, 2> magabsF);
   void fltUsed(const long gbcont, const long contforb, const int imagm);
@@ -190,23 +185,12 @@ class onesource {
   void rescale_flux_errors(const vector<double> min_err,
                            const vector<double> fac_err);
 
-  //! Return the indexes over zlib vector on which to run the fit
-  /*!
-    \param zlib The vector of redshifts of each template in the full library, in
-    the same order \param zfix If true only take indexes of the templates whose
-    redshifts are the closest to the true/spectro z. onesource::closest_red
-    needs to have been set, else the the return vector will contain all the
-    indexes, as closest_red is initialized to a negative unphysical value.
-
-    \return Vector of indexes to be used on the full library.
-   */
-  vector<size_t> validLib(const vector<double> &zLib, const bool &zfix);
-
   void fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
            const vector<size_t> &valid, const double &funz0,
            const array<int, 2> &bp);
   void fitIR(vector<SED *> &fulllib, const vector<vector<double>> &flux,
-             const int imagm, const string fit_frsc, cosmo lcdm);
+             const vector<size_t> &valid, const int imagm,
+             const string fit_frsc, cosmo lcdm);
   double nzprior(const double luv, const double lnir, const double reds,
                  const array<int, 2> bp);
   void rm_discrepant(vector<SED *> &fulllib, const vector<vector<double>> &flux,
