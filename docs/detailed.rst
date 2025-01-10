@@ -201,7 +201,7 @@ However, we also added a function ``lp.prepare`` which first compute the full pr
 .. _models:
 
 Build the rest-frame templates library
----------------------------------
+--------------------------------------
 
 
 Overview
@@ -306,7 +306,7 @@ The binary output file (\*.bin) is saved in the directory ``$LEPHAREWORK/lib_bin
 
 
 Others
-^^^^^
+^^^^^^
 
 
 Already included libraries
@@ -394,8 +394,8 @@ For the galaxy templates, an additional file is generated associated to the libr
    
 .. _sec:filter:
 
-Build the filter library 
---------------------
+Build the filter library
+------------------------
 
 
 
@@ -510,7 +510,7 @@ Parameter descriptions
 
 If the transmission curve (:math:`T_{\lambda}`) corresponds to energy then :math:`R_{\lambda}=T_{\lambda}`.
 If the transmission curve (:math:`T_{\lambda}`) corresponds to number of photons (:math:`N_{\varphi}`) then
-  :math:`R_{\lambda}= \lambda T_{\lambda}` :
+:math:`R_{\lambda}= \lambda T_{\lambda}` :
 
   .. math::
 
@@ -564,7 +564,7 @@ As an exemple : filter pippo.pb and put it in $LEPHAREDIR/filt/pippo/pippo.pb :
 The user should avoid setting a resolution that is unnecessarily high, as this could result in expensive computational time for the predicted magnitude library.
 
 Getting new filter automatically (only in python)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The python interface allows to load the filters from a yml file, with the possibility to query the `SVO service <http://svo2.cab.inta-csic.es/theory/fps/>`_ including a much larger number of filters.
 
@@ -704,11 +704,6 @@ vista/K                0.100            0.118    0.364
 | Others extinction laws can be added by following the format
   (:math:`\lambda(A) , k_{\lambda}`).
 
-.. container:: float
-   :name: fig:ext
-
-
-
 
 	  
 .. _`sec:filtcalib`:
@@ -837,7 +832,7 @@ correction is :
 .. _`sec:mag_gal`:
 
 Build the predicted flux/magnitude library
---------------------------------------
+------------------------------------------
 
 .. _description-and-outputs-1:
 
@@ -1143,6 +1138,7 @@ The ``input_table`` is a python table with a pre-defined format (explained below
 
   
 .. code-block:: python
+		
   # Instantiate an object from the class ``PhotoZ``
   photz = lp.PhotoZ(keymap)
   # Fit
@@ -1358,7 +1354,7 @@ Additional options in the configuration file will allow to restrict the use of t
 
 
 Parameters of the fit
-^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^
 
 .. _lib:
 
@@ -2510,7 +2506,7 @@ Appendix A : Content of LEPHARE-data
 
 
 Appendix B : keyword differences between the Fortran and the C++ version
--------------------------------------------------------------------------
+------------------------------------------------------------------------
 
 | We list here the keywords with a new format that you should modify to
   use the c++ version. We don’t list new keywords which correspond to
