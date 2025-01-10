@@ -221,9 +221,8 @@ void SED::warning_integrateSED(const vector<flt> &filters, bool verbose) {
       lamb_flux.emplace(lamb_flux.begin(), 0, 0, 1);
     }
 
-    if ((((lamb_flux.end() - 1)->lamb) * (1. + red) < filter.lmax()) &&
-        (red == 0)) {
-      if (verbose) {
+    if (((lamb_flux.end() - 1)->lamb) * (1. + red) < filter.lmax()) {
+      if (verbose && (red == 0)) {
         cout << "A problem could occur since maximum of SED "
              << (lamb_flux.end() - 1)->lamb << " below max of the filter "
              << filter.lmax();
