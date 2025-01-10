@@ -224,7 +224,7 @@ void SED::warning_integrateSED(const vector<flt> &filters, bool verbose) {
     if (((lamb_flux.end() - 1)->lamb) * (1. + red) < filter.lmax()) {
       if (verbose && (red == 0)) {
         cout << "A problem could occur since maximum of SED "
-             << (lamb_flux.end() - 1)->lamb << " below max of the filter "
+             << lamb_flux.back().lamb << " below max of the filter "
              << filter.lmax();
         cout << " with filters redder than " << filter.name << " and SED "
              << name << " and z " << red << ".";
@@ -236,7 +236,7 @@ void SED::warning_integrateSED(const vector<flt> &filters, bool verbose) {
       // SED in the red part This is a linear extrapolation from the last point
       // defined in the SED. The extrapolation should be done in the template
       // itself, with a physical meaning. Need to avoid such situation.
-      lamb_flux.emplace_back(1.e8, 0, 1);
+      lamb_flux.emplace_back(1.e8 * (1. + red), 0, 1);
     }
   }
 }
