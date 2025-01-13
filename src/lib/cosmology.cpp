@@ -44,34 +44,34 @@ double cosmo::distMet(double z) const {
   double dmet, ao;
 
   // case without the cosmological constant
-  if (l0 == 0) {
+  if (_l0 == 0) {
     //  ao = c/(h0*sqrt(ABS(1-omt)))
     //  in fact we use x = ao * x(z) with x(z) from eq 8 of
     //  Moscardini et al.  So we don't need to compute ao
-    if (om0 > 0) {
+    if (_om0 > 0) {
       ao = 1.;
-      dmet = om0 * z - (om0 - 2) * (1 - sqrt(1 + om0 * z));
-      dmet = 2 * ckms / (ao * h0 * om0 * om0 * (1 + z)) * dmet;
+      dmet = _om0 * z - (_om0 - 2) * (1 - sqrt(1 + _om0 * z));
+      dmet = 2 * ckms / (ao * _h0 * _om0 * _om0 * (1 + z)) * dmet;
     } else {
       ao = 1.;
-      dmet = ckms * z * (1. + z / 2.) / (h0 * (1 + z));
+      dmet = ckms * z * (1. + z / 2.) / (_h0 * (1 + z));
     }
 
-  } else if (om0 < 1 && l0 != 0) {
+  } else if (_om0 < 1 && _l0 != 0) {
     ao = 1.;
     double sum = 0.;
     double dz = z / 50.;
     for (int i = 0; i < 50; i++) {
       double zi = (double(i) + 0.5) * dz;
-      double Ez = sqrt(om0 * pow((1. + zi), 3.) +
-                       (1 - om0 - l0) * pow((1. + zi), 2.) + l0);
+      double Ez = sqrt(_om0 * pow((1. + zi), 3.) +
+                       (1 - _om0 - _l0) * pow((1. + zi), 2.) + _l0);
       sum = sum + dz / Ez;
     }
-    dmet = ckms / (h0 * ao) * sum;
+    dmet = ckms / (_h0 * ao) * sum;
 
   } else {
-    throw runtime_error("Cosmology not included : h0=" + to_string(h0) +
-                        " Om0=" + to_string(om0) + " l0=" + to_string(l0));
+    throw runtime_error("Cosmology not included : h0=" + to_string(_h0) +
+                        " Om0=" + to_string(_om0) + " l0=" + to_string(_l0));
   }
 
   return dmet;
@@ -84,29 +84,29 @@ double cosmo::distMet(double z) const {
 */
 double cosmo::time(double z) const {
   double timy = 0., val;
-  double hy = h0 * 1.0224e-12;
+  double hy = _h0 * 1.0224e-12;
 
-  if (abs(om0 - 1) < 1.e-6 && l0 == 0) {
+  if (abs(_om0 - 1) < 1.e-6 && _l0 == 0) {
     timy = 2. * pow((1 + z), -1.5) / (3 * hy);
 
-  } else if (om0 == 0 && l0 == 0) {
+  } else if (_om0 == 0 && _l0 == 0) {
     timy = 1. / (hy * (1 + z));
 
-  } else if (om0 < 1 && om0 > 0 && l0 == 0) {
-    val = (om0 * z - om0 + 2.) / (om0 * (1 + z));
-    timy = 2. * sqrt((1 - om0) * (om0 * z + 1)) / (om0 * (1 + z));
+  } else if (_om0 < 1 && _om0 > 0 && _l0 == 0) {
+    val = (_om0 * z - _om0 + 2.) / (_om0 * (1 + z));
+    timy = 2. * sqrt((1 - _om0) * (_om0 * z + 1)) / (_om0 * (1 + z));
     timy = timy - log10(val + sqrt(val * val - 1));
-    timy = timy * om0 / (2. * hy * pow((1 - om0), 1.5));
+    timy = timy * _om0 / (2. * hy * pow((1 - _om0), 1.5));
 
-  } else if (om0 > 1 && l0 == 0) {
-    timy = acos((om0 * z - om0 + 2.) / (om0 * (1 + z)));
-    timy = timy - 2 * sqrt((om0 - 1) * (om0 * z + 1)) / (om0 * (1 + z));
-    timy = timy * om0 / (2 * hy * pow((om0 - 1), 1.5));
+  } else if (_om0 > 1 && _l0 == 0) {
+    timy = acos((_om0 * z - _om0 + 2.) / (_om0 * (1 + z)));
+    timy = timy - 2 * sqrt((_om0 - 1) * (_om0 * z + 1)) / (_om0 * (1 + z));
+    timy = timy * _om0 / (2 * hy * pow((_om0 - 1), 1.5));
 
-  } else if (om0 < 1 && abs(om0 + l0 - 1) < 1.e-5) {
-    val = sqrt(1 - om0) / (sqrt(om0) * pow((1 + z), 1.5));
+  } else if (_om0 < 1 && abs(_om0 + _l0 - 1) < 1.e-5) {
+    val = sqrt(1 - _om0) / (sqrt(_om0) * pow((1 + z), 1.5));
     timy = log(val + sqrt(val * val + 1));
-    timy = timy * 2. / (3. * hy * sqrt(1 - om0));
+    timy = timy * 2. / (3. * hy * sqrt(1 - _om0));
 
   } else {
     throw runtime_error(" Not the right cosmology to derive the time ");

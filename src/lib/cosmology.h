@@ -15,20 +15,26 @@
 using std::ostream;
 using std::vector;
 
-// Class cosmology
+/*! \brief Very simple flat LCDM-type cosmology class
+ *
+ * LePHARE needs to define a fiducial cosmology class in order to compute
+ * distance moduli, absolute magnitudes, etc... This small class provides the
+ * necessary computations.
+ */
 class cosmo {
  private:
-  double h0, om0, l0;
+  double _h0, _om0, _l0;
 
  public:
-  // minimal constructor of the ext class, with its name and the id of the model
-  cosmo(double h0C = 70,    ///< Hubble constant
-        double om0C = 0.3,  ///< matter density at present time
-        double l0C = 0.7)   ///< cosmological constant
+  /// define a cosmology based on the triplet \f$H_0\f$, \f$\Omega_0\f$, and
+  /// \f$\Lambda_0\f$
+  cosmo(double h0 = 70,    ///< Hubble constant at present time
+        double om0 = 0.3,  ///< matter density at present time
+        double l0 = 0.7)   ///< cosmological constant
   {
-    h0 = h0C;
-    om0 = om0C;
-    l0 = l0C;
+    _h0 = h0;
+    _om0 = om0;
+    _l0 = l0;
   }
 
   double distMod(double z) const;  //!< compute the distance modulus at z
@@ -36,13 +42,13 @@ class cosmo {
   double time(
       double z) const;  //!< compute the cosmological time from infinity to z
   inline bool operator==(const cosmo &rhs) {
-    return h0 == rhs.h0 && om0 == rhs.om0 && l0 == rhs.l0;
+    return _h0 == rhs._h0 && _om0 == rhs._om0 && _l0 == rhs._l0;
   }
   inline bool operator!=(const cosmo &rhs) {
-    return h0 != rhs.h0 || om0 != rhs.om0 || l0 != rhs.l0;
+    return _h0 != rhs._h0 || _om0 != rhs._om0 || _l0 != rhs._l0;
   }
   inline friend ostream &operator<<(ostream &output, const cosmo &c) {
-    output << c.h0 << "," << c.om0 << "," << c.l0;
+    output << c._h0 << "," << c._om0 << "," << c._l0;
     return output;
   }
 
