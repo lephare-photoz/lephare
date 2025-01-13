@@ -206,18 +206,23 @@ class onesource {
   void convertMag();
   void keepOri();
 
-  //! Update the solution of the fit based on execution flags
-  /*!
-    \param zfix bool that sets whether to set solution to a given redshift,
-    typically a true or spectroscopic redshift \param zintp bool that sets
-    whether to improve the determination of the minimum on the chi2 curve, using
-    the method PDF::int_parabL
+  /*! \brief Update the normalization of the fit solution based on execution
+  flags
 
-    \param[out] zmin and dmmin are reevaluated, for types GAL and QSO
+  \param zfix bool set whether to set solution to a given redshift,
+  typically a true or spectroscopic redshift zintp bool that sets
+  whether to improve the determination of the minimum on the chi2 curve, using
+  the method PDF::int_parabL
 
-    Note that zfix and zintp are not supposed to both be set. In case it
-    happens, zintp is discarded here.
-   */
+  \param zintp bool set whether interpolation is to be done or not
+
+  \param lcdm cosmo instance defining the cosmology used to compute the flux
+  rescaling
+
+  Note that zfix and zintp are not supposed to both be set. In case it
+  happens, zintp is discarded. zmin and dmmin are reevaluated, for types GAL and
+  QSO
+ */
   void interp(const bool zfix, const bool zintp, const cosmo &lcdm);
   void uncertaintiesMin();
   void uncertaintiesBay();

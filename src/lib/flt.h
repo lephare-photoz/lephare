@@ -78,7 +78,7 @@ class flt {
   /// \brief generic constructor, with all internals set to unphysical defaults
   ///
   /// @param k index of the filter in the list of filters
-  /// @param filestream filter file stream
+  /// @param cname filter file stream
   /// @param transt configuration keyword TRANS_TYPE
   /// @param calibt configuration keyword FILTER_CALIB
   flt(const int k, ifstream &cname, const int transt, const int calibt)

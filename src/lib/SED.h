@@ -18,10 +18,16 @@
 #include "opa.h"
 
 //! types of object that LePHARE can treat distinctively
-enum object_type { GAL, QSO, STAR };
+enum object_type {
+  GAL, /*!< Galaxy object */
+  QSO, /*!< AGN object (QSO naming is historical) */
+  STAR /*!< Star object */
+};
 
-/*
- * General SED base class
+/*! \brief SED base class
+ *
+ * The SED class is in charge of representing a template and performing
+ * all the necessary computation on it.
  */
 class SED {
  protected:
@@ -46,7 +52,16 @@ class SED {
       index_z0;  ///< index in the full list of SEDs corresponding to the z=0
                  ///< version of the current SED.
 
-  double red, chi2 = HIGH_CHI2, dm, lnir, luv, lopt, inter;
+  double red,            ///< redshift of this SED
+      chi2 = HIGH_CHI2,  ///< best fit chi2 associated with this SED
+      dm,    ///< distance modulus, equivalent to a normalization, of this SED
+      lnir,  ///< NIR luminosity \f$\int_{2.1\,\mu m}^{2.3\,\mu m}
+             ///< L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
+      luv,   ///< UV luminosity \f$\int_{0.21\,\mu m}^{0.25\,\mu m}
+             ///< L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
+      lopt;  ///< optical luminosity \f$\int_{0.55\,\mu m}^{0.65\,\mu m}
+             ///< L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
+
   double mass, age, sfr, ssfr,
       ltir;  // need to put it out of GalSED since used in the PDF without
              // knowing that it's a gal.
@@ -139,7 +154,7 @@ class SED {
   ///@param lmin start of the lambda vector
   ///@param lmax end of the lambda vector
   ///@param Nsteps number of intervals between $lambda values (hence there are
-  /// Nsteps+1 values of \lambda)
+  /// Nsteps+1 values of \f$\lambda\f$)
   ///@param calib: parameter FILTER_CALIB passed as argument to define the
   /// calibration function \f$C(\lambda)\f$
   /// - calib=0 : \f$C(\lambda)=\lambda^{-2}\f$
@@ -153,7 +168,7 @@ class SED {
   int size() { return lamb_flux.size(); }
   /// rescale the lamb_flux.val as val *= scaleFac
   void rescale(double scaleFac);
-  /// apply  \a #shifts to the magnitude : mag += shifts
+  /// apply shifts to the magnitudes : mag += shifts
   void applyShift(const vector<double> &shifts, const int imagm);
   /// compute magnitude from filters
   void compute_magnitudes(const vector<flt> &filters);
@@ -260,12 +275,13 @@ class SED {
   }
 };
 
-/// concrete SED implementation for galaxy objects
+/// concrete SED implementation for galaxy objects (object_type GAL)
 class GalSED : public SED {
  public:
   vector<double> flEm;
   string format;
-  double tau, zmet, d4000, fracEm;
+  double tau, zmet, d4000,
+      fracEm;  //< fraction of the emmission line considered
 
   GalSED(SED const &p) : SED(p) { nlib = GAL; };
   GalSED(GalSED const &p) : SED(p) {
@@ -311,7 +327,7 @@ class GalSED : public SED {
   }
 };
 
-/// concrete SED implementation for QSO objects
+/// concrete SED implementation for AGN objects (object_type QSO)
 class QSOSED : public SED {
  public:
   QSOSED(SED const &p) : SED(p) { nlib = QSO; };
@@ -325,7 +341,7 @@ class QSOSED : public SED {
   void readMagBin(ifstream &ins);
 };
 
-/// concrete SED implementation for star objects
+/// concrete SED implementation for star objects (object_type Star)
 class StarSED : public SED {
  public:
   StarSED(SED const &p) : SED(p) { nlib = STAR; };

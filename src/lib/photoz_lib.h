@@ -11,6 +11,13 @@
 #include "flt.h"  // to read the libraries
 #include "mag.h"
 
+/*! \brief Class managing photo-z computation.
+ *
+ * The PhotoZ class is the central executor of photo-z estimation : it manages
+ * most configuration parameters, reads synthetic magnitudes inputs and object
+ * catalogs, performs the fit, and is in charge of producing results and saving
+ * them to files.
+ */
 class PhotoZ {
  private:
   keymap keys;
@@ -90,18 +97,16 @@ class PhotoZ {
   void prep_data(vector<onesource *> sources);
   void prep_data(onesource *oneObj);
 
-  //! Return the indexes over zlib vector on which to run the fit
+  //! Return the indexes over one of the zlib vectors on which to run the fit
   /*!
-    \param zlib The vector of redshifts of each template in the full library, in
-    the same order \param zfix If true only take indexes of the templates whose
-    redshifts are the closest to the true/spectro z. onesource::closest_red
-    needs to have been set, else the the return vector will contain all the
-    indexes, as closest_red is initialized to a negative unphysical value.
+    \param redshift The redshift to which the values in zLib or zLibIR,
+    depending on ir, are to be compared.
 
-    \param ir whether tje selection is done on the main template library or on
+    \param ir whether the selection is done on the main template library or on
     the IR one.
 
-    \return Vector of indexes to be used on the full library.
+    \return Vector of indexes in either zLib or zLibIR, corresponding to the
+    closest value to redshift
   */
   vector<size_t> validLib(const double &redshift, const bool &ir = false);
 };
