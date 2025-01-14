@@ -249,7 +249,6 @@ class SED {
     kcorr.clear();
     fac_line.clear();
   };
-  virtual void setOthers() {};
   void fit_normalization(const onesource &source, const int imagm);
   inline bool is_same_model(const SED &other) {
     return ((*this).nummod == other.nummod && (*this).ebv == other.ebv &&
