@@ -62,17 +62,26 @@ class SED {
       lopt;  ///< optical luminosity \f$\int_{0.55\,\mu m}^{0.65\,\mu m}
              ///< L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
 
-  double mass, age, sfr, ssfr,
-      ltir;  // need to put it out of GalSED since used in the PDF without
-             // knowing that it's a gal.
-  double ebv, mag0, distMod;
-  int extlawId;
+  double mass,  ///< mass in \f$M_\odot\f$
+      age,      ///< age in year (yr)
+      sfr,      ///< Star Formation Rate in \f$M_\odot\f$/yr
+      ssfr,     ///< Specific SFR, defined as sfr / mass
+      ltir;  ///< \f$int_{8\,\mu m}^{1000\,\mu m}    L_\lambda\; d\lambda\f$ in
+             ///< Log unit of \f$L_\odot\f$
+  // need to put it out of GalSED since used in the PDF without
+  // knowing that it's a gal.
+  double ebv,  ///< E(B-V) extinction value applied to the SED
+      mag0, distMod;
+
+  int extlawId;  ///< index of the extinction law when dust attenuation has been
+                 ///< applied
+
   double qi[4];  ///< Store the number flux (phot/cm\f$^{-2}\f$s\f$^{-1}\f$) of
                  ///< ionizing photons for HeII, HeI, H, and H2. See
                  ///< SED::calc_ph. In practice, qi[2] only is used, and only
                  ///< for the physical modeling of emission lines
                  ///< (EM_LINES="PHYS", see GalMag::read_SED)
-  vector<oneElLambda> fac_line;
+  vector<oneElLambda> fac_line;  ///< oneElLambda vector storing emission lines
 
   // Constructors defined in SED.cpp
   SED(const string nameC, int nummodC = 0, string typeC = "G");
@@ -242,13 +251,14 @@ class SED {
   void generate_spectra(double zin = 0.0, double dmin = 1.0,
                         vector<opa> opaAll = {});
 
-  // in read_lib for zphota
+  ///< clean content of base class
   virtual void clean() {
     lamb_flux.clear();
     mag.clear();
     kcorr.clear();
     fac_line.clear();
   };
+
   void fit_normalization(const onesource &source, const int imagm);
   inline bool is_same_model(const SED &other) {
     return ((*this).nummod == other.nummod && (*this).ebv == other.ebv &&
@@ -320,6 +330,8 @@ class GalSED : public SED {
   void writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
                 vector<flt> allFilters, string magtyp) const;
   void readMagBin(ifstream &ins);
+
+  ///< clean content of class
   void clean() {
     SED::clean();
     flEm.clear();
