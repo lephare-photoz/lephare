@@ -14,7 +14,7 @@ The basic principle
 
 *LePHARE* is a set of ``C++`` programs to compute photometric redshifts ( :math:`z_\mathrm{phot}` ) for galaxies and AGN, and galaxy physical parameters by fitting spectral energy distributions (SEDs) to a dataset of photometric fluxes or apparent magnitudes. Stellar templates are fitted too. The set of ``C++`` programs can also be manipulated as a library with python. The code can be run through notebooks or scripts, but also with command lines in the Unix shell as it was the case in previous versions of LePHARE in fortran. 
 
-The photometric computation can be decomposed in four parts, as illustrated in :ref:`Fig.1 <fig-skim>`.
+The photometric computation can be decomposed in four parts, as illustrated in :numref:`fig:skim`.
 
 - a preliminary step to read the SED from synthetic models or observed spectra and build the SED library. This corresponds to the program ``sedtolib`` in command lines, and the class ``Sedtolib`` in python.
 
@@ -27,14 +27,14 @@ The photometric computation can be decomposed in four parts, as illustrated in :
 When running the code using command lines in your Unix shell, these four steps need to have been run at least once (but not everytime if the libraries already exist). When running the code using the python interface, the first three steps could be combined or atomized in smaller steps, but the basic principle of building the magnitude libraries before computing the photometric redshifts remain the same.
   
 
-
+.. _fig:skim:
 .. figure:: figures/lephare_skim.png
   :width: 700
   :alt: Basic run
   :name: fig-skim
   :align: left
 	  
-  Fig.1: This figure present the four basic steps to run the code with command lines. The steps 1-2-3 could be compressed in a single one using the code "prepare" in python. 
+  This figure present the four basic steps to run the code with command lines. The steps 1-2-3 could be compressed in a single one using the code "prepare" in python. 
 
 
 
@@ -67,7 +67,7 @@ These two environment variables could be set in two different ways, depending on
   :alt: Alternative text
   :name: fig-structure
 
-  Fig.2: Structure of the *LePHARE* repository.
+  Structure of the *LePHARE* repository.
 
 
 The LePHARE internal data directory
@@ -172,7 +172,7 @@ The ``C++`` programs can also be manipulated as a library using the python inter
 
 Several notebooks are given in example in `here <https://github.com/lephare-photoz/lephare/blob/main/docs/notebooks/README.md>`_.
 
-The `detailed run notebook <https://lephare.readthedocs.io/en/latest/notebooks/detailed_run.html>`_ is the closest to the four steps outlined in Fig `1 <#fig:skim>`__, i.e. creating the filter library, the SED library, then build the predicted magnitudes from these filters and SEDs (for GAL/QSO/STAR), and finally running the photometric redshifts for a subsample of galaxies from COSMOS2020 having a spec-z.
+The `detailed run notebook <https://lephare.readthedocs.io/en/latest/notebooks/detailed_run.html>`_ is the closest to the four steps outlined in :numref:`fig:skim`, i.e. creating the filter library, the SED library, then build the predicted magnitudes from these filters and SEDs (for GAL/QSO/STAR), and finally running the photometric redshifts for a subsample of galaxies from COSMOS2020 having a spec-z.
 
 However, we also added a function ``lp.prepare`` which first compute the full predicted magnitude library (the equivalent of combining filter, sedtolib, mag_gal together in the command lines), and then we compute the photometric redshifts with ``lp.process`` as in the example below and in this `typical run notebook <https://lephare.readthedocs.io/en/latest/notebooks/typical_run.html>`_.
 
@@ -201,7 +201,7 @@ However, we also added a function ``lp.prepare`` which first compute the full pr
 .. _models:
 
 Build the rest-frame templates library
----------------------------------
+--------------------------------------
 
 
 Overview
@@ -306,7 +306,7 @@ The binary output file (\*.bin) is saved in the directory ``$LEPHAREWORK/lib_bin
 
 
 Others
-^^^^^
+^^^^^^
 
 
 Already included libraries
@@ -392,10 +392,10 @@ For the galaxy templates, an additional file is generated associated to the libr
 
 
    
-.. _`sec:filter`:
+.. _sec:filter:
 
-Build the filter library 
---------------------
+Build the filter library
+------------------------
 
 
 
@@ -500,7 +500,6 @@ Parameter descriptions
 |                |                |                     |                    |
 +----------------+----------------+---------------------+--------------------+
 
-.. _`sec:filter`:
 
 
 ``FILTER_LIST``: all the filter names must be separated by a comma. We assume that all the filter files are located in the directory ``$LEPHAREDIR/filt/``, except if the keyword ``FILTER_REP`` is specified. When writing the set of filters to be used, only the pathname after the common string ``$LEPHAREDIR/filt/`` should be specified.
@@ -511,7 +510,7 @@ Parameter descriptions
 
 If the transmission curve (:math:`T_{\lambda}`) corresponds to energy then :math:`R_{\lambda}=T_{\lambda}`.
 If the transmission curve (:math:`T_{\lambda}`) corresponds to number of photons (:math:`N_{\varphi}`) then
-  :math:`R_{\lambda}= \lambda T_{\lambda}` :
+:math:`R_{\lambda}= \lambda T_{\lambda}` :
 
   .. math::
 
@@ -565,7 +564,7 @@ As an exemple : filter pippo.pb and put it in $LEPHAREDIR/filt/pippo/pippo.pb :
 The user should avoid setting a resolution that is unnecessarily high, as this could result in expensive computational time for the predicted magnitude library.
 
 Getting new filter automatically (only in python)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The python interface allows to load the filters from a yml file, with the possibility to query the `SVO service <http://svo2.cab.inta-csic.es/theory/fps/>`_ including a much larger number of filters.
 
@@ -705,11 +704,6 @@ vista/K                0.100            0.118    0.364
 | Others extinction laws can be added by following the format
   (:math:`\lambda(A) , k_{\lambda}`).
 
-.. container:: float
-   :name: fig:ext
-
-
-
 
 	  
 .. _`sec:filtcalib`:
@@ -753,7 +747,7 @@ correction is :
   blackbody with temperature T=10000K while SCUBA uses planets which
   have SEDs in submillimeter very close to :math:`B_{\nu}=\nu`. The
   keyword FILTER_CALIB is used to account for these different
-  calibration scheme (see section `3.3 <#sec:filter>`__).
+  calibration scheme (see :ref:`sec:filter`).
 | One additional effect is the way the effective wavelength is defined.
   In the case of MIPS, the effective wavelength seems to be defined,
   according to the MIPS handbook, as :math:`\nu B_{\nu}=ctt` while the
@@ -838,7 +832,7 @@ correction is :
 .. _`sec:mag_gal`:
 
 Build the predicted flux/magnitude library
---------------------------------------
+------------------------------------------
 
 .. _description-and-outputs-1:
 
@@ -1144,6 +1138,7 @@ The ``input_table`` is a python table with a pre-defined format (explained below
 
   
 .. code-block:: python
+		
   # Instantiate an object from the class ``PhotoZ``
   photz = lp.PhotoZ(keymap)
   # Fit
@@ -1359,7 +1354,7 @@ Additional options in the configuration file will allow to restrict the use of t
 
 
 Parameters of the fit
-^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^
 
 .. _lib:
 
@@ -2511,7 +2506,7 @@ Appendix A : Content of LEPHARE-data
 
 
 Appendix B : keyword differences between the Fortran and the C++ version
--------------------------------------------------------------------------
+------------------------------------------------------------------------
 
 | We list here the keywords with a new format that you should modify to
   use the c++ version. We don’t list new keywords which correspond to
