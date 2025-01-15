@@ -582,9 +582,8 @@ void SED::reduce_memory(vector<flt> allFlt) {
   return;
 }
 
-void SED::generate_spectra(double zin, double dmin, vector<opa> opaAll) {
-  if (nlib == 0) {
-    // GAL
+void SED::generate_spectra(double zin, double dmin, const vector<opa> &opaAll) {
+  if (nlib == GAL) {
     red = zin;
     // Create a SED of emission lines
     GalSED SEDz0_Em(*this);
@@ -599,8 +598,7 @@ void SED::generate_spectra(double zin, double dmin, vector<opa> opaAll) {
     redshift();
     // Rescale la SED
     rescale(dmin);
-  } else if (nlib == 1) {
-    // QSO
+  } else if (nlib == QSO) {
     red = zin;
     // Rescale la SED
     rescale(dmin);
@@ -608,9 +606,7 @@ void SED::generate_spectra(double zin, double dmin, vector<opa> opaAll) {
     applyOpa(opaAll);
     //// Redshift the SED at the redshift extracted from the minimum chi2
     redshift();
-  } else if (nlib == 2) {
-    // STAR
-    //  Rescale la SED
+  } else if (nlib == STAR) {
     rescale(dmin);
   }
   return;
