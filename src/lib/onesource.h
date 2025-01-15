@@ -59,7 +59,7 @@ class onesource {
   vector<int> busnorma, busul, busfir, bscfir, absfilt;
   string spec, str_inp;
   int pos, nbused, nbul, nbusIR, indminSec, indminIR;
-  double zs, dm, consiz;
+  double zs, consiz;
   array<double, 3> zmin, chimin, dmmin;
   array<int, 3> indmin, imasmin;
   double zminIR, chiminIR, dmminIR, imasminIR;
