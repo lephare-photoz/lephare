@@ -251,9 +251,23 @@ class SED {
    * Results are stored in the q_i array member of size 4 of the SED instance.
    */
   virtual void calc_ph() {};  // Number of inoizing photons
+
+  /*! Compute some integrals to be stored in the object
+   *
+    This computes variables luv, lopt, lnir, and ltir
+  */
   virtual void SEDproperties() {};
+
+  /*! Generate spectrum at given redshift, with given normalization, and
+    adding emission lines and extragalactic extinction
+
+    \param zin Redshift of the SED
+    \param dmin Scale normalization of the SED
+    \param opaAll Vector of opacities to compute extinction along the line of
+    sight
+   */
   void generate_spectra(double zin = 0.0, double dmin = 1.0,
-                        vector<opa> opaAll = {});
+                        const vector<opa> &opaAll = {});
 
   ///< clean content of base class
   virtual void clean() {
@@ -263,7 +277,6 @@ class SED {
     fac_line.clear();
   };
 
-  void fit_normalization(const onesource &source, const int imagm);
   inline bool is_same_model(const SED &other) {
     return ((*this).nummod == other.nummod && (*this).ebv == other.ebv &&
             (*this).age == other.age);
