@@ -206,9 +206,9 @@ PYBIND11_MODULE(_lephare, mod) {
       .def(py::init<const GalSED &>())
       .def(py::init<const string, int>(), py::arg("name"),
            py::arg("nummod") = 0)
-      .def(py::init<const string, double, double, string, int, string, int>(),
-           py::arg("name"), py::arg("tau"), py::arg("age"), py::arg("format"),
-           py::arg("nummod"), py::arg("type"), py::arg("idAge"))
+      .def(py::init<const string, int, string, string, double, int>(),
+           py::arg("name"), py::arg("nummod"), py::arg("type"),
+           py::arg("format"), py::arg("age"), py::arg("idAge"))
       .def("SEDproperties", &GalSED::SEDproperties)
       .def("add_neb_cont", &GalSED::add_neb_cont)
       .def("generateEmEmpUV", &GalSED::generateEmEmpUV)
