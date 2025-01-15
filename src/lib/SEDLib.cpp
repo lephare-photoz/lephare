@@ -93,7 +93,7 @@ vector<GalSED> readBC03(string sedFile, int nummod, string type,
   // Create an object SED and store it in the output vector
   for (int i = 0; i < nages; i++) {
     // Construct the object SED and store the various relevant informations
-    GalSED oneSED(sedFile, nummod, type, "BC03", age[i], i);
+      GalSED oneSED(sedFile, nummod, type, "BC03", age[i], i);
 
     // Attribute the metallicity and SFH characteristic time to the SED
     oneSED.zmet = zmett;
