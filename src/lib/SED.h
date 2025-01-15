@@ -54,7 +54,7 @@ class SED {
 
   double red,            ///< redshift of this SED
       chi2 = HIGH_CHI2,  ///< best fit chi2 associated with this SED
-      dm,    ///< distance modulus, equivalent to a normalization, of this SED
+      dm,    ///< normalization of the SED
       lnir,  ///< NIR luminosity \f$\int_{2.1\,\mu m}^{2.3\,\mu m}
              ///< L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
       luv,   ///< UV luminosity \f$\int_{0.21\,\mu m}^{0.25\,\mu m}
@@ -296,7 +296,10 @@ class GalSED : public SED {
   double tau, zmet, d4000,
       fracEm;  //< fraction of the emmission line considered
 
+  /// Copy constructor from base class
   GalSED(SED const &p) : SED(p) { nlib = GAL; };
+
+  /// Copy constructor 
   GalSED(GalSED const &p) : SED(p) {
     flEm = p.flEm;
     format = p.format;
@@ -309,10 +312,16 @@ class GalSED : public SED {
     fracEm = p.fracEm;
   };
 
-  // Constructors defined in SED.cpp
-  GalSED(const string nameC, int nummodC = 0);
-  GalSED(const string nameC, double tauC, double ageC, string formatC,
-         int nummodC, string typeC, int idAgeC);
+  /// Standard constructor
+  GalSED(const string name, int nummod = 0);
+
+    /*! Extended constructor
+      \param age Age of the galaxy
+      \param idAge Index of age in the list of ages
+     */
+  GalSED(const string name, int nummod, string type,
+	 string format, double age, int idAge);
+  
   ~GalSED() { flEm.clear(); }
 
   void SEDproperties();

@@ -870,11 +870,12 @@ GalSED::GalSED(const string nameC, int nummodC) : SED(nameC, nummodC, "GAL") {
 /*
   extended constructor
 */
-GalSED::GalSED(const string nameC, double tauC, double ageC, string formatC,
-               int nummodC, string typeC, int idAgeC)
-    : SED(nameC, tauC, ageC, nummodC, typeC, idAgeC) {
+GalSED::GalSED(const string nameC, int nummodC, string typeC,
+	       string formatC, double ageC, int idAgeC)
+    : SED(nameC, nummodC, typeC) {
+  age = ageC;
+  idAge = idAgeC;  // index of the age into the SED
   format = formatC;
-  tau = tauC;
   d4000 = -999;
   zmet = -999;
   lnir = -999;
