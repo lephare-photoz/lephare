@@ -150,9 +150,6 @@ PYBIND11_MODULE(_lephare, mod) {
   py::class_<SED>(mod, "SED")
       .def(py::init<const string, int, string>(), py::arg("name") = "",
            py::arg("nummod") = 0, py::arg("type") = "G")
-      .def(py::init<const string, double, double, int, string, int>(),
-           py::arg("name"), py::arg("tau"), py::arg("age"), py::arg("nummod"),
-           py::arg("type"), py::arg("idAge"))
       .def(py::init<const SED>())
       .def_readonly("extlawId", &SED::extlawId)
       .def_readonly("ebv", &SED::ebv)

@@ -83,10 +83,14 @@ class SED {
                  ///< (EM_LINES="PHYS", see GalMag::read_SED)
   vector<oneElLambda> fac_line;  ///< oneElLambda vector storing emission lines
 
-  // Constructors defined in SED.cpp
-  SED(const string nameC, int nummodC = 0, string typeC = "G");
-  SED(const string nameC, double tauC, double ageC, int nummodC, string typeC,
-      int idAgeC);
+  /*! Generic constructor
+    \param name Arbitrary name for the SED object
+    \param nummod Identification number of the SED object
+    \param type One of g/G, q/Q or s/S for GAL, QSO, or Star type objects
+  */
+  SED(const string name, int nummod = 0, string type = "G");
+
+  /// Copy constructor
   SED(SED const &p) {
     idAge = p.idAge;
     lamb_flux = p.lamb_flux;

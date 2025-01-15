@@ -49,16 +49,6 @@ SED::SED(const string nameC, int nummodC, string type) {
 }
 
 /*
-  extended constructor
-*/
-SED::SED(const string nameC, double tauC, double ageC, int nummodC,
-         string typeC, int idAgeC)
-    : SED(nameC, nummodC, typeC) {
-  age = ageC;
-  idAge = idAgeC;  // index of the age into the SED
-}
-
-/*
   destructor of the SEd class: remove the vectors
 */
 SED::~SED() {
