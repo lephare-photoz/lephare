@@ -463,8 +463,6 @@ void GalMag::read_SED() {
     GalSED oneSED("");
     // read one SED in the binary file
     oneSED.readSEDBin(ssedIn);
-    //// Check that the lambda coverage is correct
-    // oneSED.warning_integrateSED(allFlt, verbose);
     // build the library of SEDs that modify the initial template SED
     vector<GalSED> seds = make_maglib(oneSED);
     // write the result in file
@@ -748,8 +746,6 @@ void QSOMag::read_SED() {
     QSOSED oneSED("");
     oneSED.clean();
     oneSED.readSEDBin(ssedIn);
-    //// Check that the lambda coverage is correct
-    // oneSED.warning_integrateSED(allFlt, verbose);
     // build the library of SEDs that modify the initial template SED
     vector<QSOSED> seds = make_maglib(oneSED);
     // write the result in file
