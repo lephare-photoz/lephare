@@ -303,6 +303,12 @@ class SED {
 
 /// concrete SED implementation for galaxy objects (object_type GAL)
 class GalSED : public SED {
+ private:
+  void add_neb_cont();
+  void generateEmEmpUV(double MNUV_int, double NUVR);
+  void generateEmEmpSFR(double MNUV_int, double NUVR);
+  void generateEmPhys(double zmet, double qi);
+  
  public:
   vector<double> flEm;
   string format;
@@ -338,17 +344,16 @@ class GalSED : public SED {
   ~GalSED() { flEm.clear(); }
 
   void SEDproperties();
-  void add_neb_cont();
+  void calc_ph();
   GalSED generateEmSED(const string &emtype);
-  void generateEmEmpUV(double MNUV_int, double NUVR);
-  void generateEmEmpSFR(double MNUV_int, double NUVR);
-  void generateEmPhys(double zmet, double qi);
   void generateEmSpectra(int nstep);
   void sumEmLines();
+
+  /// Compute the k-correction in each filter as : \f$k = mag(z) - mag(z=0) - \mu\f$
   void kcorrec(const vector<double> &magz0);
+  
   void rescaleEmLines();
   void zdepEmLines(int flag);
-  void calc_ph();
 
   void writeSED(ofstream &ofs, ofstream &ofsPhys, ofstream &ofsDoc);
   void readSEDBin(ifstream &ins);

@@ -210,16 +210,16 @@ PYBIND11_MODULE(_lephare, mod) {
            py::arg("name"), py::arg("nummod"), py::arg("type"),
            py::arg("format"), py::arg("age"), py::arg("idAge"))
       .def("SEDproperties", &GalSED::SEDproperties)
-      .def("add_neb_cont", &GalSED::add_neb_cont)
-      .def("generateEmEmpUV", &GalSED::generateEmEmpUV)
-      .def("generateEmEmpSFR", &GalSED::generateEmEmpSFR)
-      .def("generateEmPhys", &GalSED::generateEmPhys)
+      .def("calc_ph", &GalSED::calc_ph)
+      //      .def("add_neb_cont", &GalSED::add_neb_cont)
+      // .def("generateEmEmpUV", &GalSED::generateEmEmpUV)
+      // .def("generateEmEmpSFR", &GalSED::generateEmEmpSFR)
+      // .def("generateEmPhys", &GalSED::generateEmPhys)
       //    .def("generateEmSpectra", &GalSED::generateEmSpectra)
       .def("sumEmLines", &GalSED::sumEmLines)
       .def("kcorrec", &GalSED::kcorrec)
       .def("rescaleEmLines", &GalSED::rescaleEmLines)
-      .def("zdepEmLines", &GalSED::zdepEmLines)
-      .def("calc_ph", &GalSED::calc_ph);
+      .def("zdepEmLines", &GalSED::zdepEmLines);
 
   /******** CLASS SEDLib *********/
   applySEDLibTemplate<StarSED>(mod, "StarSEDLib");
