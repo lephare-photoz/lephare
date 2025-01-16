@@ -254,7 +254,7 @@ class SED {
 
   /*! Compute some integrals to be stored in the object
    *
-    This computes variables luv, lopt, lnir, and ltir
+    This computes variables SED::luv, SED::lopt, SED::lnir, and SED::ltir
   */
   virtual void SEDproperties() {};
 
@@ -277,22 +277,61 @@ class SED {
     fac_line.clear();
   };
 
+  /// Custom logical = between SED, based on nummod, ebv, and age
   inline bool is_same_model(const SED &other) {
     return ((*this).nummod == other.nummod && (*this).ebv == other.ebv &&
             (*this).age == other.age);
   }
-  pair<vector<double>, vector<double>> get_data_vector(double, double, bool,
+
+  /*!  Return the pair of vectors [lambdas, vals] of wavelength and spectrum
+    values
+
+    \param minl Minimum \f$\lambda\f$ of the vector
+    \param maxl Maximum \f$\lambda\f$ of the vector
+    \param mag If true, return magnitudes as vals
+    instead of fluxes
+    \param mag offset, mag system to be used in case mag is
+    true.
+   */
+  pair<vector<double>, vector<double>> get_data_vector(double minl, double maxl,
+                                                       bool mag,
                                                        double offset = 0.0);
 
+  /*! Apply transformation of the sed based on the redshift (stored in variable
+    red) \f$val\rightarrow val/(1+z)\f$ and \f$\lambda\rightarrow
+    \lambda(1+z)\f$ and
+
+   */
   void redshift();
-  void applyExt(const double ebv, const ext &oneext);
-  void applyExtLines(const ext &oneext);
+
+  /*! Apply dust extinction to the SED (GAL and GSO only)
+
+    \param ebv value of E(B-V)
+    \param ext_obj instance of class ext
+   */
+  void applyExt(const double ebv, const ext &ext_obj);
+
+  /*! Apply dust extinction to the emission lines (stored in fac_line)
+    Only for galaxies and QSO
+
+    \param ext_obj instance of class ext
+   */
+  void applyExtLines(const ext &ext_obj);
+
+  /*! Apply extinction due to intergalactic medium (only for GAL and QSO)
+
+    \param opaAll Vector of opacities to compute extinction along the line of
+  sight
+   */
   void applyOpa(const vector<opa> &opaAll);
 
-  // helper function for python binding
+  /// Helper function to append the oneElLambda(lambda, value) object to the sed
+  /// vector
   inline void emplace_back(const double lambda, const double value) {
     lamb_flux.emplace_back(lambda, value, 1);
   }
+
+  /// Helper function to set the sed vector as lambda=x and val = y
   inline void set_vector(const vector<double> &x, const vector<double> &y) {
     if (x.size() != y.size()) throw runtime_error("vector sizes are different");
     for (size_t k = 0; k < x.size(); k++) {
@@ -308,7 +347,7 @@ class GalSED : public SED {
   void generateEmEmpUV(double MNUV_int, double NUVR);
   void generateEmEmpSFR(double MNUV_int, double NUVR);
   void generateEmPhys(double zmet, double qi);
-  
+
  public:
   vector<double> flEm;
   string format;
@@ -349,9 +388,10 @@ class GalSED : public SED {
   void generateEmSpectra(int nstep);
   void sumEmLines();
 
-  /// Compute the k-correction in each filter as : \f$k = mag(z) - mag(z=0) - \mu\f$
+  /// Compute the k-correction in each filter as : \f$k = mag(z) - mag(z=0) -
+  /// \mu\f$
   void kcorrec(const vector<double> &magz0);
-  
+
   void rescaleEmLines();
   void zdepEmLines(int flag);
 
