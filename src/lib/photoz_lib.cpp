@@ -450,9 +450,9 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 keymap read_keymap_from_doc(const string libName) {
   // List of the keywords to be found in the config file/command line
   string list_keywords[] = {
-      "LIB_TYPE",   "NUMBER_ROWS", "FILTER_FILE", "FILTERS", "EM_LINES",
-      "LIB_NAME",   "NUMBER_SED",       "Z_STEP",  "COSMOLOGY",
-      "EXTINC_LAW", "EB_V",        "MOD_EXTINC",  "Z_FORM"};
+      "LIB_TYPE", "NUMBER_ROWS", "FILTER_FILE", "FILTERS",   "EM_LINES",
+      "LIB_NAME", "NUMBER_SED",  "Z_STEP",      "COSMOLOGY", "EXTINC_LAW",
+      "EB_V",     "MOD_EXTINC",  "Z_FORM"};
   // Number of keywords
   int nb_doc_key = (int)(sizeof(list_keywords) / sizeof(list_keywords[0]));
   cout << "Number of keywords to be read in the doc: " << nb_doc_key << endl;
