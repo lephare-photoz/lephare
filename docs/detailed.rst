@@ -918,17 +918,12 @@ For a set of filters given by ``FILTER_FILE`` and an input SED library defined b
 | MAGTYPE(\*)     | string               | —-       | Magnitude type                        |
 |                 |                      |          | (AB or VEGA)                          |
 +-----------------+----------------------+----------+---------------------------------------+
-| ZGRID_TYPE      | int                  | 0        | 0: constant step                      |
-|                 |                      |          | in redshift                           |
-|                 | (n=1)                |          |                                       |
-|                 |                      |          | 1: evolving step                      |
-|                 |                      |          | in redshift as                        |
-|                 |                      |          | :math:`dz \times (1+z)`               |
-+-----------------+----------------------+----------+---------------------------------------+
 | Z_STEP          | float                | 0.04,0,6 | dz,zmin,zmax:                         |
 |                 |                      |          | redshift step, dz                     |
 |                 |                      |          |                                       |
-|                 | (n=3)                |          | The minimum                           |
+|                 | (n=3)                |          | dz constant step                      |
+|                 |                      |          | in redshift                           |
+|                 |                      |          | The minimum                           |
 |                 |                      |          | (zmin) and the                        |
 |                 |                      |          | maximum redshift                      |
 |                 |                      |          | (zmax).                               |
@@ -2514,8 +2509,6 @@ Appendix B : keyword differences between the Fortran and the C++ version
 | **Z_STEP format**
 | fortran - dz,zmax,dzsup (zmin=0, dzsup step for :math:`z>6`)
 | c++ - dz,zmin,zmax
-| **ZGRID_TYPE new**
-| c++ - 0(def)/1
 | **EM_LINES (in mag_gal) format**
 | fortran - NO(def)/YES
 | c++ - NO(def)/EMP_UV/EMP_SFR/PHYS
