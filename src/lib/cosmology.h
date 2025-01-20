@@ -61,7 +61,7 @@ class cosmo {
   double flux_rescaling(double z, double z_t) const;
 };
 
-vector<double> zgrid(int gridType, double dz, double zmin, double &zmax);
+vector<double> zgrid(double dz, double zmin, double &zmax);
 int indexz(const double red, const vector<double> &gridz);
 
 #endif

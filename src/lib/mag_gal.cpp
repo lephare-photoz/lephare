@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
   // List of the keywords to be found in the config file/command line
   string list_keywords[] = {
       "t",           "COSMOLOGY",     "FILTER_FILE",  "MAGTYPE",
-      "EXTINC_LAW",  "EB_V",          "MOD_EXTINC",   "ZGRID_TYPE",
+      "EXTINC_LAW",  "EB_V",          "MOD_EXTINC",   
       "Z_STEP",      "GAL_LIB_IN",    "QSO_LIB_IN",   "STAR_LIB_IN",
       "GAL_LIB_OUT", "QSO_LIB_OUT",   "STAR_LIB_OUT", "LIB_ASCII",
       "EM_LINES",    "EM_DISPERSION", "ADD_DUSTEM",   "VERBOSE"};
