@@ -16,7 +16,7 @@ def test_cosmology_zgrid():
     zmax = 1
     dz = 0.1
     # test linear grid
-    grid = zgrid(0, dz, zmin, zmax)
+    grid = zgrid(dz, zmin, zmax)
     dummy = np.arange(zmin, zmax, dz)
     if zmin > 0:
         dummy = np.insert(dummy, 0, 0)
@@ -24,17 +24,6 @@ def test_cosmology_zgrid():
         pygrid = np.insert(dummy, len(dummy), zmax)
     assert np.testing.assert_almost_equal(grid, pygrid) is None
 
-    # test (1+z)dz grid
-    grid = zgrid(1, dz, zmin, zmax)
-    pygrid = np.array([])
-    z = zmin
-    while z < zmax:
-        pygrid = np.append(pygrid, z)
-        z = z + (1 + z) * dz
-    pygrid = np.append(pygrid, zmax)
-    if zmin > 0:
-        pygrid = np.insert(pygrid, 0, 0)
-    assert np.testing.assert_almost_equal(grid, pygrid) is None
 
 
 def test_cosmology_indexz():
