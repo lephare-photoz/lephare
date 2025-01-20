@@ -25,7 +25,6 @@ def test_cosmology_zgrid():
     assert np.testing.assert_almost_equal(grid, pygrid) is None
 
 
-
 def test_cosmology_indexz():
     grid = np.arange(1, 5, 1)
     # test value outside of grid on the lower side
