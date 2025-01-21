@@ -58,9 +58,6 @@ Mag::Mag(keymap &key_analysed) {
   // model ranges for each extinction curve
   modext = (key_analysed["MOD_EXTINC"]).split_int("0,0", nextlaw * 2);
 
-  // type of the grid in redshift
-  gridType = ((key_analysed["ZGRID_TYPE"]).split_int("0", 1))[0];
-
   // define the grid in redshift
   dz = ((key_analysed["Z_STEP"]).split_double("0.04", 3))[0];
   zmin = ((key_analysed["Z_STEP"]).split_double("0.", 3))[1];
@@ -337,7 +334,7 @@ void Mag::read_B12() {
 // Associate it to a grid in age and distance modulus
 void Mag::def_zgrid() {
   // redshift grid, depending on the method
-  gridz = zgrid(gridType, dz, zmin, zmax);
+  gridz = zgrid(dz, zmin, zmax);
 
   // Loop over the redshift grid and measure the age of the Universe and the
   // distance modulus
@@ -384,8 +381,7 @@ void Mag::write_doc() {
   sdocOut << endl << "FLUX_COR   ";
   for (vector<flt>::iterator itf = allFlt.begin(); itf < allFlt.end(); ++itf)
     sdocOut << itf->fcorrec() << ",";
-  sdocOut << endl << "ZGRID_TYPE   " << gridType << endl;
-  sdocOut << "Z_STEP   " << dz << "," << zmin << "," << zmax << endl;
+  sdocOut << endl << "Z_STEP   " << dz << "," << zmin << "," << zmax << endl;
   sdocOut << "COSMOLOGY   " << lcdm << endl;
   sdocOut << "EXTINC_LAW   ";
   for (int k = 0; k < nextlaw; k++) {
@@ -654,7 +650,6 @@ void GalMag::print_info() {
        << lepharework + "/lib_bin/" + lib + "(.doc & .bin)" << endl;
   cout << "# GAL_LIB_OUT   :"
        << lepharework + "/lib_mag/" + colib + "(.doc & .bin)" << endl;
-  cout << "# ZGRID_TYPE   :" << gridType << endl;
   cout << "# Z_STEP   :" << dz << " " << zmin << " " << zmax << endl;
   cout << "# COSMOLOGY   :" << lcdm << endl;
   cout << "# EXTINC_LAW   :";
@@ -703,7 +698,6 @@ void QSOMag::print_info() {
        << lepharework + "/lib_bin/" + lib + "(.doc & .bin)" << endl;
   cout << "# QSO_LIB_OUT   :"
        << lepharework + "/lib_mag/" + colib + "(.doc & .bin)" << endl;
-  cout << "# ZGRID_TYPE   :" << gridType << endl;
   cout << "# Z_STEP   :" << dz << " " << zmin << " " << zmax << endl;
   cout << "# COSMOLOGY   :" << lcdm << endl;
   cout << "# EXTINC_LAW   :";

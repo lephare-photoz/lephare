@@ -31,7 +31,6 @@ class Mag {
   vector<double> ebv;
   int nebv;
   vector<int> modext;
-  int gridType;
   double dz, zmin, zmax;
   string lib, colib, addDust;
 
