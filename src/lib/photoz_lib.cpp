@@ -450,9 +450,9 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 keymap read_keymap_from_doc(const string libName) {
   // List of the keywords to be found in the config file/command line
   string list_keywords[] = {
-      "LIB_TYPE",   "NUMBER_ROWS", "FILTER_FILE", "FILTERS", "EM_LINES",
-      "LIB_NAME",   "NUMBER_SED",  "ZGRID_TYPE",  "Z_STEP",  "COSMOLOGY",
-      "EXTINC_LAW", "EB_V",        "MOD_EXTINC",  "Z_FORM"};
+      "LIB_TYPE", "NUMBER_ROWS", "FILTER_FILE", "FILTERS",   "EM_LINES",
+      "LIB_NAME", "NUMBER_SED",  "Z_STEP",      "COSMOLOGY", "EXTINC_LAW",
+      "EB_V",     "MOD_EXTINC",  "Z_FORM"};
   // Number of keywords
   int nb_doc_key = (int)(sizeof(list_keywords) / sizeof(list_keywords[0]));
   cout << "Number of keywords to be read in the doc: " << nb_doc_key << endl;
@@ -486,17 +486,16 @@ void PhotoZ::check_consistency(keymap &keys) {
     double h0 = cosmo_keys[0];
     double om0 = cosmo_keys[1];
     double l0 = cosmo_keys[2];
-    int gridType = keys["ZGRID_TYPE"].split_int("0", 1)[0];
     vector<double> zstep_keys = keys["Z_STEP"].split_double("0.1", 3);
     double zstep = zstep_keys[0];
     double zmin = zstep_keys[1];
     double zmax = zstep_keys[2];
     if (gridz.size() == 0) {
       lcdm = cosmo(h0, om0, l0);
-      gridz = zgrid(gridType, zstep, zmin, zmax);
+      gridz = zgrid(zstep, zmin, zmax);
     } else {
       cosmo lcdm2(h0, om0, l0);
-      vector<double> gridz2 = zgrid(gridType, zstep, zmin, zmax);
+      vector<double> gridz2 = zgrid(zstep, zmin, zmax);
       if (lcdm2 != lcdm || gridz2 != gridz) {
         throw runtime_error(
             "Cosmology and redshift grids parameters are not "

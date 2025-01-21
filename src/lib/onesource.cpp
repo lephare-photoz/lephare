@@ -38,6 +38,7 @@ void onesource::readsource(const string &identifier, const vector<double> vals,
   ab = vals;
   sab = err_vals;
   zs = z_spec;
+  cont = context;
   str_inp = additional_input;
 }
 
@@ -62,12 +63,15 @@ void onesource::setPriors(const array<double, 2> magabsB,
 void onesource::fltUsed(const long gbcont, const long contforb,
                         const int imagm) {
   vector<int> bused;
+  busnorma.clear();
+  busul.clear();
 
   // Replace the context by the global context if defined
   if (gbcont >= 0) cont = gbcont;
 
   int nf = 0;
   nbul = 0;
+  nbused = 0;
   // Loop over each filter
   for (int k = 0; k < imagm; k++) {
     // Define if the band should be used based on the context
@@ -123,6 +127,8 @@ void onesource::fltUsed(const long gbcont, const long contforb,
 void onesource::fltUsedIR(const long fir_cont, const long fir_scale,
                           const int imagm, vector<flt> allFilters,
                           const double fir_lmin) {
+  busfir.clear();
+  bscfir.clear();
   // Loop over each filter
   for (int k = 0; k < imagm; k++) {
     // Define if the band should be used based on the context
@@ -229,6 +235,9 @@ void onesource::adapt_mag(vector<double> a0, vector<double> a1) {
     // convention as before)
     corr = a0[k] + a1[k] * 0.;
     // Observed magnitudes and flux with the correction
+    // apply the offset a0, in mag. Offset of +2.5 mag multiplies the flux by 10
+    // Convention inverted: it's like applying the offset to the model (or to
+    // the data but sign inverted) That's why the sab aren't changed
     if (ab_ori[k] > 0 || sab[k] > 0) ab[k] = ab_ori[k] * pow(10., 0.4 * corr);
     if (ab[k] > 0)
       mab[k] = flux2mag(ab[k]);
