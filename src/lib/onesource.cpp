@@ -340,12 +340,12 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
   int number_threads = 1, thread_id = 0;
   size_t imagm = ab.size();
 
-  // Reinitialise the chi2 for each library because the fit could be run several times
-  // on the same source
-  for (int k = 0; k < 3; k++)chimin[k] = HIGH_CHI2;
+  // Reinitialise the chi2 for each library because the fit could be run several
+  // times on the same source
+  for (int k = 0; k < 3; k++) chimin[k] = HIGH_CHI2;
 
-  // Do a local minimisation per thread (store chi2 and index)
-  // Catch first the number of threads
+    // Do a local minimisation per thread (store chi2 and index)
+    // Catch first the number of threads
 #ifdef _OPENMP
   number_threads = omp_get_max_threads();
 #endif
