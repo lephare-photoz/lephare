@@ -343,7 +343,7 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
   // Reinitialise the chi2 for each library because the fit could be run several times
   // on the same source
   for (int k = 0; k < 3; k++)chimin[k] = HIGH_CHI2;
-  
+
   // Do a local minimisation per thread (store chi2 and index)
   // Catch first the number of threads
 #ifdef _OPENMP
@@ -853,7 +853,6 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
   auto &pdfminzq = pdfmap[10];
   auto &pdfbayzg = pdfmap[11];
   auto &pdfbayzq = pdfmap[12];
-
 
   // parrallellize over each SED
 #ifdef _OPENMP
