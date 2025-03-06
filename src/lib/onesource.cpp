@@ -662,8 +662,7 @@ void onesource::rm_discrepant(vector<SED *> &fulllib,
     } else
       break;
   }
-
-   return;
+  return;
 }
 
 /*
