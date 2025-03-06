@@ -344,7 +344,6 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
   // on the same source
   for (int k = 0; k < 3; k++)chimin[k] = HIGH_CHI2;
   
-
   // Do a local minimisation per thread (store chi2 and index)
   // Catch first the number of threads
 #ifdef _OPENMP
@@ -486,13 +485,6 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
       imasmin[k] = fulllib[indmin[k]]->nummod;
     }
   }
-
-
-  
-  for (size_t i = 0; i < va.size(); i++) {
-      size_t il = va[i];
-      SED *sed = fulllib[il];
-   }
 
   return;
 }
@@ -670,11 +662,6 @@ void onesource::rm_discrepant(vector<SED *> &fulllib,
     } else
       break;
   }
-
-  for (size_t i = 0; i < va.size(); i++) {
-      size_t il = va[i];
-      SED *sed = fulllib[il];
-   }
 
    return;
 }
@@ -1104,7 +1091,6 @@ Compute the mode and the associated uncertainties based on the marginalized
 error
  */
 void onesource::mode() {
-
   // First element of zgmode is the mode of the marginalized PDF
   // Use the parabolic interpolation for galaxies and QSO
   zgmode.push_back(pdfmap[11].int_parabL());
