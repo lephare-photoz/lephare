@@ -80,7 +80,7 @@ def process(
         offsets = "Offsets from auto-adapt: " + offsets + "\n"
         print(offsets)
     else:
-        a0 = np.full(n_filters, 0), np.full(n_filters, 0)  # Do we need to set values?
+        a0 = np.full(n_filters, 0)
         print("AUTO_ADAPT set to NO and no user supplied offsets. Using zero offsets.")
 
     # create the onesource objects
@@ -140,7 +140,7 @@ def calculate_offsets(config, input, col_names=None, standard_names=False):
         photz.prep_data(one_obj)
         srclist.append(one_obj)
 
-    a0  = photz.run_autoadapt(srclist)
+    a0 = photz.run_autoadapt(srclist)
     offsets = ",".join(np.array(a0).astype(str))
     offsets = "Offsets from auto-adapt: " + offsets + "\n"
     print(offsets)

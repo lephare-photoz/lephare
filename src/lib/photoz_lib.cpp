@@ -254,7 +254,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   zbmax.erase(zbmax.begin(), zbmax.begin() + 1);
 
   /*  AUTO-ADAPT */
-  // APPLY_SYSSHIFT shift to be applied in each filter. 
+  // APPLY_SYSSHIFT shift to be applied in each filter.
   // vector
   shifts0 = (key_analysed["APPLY_SYSSHIFT"]).split_double("0.", -1);
 
@@ -992,8 +992,7 @@ vector<onesource *> PhotoZ::read_autoadapt_sources() {
   Run the fit in order to get an adaptation of the zero-points
   Median of the difference between the modeled magnitudes and the observed ones
 */
-vector<double> PhotoZ::run_autoadapt(
-    vector<onesource *> adaptSources) {
+vector<double> PhotoZ::run_autoadapt(vector<onesource *> adaptSources) {
   double funz0 = lcdm.distMod(gridz[1] / 20.);
   vector<double> a0;
   a0.assign(imagm, 0.);
@@ -1446,9 +1445,9 @@ void PhotoZ::prep_data(onesource *oneObj) {
   oneObj->keepOri();
   // Correct the observed magnitudes and fluxes with the coefficients
   // given in APPLY_SHIFTS
-  if (shifts0.size() == (size_t)imagm){
-          oneObj->adapt_mag(shifts0);
-          oneObj->keepOri(); // Include the shifts in the original flux
+  if (shifts0.size() == (size_t)imagm) {
+    oneObj->adapt_mag(shifts0);
+    oneObj->keepOri();  // Include the shifts in the original flux
   }
   // Define the filters used for the fit based on the context
   oneObj->fltUsed(gbcont, contforb, imagm);

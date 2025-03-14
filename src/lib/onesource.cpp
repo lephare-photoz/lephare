@@ -232,7 +232,7 @@ void onesource::adapt_mag(vector<double> a0) {
   for (size_t k = 0; k < ab.size(); k++) {
     // Define the correction to be applied to the observed magnitudes (same
     // convention as before)
-    corr = a0[k]; 
+    corr = a0[k];
     // Observed magnitudes and flux with the correction
     // apply the offset a0, in mag. Offset of +2.5 mag multiplies the flux by 10
     // Convention inverted: it's like applying the offset to the model (or to
