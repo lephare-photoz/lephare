@@ -65,7 +65,6 @@ void onesource::fltUsed(const long gbcont, const long contforb,
   vector<int> bused;
   busnorma.clear();
   busul.clear();
-
   // Replace the context by the global context if defined
   if (gbcont >= 0) cont = gbcont;
 
@@ -293,7 +292,6 @@ void onesource::substellar(const bool substar, vector<flt> allFilters) {
 void onesource::rescale_flux_errors(const vector<double> min_err,
                                     const vector<double> fac_err) {
   size_t imagm = ab.size();
-
   // check if the number of filters in min_err corresponds to the expected one
   if ((size_t)imagm == min_err.size() || min_err.size() == 1) {
     for (size_t k = 0; k < imagm; k++) {

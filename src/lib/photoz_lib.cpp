@@ -969,10 +969,6 @@ vector<onesource *> PhotoZ::read_autoadapt_sources() {
 
       // Keep only sources with a spectroscopic redshift
       if (oneObj->zs > adzmin && oneObj->zs < adzmax) {
-        // Correct the observed magnitudes and fluxes with the coefficients
-        // given in APPLY_SHIFTS
-        if (shifts0.size() == (size_t)imagm)
-          oneObj->adapt_mag(shifts0, shifts1);
         // Keep all the objects within a vector if in the right mag range
         double magSel;
         if (oneObj->ab[fl_auto] > 0)
@@ -1454,6 +1450,12 @@ void PhotoZ::prep_data(onesource *oneObj) {
   oneObj->convertMag();
   // Keep original magnitudes
   oneObj->keepOri();
+  // Correct the observed magnitudes and fluxes with the coefficients
+  // given in APPLY_SHIFTS
+  if (shifts0.size() == (size_t)imagm){
+          oneObj->adapt_mag(shifts0, shifts1);
+          oneObj->keepOri(); // Include the shifts in the original flux
+  }
   // Define the filters used for the fit based on the context
   oneObj->fltUsed(gbcont, contforb, imagm);
   return;
@@ -1591,10 +1593,6 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
       cout << "Fit source " << nobj << " with Id " << oneObj->spec << " \r "
            << flush;
     nobj++;
-    // Correct the observed magnitudes and fluxes with the coefficients given in
-    // APPLY_SHIFTS
-    if (shifts0.size() == (size_t)imagm) oneObj->adapt_mag(shifts0, shifts1);
-    // Correct the observed magnitudes and fluxes with the coefficients found by
     // auto-adapt
     if (autoadapt) oneObj->adapt_mag(a0, a1);
     // set the prior on the redshift, abs mag, ebv, etc on the object
@@ -1628,7 +1626,6 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
     // find the mode of the marginalized PDF and associated uncertainties,
     // centered on the mode
     oneObj->mode();
-
     // The rest of the procedure requires that a specific choice be made for the
     // redshift of GAL solutions, to be considered for computation of physical
     // quantities, among the following choices: the spectro zs, the best chi2
