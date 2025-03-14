@@ -103,8 +103,8 @@ def test_adapt_mag():
     src.keepOri()
     src.convertMag()
     assert np.testing.assert_almost_equal(src.ab_ori, [6.414e-32, 1.3182e-31, 1.6905e-31]) is None
-    src.adapt_mag([0, 0, 0], [0.1, 0.1, 0.1])
+    src.adapt_mag([0, 0, 0])
     assert np.testing.assert_almost_equal(src.ab, [6.414e-32, 1.3182e-31, 1.6905e-31]) is None
     # Offset of +2.5 mag multiplies the flux by 10 (like dividing model by 10)
-    src.adapt_mag([2.5, 2.5, 2.5], [0.1, 0.1, 0.1])
+    src.adapt_mag([2.5, 2.5, 2.5])
     assert np.testing.assert_almost_equal(src.ab, [6.414e-31, 1.3182e-30, 1.6905e-30]) is None

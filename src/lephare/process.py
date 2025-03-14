@@ -65,13 +65,12 @@ def process(
 
     # If AUTO_ADAPT set compute offsets
     if config["AUTO_ADAPT"].value == "YES":
-        a0, a1 = photz.run_autoadapt(srclist)
+        a0 = photz.run_autoadapt(srclist)
         offsets = ",".join(np.array(a0).astype(str))
-        offsets = "Offsets from auto-adapt: " + offsets + "\n"
-        print(offsets)
+        print("Offsets from auto-adapt: " + offsets)
     else:
-        a0, a1 = np.full(n_filters, 0), np.full(n_filters, 0)  # Do we need to set values?
-        print("AUTO_ADAPT set to NO and no user supplied offsets. Using zero offsets.")
+        a0 = np.full(n_filters, 0)
+        print("AUTO_ADAPT set to NO. Using zero offsets.")
 
     # create the onesource objects
     photozlist = []
@@ -82,7 +81,7 @@ def process(
         photozlist.append(one_obj)
 
     # Perform the main run
-    photz.run_photoz(photozlist, a0, a1)
+    photz.run_photoz(photozlist, a0)
     # Write outputs if requested
     if write_outputs:
         photz.write_outputs(photozlist, int(time.time()))
@@ -111,8 +110,6 @@ def calculate_offsets(config, input, col_names=None, standard_names=False):
 
     Returns
     =======
-    a1 : np.array
-        Offsets a1
     a0 : np.array
         Offsets a0
     """
@@ -132,11 +129,11 @@ def calculate_offsets(config, input, col_names=None, standard_names=False):
         photz.prep_data(one_obj)
         srclist.append(one_obj)
 
-    a0, a1 = photz.run_autoadapt(srclist)
+    a0 = photz.run_autoadapt(srclist)
     offsets = ",".join(np.array(a0).astype(str))
     offsets = "Offsets from auto-adapt: " + offsets + "\n"
     print(offsets)
-    return a0, a1
+    return a0
 
 
 def table_to_data(config, input, col_names=None, standard_names=False):
