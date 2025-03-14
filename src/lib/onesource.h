@@ -228,7 +228,7 @@ class onesource {
   void generatePDF_IR(vector<SED *> &fulllib);
   void mode();
   void interp_lib(vector<SED *> &fulllib, const int imagm, cosmo lcdm);
-  void adapt_mag(vector<double> a0, vector<double> a1);
+  void adapt_mag(vector<double> a0);
   void substellar(const bool substar, vector<flt> allFilters);
   void absmag(const vector<vector<int>> &bestFlt,
               const vector<vector<double>> &maxkcolor, cosmo lcdm,
