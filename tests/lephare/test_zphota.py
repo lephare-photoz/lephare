@@ -93,7 +93,7 @@ def run_configured_zp(zp, config_file_path):
 
                 mock_read_photoz_sources.assert_called_once()
                 mock_run_photoz.assert_called_once()
-                mock_run_photoz.assert_called_with(mock_sources, ANY, ANY)
+                mock_run_photoz.assert_called_with(mock_sources, ANY)
                 mock_write_outputs.assert_called_once()
                 mock_write_outputs.assert_called_with(mock_sources, ANY)
 
