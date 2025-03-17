@@ -31,5 +31,8 @@ def test_process(test_data_dir: str):
     assert np.isclose(output["Z_BEST"][0], 3.5877994546919934)
     assert len(photozlist[0].pdfmap[11].xaxis) == 51
     pdfs = np.array([photozlist[i].pdfmap[11].vPDF for i in np.arange(len(photozlist))])
-
     assert np.isclose(np.sum(pdfs), 1001.2774052829275)
+
+    # Check AUTO_ADAPT
+    config["AUTO_ADAPT"] = "YES"
+    _, _ = lp.process(config, input[reduced_cols], write_outputs=False)
