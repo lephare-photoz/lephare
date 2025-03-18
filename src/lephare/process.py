@@ -17,7 +17,6 @@ def process(
     col_names=None,
     standard_names=False,
     filename=None,
-    offsets=None,
     write_outputs=False,
 ):
     """Run all required steps to produce photometric redshift estimates
@@ -35,8 +34,6 @@ def process(
         If true we assume standard names.
     filename : str
         Output file name for the output catalogue.
-    offsets : list
-        If offsets are set autoadapt is not run but the set values are used.
     write_outputs : bool
         Whether to write the output spectra, PDF, and ascii file if specified
         in the config. By default these are not written to save space.
@@ -67,21 +64,13 @@ def process(
         srclist.append(one_obj)
 
     # If AUTO_ADAPT set compute offsets
-    if offsets is not None:
-        print("Using user supplied offsets")
-        a0 = offsets[0]
-        try:
-            assert len(a0) == n_filters
-        except AssertionError as e:
-            raise Exception("Length of offset overrides not equal to the number of filters.") from e
-    elif config["AUTO_ADAPT"].value == "YES":
+    if config["AUTO_ADAPT"].value == "YES":
         a0 = photz.run_autoadapt(srclist)
         offsets = ",".join(np.array(a0).astype(str))
-        offsets = "Offsets from auto-adapt: " + offsets + "\n"
-        print(offsets)
+        print("Offsets from auto-adapt: " + offsets)
     else:
         a0 = np.full(n_filters, 0)
-        print("AUTO_ADAPT set to NO and no user supplied offsets. Using zero offsets.")
+        print("AUTO_ADAPT set to NO. Using zero offsets.")
 
     # create the onesource objects
     photozlist = []
