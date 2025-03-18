@@ -35,4 +35,6 @@ def test_process(test_data_dir: str):
 
     # Check AUTO_ADAPT
     config["AUTO_ADAPT"] = "YES"
-    _, _ = lp.process(config, input[reduced_cols], write_outputs=False)
+    output, photozlist = lp.process(config, input[reduced_cols], write_outputs=False)
+
+    assert ~np.isclose(output["Z_BEST"][0], 3.5877994546919934)
