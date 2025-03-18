@@ -35,6 +35,10 @@ def test_process(test_data_dir: str):
 
     # Check AUTO_ADAPT
     config["AUTO_ADAPT"] = "YES"
-    output, photozlist = lp.process(config, input[reduced_cols], write_outputs=False)
+    output, photozlist = lp.process(config, input[reduced_cols], write_outputs=True)
 
     assert ~np.isclose(output["Z_BEST"][0], 3.5877994546919934)
+    assert os.path.isfile("zphot.out")
+
+    a0 = lp.calculate_offsets(config, input[reduced_cols])
+    assert len(a0) == 2
