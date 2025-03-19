@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import lephare as lp
 import numpy as np
@@ -54,3 +55,26 @@ def test_process(test_data_dir: str):
         config, input[reduced_cols], standard_names=True
     )
     assert len(zspec) == 100
+
+
+def test_load_sed_list(test_data_dir):
+    test_dir = os.path.abspath(os.path.dirname(__file__))
+    # Move one of the example sed folders
+    _ = shutil.copytree(
+        os.path.join(test_dir, "../data/sed/QSO"), os.path.join(test_dir, "../tmp/seds"), dirs_exist_ok=True
+    )
+    lp.load_sed_list(os.path.join(test_dir, "../tmp/seds/ONE_SED.list"), "QSO")
+    # Check the list is there
+    assert os.path.exists(os.path.join(test_dir, "../data/sed/QSO/ONE_SED/ONE_SED.list"))
+    # Check the sed is there
+    assert os.path.exists(os.path.join(test_dir, "../data/sed/QSO/ONE_SED/o5v.sed.ext"))
+
+    # Check it can run even if the file is already there
+    lp.load_sed_list(os.path.join(test_dir, "../tmp/seds/ONE_SED.list"), "QSO")
+    # Check absolute paths
+    with open(os.path.join(test_dir, "../tmp/seds/ONE_SED_ABS.list"), "w") as file:
+        file.write(os.path.join(test_dir, "../tmp/seds/o5v.sed.ext"))
+    lp.load_sed_list(os.path.join(test_dir, "../tmp/seds/ONE_SED_ABS.list"), "QSO", absolute_paths=True)
+    # Clear the copied folders
+    shutil.rmtree(os.path.join(test_dir, "../tmp/seds"))
+    shutil.rmtree(os.path.join(test_dir, "../data/sed/QSO/ONE_SED"))
