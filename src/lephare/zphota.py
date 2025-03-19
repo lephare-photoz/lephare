@@ -99,18 +99,16 @@ class Zphota(Runner):
         autoadapt = (self.keymap["AUTO_ADAPT"]).split_bool("NO", 1)[0]
         if autoadapt:
             adapt_srcs = photoz.read_autoadapt_sources()
-            a0, a1 = photoz.run_autoadapt(adapt_srcs)
+            a0 = photoz.run_autoadapt(adapt_srcs)
         else:
             a0 = []
-            a1 = []
             for _ in range(photoz.imagm):
                 a0.append(0.0)
-                a1.append(0.0)
 
         opa_out = GalMag.read_opa()  # noqa: F841
 
         fit_srcs = photoz.read_photoz_sources()
-        photoz.run_photoz(fit_srcs, a0, a1)
+        photoz.run_photoz(fit_srcs, a0)
         photoz.write_outputs(fit_srcs, int(time.time()))
 
     def end(self):
