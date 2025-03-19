@@ -42,3 +42,15 @@ def test_process(test_data_dir: str):
 
     a0 = lp.calculate_offsets(config, input[reduced_cols])
     assert len(a0) == 2
+
+    # Test table formatting
+    id, flux, flux_err, context, zspec, string_data = lp.table_to_data(
+        config, input[reduced_cols], col_names=reduced_cols, standard_names=False
+    )
+    assert len(zspec) == 100
+    config["FILTER_LIST"] = "cosmos/IB527.lowres,cosmos/IB679.lowres"
+    config = lp.all_types_to_keymap(config)
+    id, flux, flux_err, context, zspec, string_data = lp.table_to_data(
+        config, input[reduced_cols], standard_names=True
+    )
+    assert len(zspec) == 100

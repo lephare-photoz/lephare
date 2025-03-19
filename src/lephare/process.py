@@ -170,7 +170,7 @@ def table_to_data(config, input, col_names=None, standard_names=False):
         The context determining flux usage
     zspec : np.array
         The spectroscopic redshifts.
-    string_data : np.array
+    string_input : np.array
         Additional notes as a string.
     """
     n_filters = len(config["FILTER_LIST"].value.split(","))
@@ -188,7 +188,7 @@ def table_to_data(config, input, col_names=None, standard_names=False):
             col_names += [f"ferr_{f}"]
         col_names += ["context"]
         col_names += ["zspec"]
-        col_names += ["string_data"]
+        col_names += ["string_input"]
     else:
         print("Using user columns from input table assuming they are in the standard order.")
         assert len(input.colnames) == 2 * n_filters + 4

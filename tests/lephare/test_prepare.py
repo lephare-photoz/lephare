@@ -30,6 +30,11 @@ def test_load_sed_list(test_data_dir):
     assert os.path.exists(os.path.join(test_dir, "../data/sed/QSO/ONE_SED/ONE_SED.list"))
     # Check the sed is there
     assert os.path.exists(os.path.join(test_dir, "../data/sed/QSO/ONE_SED/o5v.sed.ext"))
+
+    # Check it can run even if the file is already there
+    lp.load_sed_list(os.path.join(test_dir, "../tmp/seds/ONE_SED.list"), "QSO")
+    # Check absolute paths
+    lp.load_sed_list(os.path.join(test_dir, "../tmp/seds/ONE_SED.list"), "QSO", absolute_paths=True)
     # Clear the copied folders
     shutil.rmtree(os.path.join(test_dir, "../tmp/seds"))
     shutil.rmtree(os.path.join(test_dir, "../data/sed/QSO/ONE_SED"))
