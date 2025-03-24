@@ -65,7 +65,6 @@ void onesource::fltUsed(const long gbcont, const long contforb,
   vector<int> bused;
   busnorma.clear();
   busul.clear();
-
   // Replace the context by the global context if defined
   if (gbcont >= 0) cont = gbcont;
 
@@ -225,15 +224,15 @@ void onesource::keepOri() {
 }
 
 /*
- MODIFY THE OBSERVED MAGNITUDES WITH THE VALUE A0 and A1
+ MODIFY THE OBSERVED MAGNITUDES WITH THE VALUE A0
 */
-void onesource::adapt_mag(vector<double> a0, vector<double> a1) {
+void onesource::adapt_mag(vector<double> a0) {
   double corr;
   // Loop over each filter
   for (size_t k = 0; k < ab.size(); k++) {
     // Define the correction to be applied to the observed magnitudes (same
     // convention as before)
-    corr = a0[k] + a1[k] * 0.;
+    corr = a0[k];
     // Observed magnitudes and flux with the correction
     // apply the offset a0, in mag. Offset of +2.5 mag multiplies the flux by 10
     // Convention inverted: it's like applying the offset to the model (or to
@@ -293,7 +292,6 @@ void onesource::substellar(const bool substar, vector<flt> allFilters) {
 void onesource::rescale_flux_errors(const vector<double> min_err,
                                     const vector<double> fac_err) {
   size_t imagm = ab.size();
-
   // check if the number of filters in min_err corresponds to the expected one
   if ((size_t)imagm == min_err.size() || min_err.size() == 1) {
     for (size_t k = 0; k < imagm; k++) {

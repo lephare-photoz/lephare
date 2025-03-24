@@ -85,21 +85,18 @@ int main(int argc, char *argv[]) {
   */
 
   // shifts derived by auto-adapt
-  vector<double> a0, a1;
+  vector<double> a0;
   if (autoadapt) {
     // Read the sources to be used for auto-adapt
     vector<onesource *> adaptSrcs = photoz.read_autoadapt_sources();
     // Compute the offsets
-    std::tie(a0, a1) = photoz.run_autoadapt(adaptSrcs);
+    a0 = photoz.run_autoadapt(adaptSrcs);
     cout << " Done " << endl;
     // Clean the vector
     for (auto &src : adaptSrcs) delete src;
     adaptSrcs.shrink_to_fit();
   } else {
-    for (int k = 0; k < photoz.imagm; k++) {
-      a0.push_back(0.);
-      a1.push_back(0.);
-    }
+    for (int k = 0; k < photoz.imagm; k++) a0.push_back(0.);
   }
 
   /*
@@ -108,7 +105,7 @@ int main(int argc, char *argv[]) {
 
   // Read the sources for which we want photo-z
   vector<onesource *> fitSrcs = photoz.read_photoz_sources();
-  photoz.run_photoz(fitSrcs, a0, a1);
+  photoz.run_photoz(fitSrcs, a0);
   photoz.write_outputs(fitSrcs, ti1);
 
   // display the time needed to run the code

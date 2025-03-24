@@ -17,7 +17,6 @@ def process(
     col_names=None,
     standard_names=False,
     filename=None,
-    offsets=None,
     write_outputs=False,
 ):
     """Run all required steps to produce photometric redshift estimates
@@ -35,8 +34,6 @@ def process(
         If true we assume standard names.
     filename : str
         Output file name for the output catalogue.
-    offsets : list
-        If offsets are set autoadapt is not run but the set values are used.
     write_outputs : bool
         Whether to write the output spectra, PDF, and ascii file if specified
         in the config. By default these are not written to save space.
@@ -67,23 +64,13 @@ def process(
         srclist.append(one_obj)
 
     # If AUTO_ADAPT set compute offsets
-    if offsets is not None:
-        print("Using user supplied offsets")
-        a0 = offsets[0]
-        a1 = offsets[1]
-        try:
-            assert len(a0) == n_filters
-            assert len(a1) == n_filters
-        except AssertionError as e:
-            raise Exception("Length of offset overrides not equal to the number of filters.") from e
-    elif config["AUTO_ADAPT"].value == "YES":
-        a0, a1 = photz.run_autoadapt(srclist)
+    if config["AUTO_ADAPT"].value == "YES":
+        a0 = photz.run_autoadapt(srclist)
         offsets = ",".join(np.array(a0).astype(str))
-        offsets = "Offsets from auto-adapt: " + offsets + "\n"
-        print(offsets)
+        print("Offsets from auto-adapt: " + offsets)
     else:
-        a0, a1 = np.full(n_filters, 0), np.full(n_filters, 0)  # Do we need to set values?
-        print("AUTO_ADAPT set to NO and no user supplied offsets. Using zero offsets.")
+        a0 = np.full(n_filters, 0)
+        print("AUTO_ADAPT set to NO. Using zero offsets.")
 
     # create the onesource objects
     photozlist = []
@@ -94,7 +81,7 @@ def process(
         photozlist.append(one_obj)
 
     # Perform the main run
-    photz.run_photoz(photozlist, a0, a1)
+    photz.run_photoz(photozlist, a0)
     # Write outputs if requested
     if write_outputs:
         photz.write_outputs(photozlist, int(time.time()))
@@ -123,8 +110,6 @@ def calculate_offsets(config, input, col_names=None, standard_names=False):
 
     Returns
     =======
-    a1 : np.array
-        Offsets a1
     a0 : np.array
         Offsets a0
     """
@@ -144,11 +129,11 @@ def calculate_offsets(config, input, col_names=None, standard_names=False):
         photz.prep_data(one_obj)
         srclist.append(one_obj)
 
-    a0, a1 = photz.run_autoadapt(srclist)
+    a0 = photz.run_autoadapt(srclist)
     offsets = ",".join(np.array(a0).astype(str))
     offsets = "Offsets from auto-adapt: " + offsets + "\n"
     print(offsets)
-    return a0, a1
+    return a0
 
 
 def table_to_data(config, input, col_names=None, standard_names=False):
@@ -185,7 +170,7 @@ def table_to_data(config, input, col_names=None, standard_names=False):
         The context determining flux usage
     zspec : np.array
         The spectroscopic redshifts.
-    string_data : np.array
+    string_input : np.array
         Additional notes as a string.
     """
     n_filters = len(config["FILTER_LIST"].value.split(","))
@@ -203,7 +188,7 @@ def table_to_data(config, input, col_names=None, standard_names=False):
             col_names += [f"ferr_{f}"]
         col_names += ["context"]
         col_names += ["zspec"]
-        col_names += ["string_data"]
+        col_names += ["string_input"]
     else:
         print("Using user columns from input table assuming they are in the standard order.")
         assert len(input.colnames) == 2 * n_filters + 4
