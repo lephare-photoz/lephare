@@ -13,7 +13,6 @@ mag_gal_config_keys = [
     "EXTINC_LAW",
     "EB_V",
     "MOD_EXTINC",
-    "ZGRID_TYPE",
     "Z_STEP",
     "GAL_LIB_IN",
     "QSO_LIB_IN",
