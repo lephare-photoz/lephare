@@ -10,16 +10,24 @@ __all__ = [
 
 
 class Runner:
-    """Base class holding config values for running all stages.
+    """
+    Base class for the filter, sedtolib, mag_gal, and zphota scripts, which uses
+    classes inherited from Runner to drive execution of these LePHARE stages.
 
-    Parameters
+    Configuration of the classes uses either a configuration file, a dictionary of key names
+    and corresponding keyword objects, or set of key/values passed as arguments to the constructor
+
+    The order of precedence is : key/values pairs overwrite config_keymap entries, which
+    themselves overwrite config_file entries.
+
+    Arguments
     ----------
-    config_keys : `list` or `None`, optional
-        List of all config keys
-    config_file : `string` or `None`, optional
-        Path to config file in LePHARE .para format
-    config_keymap : `dict` or `None`, optional
-        Dictionary of all config values as alternative to config file.
+         config_keys : `list` or `None`, optional
+             List of all admissible configuration keys, provided by the inheriting classes
+         config_file : `string` or `None`, optional
+             Path to a configuration file in LePHARE .para format
+         config_keymap : `dict` or `None`, optional
+             Dictionary of configuration values provided as 'key/keyword object' pairs.
     """
 
     def __init__(self, config_keys=None, config_file=None, config_keymap=None, **kwargs):
