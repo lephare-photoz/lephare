@@ -22,7 +22,7 @@ class Runner:
         Dictionary of all config values as alternative to config file.
     """
 
-    def __init__(self, config_keys=None, config_file=None, config_keymap=None):
+    def __init__(self, config_keys=None, config_file=None, config_keymap=None, **kwargs):
         # set the LEPHAREDIR and LEPHAREWORK env variable
         get_lephare_env()
         self.keymap = {}
@@ -41,7 +41,13 @@ class Runner:
         if config_keymap is not None:
             # merge the config_file and config_keymap, keeping the config_keymap in case of duplicate
             self.keymap = self.keymap | config_keymap
-        if config_keymap is None and config_file is None:
+        for key in kwargs:
+            if key in config_keys:
+                self.keymap[key] = keyword(key, str(kwargs[key]))
+            else:
+                raise RuntimeError(f"{key} is not a recognized argument of {self.__class__.__name__}.")
+
+        if config_keymap is None and config_file is None and kwargs == {}:
             # this only happens if the code is called as an executed script
             # Consider the keywords given in the line command
             self.args = self.config_parser()

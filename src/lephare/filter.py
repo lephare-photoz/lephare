@@ -17,10 +17,11 @@ class Filter(Runner):
     Parameters
     ----------
     config_file : `string`
+
     """
 
-    def __init__(self, config_file=None, config_keymap=None):
-        super().__init__(filter_config_keys, config_file, config_keymap)
+    def __init__(self, config_file=None, config_keymap=None, **kwargs):
+        super().__init__(filter_config_keys, config_file, config_keymap, **kwargs)
 
     def run(self, **kwargs):
         """Update keymap and verbosity based on call arguments.
