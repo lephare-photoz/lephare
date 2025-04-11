@@ -34,7 +34,7 @@ extern const double f_ga;
 
 void get_lephare_env();
 
-bool check_first_char(string maligne);
+bool check_first_char(const string &maligne);
 
 double blackbody(double T, double lambda);
 
