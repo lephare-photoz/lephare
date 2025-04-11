@@ -7,6 +7,7 @@
 #define SEDLIB_H_
 
 #include <ctime>
+#include <filesystem>
 
 #include "SED.h"
 #include "globals.h"
@@ -256,7 +257,8 @@ void SEDLib<T>::read_model_list() {
       // it
       ss >> nameSED;
       // check if nameSED is an absolute path
-      if (nameSED.front() != '/') nameSED = lepharedir + path + nameSED;
+      if (std::filesystem::path(nameSED).is_relative())
+        nameSED = lepharedir + path + nameSED;
 
       formatSED = 'A';  // Default: ascii
       if (!ss.eof()) ss >> formatSED;
