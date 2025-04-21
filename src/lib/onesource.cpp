@@ -1517,12 +1517,16 @@ void onesource::interp(const bool zfix, const bool zintp, const cosmo &lcdm) {
   }
 
   if (zintp) {
-    double target_z_gal = pdfmap[9].int_parab();
-    double target_z_qso = pdfmap[10].int_parab();
-    dmmin[0] *= lcdm.flux_rescaling(zmin[0], target_z_gal);
-    zmin[0] = target_z_gal;
-    dmmin[1] *= lcdm.flux_rescaling(zmin[1], target_z_qso);
-    zmin[1] = target_z_qso;
+    if (zmin[0] != INVALID_Z) {
+      double target_z_gal = pdfmap[9].int_parab();
+      dmmin[0] *= lcdm.flux_rescaling(zmin[0], target_z_gal);
+      zmin[0] = target_z_gal;
+    }
+    if (zmin[1] != INVALID_Z) {
+      double target_z_qso = pdfmap[10].int_parab();
+      dmmin[1] *= lcdm.flux_rescaling(zmin[1], target_z_qso);
+      zmin[1] = target_z_qso;
+    }
     return;
   }
 }

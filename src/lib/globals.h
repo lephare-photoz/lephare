@@ -11,6 +11,8 @@
 #define INVALID_VAL -9999.0
 #define INVALID_MAG -9999.0
 #define INVALID_PHYS -999.0
+#define INVALID_Z -99.9
+#define INVALID_INDEX -99
 #define NULL_FLUX 0.0
 #define HIGH_MAG 1000.0
 #define HIGH_CHI2 1.0e9
