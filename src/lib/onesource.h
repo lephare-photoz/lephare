@@ -83,20 +83,20 @@ class onesource {
 
   // Minimal constructor of the source
   onesource() {
-    spec = "1";  // ident
-    zs = -99.9;  // spectroscopic redshift
-    cont = 0;    // context
+    spec = "1";      // ident
+    zs = INVALID_Z;  // spectroscopic redshift
+    cont = 0;        // context
     str_inp = ' ';
     for (int k = 0; k < 3; k++) {
-      zmin[k] = -99.9;
-      indmin[k] = -99;
+      zmin[k] = INVALID_Z;
+      indmin[k] = INVALID_INDEX;
       chimin[k] = HIGH_CHI2;
-      imasmin[k] = -99;
+      imasmin[k] = INVALID_INDEX;
     }
-    zminIR = -99.9;
-    indminIR = -99;
+    zminIR = INVALID_Z;
+    indminIR = INVALID_INDEX;
     chiminIR = HIGH_CHI2;
-    imasminIR = -99;
+    imasminIR = INVALID_INDEX;
     nbused = 0;
     pos = 0;
   }
