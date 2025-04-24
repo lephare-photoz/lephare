@@ -103,7 +103,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   // GLB_CONTEXT Global context to be used for all objects - 0 default (all
   // bands)
-  gbcont = ((key_analysed["GLB_CONTEXT"]).split_long("0", 1))[0];
+  gbcont = ((key_analysed["GLB_CONTEXT"]).split_long("-99", 1))[0];
 
   // FORB_CONTEXT Context to reject some bands for all sources - 0 default
   contforb = ((key_analysed["FORB_CONTEXT"]).split_long("0", 1))[0];
