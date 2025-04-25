@@ -1,0 +1,36 @@
+###IMPORANT####
+We have updated the files!
+Do not run your code on these files,
+ please look in the SCATTERERRS directory for updated files and an updated README
+##############
+
+Simulation files
+
+* For training algorithms:
+  Final_Buzzard_training_file.fits
+
+  File contains: 
+  BuzzID, ra, dec, LSST[ugrizy], errLSST[ugrizy], redshift, mstar, ecatID, oldID
+
+  If you need a validation set to train your algorithm you must draw it from this set.
+
+
+* To test the performance:
+  Final_Buzzard_test_file.fits 
+
+  File contains: 
+  BuzzID, ra, dec, LSST[ugrizy], errLSST[ugrizy]
+
+
+* Truth for test set (should be blinded)
+  Final_Buzzard_truth_file.fits
+
+  Same galaxies as in test set but file contains all the values:
+  BuzzID, ra, dec, LSST[ugrizy], errLSST[ugrizy], redshift, mstar, ecatID, oldID
+
+
+Auxiliary data
+
+FILTERS/ the six filter transmissions used
+SEDS/    SEDs, see relevant readme's here
+
