@@ -167,8 +167,8 @@ class Runner:
             print("execution time: %.4g" % (time.time() - self.start))
 
     def add_authorized_keys(self):
-        """Add authorized keys to the argument parser object"""
-        raise Exception("runner.py is an abstract class")
+        """Empty function, overloaded by inheriting classes"""
+        pass
 
 
 if __name__ == "__main__":
