@@ -13,7 +13,7 @@ def test_runner_base():
     both a list of config_keys and a path to a config file. We want to check only
     that the class can be instantiated and that the resulting keymap isn't empty."""
 
-    test_keys = ["key1", "key2", "key3"]
+    test_keys = {"key1":"help1", "key2":"help2", "key3":"help3"}
     config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
     runner = lp.Runner(config_keys=test_keys, config_file=config_file_path)
     assert len(runner.keymap)
@@ -93,7 +93,7 @@ def test_runner_config_file_not_found():
 
 def test_command_line_argument_parsing_basic(monkeypatch):
     """Check to make sure that command line arguments are parsed correctly."""
-    test_keys = ["key1", "key2", "key3"]
+    test_keys = {"key1":"help1", "key2":"help2", "key3":"help3"}
     monkeypatch.setattr("sys.argv", ["runner.py", "--key1", "foo", "--key2", "42"])
     runner = lp.Runner(config_keys=test_keys)
 
@@ -109,7 +109,7 @@ def test_command_line_argument_parsing_basic(monkeypatch):
 def test_command_line_argument_parsing_with_known_args(monkeypatch):
     """Check to make sure that command line arguments are parsed correctly when
     including known arguments."""
-    test_keys = ["key1", "key2", "key3"]
+    test_keys = {"key1":"help1", "key2":"help2", "key3":"help3"}
     config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
     monkeypatch.setattr(
         "sys.argv", ["runner.py", "--key1", "foo", "--key2", "42", "--config", config_file_path, "--timer"]
@@ -137,7 +137,7 @@ def test_command_line_argument_parsing_with_subclass(monkeypatch):
         def __class__(self):
             return type("Sedtolib", (object,), {})
 
-    test_keys = ["key1", "key2", "key3"]
+    test_keys = {"key1":"help1", "key2":"help2", "key3":"help3"}
     config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
     monkeypatch.setattr(
         "sys.argv",

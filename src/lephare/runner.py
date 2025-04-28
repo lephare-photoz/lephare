@@ -167,8 +167,9 @@ class Runner:
             print("execution time: %.4g" % (time.time() - self.start))
 
     def add_authorized_keys(self):
-        """Empty function, overloaded by inheriting classes"""
-        pass
+        """Add authorized keys in config keys to the parser"""
+        for key in self.config_keys:
+            self.parser.add_argument("--%s" % key, type=str, metavar="", help=self.config_keys[key])
 
 
 if __name__ == "__main__":
