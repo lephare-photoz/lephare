@@ -7,21 +7,48 @@ __all__ = [
     "Filter",
 ]
 
-global filter_config_keys
-filter_config_keys = ["FILTER_REP", "FILTER_LIST", "TRANS_TYPE", "FILTER_CALIB", "FILTER_FILE"]
+config_keys = {
+    "FILTER_REP": "path to repository where filter files are searched",
+    "FILTER_LIST": "list of filter files, to be searched in FILTER_REP if relative",
+    "TRANS_TYPE": "Transmission curve type: 0[def] for energy, 1 for photon nb",
+    "FILTER_CALIB": "calibration system for the filter:\
+    0[def]: fnu=cst 1: nu.fnu=cst 2: fnu=nu 3: fnu=Black Body @ T=10000K\
+    4: for MIPS (leff with nu fnu=ctt and flux with BB @ 10000K",
+    "FILTER_FILE": "output filter filename, will be saved in $LEPHAREWORK/filt/",
+}
 
 
 class Filter(Runner):
-    """Build the filter files based on config
+    """
+    The specific arguments to the Filter class are
 
-    Parameters
-    ----------
-    config_file : `string`
-
+    FILTER_REP
+                path to repository where filter files are searched,
+    FILTER_LIST
+                list of filter files, to be searched in FILTER_REP if relative,
+    TRANS_TYPE
+                Transmission curve type: 0[def] for energy, 1 for photon nb,
+    FILTER_CALIB
+                calibration system for the filter:
+                  0[def]: fnu=cst
+                  1: nu.fnu=cst
+                  2: fnu=nu
+                  3: fnu=Black Body @ T=10000K
+                  4: for MIPS (leff with nu fnu=ctt and flux with BB @ 10000K,
+    FILTER_FILE
+                output filter filename, will be saved in $LEPHAREWORK/filt/,
     """
 
+    def add_authorized_keys(self):
+        """Add the specific Filter arguments to the argument parser"""
+        for key in config_keys:
+            self.parser.add_argument("--%s" % key, type=str, metavar="", help=config_keys[key])
+        self.parser.usage = "Build the LePHARE internal representation of the set of filters to be used"
+        self.__doc__ = self.parser.usage
+
     def __init__(self, config_file=None, config_keymap=None, **kwargs):
-        super().__init__(filter_config_keys, config_file, config_keymap, **kwargs)
+        super().__init__(config_keys.keys(), config_file, config_keymap, **kwargs)
+        self.__doc__ = self.parser.usage
 
     def run(self, **kwargs):
         """Update keymap and verbosity based on call arguments.

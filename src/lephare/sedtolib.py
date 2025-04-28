@@ -7,42 +7,54 @@ __all__ = [
     "Sedtolib",
 ]
 
-global sedtolib_config_keys
 # List of keywords associated to setolib
-sedtolib_config_keys = [
-    "GAL_SED",
-    "GAL_FSCALE",
-    "GAL_LIB",
-    "SEL_AGE",
-    "AGE_RANGE",
-    "QSO_SED",
-    "QSO_FSCALE",
-    "QSO_LIB",
-    "STAR_SED",
-    "STAR_LIB",
-    "STAR_FSCALE",
-    "LIB_ASCII",
-]
+config_keys = {
+    "type": "define what kind of objects these SED belong to : GAL, QSO, or STAR",
+    "GAL_SED": "file listing the galaxy SEDs to be used",
+    "GAL_FSCALE": "arbitrary Flux scale for galaxy templates",
+    "GAL_LIB": "name of the output binary SED file for the galaxies (relative to $LEPHAREWORK/lib_bin/)",
+    "SEL_AGE": "file listing the different galaxy ages to consider",
+    "AGE_RANGE": "minimal and maximal age in year to consider",
+    "QSO_SED": "same for QSO/AGN templates",
+    "QSO_FSCALE": "same for QSO/AGN templates",
+    "QSO_LIB": "same for QSO/AGN templates",
+    "STAR_SED": "same for STAR templates",
+    "STAR_LIB": "same for STAR templates",
+    "STAR_FSCALE": "same for STAR templates",
+    "LIB_ASCII": "if set to YES, also provide the output in ascii",
+}
 
 
 class Sedtolib(Runner):
-    """Read a configurable set of SED, compute extinction corrections, and store the
-    results into a binary library for later use.
+    """
+    The specific arguments to the Sedtolib class are
 
-    The run method is equivalent to the terminal sedtolib command.
-
-    Parameters
-    ----------
-    config_file : `string` or `None`, optional
-        Path to config file in LePHARE .para format
-    config_keymap : `dict` or `None`, optional
-        Dictionary of all config values as alternative to config file.
+    type:
+           define what kind of objects these SED belong to : GAL, QSO, or STAR
+    GAL_SED:
+           file listing the galaxy SEDs to be used
+    GAL_FSCALE":
+           arbitrary Flux scale for galaxy templates
+    GAL_LIB:
+           name of the output binary SED file for the galaxies (relative to $ZPHOTWORK/lib_bin/)
+    SEL_AGE:
+           file listing the different galaxy ages to consider
+    AGE_RANGE:
+           minimal and maximal age in year to consider
+    QSO_SED, QSO_FSCALE, QSO_LIB, STAR_SED, STAR_LIB, STAR_FSCALE :
+           same for QSO/AGN and STAR SED types
+    LIB_ASCII:
+           if set to YES, also provide the output in ascii
     """
 
-    # Initalisation
-    def __init__(self, config_file=None, config_keymap=None):
-        # Class heritates from runner. So, __init__ in runner.py
-        super().__init__(sedtolib_config_keys, config_file, config_keymap)
+    def add_authorized_keys(self):
+        """Add the specific Sedtolib arguments to the argument parser"""
+        for key in config_keys:
+            self.parser.add_argument("--%s" % key, type=str, metavar="", help=config_keys[key])
+        self.parser.usage = "Build the LePHARE internal representation of the set of SED templates to be used"
+
+    def __init__(self, config_file=None, config_keymap=None, **kwargs):
+        super().__init__(config_keys, config_file, config_keymap, **kwargs)
 
     def run(self, **kwargs):
         """Take keymap and set SED library as class variable.
