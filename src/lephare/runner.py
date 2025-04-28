@@ -11,8 +11,10 @@ __all__ = [
 
 class Runner:
     """
-    Base class for the filter, sedtolib, mag_gal, and zphota scripts, which uses
-    classes inherited from Runner to drive execution of these LePHARE stages.
+
+    Runner is the base class of the classes Filter, Sedtolib, MagGal, and Zphota,
+    responsible to drive the execution of the filter, sedtolib, mag_gal, and
+    `zphota` scripts, respectively.
 
     Configuration of the classes uses either a configuration file, a dictionary of key names
     and corresponding keyword objects, or set of key/values passed as arguments to the constructor
@@ -51,7 +53,10 @@ class Runner:
             self.keymap = self.keymap | config_keymap
         for key in kwargs:
             if key in config_keys:
-                self.keymap[key] = keyword(key, str(kwargs[key]))
+                if key == "type":
+                    self.typ = kwargs[key]
+                else:
+                    self.keymap[key] = keyword(key, str(kwargs[key]))
             else:
                 raise RuntimeError(f"{key} is not a recognized argument of {self.__class__.__name__}.")
 
@@ -105,15 +110,11 @@ class Runner:
 
     def config_parser(self):
         """Create command line config parser from list of keys"""
-        parser = argparse.ArgumentParser(add_help=False)
-        # No required positional argument as in the C++ code, though in there
-        # absence of the config file results in exiting. Need to understand whether
-        # LePhare executables can be run with all keywords provided at the
-        # command line
-        parser.add_argument("-c", "--config", type=str, default="", help="Path to config file.")
-        args, unknown = parser.parse_known_args()
+        # parser = argparse.ArgumentParser(add_help=False)
+        # parser.add_argument("-c", "--config", type=str, default="", help="Path to config file.")
+        # args, unknown = parser.parse_known_args()
 
-        self.parser = argparse.ArgumentParser(parser, add_help=True)
+        self.parser = argparse.ArgumentParser()
         self.parser.add_argument("--verbose", help="increase onscreen verbosity", action="store_true")
         self.parser.add_argument("--timer", help="switch timer on to time execution", action="store_true")
         self.parser.add_argument("-c", "--config", type=str, default="", help="Path to config file.")
@@ -128,8 +129,10 @@ class Runner:
             )
 
         # add authorized command line args:
-        for key in self.config_keys:
-            self.parser.add_argument("--%s" % key, type=str)
+        self.add_authorized_keys()
+        args, unknown = self.parser.parse_known_args()
+        # for key in self.config_keys:
+        #     self.parser.add_argument("--%s" % key, type=str)
 
         if args.config != "":
             self.parse_config_file(args.config)
@@ -162,6 +165,10 @@ class Runner:
     def end(self):
         if self.args.timer:
             print("execution time: %.4g" % (time.time() - self.start))
+
+    def add_authorized_keys(self):
+        """Add authorized keys to the argument parser object"""
+        raise Exception("runner.py is an abstract class")
 
 
 if __name__ == "__main__":
