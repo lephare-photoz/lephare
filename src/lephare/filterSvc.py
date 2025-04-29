@@ -168,10 +168,10 @@ class FilterSvc:
         try:
             query = f"{SVO_URL}/fps.php?PhotCalID={filter_id}/{system}"
             r = requests.get(query, timeout=5)
-        except ConnectionRefusedError: #pragma no cover
+        except ConnectionRefusedError:  # pragma no cover
             print(f"request {query} failed due to failure to connect to the server.")
             return None
-        except requests.ConnectTimeout: #pragma no cover
+        except requests.ConnectTimeout:  # pragma no cover
             print("Timeout on SVO server")
             return None
         try:

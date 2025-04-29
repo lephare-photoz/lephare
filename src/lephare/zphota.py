@@ -232,11 +232,11 @@ occurred on these filters.
         super().end()
 
 
-def main(): #pragma no cover
+def main():  # pragma no cover
     runner = Zphota()
     runner.run()
     runner.end()
 
 
-if __name__ == "__main__":#pragma no cover
+if __name__ == "__main__":  # pragma no cover
     main()

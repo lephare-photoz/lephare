@@ -134,11 +134,11 @@ class MagGal(Runner):
         return
 
 
-def main(): #pragma no cover
+def main():  # pragma no cover
     runner = MagGal()
     runner.run()
     runner.end()
 
 
-if __name__ == "__main__":#pragma no cover
+if __name__ == "__main__":  # pragma no cover
     main()
