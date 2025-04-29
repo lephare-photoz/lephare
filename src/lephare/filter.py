@@ -93,11 +93,11 @@ class Filter(Runner):
         write_output_filter(filtfile, filtdoc, vec_flt)
 
 
-def main():
+def main(): #pragma no cover
     runner = Filter()
     runner.run()
     runner.end()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":#pragma no cover
     main()

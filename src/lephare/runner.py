@@ -99,7 +99,7 @@ class Runner:
                     except:  # noqa: E722
                         keymap[splits[0]] = keyword(splits[0], "")
 
-                    if splits[0] in self.config_keys and hasattr(self, "parser"):
+                    if splits[0] in self.config_keys and hasattr(self, "parser"): #pragma no cover
                         self.parser.set_defaults(
                             **{
                                 splits[0]: splits[1],
@@ -173,4 +173,4 @@ class Runner:
 
 
 if __name__ == "__main__":
-    raise TypeError("Runner is a base class, not an executable")
+    raise TypeError("Runner is a base class, not an executable") # pragma: no cover

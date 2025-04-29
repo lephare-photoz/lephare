@@ -98,11 +98,11 @@ class Sedtolib(Runner):
         return
 
 
-def main():
+def main(): #pragma no cover
     runner = Sedtolib()
     runner.run()
     runner.end()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":#pragma no cover
     main()
