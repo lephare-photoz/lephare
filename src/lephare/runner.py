@@ -110,9 +110,6 @@ class Runner:
 
     def config_parser(self):
         """Create command line config parser from list of keys"""
-        # parser = argparse.ArgumentParser(add_help=False)
-        # parser.add_argument("-c", "--config", type=str, default="", help="Path to config file.")
-        # args, unknown = parser.parse_known_args()
 
         self.parser = argparse.ArgumentParser()
         self.parser.add_argument("--verbose", help="increase onscreen verbosity", action="store_true")
@@ -131,8 +128,6 @@ class Runner:
         # add authorized command line args:
         self.add_authorized_keys()
         args, unknown = self.parser.parse_known_args()
-        # for key in self.config_keys:
-        #     self.parser.add_argument("--%s" % key, type=str)
 
         if args.config != "":
             self.parse_config_file(args.config)
