@@ -149,7 +149,8 @@ class Runner:
             try:
                 self.keymap[key] = keyword(key, getattr(args, key))
             except:  # noqa: E722
-                self.keymap[key] = keyword(key, "")
+                if key not in self.keymap:
+                    self.keymap[key] = keyword(key, "")
 
         return args
 
