@@ -42,7 +42,7 @@ class Runner:
         # Check that the relevant keyword names are defined
         if config_keys is None:
             raise RuntimeError("Runner is a base class and cannot be initialized")
-        self.config_keys = list(config_keys)
+        self.config_keys = config_keys
 
         if config_file is not None:
             # this only happens if the code is called from python
@@ -51,9 +51,10 @@ class Runner:
         if config_keymap is not None:
             # merge the config_file and config_keymap, keeping the config_keymap in case of duplicate
             self.keymap = self.keymap | config_keymap
+        
         for key in kwargs:
             ukey = key.upper()
-            if ukey in config_keys:
+            if ukey in self.config_keys:
                 if key == "type":
                     self.typ = kwargs[key]
                 else:
