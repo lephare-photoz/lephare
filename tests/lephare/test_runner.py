@@ -113,14 +113,14 @@ def test_command_line_argument_parsing_basic(monkeypatch):
 
 def test_kwargs_arguments():
     test_keys = {"key1": "help1", "key2": "help2", "key3": "help3"}
-    runner = lp.Runner(config_keys=test_keys, key1="dummy")
+    runner = lp.Runner(config_keys=test_keys)
     assert [k in runner.keymap for k in test_keys]
 
-    runner = lp.Runner(config_keys={"type": "dummy"}, type="GAL")
-    assert runner.typ == "GAL"
+    runner = lp.Runner(config_keys={"A": "help"}, a="dummy2")
+    assert runner.keymap["A"].value == "dummy2"
 
     with pytest.raises(RuntimeError) as excinfo:
-        runner = lp.Runner(config_keys={"key1": "dummy"}, key2="unauthorized key")
+        runner = lp.Runner(config_keys={"key1": "help"}, key2="unauthorized key")
         assert excinfo.value == f"key2 is not a recognized argument of {runner.__class__.__name__}"
 
 

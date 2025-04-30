@@ -51,7 +51,7 @@ class Runner:
         if config_keymap is not None:
             # merge the config_file and config_keymap, keeping the config_keymap in case of duplicate
             self.keymap = self.keymap | config_keymap
-        
+
         for key in kwargs:
             ukey = key.upper()
             if ukey in self.config_keys:
