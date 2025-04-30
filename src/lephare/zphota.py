@@ -39,7 +39,6 @@ config_keys = {
     to use for physical parameter computation",
     "DZ_WIN": "Window search for second peak",
     "MIN_THRES": "lower threshold for second peak",
-    "PROB_INTZ": "",
     "SPEC_OUT": "output the best spectrum of each object",
     "FIR_LIB": "dedicated far infrared synthetic magnitudes files",
     "FIR_LMIN": "minimum value for lambda_mean/(1+z) (in microns) in FIR analysis",
@@ -57,8 +56,9 @@ config_keys = {
     to not compute these color distributions)",
     "M_REF": "band index for which to compute the rest frame absolute magnitude\
     probability distribution",
-    "APPLY_SYSSHIFT": "list of values (equal to the number of bands) to add to the magnitudes\
-    as zerop points. These are also the output of the auto adaptation stage",
+    "APPLY_SYSSHIFT": "list of values (equal to the number of bands) to add to the predicted\
+    magnitudes as zerop points  (substracted to the observed magnitudes).\
+    These are also the output of the auto adaptation stage",
     "AUTO_ADAPT": "perform zero point auto adaptation based on the provided true redshifts",
     "ADAPT_BAND": "band number for which to check magnitude range for auto adaptation",
     "ADAPT_LIM": "min,max magnitude range for auto adaptation",
