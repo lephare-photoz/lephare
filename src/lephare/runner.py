@@ -52,11 +52,12 @@ class Runner:
             # merge the config_file and config_keymap, keeping the config_keymap in case of duplicate
             self.keymap = self.keymap | config_keymap
         for key in kwargs:
-            if key in config_keys:
+            ukey = key.upper()
+            if ukey in config_keys:
                 if key == "type":
                     self.typ = kwargs[key]
                 else:
-                    self.keymap[key] = keyword(key, str(kwargs[key]))
+                    self.keymap[ukey] = keyword(ukey, str(kwargs[key]))
             else:
                 raise RuntimeError(f"{key} is not a recognized argument of {self.__class__.__name__}.")
 
