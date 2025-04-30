@@ -134,9 +134,7 @@ class Runner:
         if args.config != "":
             self.parse_config_file(args.config)
         else:
-            print("WARNING: no config file provided!")
             self.keymap = {}
-
         try:  # noqa: SIM105
             # capture the type if it is passed as script argument
             self.typ = args.typ
