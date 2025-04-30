@@ -42,7 +42,7 @@ class Runner:
         # Check that the relevant keyword names are defined
         if config_keys is None:
             raise RuntimeError("Runner is a base class and cannot be initialized")
-        self.config_keys = config_keys
+        self.config_keys = list(config_keys)
 
         if config_file is not None:
             # this only happens if the code is called from python
