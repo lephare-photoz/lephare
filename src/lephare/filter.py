@@ -23,20 +23,20 @@ class Filter(Runner):
     The specific arguments to the Filter class are
 
     FILTER_REP
-                path to repository where filter files are searched,
+                path to repository where filter files are searched
     FILTER_LIST
-                list of filter files, to be searched in FILTER_REP if relative,
+                list of filter files, to be searched in FILTER_REP if relative
     TRANS_TYPE
-                Transmission curve type: 0[def] for energy, 1 for photon nb,
+                Transmission curve type: 0[def] for energy, 1 for photon nb
     FILTER_CALIB
                 calibration system for the filter:
                   0[def]: fnu=cst
                   1: nu.fnu=cst
                   2: fnu=nu
                   3: fnu=Black Body @ T=10000K
-                  4: for MIPS (leff with nu fnu=ctt and flux with BB @ 10000K,
+                  4: for MIPS (leff with nu fnu=ctt and flux with BB @ 10000K
     FILTER_FILE
-                output filter filename, will be saved in $LEPHAREWORK/filt/,
+                output filter filename, will be saved in $LEPHAREWORK/filt/
     """
 
     def add_authorized_keys(self):
