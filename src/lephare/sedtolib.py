@@ -1,4 +1,6 @@
+import inspect
 import time
+from contextlib import suppress
 
 from ._lephare import GalSEDLib, QSOSEDLib, StarSEDLib, keyword
 from .runner import Runner
@@ -9,7 +11,8 @@ __all__ = [
 
 # List of keywords associated to setolib
 config_keys = {
-    "type": "define what kind of objects these SED belong to : GAL, QSO, or STAR",
+    "typ": "define what kind of objects these SED belong to : GAL, QSO, or STAR",
+    "VERBOSE": "add verbosity",
     "GAL_SED": "file listing the galaxy SEDs to be used",
     "GAL_FSCALE": "arbitrary Flux scale for galaxy templates",
     "GAL_LIB": "name of the output binary SED file for the galaxies (relative to $LEPHAREWORK/lib_bin/)",
@@ -29,7 +32,7 @@ class Sedtolib(Runner):
     """
     The specific arguments to the Sedtolib class are
 
-    type:
+    typ:
            define what kind of objects these SED belong to : GAL, QSO, or STAR
     GAL_SED:
            file listing the galaxy SEDs to be used
@@ -47,11 +50,12 @@ class Sedtolib(Runner):
            if set to YES, also provide the output in ascii
     """
 
-    def add_authorized_keys(self):
-        """Add the specific Sedtolib arguments to the argument parser"""
-        for key in config_keys:
-            self.parser.add_argument("--%s" % key, type=str, metavar="", help=config_keys[key])
-        self.parser.usage = "Build the LePHARE internal representation of the set of SED templates to be used"
+    def update_help(self):
+        """Add the specific Sedtolib help"""
+        doc = "Build the LePHARE internal representation of the set of SED templates to be used"
+        with suppress(Exception):
+            self.parser.usage = doc
+        self.__doc__ = doc + "\n" + inspect.getdoc(Sedtolib)
 
     def __init__(self, config_file=None, config_keymap=None, **kwargs):
         super().__init__(config_keys, config_file, config_keymap, **kwargs)
@@ -61,19 +65,15 @@ class Sedtolib(Runner):
 
         Must be run independently for stars, galaxies, and QSO.
         """
-        # update keymap and verbosity based on call arguments
-        # this is only when the code is called from python session
-        self.verbose = kwargs.pop("verbose", self.verbose)
 
-        # loop over a dictionnary passed in argument (key and value)
+        super().run()
+
+        self.verbose = kwargs.pop("verbose", self.verbose)
+        if "typ" in kwargs:
+            self.typ = kwargs.pop("typ", self.typ)
+            self.typ = self.typ.upper()
+
         for k, v in kwargs.items():
-            if k == "typ":
-                self.typ = v.upper()
-                continue
-            # if k == "config":
-            #     self.config = config_file
-            #     continue
-            # if the key in argument is in the keymap, update the keymap with the argument
             if k.upper() in self.keymap:
                 self.keymap[k.upper()] = keyword(k.upper(), str(v))
 

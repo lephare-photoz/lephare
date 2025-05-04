@@ -1,3 +1,6 @@
+import inspect
+from contextlib import suppress
+
 from ._lephare import GalMag, QSOMag, StarMag, keyword
 from .runner import Runner
 
@@ -5,9 +8,9 @@ __all__ = [
     "MagGal",
 ]
 
-global mag_gal_config_keys
 config_keys = {
-    "type": "define what kind of objects these SED belong to : GAL, QSO, or STAR",
+    "typ": "define what kind of objects these SED belong to : GAL, QSO, or STAR",
+    "VERBOSE": "add verbosity",
     "COSMOLOGY": "fiducial cosmology used for absolute magnitudes evaluations",
     "FILTER_FILE": "filter file provided by filter script or the Filter class",
     "MAGTYPE": "AB or VEGA system",
@@ -27,14 +30,13 @@ config_keys = {
     "EM_LINES": "[NO/EMP_UV/EMP_SFR/PHYS] choice of prescription for emission line computation",
     "EM_DISPERSION": "rescaling values for the emission lines",
     "ADD_DUSTEM": "add the dust emission in templates when missing",
-    "VERBOSE": "add verbosity",
 }
 
 
 class MagGal(Runner):
     """The specific arguments to the MagGal class are
 
-    type:
+    typ:
            define what kind of objects these SED belong to : GAL, QSO, or STAR
     COSMOLOGY:
            fiducial h0, Omega_m0, and LambdaO used to define a flat LCDM cosmology
@@ -71,15 +73,15 @@ class MagGal(Runner):
            add verbosity
     """
 
-    def add_authorized_keys(self):
-        """Add the specific MagGal arguments to the argument parser"""
-        for key in config_keys:
-            self.parser.add_argument("--%s" % key, type=str, metavar="", help=config_keys[key])
-        self.parser.usage = "Build the LePHARE synthetic magnitudes"
-        self.__doc__ = self.parser.usage
+    def update_help(self):
+        """Add the specific MagGal help"""
+        doc = "Build the LePHARE internal representation of the set of SED templates to be used"
+        with suppress(Exception):
+            self.parser.usage = "Build the LePHARE synthetic magnitudes"
+        self.__doc__ = doc + "\n" + inspect.getdoc(MagGal)
 
     def __init__(self, config_file=None, config_keymap=None, **kwargs):
-        super().__init__(config_keys.keys(), config_file, config_keymap, **kwargs)
+        super().__init__(config_keys, config_file, config_keymap, **kwargs)
 
     def run(self, **kwargs):
         """Compute the model magnitudes across the redshift grid.
@@ -88,6 +90,8 @@ class MagGal(Runner):
         -------
         None
         """
+        super().run()
+
         # update keymap and verbosity based on call arguments
         # this is only when the code is called from python session
         self.verbose = kwargs.pop("verbose", self.verbose)

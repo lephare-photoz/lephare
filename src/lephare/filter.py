@@ -1,4 +1,6 @@
+import inspect
 import os
+from contextlib import suppress
 
 from ._lephare import flt, keyword, write_output_filter
 from .runner import Runner
@@ -8,6 +10,7 @@ __all__ = [
 ]
 
 config_keys = {
+    "VERBOSE": "add verbosity",
     "FILTER_REP": "path to repository where filter files are searched",
     "FILTER_LIST": "list of filter files, to be searched in FILTER_REP if relative",
     "TRANS_TYPE": "Transmission curve type: 0[def] for energy, 1 for photon nb",
@@ -22,6 +25,8 @@ class Filter(Runner):
     """
     The specific arguments to the Filter class are
 
+    VERBOSE
+                add verbosity
     FILTER_REP
                 path to repository where filter files are searched
     FILTER_LIST
@@ -39,21 +44,24 @@ class Filter(Runner):
                 output filter filename, will be saved in $LEPHAREWORK/filt/
     """
 
-    def add_authorized_keys(self):
-        """Add the specific Filter arguments to the argument parser"""
-        for key in config_keys:
-            self.parser.add_argument("--%s" % key, type=str, metavar="", help=config_keys[key])
-        self.parser.usage = "Build the LePHARE internal representation of the set of filters to be used"
-        self.__doc__ = self.parser.usage
+    def update_help(self):
+        """Add specific help information"""
+        doc = "Build the LePHARE internal representation of the set of filters to be used\n"
+        with suppress(Exception):
+            self.parser.usage = doc
+        self.__doc__ = doc + "\n" + inspect.getdoc(Filter)
 
     def __init__(self, config_file=None, config_keymap=None, **kwargs):
-        super().__init__(config_keys.keys(), config_file, config_keymap, **kwargs)
+        super().__init__(config_keys, config_file, config_keymap, **kwargs)
 
     def run(self, **kwargs):
         """Update keymap and verbosity based on call arguments.
 
         This is only when the code is called from python session.
         """
+
+        super().run()
+
         self.verbose = kwargs.pop("verbose", self.verbose)
         for k, v in kwargs.items():
             if k.upper() in self.keymap:

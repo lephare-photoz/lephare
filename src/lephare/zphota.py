@@ -1,4 +1,6 @@
+import inspect
 import time
+from contextlib import suppress
 
 from ._lephare import (
     GalMag,
@@ -12,6 +14,7 @@ __all__ = [
 ]
 
 config_keys = {
+    "VERBOSE": "add verbosity",
     "CAT_IN": "input catalog",
     "INP_TYPE": "F if Fluxes, M if magnitudes",
     "CAT_MAG": "AB or VEGA magnitude system of the input catalog (default AB)",
@@ -24,7 +27,6 @@ config_keys = {
     "Z_RANGE": "Z min and max allowed in the GALAXY library",
     "PARA_OUT": "file listing the output keywords to be written on file (one keyword per line)",
     "CAT_OUT": "output file name",
-    "VERBOSE": "add verbosity",
     "CAT_TYPE": "LONG or SHORT, depending on whether zspec, context, and other columns are present \
     after the magnitudes/fluxes and error columns",
     "ERR_SCALE": "values to be added in quadrature to the errors in magnitude in each band\
@@ -90,7 +92,8 @@ nonestring = "NONE"
 
 class Zphota(Runner):
     """The specific arguments to the Zphota class are
-
+    VERBOSE:
+           add verbosity
     CAT_IN:
            input catalog
     INP_TYPE:
@@ -114,8 +117,6 @@ without the suffix (to be found in $LEPHAREWORK/lib_mag)
            file listing the output keywords to be written on file (one keyword per line)
     CAT_OUT:
            output file name
-    VERBOSE:
-           add verbosity
     CAT_TYPE:
            LONG or SHORT, depending on whether zspec, context, and other columns are present \
 after the magnitudes/fluxes and error columns
@@ -148,8 +149,6 @@ to use for physical parameter computation
            Window search for second peak
     MIN_THRES:
            lower threshold for second peak
-    PROB_INTZ:
-
     SPEC_OUT:
            output the best spectrum of each object
     FIR_LIB:
@@ -216,20 +215,25 @@ Need 1 or N values.
 Need 1 or N values
     """
 
-    def add_authorized_keys(self):
-        """Add the specific Zphota arguments to the argument parser"""
-        for key in config_keys:
-            self.parser.add_argument("--%s" % key, type=str, metavar="", help=config_keys[key])
-        self.parser.usage = "Execute LePHARE photo-z estimation"
+    def update_help(self):
+        """Add the specific Zphota help"""
+        doc = "Execute LePHARE photo-z estimation"
+        with suppress(Exception):
+            self.parser.usage = doc
+        self.__doc__ = doc + "\n" + inspect.getdoc(Zphota)
 
     def __init__(self, config_file=None, config_keymap=None, **kwargs):
         super().__init__(config_keys, config_file, **kwargs)
 
     def run(self, **kwargs):
-        # update keymap and verbosity based on call arguments
-        # this is only when the code is called from python session
+        super().run()
+
         self.verbose = kwargs.pop("verbose", self.verbose)
-        self.keymap["c"] = keyword("c", self.config)
+        self.keymap["c"] = keyword("c", self.config).upper()
+
+        for k, v in kwargs.items():
+            if k.upper() in self.keymap:
+                self.keymap[k.upper()] = keyword(k.upper(), str(v))
 
         photoz = PhotoZ(self.keymap)
         autoadapt = (self.keymap["AUTO_ADAPT"]).split_bool("NO", 1)[0]
