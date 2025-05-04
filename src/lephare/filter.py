@@ -1,7 +1,7 @@
 import os
 
-from lephare._lephare import flt, keyword, write_output_filter
-from lephare.runner import Runner
+from ._lephare import flt, keyword, write_output_filter
+from .runner import Runner
 
 __all__ = [
     "Filter",

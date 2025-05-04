@@ -1,5 +1,5 @@
-from lephare._lephare import GalMag, QSOMag, StarMag, keyword
-from lephare.runner import Runner
+from ._lephare import GalMag, QSOMag, StarMag, keyword
+from .runner import Runner
 
 __all__ = [
     "MagGal",

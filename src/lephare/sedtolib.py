@@ -1,7 +1,7 @@
 import time
 
-from lephare._lephare import GalSEDLib, QSOSEDLib, StarSEDLib, keyword
-from lephare.runner import Runner
+from ._lephare import GalSEDLib, QSOSEDLib, StarSEDLib, keyword
+from .runner import Runner
 
 __all__ = [
     "Sedtolib",

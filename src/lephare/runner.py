@@ -2,7 +2,7 @@ import argparse
 import os
 import time
 
-from lephare._lephare import get_lephare_env, keyword
+from ._lephare import get_lephare_env, keyword
 
 __all__ = [
     "Runner",

@@ -7,7 +7,8 @@ import requests
 import yaml
 
 from lephare import LEPHAREDIR
-from lephare._lephare import check_first_char, flt
+
+from ._lephare import check_first_char, flt
 
 __all__ = [
     "FilterSvc",

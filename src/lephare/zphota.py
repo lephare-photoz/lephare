@@ -1,11 +1,11 @@
 import time
 
-from lephare._lephare import (  # , read_lib, read_doc_filters, readOutKeywords, GalMag, bestFilter, maxkcolor
+from ._lephare import (
     GalMag,
     PhotoZ,
     keyword,
 )
-from lephare.runner import Runner
+from .runner import Runner
 
 __all__ = [
     "Zphota",
