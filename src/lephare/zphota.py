@@ -229,7 +229,7 @@ Need 1 or N values
         super().run()
 
         self.verbose = kwargs.pop("verbose", self.verbose)
-        self.keymap["c"] = keyword("c", self.config).upper()
+        self.keymap["c"] = keyword("c", self.config)
 
         for k, v in kwargs.items():
             if k.upper() in self.keymap:
