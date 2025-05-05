@@ -10,7 +10,7 @@ __all__ = [
 
 config_keys = {
     "typ": "define what kind of objects these SED belong to : GAL, QSO, or STAR",
-    "VERBOSE": "add verbosity",
+    "verbose": "increase onscreen verbosity",
     "COSMOLOGY": "fiducial cosmology used for absolute magnitudes evaluations",
     "FILTER_FILE": "filter file provided by filter script or the Filter class",
     "MAGTYPE": "AB or VEGA system",
@@ -38,6 +38,8 @@ class MagGal(Runner):
 
     typ:
            define what kind of objects these SED belong to : GAL, QSO, or STAR
+    verbose:
+           increase onscreen verbosity
     COSMOLOGY:
            fiducial h0, Omega_m0, and LambdaO used to define a flat LCDM cosmology
            used for absolute magnitudes evaluations

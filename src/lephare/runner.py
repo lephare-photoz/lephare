@@ -129,32 +129,28 @@ class Runner:
         """Create command line config parser from list of keys"""
 
         self.parser = argparse.ArgumentParser()
-        self.parser.add_argument("--verbose", help="increase onscreen verbosity", action="store_true")
+        # these two arguments are not part of the config keys: config is provided directly in python,
+        # and timer is dealt with differently in a python ecosystem.
         self.parser.add_argument("--timer", help="switch timer on to time execution", action="store_true")
         self.parser.add_argument("-c", "--config", type=str, default="", help="Path to config file.")
-        if self.__class__.__name__ in ["Sedtolib", "MagGal"]:
-            self.parser.add_argument(
-                "-t",
-                "--typ",
-                type=str,
-                default="",
-                help="Type of SED object : GAL QSO or STAR",
-                required=True,
-            )
 
-        # add authorized command line args:
+        # add config keys as authorized command line args:
         self.add_authorized_keys()
+
         args, unknown = self.parser.parse_known_args()
         if args.config != "":
             self.keymap = self.parse_config_file(args.config)
         else:
             self.keymap = {}
-        with suppress(Exception):
-            # capture the type if it is passed as script argument
-            self.typ = args.typ
 
-        self.verbose = args.verbose
-        self.timer = args.timer
+        # capture specific args if they is passed as script argument
+        with suppress(Exception):
+            self.typ = args.typ
+        with suppress(Exception):
+            self.verbose = args.verbose
+        with suppress(Exception):
+            self.timer = args.timer
+
         # copy the args keywords back into the keymap,
         # setting value to "" for verbose, timer and the like
         for key in self.config_keys:
@@ -177,7 +173,12 @@ class Runner:
     def add_authorized_keys(self):
         """Add authorized keys in config keys to the parser"""
         for k, v in self.config_keys.items():
-            self.parser.add_argument("--%s" % k, type=str, metavar="", help=v)
+            if k == "typ":
+                self.parser.add_argument("-t", "--typ", type=str, default="", help=v, required=True)
+            elif k == "verbose":
+                self.parser.add_argument("--verbose", help="increase onscreen verbosity", action="store_true")
+            else:
+                self.parser.add_argument("--%s" % k, type=str, metavar="", help=v)
 
     def validate_config_dict(self, input_dict, no_raise=True):
         """Check that the input dictionary match the licit arguments"""

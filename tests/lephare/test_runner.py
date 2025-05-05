@@ -108,9 +108,9 @@ def test_command_line_argument_parsing_basic(monkeypatch):
     assert runner.keymap["key2"].value == "42"
     assert runner.keymap["key3"].value == ""
     assert len(runner.keymap) == 3
-    assert runner.args.config == ""
-    assert runner.args.timer is False
-    assert runner.args.verbose is False
+    assert runner.config == ""
+    assert runner.timer is False
+    assert runner.verbose is False
 
     monkeypatch.setattr("sys.argv", ["runner.py", "--timer"])
     runner = lp.Runner(config_keys=test_keys)
@@ -148,9 +148,9 @@ def test_command_line_argument_parsing_with_known_args(monkeypatch):
     assert runner.keymap["key3"].value == ""
     assert runner.keymap["QSO_FSCALE"].value == "1."
     assert len(runner.keymap) > 3
-    assert runner.args.config == config_file_path
-    assert runner.args.timer is True
-    assert runner.args.verbose is False
+    assert runner.config == config_file_path
+    assert runner.timer is True
+    assert runner.verbose is False
     with pytest.raises(AttributeError) as excinfo:
         _ = runner.args.typ
         assert excinfo.value == "'Runner' object has no attribute 'typ'"
@@ -164,7 +164,7 @@ def test_command_line_argument_parsing_with_subclass(monkeypatch):
         def __class__(self):
             return type("Sedtolib", (object,), {})
 
-    test_keys = {"key1": "help1", "key2": "help2", "key3": "help3", "QSO_FSCALE": "help"}
+    test_keys = {"key1": "help1", "key2": "help2", "key3": "help3", "QSO_FSCALE": "help", "typ": "help"}
     config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
     monkeypatch.setattr(
         "sys.argv",
@@ -188,8 +188,7 @@ def test_command_line_argument_parsing_with_subclass(monkeypatch):
     assert runner.keymap["key3"].value == ""
     assert runner.keymap["QSO_FSCALE"].value == "1."
     assert len(runner.keymap) > 3
-    assert runner.args.config == config_file_path
-    assert runner.args.timer is True
-    assert runner.args.verbose is False
-    assert runner.args.typ == "BAR"
+    assert runner.config == config_file_path
+    assert runner.timer is True
+    assert runner.verbose is False
     assert runner.typ == "BAR"
