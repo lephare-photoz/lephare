@@ -96,14 +96,26 @@ class MagGal(Runner):
 
         # update keymap and verbosity based on call arguments
         # this is only when the code is called from python session
-        self.verbose = kwargs.pop("verbose", self.verbose)
+        v = kwargs.pop("verbose", self.verbose)
+        if v.__class__ is bool:
+            self.verbose = v
+            self.keymap["VERBOSE"] = keyword("VERBOSE", "YES") \
+                if v else keyword("VERBOSE", "NO")
+        if v.__class__ is str:
+            if v.upper() == "YES":
+                self.keymap["VERBOSE"] = keyword("VERBOSE","YES")
+                self.verbose = True
+            elif v.upper() == "NO":
+                self.keymap["VERBOSE"] = keyword("VERBOSE","NO")
+                self.verbose = False
+            else:
+                raise RuntimeError("verbose is to be set to False/True or YES/yes//NO/no")
+            
+
+        if "typ" in kwargs:
+            self.typ = kwargs.pop("typ", self.typ)
+            self.typ = self.typ.upper()
         for k, v in kwargs.items():
-            if k == "typ":
-                self.typ = v.upper()
-                continue
-            # if k == "config":
-            #     self.config = config_file
-            #     continue
             if k.upper() in self.keymap:
                 self.keymap[k.upper()] = keyword(k.upper(), str(v))
 
