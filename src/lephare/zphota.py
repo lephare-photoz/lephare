@@ -226,14 +226,9 @@ Need 1 or N values
         super().__init__(config_keys, config_file, **kwargs)
 
     def run(self, **kwargs):
-        super().run()
+        super().run(**kwargs)
 
-        self.verbose = kwargs.pop("verbose", self.verbose)
         self.keymap["c"] = keyword("c", self.config)
-
-        for k, v in kwargs.items():
-            if k.upper() in self.keymap:
-                self.keymap[k.upper()] = keyword(k.upper(), str(v))
 
         photoz = PhotoZ(self.keymap)
         autoadapt = (self.keymap["AUTO_ADAPT"]).split_bool("NO", 1)[0]

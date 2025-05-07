@@ -2,7 +2,7 @@ import inspect
 import os
 from contextlib import suppress
 
-from ._lephare import flt, keyword, write_output_filter
+from ._lephare import flt, write_output_filter
 from .runner import Runner
 
 __all__ = [
@@ -60,12 +60,7 @@ class Filter(Runner):
         This is only when the code is called from python session.
         """
 
-        super().run()
-
-        self.verbose = kwargs.pop("verbose", self.verbose)
-        for k, v in kwargs.items():
-            if k.upper() in self.keymap:
-                self.keymap[k.upper()] = keyword(k.upper(), str(v))
+        super().run(**kwargs)
 
         keymap = self.keymap
         flt_rep = keymap["FILTER_REP"].split_string(os.path.join(os.environ["LEPHAREDIR"], "filt/"), 1)[0]

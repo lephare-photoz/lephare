@@ -2,7 +2,7 @@ import inspect
 import time
 from contextlib import suppress
 
-from ._lephare import GalSEDLib, QSOSEDLib, StarSEDLib, keyword
+from ._lephare import GalSEDLib, QSOSEDLib, StarSEDLib
 from .runner import Runner
 
 __all__ = [
@@ -65,16 +65,7 @@ class Sedtolib(Runner):
         Must be run independently for stars, galaxies, and QSO.
         """
 
-        super().run()
-
-        self.verbose = kwargs.pop("verbose", self.verbose)
-        if "typ" in kwargs:
-            self.typ = kwargs.pop("typ", self.typ)
-            self.typ = self.typ.upper()
-
-        for k, v in kwargs.items():
-            if k.upper() in self.keymap:
-                self.keymap[k.upper()] = keyword(k.upper(), str(v))
+        super().run(**kwargs)
 
         if self.typ[0] == "G":
             sed_library = GalSEDLib(self.keymap, self.config, self.typ)
