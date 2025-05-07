@@ -20,8 +20,7 @@ J. Cohen-Tanugi and R. Shirley.
 .. note::
 
    This is the official version of LePHARE in C++/Python. It is in active development. The 
-   deprecated version can be found `here <https://gitlab.lam.fr/Galaxies/LEPHARE>`_ 
-   in case you have legacy code that depends on it.
+   deprecated version can be found `here <https://gitlab.lam.fr/Galaxies/LEPHARE>`_ in case you have legacy code that depends on it.
 
 
 .. toctree::
