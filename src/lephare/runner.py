@@ -60,6 +60,8 @@ class Runner:
             # config_keymap. If both are provided, merge them, with
             # config_keymap entries overriding in case of duplicates
             self.keymap = self.keymap | config_keymap
+            if "VERBOSE" in self.keymap:
+                self.verbose = bool(self.keymap["VERBOSE"].value == "YES")
 
         # Finally, take the directly provided arguments, which supersede
         # both config_file and config_keymap inputs
@@ -69,21 +71,20 @@ class Runner:
             if uk == "TYP":
                 self.typ = v.upper()
             # allow verbose to be passed as a bool arg, more pythonesque
-            if uk == "VERBOSE" and v.__class__ is bool:
-                kwargs[k] = "YES" if v else "NO"
+            if uk == "VERBOSE":
+                if v.__class__ is bool:
+                    self.verbose = v
+                    kwargs[k] = "YES" if v else "NO"
+                else:
+                    self.verbose = bool(v.upper() == "YES")
 
             self.keymap[uk] = keyword(uk, str(kwargs[k]))
-        print(self.keymap)
 
-        # this only happens if the code is called as an executed script
-        # Consider the keywords given in the line command
-        if config_file is None and config_keymap is None and kwargs == {}:
+        # If self.keymap is still empty, it either means that
+        # 1/ an instance of Runner or its inherited classes was called from an executable,
+        # 2/ or that it was instantiated in a python session without argument
+        if self.keymap == {} and not hasattr(sys, "ps1"):
             self.args = self.config_parser()
-            print(self.keymap, not hasattr(sys, "ps1"))
-
-        # set verbosity. check keymap is not set on the commandline.
-        if not self.verbose and "VERBOSE" in self.keymap:
-            self.verbose = self.keymap["VERBOSE"].split_bool("NO", 1)[0]
 
         self.update_help()
         return
@@ -133,32 +134,35 @@ class Runner:
         # and timer is dealt with differently in a python ecosystem.
         self.parser.add_argument("--timer", help="switch timer on to time execution", action="store_true")
         self.parser.add_argument("-c", "--config", type=str, default="", help="Path to config file.")
-
         # add config keys as authorized command line args:
         self.add_authorized_keys()
-
         args, unknown = self.parser.parse_known_args()
+
+        keymap = {}
         if args.config != "":
-            self.keymap = self.parse_config_file(args.config)
-        else:
-            self.keymap = {}
+            keymap = self.parse_config_file(args.config)
 
         # capture specific args if they is passed as script argument
         with suppress(Exception):
             self.typ = args.typ
-        with suppress(Exception):
-            self.verbose = args.verbose
+
         with suppress(Exception):
             self.timer = args.timer
 
         # copy the args keywords back into the keymap,
         # setting value to "" for verbose, timer and the like
         for key in self.config_keys:
+            if key == "verbose":
+                self.verbose = args.verbose
+                keymap[key] = keyword(key, "YES") if self.verbose else keyword(key, "NO")
+                continue
             try:
-                self.keymap[key] = keyword(key, getattr(args, key))
+                keymap[key] = keyword(key, getattr(args, key))
             except:  # noqa: E722
-                if key not in self.keymap:
-                    self.keymap[key] = keyword(key, "")
+                if key not in keymap:
+                    keymap[key] = keyword(key, "")
+
+        self.keymap = keymap
         return args
 
     def run(self):
