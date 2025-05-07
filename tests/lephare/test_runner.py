@@ -69,7 +69,7 @@ def test_runner_cannot_run():
 
 def test_runner_verbosity():
     """Check to make sure that verbosity is set correctly via the config_keymap"""
-    test_keys = ["key1", "key2", "key3"]
+    test_keys = {"key1":"help2", "key2":"help2", "key3":"help3"}
     config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
     config_keymap = {}
     runner = lp.Runner(config_keys=test_keys, config_file=config_file_path, config_keymap=config_keymap)
