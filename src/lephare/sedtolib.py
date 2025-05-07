@@ -24,7 +24,6 @@ config_keys = {
     "STAR_SED": "same for STAR templates",
     "STAR_LIB": "same for STAR templates",
     "STAR_FSCALE": "same for STAR templates",
-    "LIB_ASCII": "if set to YES, also provide the output in ascii",
 }
 
 
@@ -48,8 +47,6 @@ class Sedtolib(Runner):
            minimal and maximal age in year to consider
     QSO_SED, QSO_FSCALE, QSO_LIB, STAR_SED, STAR_LIB, STAR_FSCALE :
            same for QSO/AGN and STAR SED types
-    LIB_ASCII:
-           if set to YES, also provide the output in ascii
     """
 
     def update_help(self):
