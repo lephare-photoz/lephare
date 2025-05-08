@@ -80,7 +80,7 @@ class MagGal(Runner):
         doc = "Build the LePHARE internal representation of the set of SED templates to be used"
         with suppress(Exception):
             self.parser.usage = "Build the LePHARE synthetic magnitudes"
-        self.__doc__ = doc + "\n" + inspect.getdoc(MagGal)
+        #self.__doc__ = doc + "\n" + inspect.getdoc(MagGal)
 
     def __init__(self, config_file=None, config_keymap=None, **kwargs):
         super().__init__(config_keys, config_file, config_keymap, **kwargs)
