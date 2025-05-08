@@ -214,3 +214,4 @@ LIMITS_ZBIN      0,99            #  Redshifts used to split in N bins, separated
 LIMITS_MAPP_REF  1               #  Band in which the absolute magnitude is computed 
 LIMITS_MAPP_SEL  1               #  Give the selection band in each redshift bin. Need 1 or N values.
 LIMITS_MAPP_CUT  90              #  Magnitude cut used in each redshift bin. Need 1 or N values.
+TEST_ARG_NO_VAL

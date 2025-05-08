@@ -13,7 +13,6 @@ LEPHAREDIR = dm.LEPHAREDIR
 
 from ._lephare import *
 
-# from lephare._lephare import  get_lephare_env
 # make LEPHAREDIR and LEPHAREWORK avaliable to the C++ codes
 get_lephare_env()  # noqa: F405
 

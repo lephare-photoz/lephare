@@ -1,69 +1,70 @@
 import time
+from contextlib import suppress
 
-from lephare._lephare import GalSEDLib, QSOSEDLib, StarSEDLib, keyword
-from lephare.runner import Runner
+from ._lephare import GalSEDLib, QSOSEDLib, StarSEDLib
+from .runner import Runner
 
 __all__ = [
     "Sedtolib",
 ]
 
-global sedtolib_config_keys
 # List of keywords associated to setolib
-sedtolib_config_keys = [
-    "GAL_SED",
-    "GAL_FSCALE",
-    "GAL_LIB",
-    "SEL_AGE",
-    "AGE_RANGE",
-    "QSO_SED",
-    "QSO_FSCALE",
-    "QSO_LIB",
-    "STAR_SED",
-    "STAR_LIB",
-    "STAR_FSCALE",
-    "LIB_ASCII",
-]
+config_keys = {
+    "typ": "define what kind of objects these SED belong to : GAL, QSO, or STAR",
+    "verbose": "increase onscreen verbosity",
+    "GAL_SED": "file listing the galaxy SEDs to be used",
+    "GAL_FSCALE": "arbitrary Flux scale for galaxy templates",
+    "GAL_LIB": "name of the output binary SED file for the galaxies (relative to $LEPHAREWORK/lib_bin/)",
+    "SEL_AGE": "file listing the different galaxy ages to consider",
+    "AGE_RANGE": "minimal and maximal age in year to consider",
+    "QSO_SED": "same for QSO/AGN templates",
+    "QSO_FSCALE": "same for QSO/AGN templates",
+    "QSO_LIB": "same for QSO/AGN templates",
+    "STAR_SED": "same for STAR templates",
+    "STAR_LIB": "same for STAR templates",
+    "STAR_FSCALE": "same for STAR templates",
+}
 
 
 class Sedtolib(Runner):
-    """Read a configurable set of SED, compute extinction corrections, and store the
-    results into a binary library for later use.
+    """
+    The specific arguments to the Sedtolib class are
 
-    The run method is equivalent to the terminal sedtolib command.
-
-    Parameters
-    ----------
-    config_file : `string` or `None`, optional
-        Path to config file in LePHARE .para format
-    config_keymap : `dict` or `None`, optional
-        Dictionary of all config values as alternative to config file.
+    typ:
+           define what kind of objects these SED belong to : GAL, QSO, or STAR
+    verbose:
+           increase onscreen verbosity
+    GAL_SED:
+           file listing the galaxy SEDs to be used
+    GAL_FSCALE":
+           arbitrary Flux scale for galaxy templates
+    GAL_LIB:
+           name of the output binary SED file for the galaxies (relative to $ZPHOTWORK/lib_bin/)
+    SEL_AGE:
+           file listing the different galaxy ages to consider
+    AGE_RANGE:
+           minimal and maximal age in year to consider
+    QSO_SED, QSO_FSCALE, QSO_LIB, STAR_SED, STAR_LIB, STAR_FSCALE :
+           same for QSO/AGN and STAR SED types
     """
 
-    # Initalisation
-    def __init__(self, config_file=None, config_keymap=None):
-        # Class heritates from runner. So, __init__ in runner.py
-        super().__init__(sedtolib_config_keys, config_file, config_keymap)
+    def update_help(self):
+        """Add the specific Sedtolib help"""
+        doc = "Build the LePHARE internal representation of the set of SED templates to be used"
+        with suppress(Exception):
+            self.parser.usage = doc
+        self.__doc__ = doc + "\n"  # + inspect.getdoc(Sedtolib)
+
+    def __init__(self, config_file=None, config_keymap=None, **kwargs):
+        super().__init__(config_keys, config_file, config_keymap, **kwargs)
 
     def run(self, **kwargs):
         """Take keymap and set SED library as class variable.
 
         Must be run independently for stars, galaxies, and QSO.
         """
-        # update keymap and verbosity based on call arguments
-        # this is only when the code is called from python session
-        self.verbose = kwargs.pop("verbose", self.verbose)
 
-        # loop over a dictionnary passed in argument (key and value)
-        for k, v in kwargs.items():
-            if k == "typ":
-                self.typ = v.upper()
-                continue
-            # if k == "config":
-            #     self.config = config_file
-            #     continue
-            # if the key in argument is in the keymap, update the keymap with the argument
-            if k.upper() in self.keymap:
-                self.keymap[k.upper()] = keyword(k.upper(), str(v))
+        super().run(**kwargs)
 
         if self.typ[0] == "G":
             sed_library = GalSEDLib(self.keymap, self.config, self.typ)
@@ -86,11 +87,11 @@ class Sedtolib(Runner):
         return
 
 
-def main():
+def main():  # pragma no cover
     runner = Sedtolib()
     runner.run()
     runner.end()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma no cover
     main()
