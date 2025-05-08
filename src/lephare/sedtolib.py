@@ -54,7 +54,7 @@ class Sedtolib(Runner):
         doc = "Build the LePHARE internal representation of the set of SED templates to be used"
         with suppress(Exception):
             self.parser.usage = doc
-        self.__doc__ = doc + "\n" + inspect.getdoc(Sedtolib)
+        #self.__doc__ = doc + "\n" + inspect.getdoc(Sedtolib)
 
     def __init__(self, config_file=None, config_keymap=None, **kwargs):
         super().__init__(config_keys, config_file, config_keymap, **kwargs)
