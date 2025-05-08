@@ -1,4 +1,3 @@
-import inspect
 import time
 from contextlib import suppress
 
@@ -220,7 +219,7 @@ Need 1 or N values
         doc = "Execute LePHARE photo-z estimation"
         with suppress(Exception):
             self.parser.usage = doc
-        #self.__doc__ = doc + "\n" + inspect.getdoc(Zphota)
+        self.__doc__ = doc + "\n"  # + inspect.getdoc(Zphota)
 
     def __init__(self, config_file=None, config_keymap=None, **kwargs):
         super().__init__(config_keys, config_file, **kwargs)

@@ -1,4 +1,3 @@
-import inspect
 import os
 from contextlib import suppress
 
@@ -49,7 +48,7 @@ class Filter(Runner):
         doc = "Build the LePHARE internal representation of the set of filters to be used\n"
         with suppress(Exception):
             self.parser.usage = doc
-        #self.__doc__ = doc + "\n" + inspect.getdoc(Filter)
+        self.__doc__ = doc + "\n"  # + inspect.getdoc(Filter)
 
     def __init__(self, config_file=None, config_keymap=None, **kwargs):
         super().__init__(config_keys, config_file, config_keymap, **kwargs)
