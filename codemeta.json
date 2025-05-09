@@ -1,0 +1,35 @@
+{
+    "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+    "@type": "SoftwareSourceCode",
+    "author": [{
+        "@type": "Person",
+        "givenName": "Stéphane",
+        "familyName": "Arnouts",
+        "@id": ""
+    }, {
+        "@type": "Person",
+        "givenName": "Olivier",
+        "familyName": "Ilbert",
+        "@id": "0000-0002-7303-4397"
+    },{
+        "@type": "Person",
+        "givenName": "Johann",
+        "familyName": "Cohen-Tanugi",
+        "@id": "0000-0001-9022-4232"
+    },{
+        "@type": "Person",
+        "givenName": "Raphael",
+        "familyName": "Shirley",
+        "@id": "0000-0002-1114-0135"
+    },{
+        "@type": "Person",
+        "givenName": "Mara",
+        "familyName": "Salvato",
+        "@id": "0000-0001-7116-9303"
+    },],
+    "name": "LePHARE",
+    "softwareVersion": "0.2",
+    "identifier": "https://doi.org/10.5281/zenodo.14162574",
+    "datePublished": "2011-11-14",
+    "codeRepository": "https://github.com/lephare-photoz/lephare"
+}
