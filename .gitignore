@@ -156,3 +156,6 @@ _html/
 
 # Project initialization script
 .initialize_new_project.sh
+
+/fig
+/simulation_catalogs
