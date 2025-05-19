@@ -49,26 +49,20 @@ int main(int argc, char *argv[]) {
 
   // List of the keywords to be found in the config file/command line
   string list_keywords[] = {
-      "CAT_IN",          "INP_TYPE",       "CAT_MAG",
-      "CAT_FMT",         "CAT_LINES",      "ZPHOTLIB",
-      "PARA_OUT",        "CAT_OUT",        "VERBOSE",
-      "CAT_TYPE",        "ERR_SCALE",      "ERR_FACTOR",
-      "BD_SCALE",        "GLB_CONTEXT",    "FORB_CONTEXT",
-      "MASS_SCALE",      "MAG_ABS",        "MAG_ABS_AGN",
-      "MAG_REF",         "NZ_PRIOR",       "ZFIX",
-      "Z_INTERP",        "EXTERNALZ_FILE", "RM_DISCREPANT_BD",
-      "Z_RANGE",         "EBV_RANGE",      "DZ_WIN",
-      "MIN_THRES",       "PROB_INTZ",      "SPEC_OUT",
-      "FIR_LIB",         "FIR_LMIN",       "FIR_CONT",
-      "FIR_SCALE",       "FIR_FREESCALE",  "FIR_SUBSTELLAR",
-      "MABS_METHOD",     "MABS_CONTEXT",   "MABS_REF",
-      "MABS_FILT",       "MABS_ZBIN",      "RF_COLORS",
-      "M_REF",           "Z_METHOD",       "APPLY_SYSSHIFT",
-      "AUTO_ADAPT",      "ADAPT_BAND",     "ADAPT_LIM",
-      "ADAPT_CONTEXT",   "ADAPT_ZBIN",     "PDZ_OUT",
-      "PDZ_TYPE",        "PDZ_MABS_FILT",  "ADD_EMLINES",
-      "ADDITIONAL_MAG",  "LIMITS_ZBIN",    "LIMITS_MAPP_REF",
-      "LIMITS_MAPP_SEL", "LIMITS_MAPP_CUT"};
+      "CAT_IN",          "INP_TYPE",        "CAT_MAG",          "CAT_FMT",
+      "CAT_LINES",       "ZPHOTLIB",        "PARA_OUT",         "CAT_OUT",
+      "VERBOSE",         "CAT_TYPE",        "ERR_SCALE",        "ERR_FACTOR",
+      "GLB_CONTEXT",     "FORB_CONTEXT",    "MASS_SCALE",       "MAG_ABS",
+      "MAG_ABS_AGN",     "MAG_REF",         "NZ_PRIOR",         "ZFIX",
+      "Z_INTERP",        "EXTERNALZ_FILE",  "RM_DISCREPANT_BD", "Z_RANGE",
+      "EBV_RANGE",       "DZ_WIN",          "MIN_THRES",        "SPEC_OUT",
+      "FIR_LIB",         "FIR_LMIN",        "FIR_CONT",         "FIR_SCALE",
+      "FIR_FREESCALE",   "FIR_SUBSTELLAR",  "MABS_METHOD",      "MABS_CONTEXT",
+      "MABS_REF",        "MABS_FILT",       "MABS_ZBIN",        "RF_COLORS",
+      "M_REF",           "Z_METHOD",        "APPLY_SYSSHIFT",   "AUTO_ADAPT",
+      "ADAPT_BAND",      "ADAPT_LIM",       "ADAPT_ZBIN",       "PDZ_OUT",
+      "PDZ_TYPE",        "ADD_EMLINES",     "ADDITIONAL_MAG",   "LIMITS_ZBIN",
+      "LIMITS_MAPP_REF", "LIMITS_MAPP_SEL", "LIMITS_MAPP_CUT"};
   // Number of keywords
   int nb_ref_key = (int)(sizeof(list_keywords) / sizeof(list_keywords[0]));
 

@@ -77,12 +77,12 @@ def prepare(config, star_config=None, gal_config=None, qso_config=None):
         if list_loc.find("sed/") >= 0:
             list_loc = os.path.join(lp.LEPHAREDIR, list_loc)
         sedtolib_kwargs = {f"{object_type.lower()}_sed": list_loc}
-        print(sedtolib_kwargs)
         sedlib.run(typ=object_type, **sedtolib_kwargs)
         write_yaml_config(updated_config, sed_output)
         # Run mag_gal
+        print(updated_config["VERBOSE"])
         maglib = lp.MagGal(config_keymap=updated_config)
-        maglib.run(typ=object_type)
+        maglib.run(typ=object_type, verbose=False)
         write_yaml_config(updated_config, mag_output)
 
 
