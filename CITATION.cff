@@ -1,0 +1,38 @@
+cff-version: "1.1.0"
+message: "If you use the LePHARE software, please cite it as below."
+authors:
+  -
+    family-names: Arnouts
+    given-names: Stéphane
+    orcid: ""
+  -
+    family-names: Ilbert
+    given-names: Olivier
+    orcid: "https://orcid.org/0000-0002-7303-4397"
+  -
+    family-names: Cohen-Tanugi
+    given-names: Johann
+    orcid: "https://orcid.org/0000-0001-9022-4232"
+  -
+    family-names: Shirley
+    given-names: Raphael
+    orcid: "https://orcid.org/0000-0002-1114-0135"
+  -
+    family-names: Salvato
+    given-names: Mara
+    orcid: "https://orcid.org/0000-0001-7116-9303"
+identifiers:
+  -
+    type: doi
+    value: "10.5281/zenodo.14162574"
+keywords:
+  - "galaxies"
+  - "cosmology"
+  - "photometric redshifts"
+  - "C++"
+  - python
+title: "LePHARE"
+version: "0.2"
+date-released: 2024-11-14
+license: "MIT"
+repository-code: "https://github.com/lephare-photoz/lephare"
