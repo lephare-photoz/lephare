@@ -49,16 +49,6 @@ SED::SED(const string nameC, int nummodC, string type) {
 }
 
 /*
-  extended constructor
-*/
-SED::SED(const string nameC, double tauC, double ageC, int nummodC,
-         string typeC, int idAgeC)
-    : SED(nameC, nummodC, typeC) {
-  age = ageC;
-  idAge = idAgeC;  // index of the age into the SED
-}
-
-/*
   destructor of the SEd class: remove the vectors
 */
 SED::~SED() {
@@ -592,9 +582,8 @@ void SED::reduce_memory(vector<flt> allFlt) {
   return;
 }
 
-void SED::generate_spectra(double zin, double dmin, vector<opa> opaAll) {
-  if (nlib == 0) {
-    // GAL
+void SED::generate_spectra(double zin, double dmin, const vector<opa> &opaAll) {
+  if (nlib == GAL) {
     red = zin;
     // Create a SED of emission lines
     GalSED SEDz0_Em(*this);
@@ -609,8 +598,7 @@ void SED::generate_spectra(double zin, double dmin, vector<opa> opaAll) {
     redshift();
     // Rescale la SED
     rescale(dmin);
-  } else if (nlib == 1) {
-    // QSO
+  } else if (nlib == QSO) {
     red = zin;
     // Rescale la SED
     rescale(dmin);
@@ -618,9 +606,7 @@ void SED::generate_spectra(double zin, double dmin, vector<opa> opaAll) {
     applyOpa(opaAll);
     //// Redshift the SED at the redshift extracted from the minimum chi2
     redshift();
-  } else if (nlib == 2) {
-    // STAR
-    //  Rescale la SED
+  } else if (nlib == STAR) {
     rescale(dmin);
   }
   return;
@@ -880,11 +866,12 @@ GalSED::GalSED(const string nameC, int nummodC) : SED(nameC, nummodC, "GAL") {
 /*
   extended constructor
 */
-GalSED::GalSED(const string nameC, double tauC, double ageC, string formatC,
-               int nummodC, string typeC, int idAgeC)
-    : SED(nameC, tauC, ageC, nummodC, typeC, idAgeC) {
+GalSED::GalSED(const string nameC, int nummodC, string typeC, string formatC,
+               double ageC, int idAgeC)
+    : SED(nameC, nummodC, typeC) {
+  age = ageC;
+  idAge = idAgeC;  // index of the age into the SED
   format = formatC;
-  tau = tauC;
   d4000 = -999;
   zmet = -999;
   lnir = -999;
