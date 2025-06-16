@@ -7,6 +7,7 @@ A collection of notebooks and scripts to perform statistics on the output catalo
  
 
 Simulation_catalogs:
+ - not on github
  - originally to perform training algorithm on lephare.
  - see in-folder README.
 

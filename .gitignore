@@ -158,4 +158,4 @@ _html/
 .initialize_new_project.sh
 
 /fig
-/simulation_catalogs
+/training_stats/simulation_catalogs
