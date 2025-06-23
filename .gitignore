@@ -158,5 +158,5 @@ _html/
 .initialize_new_project.sh
 
 /fig
-/training_stats/simulation_catalogs
-/training_stats/output_data
+#/training_stats/simulation_catalogs
+#/training_stats/output_data
