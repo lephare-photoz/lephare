@@ -30,6 +30,8 @@ class PhotoZ {
                 /// solution, when computing physical parameters.
 
   string cat, typm, catmag, cattyp, zmulti, outf, outsp, outpdz, outpdm;
+  string outpdf_star;
+  ofstream starpdf_out;
   vector<double> shifts0, min_err, fac_err, int_pdz, zbmin, zbmax;
   vector<flt> allFiltersAdd;
   vector<vector<int>> goodFlt;

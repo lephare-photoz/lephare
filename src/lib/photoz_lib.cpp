@@ -12,6 +12,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <iomanip>
 
 // Le Phare
 #include <omp.h>
@@ -262,6 +263,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   // PDZ_OUT pdz output file
   outpdz = (key_analysed["PDZ_OUT"]).split_string(nonestring, 1)[0];
   // PDZ_TYPE type of PZD (BAY_ZG,BAY_ZQ,MIN_ZG,MIN_ZQ,MASS,SFR,SSFR,AGE)
+  outpdf_star = ((keys["STAR_PDF_OUT"]).split_string(nonestring, 1))[0];
   pdftype = ((key_analysed["PDZ_TYPE"]).split_string("BAY_ZG", -1));
   // PDZ_MABS_FILT filter in which we want the mag abs in each pdz
   pdz_fabs = (key_analysed["PDZ_MABS_FILT"]).split_int("0", -1);
@@ -366,6 +368,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   outputHeader += "# SPEC_OUT               : " + outsp + '\n';
   outputHeader += "# CHI_OUT                : " + bool2string(outchi) + '\n';
   outputHeader += "# PDZ_OUT                : " + outpdz + '\n';
+  outputHeader += "# STAR_PDF_OUT           : " + outpdf_star + '\n';
   outputHeader += "####################################### \n";
 
   // Write the header on the screen
@@ -1606,6 +1609,16 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
     // Generate the marginalized PDF (z+physical parameters) from the chi2
     // stored in each SED
     oneObj->generatePDF(fullLib, valid, fltColRF, fltREF, zfix);
+    // Generate the PDF of star spectral type
+    if (!oneObj->chi2_star_models.empty()) {oneObj->generatePDF_stars();}
+
+    // std::cout << std::fixed << std::setprecision(10);
+    // std::cout << "PDF star :\n";
+    // for (const auto& val : oneObj->vPDF_star) {
+    //     std::cout << val << " ";
+    // }
+    // std::cout << std::endl;
+    
     // Interpolation of Z_BEST and ZQ_BEST (zmin) via Chi2 curves, put z-spec if
     // ZFIX YES  (only gal for the moment)
     if (zfix || zintp) oneObj->interp(zfix, zintp, lcdm);
@@ -1694,6 +1707,13 @@ void PhotoZ::write_outputs(vector<onesource *> sources, const time_t &ti1) {
   vector<opa> opaOut = Mag::read_opa();
 
   static bool first_obj = true;
+  if (outpdf_star != nonestring) {
+    string output = outpdf_star + "_PDFstar" + ".prob";
+    starpdf_out.open(output.c_str());
+    if (!starpdf_out)
+      throw runtime_error("Cannot open file " + outpdf_star + " for star PDF output.");
+  }
+
   for (auto &oneObj : sources) {
     // write the object in output
     oneObj->write_out(fullLib, fullLibIR, stout, outkeywords);
@@ -1708,8 +1728,21 @@ void PhotoZ::write_outputs(vector<onesource *> sources, const time_t &ti1) {
       oneObj->write_pdz_header(pdftype, pdf_streams, ti1);
     if (outpdz.compare(nonestring) != 0)
       oneObj->write_pdz(pdftype, pdf_streams);
+
+    if (!oneObj->chi2_star_models.empty()) {
+      if (outpdf_star != nonestring && first_obj)
+        oneObj->write_pdz_header_stars(starpdf_out, ti1);
+      if (outpdf_star != nonestring)
+        oneObj->write_pdz_stars(starpdf_out);
+    }
+
     first_obj = false;
   }
+
+  if (starpdf_out.is_open()) {
+    starpdf_out.close();
+  }
+
 
   if (outpdz.compare(nonestring) != 0)
     for (const auto &type : pdftype) {

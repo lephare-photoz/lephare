@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
       "ADAPT_CONTEXT",   "ADAPT_ZBIN",     "PDZ_OUT",
       "PDZ_TYPE",        "PDZ_MABS_FILT",  "ADD_EMLINES",
       "ADDITIONAL_MAG",  "LIMITS_ZBIN",    "LIMITS_MAPP_REF",
-      "LIMITS_MAPP_SEL", "LIMITS_MAPP_CUT"};
+      "LIMITS_MAPP_SEL", "LIMITS_MAPP_CUT", "STAR_PDF_OUT"};
   // Number of keywords
   int nb_ref_key = (int)(sizeof(list_keywords) / sizeof(list_keywords[0]));
 

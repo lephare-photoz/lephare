@@ -90,7 +90,8 @@ zphota -c $CONFIG_FILE \
     --PARA_OUT $LEPHAREDIR/examples/output.para \
     --VERBOSE NO \
     --ZFIX NO \
-    --PDZ_OUT $LEPHAREWORK/zphota/
+    --PDZ_OUT $LEPHAREWORK/zphota/ \
+    --STAR_PDF_OUT NONE
 
 echo "Generating figures and specs..."
 python $LEPHAREDIR/examples/figuresLPZ.py $CAT_OUT

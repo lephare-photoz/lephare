@@ -238,6 +238,9 @@ zphota
    * - PDZ_OUT
      - NONE[.pdz] 
      - Output file name in which PDZ will be stored (full path). The code will add automatically the extension[.pdz]
+   * - STAR_PDF_OUT
+     - NONE[.pdz] 
+     - Output file name in which PDF_star will be stored (full path). The code will add automatically the extension[.pdz]
    * - PDZ_TYPE
      - BAY[def]  or MIN
      - value: BAY\_ZG[def] or/and BAY\_ZQ,MIN\_ZG,MIN\_ZQ,MASS,SFR,SSFR,AGE PDZ in output [def-BAY]. BAY\_ZG sum all probabilities at a given z. MIN_ZG takes ex p(-chi2_min/2) at a each z.

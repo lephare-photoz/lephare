@@ -69,6 +69,7 @@ zphota_config_keys = [
     "LIMITS_MAPP_SEL",
     "LIMITS_MAPP_CUT",
     "Z_STEP",
+    "STAR_PDF_OUT",
 ]
 
 nonestring = "NONE"

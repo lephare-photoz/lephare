@@ -66,6 +66,7 @@ default_cosmos_config = {
     "MOD_EXTINC": "0,0",
     "PARA_OUT": f"{lp.LEPHAREDIR}/examples/output.para",
     "PDZ_OUT": "test",
+    "STAR_PDF_OUT": "NONE",
     "PDZ_TYPE": "BAY_ZG",
     "QSO_FSCALE": "1.",
     "QSO_LIB": "LIB_QSO",

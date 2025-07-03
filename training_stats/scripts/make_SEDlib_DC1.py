@@ -5,7 +5,7 @@ from matplotlib import pylab as plt
 
 ##### Create filter library #####
 base_dir = os.path.abspath(os.path.join(os.getcwd(), '..')) #change to your lephare base_dir
-filter_path = os.path.join(base_dir, 'lephare/training_stats/simulation_catalogs/buzzard_base/FILTERS') 
+filter_path = os.path.join(base_dir, 'lephare/training_stats/simulation_catalogs/buzzard_base/filt') 
 print(filter_path)
 filter_rep = lp.keyword("FILTER_REP", filter_path)
 filter_list = lp.keyword("FILTER_LIST",
@@ -28,7 +28,7 @@ filterLib.run()
 
 ##### Create SED library #####
 
-SED_path = os.path.join(base_dir, 'lephare/training_stats/simulation_catalogs/buzzard_base/SEDS/updated_Buzzard_SEDs')
+SED_path = os.path.join(base_dir, 'lephare/training_stats/simulation_catalogs/buzzard_base/lib_bin/updated_Buzzard_SEDs')
 
 # SED_list = sorted([
 #     f for f in os.listdir(SED_path)
@@ -65,7 +65,7 @@ print(f"past {len(SED_list)} file.sed and file.list in {LEPHARE_SED_GAL_PATH}")
 
 
 
-SED_list_path = f"{base_dir}/lephare/training_stats/simulation_catalogs/buzzard_base/SEDS/updated_Buzzard_SEDs/updated_Buzzard_SEDs.list"
+SED_list_path = f"{base_dir}/lephare/training_stats/simulation_catalogs/buzzard_base/lib_bin/updated_Buzzard_SEDs/updated_Buzzard_SEDs.list"
 sedLib = lp.Sedtolib(config_keymap={
     "SED_REP": SED_rep,
     "GAL_SED": lp.keyword("GAL_SED", SED_list_path),
