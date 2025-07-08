@@ -26,8 +26,8 @@ filterLib.run()
 
 #### Create SED library #####
 #ready in lephare data
-
-SED_list_path = f"{base_dir}/lephare/training_stats/simulation_catalogs/DES/DES_STARCAT/WORK_COMPLETE2/lib_bin/STAR_MOD.list"
+#replace by STAR_MOD.list if you want full list
+SED_list_path = f"{base_dir}/lephare/training_stats/simulation_catalogs/DES/DES_STARCAT/WORK_COMPLETE2/lib_bin/DES_STAR.list"
 sedLib = lp.Sedtolib(config_keymap={
     "STAR_SED": lp.keyword("STAR_SED", SED_list_path),
     "STAR_FSCALE": lp.keyword("STAR_FSCALE", "3.0e-9"),
