@@ -12,9 +12,10 @@ A python cript to sort good from bad zphota computed data using :
  - BAY_ZG.prob from PDZ_OUT keyword when running z_phota
 '''
 
-PDZ_path = '/home/hallouin/Documents/thall_2025/photoz/lephare/training_stats/output_data/PDZs/TRAINING_PDZ_100_MIN_ZG.prob'
-CAT_path = '/home/hallouin/Documents/thall_2025/photoz/lephare/training_stats/output_data/TRAINING_CAT_100.out'
-flagged_CAT_path = '/home/hallouin/Documents/thall_2025/photoz/lephare/training_stats/output_data/TRAINING_CAT_100_flag.out'
+base_dir = os.path.abspath(os.path.join(os.getcwd()))
+CAT_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/DESstars_Buzzard_PICKLES_DES.out') #output catalog directory
+PDZ_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/PDZs/DESstars_Buzzard_PICKLES_DES_MIN_ZG.prob')
+# flagged_CAT_path = os.path.join(base_dir, 'simulation_catalogs/star_gal/DESstars_Buzzard_PICKLES_DES_typed.out')
 ZMIN, ZMAX, ZSTEP = 0, 2, 0.01
 z_grid = np.arange(ZMIN, ZMAX + ZSTEP, ZSTEP)
 
@@ -188,8 +189,8 @@ def plot_single_pdz(pdz_path, zgrid, row=None, nb_peak_thresh=1, height_thresh=0
     plt.show()
 
 #plot one pdz for example
-plot_single_pdz(PDZ_path, z_grid, row=7, nb_peak_thresh=1, height_thresh=0.75, tail_thresh=0.25, peak_ratio_thresh=0.75, error_thresh=0.125)
-
+plot_single_pdz(PDZ_path, z_grid, row=8779, nb_peak_thresh=1, height_thresh=0.75, tail_thresh=0.25, peak_ratio_thresh=0.75, error_thresh=0.125)
+#8779 intéréssant
 
 #display statistics from given catalog
 def average_stats(pdz_path, zgrid):
