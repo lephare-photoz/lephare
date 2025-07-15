@@ -297,16 +297,16 @@ def load_and_write(catalog_path, flagged_catalog_path, star_pdf_path=None, pdz_p
 ### Load zphota output catalog(s)
 base_dir = os.path.abspath(os.path.join(os.getcwd()))
 ### Tests on stars ###
-CAT_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/DESstars_Buzzard_PICKLES_DES.out') #output catalog directory
-PDZ_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/PDZs/DESstars_Buzzard_PICKLES_DES_MIN_ZG.prob')
-STAR_PDF_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/PDFs/DESstars_Buzzard_PICKLES_DES_PDFstar.prob')
-CAT_path_flagged = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/DESstars_Buzzard_PICKLES_DES_typed.out')
+# CAT_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/DESstars_Buzzard_PICKLES_DES.out') #output catalog directory
+# PDZ_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/PDZs/DESstars_Buzzard_PICKLES_DES_MIN_ZG.prob')
+# STAR_PDF_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/PDFs/DESstars_Buzzard_PICKLES_DES_PDFstar.prob')
+# CAT_path_flagged = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/DESstars_Buzzard_PICKLES_DES_typed.out')
 
 ### Tests on galaxies ###
-# CAT_path = os.path.join(base_dir, 'simulation_catalogs/star_gal/DC1_Buzzard_PICKLES_LSST.out') #output catalog directory
-# PDZ_path = os.path.join(base_dir, 'simulation_catalogs/star_gal/PDZs/DC1_Buzzard_PICKLES_LSST_MIN_ZG.prob')
-# STAR_PDF_path = os.path.join(base_dir, 'simulation_catalogs/star_gal/PDFs/DC1_Buzzard_PICKLES_LSST_PDFstar.prob')
-# CAT_path_flagged = os.path.join(base_dir, 'simulation_catalogs/star_gal/DC1_Buzzard_PICKLES_DES_typed.out')
+CAT_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/DC1_Buzzard_PICKLES_LSST.out') #output catalog directory
+PDZ_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/PDZs/DC1_Buzzard_PICKLES_LSST_MIN_ZG.prob')
+STAR_PDF_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/PDFs/DC1_Buzzard_PICKLES_LSST_PDFstar.prob')
+CAT_path_flagged = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/DC1_Buzzard_PICKLES_DES_typed.out')
 
 ### Other paths ###
 SED_LIST_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/DES/DES_STARCAT/WORK_COMPLETE2/lib_bin/DES_STAR.list')
