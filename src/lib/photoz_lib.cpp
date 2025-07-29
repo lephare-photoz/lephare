@@ -14,7 +14,9 @@
 #include <vector>
 
 // Le Phare
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 
 #include "SED.h"        //our own class to read the keywords
 #include "cosmology.h"  // in order to measure the distance modulus

@@ -7,7 +7,9 @@
 
 #include "onesource.h"
 
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 
 #include <algorithm>
 #include <cmath>
