@@ -3,7 +3,6 @@
 
 #include <ctime>   // date
 #include <string>  // use string
-#include <tuple>   // use std::make_tuple
 #include <vector>  // manipulate vector
 
 #include "SED.h"  // to read the libraries
@@ -38,7 +37,7 @@ class PhotoZ {
                 /// solution, when computing physical parameters.
 
   string cat, typm, catmag, cattyp, zmulti, outf, outsp, outpdz, outpdm;
-  vector<double> shifts0, shifts1, min_err, fac_err, int_pdz, zbmin, zbmax;
+  vector<double> shifts0, min_err, fac_err, int_pdz, zbmin, zbmax;
   vector<flt> allFiltersAdd;
   vector<vector<int>> goodFlt;
   vector<vector<double>> maxkcol;
@@ -69,10 +68,9 @@ class PhotoZ {
     lightLib.clear();
   }
 
-  std::tuple<vector<double>, vector<double>> run_autoadapt(vector<onesource *>);
+  vector<double> run_autoadapt(vector<onesource *>);
 
-  void run_photoz(vector<onesource *> sources, const vector<double> &a0,
-                  const vector<double> &a1);
+  void run_photoz(vector<onesource *> sources, const vector<double> &a0);
 
   string prep_header(vector<string> outkeywords);
 
@@ -116,7 +114,7 @@ keymap read_keymap_from_doc(const string libName);
 vector<string> readOutKeywords(const string outpara);
 
 void auto_adapt(const vector<onesource *> adaptSources, vector<double> &a0,
-                vector<double> &a1, int &converge, int &iteration);
+                int &converge, int &iteration);
 
 vector<vector<int>> bestFilter(int nbFlt, vector<double> gridz,
                                vector<SED *> fullLib, int method,

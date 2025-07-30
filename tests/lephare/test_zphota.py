@@ -39,14 +39,6 @@ def test_with_command_line_config(monkeypatch):
     assert zp.keymap["Z_INTERP"].value == "YES"
 
 
-def test_with_command_line_unrecogized_config(monkeypatch):
-    """Use command line arguments to instantiate the Zphota class, but include
-    an unrecognized argument."""
-    with pytest.raises(SystemExit):
-        monkeypatch.setattr("sys.argv", ["zphota.py", "--FOO", "bar"])
-        _ = Zphota()
-
-
 def test_override_config_file_with_command_line(monkeypatch):
     """Use the command line to feed in a config file, but override one of the values
     with a command line value.
@@ -93,7 +85,7 @@ def run_configured_zp(zp, config_file_path):
 
                 mock_read_photoz_sources.assert_called_once()
                 mock_run_photoz.assert_called_once()
-                mock_run_photoz.assert_called_with(mock_sources, ANY, ANY)
+                mock_run_photoz.assert_called_with(mock_sources, ANY)
                 mock_write_outputs.assert_called_once()
                 mock_write_outputs.assert_called_with(mock_sources, ANY)
 

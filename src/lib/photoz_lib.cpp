@@ -103,7 +103,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   // GLB_CONTEXT Global context to be used for all objects - 0 default (all
   // bands)
-  gbcont = ((key_analysed["GLB_CONTEXT"]).split_long("0", 1))[0];
+  gbcont = ((key_analysed["GLB_CONTEXT"]).split_long("-99", 1))[0];
 
   // FORB_CONTEXT Context to reject some bands for all sources - 0 default
   contforb = ((key_analysed["FORB_CONTEXT"]).split_long("0", 1))[0];
@@ -195,10 +195,6 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   // MIN_THRES threshold to trigger the detection - 0.1 by default
   min_thres = ((key_analysed["MIN_THRES"]).split_double("0.1", 1))[0];
 
-  // PROB_INTZ Integrated PDFz over Z ranges - 0. by default
-  int_pdz = (key_analysed["PROB_INTZ"]).split_double("0.", -1);
-  int npdz = int(int_pdz.size());
-
   /* Output */
 
   // SPEC_OUT Output individual spectra - NO default
@@ -254,20 +250,15 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   zbmax.erase(zbmax.begin(), zbmax.begin() + 1);
 
   /*  AUTO-ADAPT */
-  // APPLY_SYSSHIFT shift to be applied in each filter. Create a fake shifts1
+  // APPLY_SYSSHIFT shift to be applied in each filter.
   // vector
   shifts0 = (key_analysed["APPLY_SYSSHIFT"]).split_double("0.", -1);
-  for (size_t i = 0; i < shifts0.size(); i++) shifts1.push_back(0.);
 
   /* PDZ OUTPUT */
   // PDZ_OUT pdz output file
   outpdz = (key_analysed["PDZ_OUT"]).split_string(nonestring, 1)[0];
   // PDZ_TYPE type of PZD (BAY_ZG,BAY_ZQ,MIN_ZG,MIN_ZQ,MASS,SFR,SSFR,AGE)
   pdftype = ((key_analysed["PDZ_TYPE"]).split_string("BAY_ZG", -1));
-  // PDZ_MABS_FILT filter in which we want the mag abs in each pdz
-  pdz_fabs = (key_analysed["PDZ_MABS_FILT"]).split_int("0", -1);
-  // // PDM_OUT pdf(stellar mass) output file
-  // outpdm = ((key_analysed["PDM_OUT"]).split_string(nonestring,1))[0];
 
   // ADD_EMLINES
   // minimum and maximum models to add emission lines
@@ -325,11 +316,6 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   outputHeader += "# Z_INTERP               : " + bool2string(zintp) + '\n';
   outputHeader +=
       "# Z_METHOD               : " + string(methz ? "MED" : "BEST") + '\n';
-  outputHeader += "# PROB_INTZ              : ";
-  for (int k = 0; k < npdz; k++) {
-    outputHeader += to_string(int_pdz[k]) + ' ';
-  };
-  outputHeader += '\n';
 
   outputHeader += "# MABS_METHOD            : " + to_string(method) + '\n';
   outputHeader += "# MABS_CONTEXT           : ";
@@ -448,7 +434,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 }
 
 keymap read_keymap_from_doc(const string libName) {
-  // List of the keywords to be found in the config file/command line
+  // List of the keywords to be found in the mag_gal doc output.
   string list_keywords[] = {
       "LIB_TYPE", "NUMBER_ROWS", "FILTER_FILE", "FILTERS",   "EM_LINES",
       "LIB_NAME", "NUMBER_SED",  "Z_STEP",      "COSMOLOGY", "EXTINC_LAW",
@@ -969,10 +955,6 @@ vector<onesource *> PhotoZ::read_autoadapt_sources() {
 
       // Keep only sources with a spectroscopic redshift
       if (oneObj->zs > adzmin && oneObj->zs < adzmax) {
-        // Correct the observed magnitudes and fluxes with the coefficients
-        // given in APPLY_SHIFTS
-        if (shifts0.size() == (size_t)imagm)
-          oneObj->adapt_mag(shifts0, shifts1);
         // Keep all the objects within a vector if in the right mag range
         double magSel;
         if (oneObj->ab[fl_auto] > 0)
@@ -997,12 +979,10 @@ vector<onesource *> PhotoZ::read_autoadapt_sources() {
   Run the fit in order to get an adaptation of the zero-points
   Median of the difference between the modeled magnitudes and the observed ones
 */
-std::tuple<vector<double>, vector<double>> PhotoZ::run_autoadapt(
-    vector<onesource *> adaptSources) {
+vector<double> PhotoZ::run_autoadapt(vector<onesource *> adaptSources) {
   double funz0 = lcdm.distMod(gridz[1] / 20.);
-  vector<double> a0, a1;
+  vector<double> a0;
   a0.assign(imagm, 0.);
-  a1.assign(imagm, 0.);
   // Use the spec-z for the adpation
   if (verbose)
     cout << "\n Number of sources read for auto adapt " << adaptSources.size()
@@ -1017,7 +997,7 @@ std::tuple<vector<double>, vector<double>> PhotoZ::run_autoadapt(
       for (auto &oneObj : adaptSources) {
         // Correct the observed magnitudes and fluxes with the coefficients
         // found by auto-adapt
-        oneObj->adapt_mag(a0, a1);
+        oneObj->adapt_mag(a0);
         // set the prior on the redshift, abs mag, ebv, etc on the object
         oneObj->setPriors(magabsB, magabsF);
 
@@ -1037,7 +1017,7 @@ std::tuple<vector<double>, vector<double>> PhotoZ::run_autoadapt(
           cout << " Fit source for adapt " << oneObj->spec << "  \r " << flush;
       }
       // run auto-adapt
-      auto_adapt(adaptSources, a0, a1, converge, iteration);
+      auto_adapt(adaptSources, a0, converge, iteration);
       // Display the results
       if (verbose) {
         cout << "Offsets:  ";
@@ -1047,22 +1027,20 @@ std::tuple<vector<double>, vector<double>> PhotoZ::run_autoadapt(
     }
   }
   if (verbose) cout << endl << "Done with auto-adapt " << endl;
-  return std::make_tuple(a0, a1);
+  return a0;
 }
 
 /*
   function to compare observed magnitudes and predicted ones
 */
 void auto_adapt(const vector<onesource *> adaptSources, vector<double> &a0,
-                vector<double> &a1, int &converge, int &iteration) {
-  vector<double> diff, a0pre, a1pre;
+                int &converge, int &iteration) {
+  vector<double> diff, a0pre;
   double inter;
 
-  // Keep the values of a0 and a1 to check the convergence
+  // Keep the values of a0 to check the convergence
   a0pre.swap(a0);
-  a1pre.swap(a1);
   a0.clear();
-  a1.clear();
   // Number of filters
   int imagm = (adaptSources[0]->ab).size();
 
@@ -1089,10 +1067,8 @@ void auto_adapt(const vector<onesource *> adaptSources, vector<double> &a0,
            [](double a, double b) { return (a > b); });
       // Store the median in a0
       a0.push_back(diff[int(diff.size() / 2.)]);
-      a1.push_back(0.);
     } else {
       a0.push_back(0.);
-      a1.push_back(0.);
     }
     // cout << "Adaptation a0 : " << k << " " << a0[k] << " " << endl;
   }
@@ -1454,6 +1430,12 @@ void PhotoZ::prep_data(onesource *oneObj) {
   oneObj->convertMag();
   // Keep original magnitudes
   oneObj->keepOri();
+  // Correct the observed magnitudes and fluxes with the coefficients
+  // given in APPLY_SHIFTS
+  if (shifts0.size() == (size_t)imagm) {
+    oneObj->adapt_mag(shifts0);
+    oneObj->keepOri();  // Include the shifts in the original flux
+  }
   // Define the filters used for the fit based on the context
   oneObj->fltUsed(gbcont, contforb, imagm);
   return;
@@ -1470,8 +1452,7 @@ void PhotoZ::prep_data(vector<onesource *> sources) {
 /*
   Central part of the code to fit the templates and measure the photo-z
 */
-void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
-                        const vector<double> &a1) {
+void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
   // Open the output file
   // AUTO_ADAPT adaptation of the zero-points
   bool autoadapt = keys["AUTO_ADAPT"].split_bool("NO", 1)[0];
@@ -1591,12 +1572,8 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
       cout << "Fit source " << nobj << " with Id " << oneObj->spec << " \r "
            << flush;
     nobj++;
-    // Correct the observed magnitudes and fluxes with the coefficients given in
-    // APPLY_SHIFTS
-    if (shifts0.size() == (size_t)imagm) oneObj->adapt_mag(shifts0, shifts1);
-    // Correct the observed magnitudes and fluxes with the coefficients found by
     // auto-adapt
-    if (autoadapt) oneObj->adapt_mag(a0, a1);
+    if (autoadapt) oneObj->adapt_mag(a0);
     // set the prior on the redshift, abs mag, ebv, etc on the object
     oneObj->setPriors(magabsB, magabsF);
     // If ZFIX=YES select the templates with the closest redshift to zs,
@@ -1628,7 +1605,6 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0,
     // find the mode of the marginalized PDF and associated uncertainties,
     // centered on the mode
     oneObj->mode();
-
     // The rest of the procedure requires that a specific choice be made for the
     // redshift of GAL solutions, to be considered for computation of physical
     // quantities, among the following choices: the spectro zs, the best chi2

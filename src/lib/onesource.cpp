@@ -65,7 +65,6 @@ void onesource::fltUsed(const long gbcont, const long contforb,
   vector<int> bused;
   busnorma.clear();
   busul.clear();
-
   // Replace the context by the global context if defined
   if (gbcont >= 0) cont = gbcont;
 
@@ -225,15 +224,15 @@ void onesource::keepOri() {
 }
 
 /*
- MODIFY THE OBSERVED MAGNITUDES WITH THE VALUE A0 and A1
+ MODIFY THE OBSERVED MAGNITUDES WITH THE VALUE A0
 */
-void onesource::adapt_mag(vector<double> a0, vector<double> a1) {
+void onesource::adapt_mag(vector<double> a0) {
   double corr;
   // Loop over each filter
   for (size_t k = 0; k < ab.size(); k++) {
     // Define the correction to be applied to the observed magnitudes (same
     // convention as before)
-    corr = a0[k] + a1[k] * 0.;
+    corr = a0[k];
     // Observed magnitudes and flux with the correction
     // apply the offset a0, in mag. Offset of +2.5 mag multiplies the flux by 10
     // Convention inverted: it's like applying the offset to the model (or to
@@ -293,7 +292,6 @@ void onesource::substellar(const bool substar, vector<flt> allFilters) {
 void onesource::rescale_flux_errors(const vector<double> min_err,
                                     const vector<double> fac_err) {
   size_t imagm = ab.size();
-
   // check if the number of filters in min_err corresponds to the expected one
   if ((size_t)imagm == min_err.size() || min_err.size() == 1) {
     for (size_t k = 0; k < imagm; k++) {
@@ -340,8 +338,12 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
   int number_threads = 1, thread_id = 0;
   size_t imagm = ab.size();
 
-  // Do a local minimisation per thread (store chi2 and index)
-  // Catch first the number of threads
+  // Reinitialise the chi2 for each library because the fit could be run several
+  // times on the same source
+  for (int k = 0; k < 3; k++) chimin[k] = HIGH_CHI2;
+
+    // Do a local minimisation per thread (store chi2 and index)
+    // Catch first the number of threads
 #ifdef _OPENMP
   number_threads = omp_get_max_threads();
 #endif
@@ -800,34 +802,34 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
   // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] / 5:["AGE"] /
   // 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] / 10:["MIN_ZQ"] /
   // 11:["BAY_ZG"] / 12:["BAY_ZQ"]
-  double PDFzloc[pdfmap[11].size()];
+  vector<double> PDFzloc(pdfmap[11].size());
   for (size_t i = 0; i < pdfmap[11].size(); ++i) PDFzloc[i] = 0.0;
 
-  double PDFzqloc[pdfmap[12].size()];
+  vector<double> PDFzqloc(pdfmap[12].size());
   for (size_t i = 0; i < pdfmap[12].size(); ++i) PDFzqloc[i] = 0.0;
 
-  double PDFmassloc[pdfmap[0].size()];
+  vector<double> PDFmassloc(pdfmap[0].size());
   for (size_t i = 0; i < pdfmap[0].size(); ++i) PDFmassloc[i] = 0.0;
 
-  double PDFSFRloc[pdfmap[1].size()];
+  vector<double> PDFSFRloc(pdfmap[1].size());
   for (size_t i = 0; i < pdfmap[1].size(); ++i) PDFSFRloc[i] = 0.0;
 
-  double PDFsSFRloc[pdfmap[2].size()];
+  vector<double> PDFsSFRloc(pdfmap[2].size());
   for (size_t i = 0; i < pdfmap[2].size(); ++i) PDFsSFRloc[i] = 0.0;
 
-  double PDFAgeloc[pdfmap[5].size()];
+  vector<double> PDFAgeloc(pdfmap[5].size());
   for (size_t i = 0; i < pdfmap[5].size(); ++i) PDFAgeloc[i] = 0.0;
 
-  double PDFLdustloc[pdfmap[3].size()];
+  vector<double> PDFLdustloc(pdfmap[3].size());
   for (size_t i = 0; i < pdfmap[3].size(); ++i) PDFLdustloc[i] = 0.0;
 
-  double PDFcol1loc[pdfmap[6].size()];
+  vector<double> PDFcol1loc(pdfmap[6].size());
   for (size_t i = 0; i < pdfmap[6].size(); ++i) PDFcol1loc[i] = 0.0;
 
-  double PDFcol2loc[pdfmap[7].size()];
+  vector<double> PDFcol2loc(pdfmap[7].size());
   for (size_t i = 0; i < pdfmap[7].size(); ++i) PDFcol2loc[i] = 0.0;
 
-  double PDFmrefloc[pdfmap[8].size()];
+  vector<double> PDFmrefloc(pdfmap[8].size());
   for (size_t i = 0; i < pdfmap[8].size(); ++i) PDFmrefloc[i] = 0.0;
 
   // Decide if the uncertainties on the rest-frame colors should be analysed
@@ -856,11 +858,19 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
 #pragma omp parallel private(pos, col1, col2, rfSED, prob) firstprivate( \
         thread_id, dimzg, number_threads) shared(locChi2, locInd, fulllib)
   {
+// We need to define the vector reduction we want, which is elementwise addition
+#pragma omp declare reduction(                                  \
+        vec_double_plus : std::vector<double> : std::transform( \
+                omp_out.begin(), omp_out.end(), omp_in.begin(), \
+                    omp_out.begin(), std::plus<double>()))      \
+    initializer(omp_priv = omp_orig)
+
     // Catch the name of the local thread in the parallelisation
     thread_id = omp_get_thread_num();
-#pragma omp for schedule(static, 10000) reduction(                           \
-        + : PDFzloc, PDFzqloc, PDFmassloc, PDFSFRloc, PDFsSFRloc, PDFAgeloc, \
-            PDFLdustloc, PDFcol1loc, PDFcol2loc, PDFmrefloc) nowait
+#pragma omp for schedule(static, 10000)                                       \
+    reduction(vec_double_plus : PDFzloc, PDFzqloc, PDFmassloc, PDFSFRloc,     \
+                  PDFsSFRloc, PDFAgeloc, PDFLdustloc, PDFcol1loc, PDFcol2loc, \
+                  PDFmrefloc) nowait
 #endif
     // Loop over all SEDs, which is parallelized
     for (size_t i = 0; i < va.size(); i++) {
@@ -1003,16 +1013,16 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
   // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] / 5:["AGE"] /
   // 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] / 10:["MIN_ZQ"] /
   // 11:["BAY_ZG"] / 12:["BAY_ZQ"] Put back 1 dimension array into PDF objects
-  pdfbayzg.vPDF.assign((PDFzloc), (PDFzloc + pdfbayzg.size()));
-  pdfbayzq.vPDF.assign((PDFzqloc), (PDFzqloc + pdfbayzq.size()));
-  pdfmass.vPDF.assign((PDFmassloc), (PDFmassloc + pdfmass.size()));
-  pdfsfr.vPDF.assign((PDFSFRloc), (PDFSFRloc + pdfsfr.size()));
-  pdfssfr.vPDF.assign((PDFsSFRloc), (PDFsSFRloc + pdfssfr.size()));
-  pdfage.vPDF.assign((PDFAgeloc), (PDFAgeloc + pdfage.size()));
-  pdfldust.vPDF.assign((PDFLdustloc), (PDFLdustloc + pdfldust.size()));
-  pdfcol1.vPDF.assign((PDFcol1loc), (PDFcol1loc + pdfcol1.size()));
-  pdfcol2.vPDF.assign((PDFcol2loc), (PDFcol2loc + pdfcol2.size()));
-  pdfmref.vPDF.assign((PDFmrefloc), (PDFmrefloc + pdfmref.size()));
+  pdfbayzg.vPDF = PDFzloc;
+  pdfbayzq.vPDF = PDFzqloc;
+  pdfmass.vPDF = PDFmassloc;
+  pdfsfr.vPDF = PDFSFRloc;
+  pdfssfr.vPDF = PDFsSFRloc;
+  pdfage.vPDF = PDFAgeloc;
+  pdfldust.vPDF = PDFLdustloc;
+  pdfcol1.vPDF = PDFcol1loc;
+  pdfcol2.vPDF = PDFcol2loc;
+  pdfmref.vPDF = PDFmrefloc;
 
   // Normalize the PDF
 
@@ -1507,12 +1517,16 @@ void onesource::interp(const bool zfix, const bool zintp, const cosmo &lcdm) {
   }
 
   if (zintp) {
-    double target_z_gal = pdfmap[9].int_parab();
-    double target_z_qso = pdfmap[10].int_parab();
-    dmmin[0] *= lcdm.flux_rescaling(zmin[0], target_z_gal);
-    zmin[0] = target_z_gal;
-    dmmin[1] *= lcdm.flux_rescaling(zmin[1], target_z_qso);
-    zmin[1] = target_z_qso;
+    if (zmin[0] != INVALID_Z) {
+      double target_z_gal = pdfmap[9].int_parab();
+      dmmin[0] *= lcdm.flux_rescaling(zmin[0], target_z_gal);
+      zmin[0] = target_z_gal;
+    }
+    if (zmin[1] != INVALID_Z) {
+      double target_z_qso = pdfmap[10].int_parab();
+      dmmin[1] *= lcdm.flux_rescaling(zmin[1], target_z_qso);
+      zmin[1] = target_z_qso;
+    }
     return;
   }
 }

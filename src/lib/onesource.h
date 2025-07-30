@@ -83,20 +83,20 @@ class onesource {
 
   // Minimal constructor of the source
   onesource() {
-    spec = "1";  // ident
-    zs = -99.9;  // spectroscopic redshift
-    cont = 0;    // context
+    spec = "1";      // ident
+    zs = INVALID_Z;  // spectroscopic redshift
+    cont = 0;        // context
     str_inp = ' ';
     for (int k = 0; k < 3; k++) {
-      zmin[k] = -99.9;
-      indmin[k] = -99;
+      zmin[k] = INVALID_Z;
+      indmin[k] = INVALID_INDEX;
       chimin[k] = HIGH_CHI2;
-      imasmin[k] = -99;
+      imasmin[k] = INVALID_INDEX;
     }
-    zminIR = -99.9;
-    indminIR = -99;
+    zminIR = INVALID_Z;
+    indminIR = INVALID_INDEX;
     chiminIR = HIGH_CHI2;
-    imasminIR = -99;
+    imasminIR = INVALID_INDEX;
     nbused = 0;
     pos = 0;
   }
@@ -233,7 +233,7 @@ class onesource {
   void generatePDF_IR(vector<SED *> &fulllib);
   void mode();
   void interp_lib(vector<SED *> &fulllib, const int imagm, cosmo lcdm);
-  void adapt_mag(vector<double> a0, vector<double> a1);
+  void adapt_mag(vector<double> a0);
   void substellar(const bool substar, vector<flt> allFilters);
   void absmag(const vector<vector<int>> &bestFlt,
               const vector<vector<double>> &maxkcolor, cosmo lcdm,

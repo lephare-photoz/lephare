@@ -28,6 +28,7 @@ dependencies = [
     "requests",
     "pooch",
     "platformdirs",
+    "wurlitzer",#allows C++ cout to be captured in a jupyter notebook and forwarded to standard output on terminal
 ]
 
 [project.scripts]

@@ -1,36 +1,65 @@
 import os
+from contextlib import suppress
 
-from lephare._lephare import flt, keyword, write_output_filter
-from lephare.runner import Runner
+from ._lephare import flt, write_output_filter
+from .runner import Runner
 
 __all__ = [
     "Filter",
 ]
 
-global filter_config_keys
-filter_config_keys = ["FILTER_REP", "FILTER_LIST", "TRANS_TYPE", "FILTER_CALIB", "FILTER_FILE"]
+config_keys = {
+    "verbose": "increase onscreen verbosity",
+    "FILTER_REP": "path to repository where filter files are searched",
+    "FILTER_LIST": "list of filter files, to be searched in FILTER_REP if relative",
+    "TRANS_TYPE": "Transmission curve type: 0[def] for energy, 1 for photon nb",
+    "FILTER_CALIB": "calibration system for the filter:\
+    0[def]: fnu=cst 1: nu.fnu=cst 2: fnu=nu 3: fnu=Black Body @ T=10000K\
+    4: for MIPS (leff with nu fnu=ctt and flux with BB @ 10000K",
+    "FILTER_FILE": "output filter filename, will be saved in $LEPHAREWORK/filt/",
+}
 
 
 class Filter(Runner):
-    """Build the filter files based on config
+    """
+    The specific arguments to the Filter class are
 
-    Parameters
-    ----------
-    config_file : `string`
+    verbose
+                increase onscreen verbosity
+    FILTER_REP
+                path to repository where filter files are searched
+    FILTER_LIST
+                list of filter files, to be searched in FILTER_REP if relative
+    TRANS_TYPE
+                Transmission curve type: 0[def] for energy, 1 for photon nb
+    FILTER_CALIB
+                calibration system for the filter:
+                  0[def]: fnu=cst
+                  1: nu.fnu=cst
+                  2: fnu=nu
+                  3: fnu=Black Body @ T=10000K
+                  4: for MIPS (leff with nu fnu=ctt and flux with BB @ 10000K
+    FILTER_FILE
+                output filter filename, will be saved in $LEPHAREWORK/filt/
     """
 
-    def __init__(self, config_file=None, config_keymap=None):
-        super().__init__(filter_config_keys, config_file, config_keymap)
+    def update_help(self):
+        """Add specific help information"""
+        doc = "Build the LePHARE internal representation of the set of filters to be used\n"
+        with suppress(Exception):
+            self.parser.usage = doc
+        self.__doc__ = doc + "\n"  # + inspect.getdoc(Filter)
+
+    def __init__(self, config_file=None, config_keymap=None, **kwargs):
+        super().__init__(config_keys, config_file, config_keymap, **kwargs)
 
     def run(self, **kwargs):
         """Update keymap and verbosity based on call arguments.
 
         This is only when the code is called from python session.
         """
-        self.verbose = kwargs.pop("verbose", self.verbose)
-        for k, v in kwargs.items():
-            if k.upper() in self.keymap:
-                self.keymap[k.upper()] = keyword(k.upper(), str(v))
+
+        super().run(**kwargs)
 
         keymap = self.keymap
         flt_rep = keymap["FILTER_REP"].split_string(os.path.join(os.environ["LEPHAREDIR"], "filt/"), 1)[0]
@@ -59,18 +88,18 @@ class Filter(Runner):
 
         vec_flt = []
         for k, (f, t, c) in enumerate(zip(flt_files, transtyp, calibtyp)):
-            flt_file = os.path.join(flt_rep, f)
+            flt_file = f if os.path.isabs(f) else os.path.join(flt_rep, f)
             one_filt = flt(k, flt_file, t, c)
             vec_flt.append(one_filt)
 
         write_output_filter(filtfile, filtdoc, vec_flt)
 
 
-def main():
+def main():  # pragma no cover
     runner = Filter()
     runner.run()
     runner.end()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma no cover
     main()

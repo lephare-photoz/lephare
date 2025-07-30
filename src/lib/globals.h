@@ -11,6 +11,8 @@
 #define INVALID_VAL -9999.0
 #define INVALID_MAG -9999.0
 #define INVALID_PHYS -999.0
+#define INVALID_Z -99.9
+#define INVALID_INDEX -99
 #define NULL_FLUX 0.0
 #define HIGH_MAG 1000.0
 #define HIGH_CHI2 1.0e9
@@ -34,7 +36,7 @@ extern const double f_ga;
 
 void get_lephare_env();
 
-bool check_first_char(string maligne);
+bool check_first_char(const string &maligne);
 
 double blackbody(double T, double lambda);
 
