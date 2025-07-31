@@ -1,6 +1,7 @@
 import os
 
 import lephare as lp
+from astropy.table import Table
 from lephare.prepare import all_types_to_keymap
 
 
@@ -16,6 +17,8 @@ def test_prepare(test_data_dir: str):
     assert default_config["FILTER_REP"] == str(os.path.join(test_data_dir, "filt"))
     # Check it made the galaxy binary file
     assert os.path.exists(os.path.join(test_dir, "../tmp/lib_mag/CE_COSMOS.bin"))
+    gal_mag = Table.read(os.path.join(test_dir, "../tmp/lib_mag/CE_COSMOS.dat"), format="ascii")
+    assert len(gal_mag.colnames) == 15  # Contains additional EM_DISPERSION column
 
 
 def test_all_types_to_keymap():
