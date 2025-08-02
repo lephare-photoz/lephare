@@ -15,7 +15,12 @@
 using std::string;
 using std::vector;
 
-// Class filter
+/*! \brief Extragalactic Opacity
+ *
+ * LePHARE can correct for extragalactic opacity based on models that are
+ * stored in <a
+ * href="https://github.com/lephare-photoz/lephare-data/opa">lephare-data/opa</a>.
+ */
 class opa {
  private:
   string opaFile;
