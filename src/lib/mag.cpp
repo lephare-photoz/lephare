@@ -588,6 +588,7 @@ vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
                 }
                 // indicate that the emission lines have been computed
                 oneSEDInt.has_emlines = true;
+                oneSEDInt.fracEm = fracEm[l];
                 if (oneSEDInt.red > 1.e-10) oneEmInt.lamb_flux.clear();
                 oneEmInt.clean();
               }
