@@ -1,6 +1,6 @@
 import numpy as np
 from lephare._lephare import blackbody, check_first_char, indexes_in_vec
-
+from lephare._lephare import bool2string
 
 def test_globals_first_char():
     assert check_first_char("test")
@@ -14,6 +14,7 @@ def test_globals_first_char():
 
 def test_globals_blackbody():
     assert np.isclose(blackbody(10000, 500), 1.018807e-26)
+    assert np.isclose(blackbody(10, 500), 1.018807e-26)
 
 
 def test_indexes_in_vec():
@@ -22,3 +23,7 @@ def test_indexes_in_vec():
     assert indexes_in_vec(val, v, 0.1) == [1]
     assert indexes_in_vec(val, v, 0.01) == []
     assert indexes_in_vec(val, v, 0.3) == [0, 1]
+
+def test_various():
+    assert bool2string(0) == "NO"
+    assert bool2string(1) == "YES"
