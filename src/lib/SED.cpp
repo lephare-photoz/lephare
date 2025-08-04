@@ -1586,7 +1586,7 @@ void GalSED::writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
   ofsBin.write((char *)&nummod, sizeof(int));      // Index du template
   ofsBin.write((char *)&extlawId, sizeof(int));    // type du model
   ofsBin.write((char *)&ebv, sizeof(double));      // E(B-V)
-  ofsBin.write((char *)&ltir, sizeof(double));     // LTIR
+  ofsBin.write((char *)&fracEm, sizeof(double));   // fracEm index
   ofsBin.write((char *)&red, sizeof(double));      // redshift
   ofsBin.write((char *)&distMod, sizeof(double));  // distance modulus
   ofsBin.write((char *)&age, sizeof(double));      // age
@@ -1634,7 +1634,7 @@ void GalSED::writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
     // start the numbering of attenuation curves at 1 in output
     ofsDat << setw(3) << extlawId + 1 << " ";
     ofsDat << setw(3) << ebv << " ";
-    ofsDat << setw(12) << ltir << " ";
+    ofsDat << setw(12) << fracEm << " ";
     ofsDat << setw(5) << red << " ";
     ofsDat << setw(12) << distMod << " ";
     ofsDat << setw(12) << age << " ";
@@ -1684,7 +1684,7 @@ void GalSED::readMagBin(ifstream &ins) {
   ins.read((char *)&nummod, sizeof(int));
   ins.read((char *)&extlawId, sizeof(int));
   ins.read((char *)&ebv, sizeof(double));
-  ins.read((char *)&ltir, sizeof(double));
+  ins.read((char *)&fracEm, sizeof(double));
   ins.read((char *)&red, sizeof(double));
   ins.read((char *)&distMod, sizeof(double));
   ins.read((char *)&age, sizeof(double));
