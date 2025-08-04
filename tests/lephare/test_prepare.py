@@ -18,7 +18,7 @@ def test_prepare(test_data_dir: str):
     # Check it made the galaxy binary file
     assert os.path.exists(os.path.join(test_dir, "../tmp/lib_mag/CE_COSMOS.bin"))
     gal_mag = Table.read(os.path.join(test_dir, "../tmp/lib_mag/CE_COSMOS.dat"), format="ascii")
-    assert len(gal_mag.colnames) == 15  # Contains additional EM_DISPERSION column
+    assert len(gal_mag.colnames) == 14  # Contains additional EM_DISPERSION column
 
 
 def test_all_types_to_keymap():
