@@ -77,7 +77,7 @@ EM_DISPERSION   0.5,0.75,1.,1.5,2. # Dispersion allowed in the emission line flu
 ADD_DUSTEM      NO               # Add the dust emission in templates when missing 
 #
 #------------------     ASCII OUTPUT FILES OPTION       -------------------------------
-LIB_ASCII       NO		# Writing Output in ASCII file (-> working directory)
+LIB_ASCII       YES		# Writing Output in ASCII file (-> working directory)
 #
 
 
