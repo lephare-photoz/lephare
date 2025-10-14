@@ -333,11 +333,9 @@ void Mag::read_B12() {
 // Define the redshift grid
 // Associate it to a grid in age and distance modulus
 void Mag::def_zgrid() {
-  // redshift grid, depending on the method
-  gridz = zgrid(dz, zmin, zmax);
-
-  // Loop over the redshift grid and measure the age of the Universe and the
-  // distance modulus
+  set_zgrid(dz, zmin, zmax);
+  // Loop over the redshift grid and measure the age
+  // of the Universe and the distance modulus
   for (size_t k = 0; k < gridz.size(); k++) {
     gridT.push_back(lcdm.time(gridz[k]));
     gridDM.push_back(lcdm.distMod(gridz[k]));
