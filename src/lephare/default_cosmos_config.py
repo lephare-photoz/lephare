@@ -34,7 +34,7 @@ default_cosmos_config = {
     ),
     "EXTERNALZ_FILE": "NONE",
     "EXTINC_LAW": ("SMC_prevot.dat,SB_calzetti.dat,SB_calzetti_bump1.dat,SB_calzetti_bump2.dat"),
-    "FILTER_CALIB": ("0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1",),
+    "FILTER_CALIB": ("0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1"),
     "FILTER_FILE": "filter_cosmos",
     "FILTER_LIST": (
         "cosmos/u_cfht.lowres,cosmos/u_new.pb,hsc/gHSC.pb,hsc/rHSC.pb,"
