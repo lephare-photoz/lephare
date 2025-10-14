@@ -1,7 +1,7 @@
 #include <pybind11/numpy.h>
+#include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
 namespace py = pybind11;
 
 #include <string>
@@ -60,7 +60,9 @@ PYBIND11_MODULE(_lephare, mod) {
            "Compute metric distance given redshift z.", py::arg("z"))
       .def("time", py::vectorize(&cosmo::time), "Compute time at redshift z.",
            py::arg("z"))
-      .def("flux_rescaling", &cosmo::flux_rescaling, "Compute flux rescaling.");
+      .def("flux_rescaling", &cosmo::flux_rescaling, "Compute flux rescaling.")
+      .def(py::self == py::self)
+      .def(py::self != py::self);
 
   mod.def("zgrid", &zgrid, "Generate a redshift grid.");
   mod.def("indexz", &indexz, "Get the index for a redshift value.");

@@ -5,9 +5,11 @@ from lephare import cosmo, indexz, zgrid
 
 def test_cosmology():
     # test default arguments
-    _ = cosmo()
+    c = cosmo()
+    assert c == cosmo(70, 0.3, 0.7)
     # test setting arguments
-    _ = cosmo(h0=67, om0=0.27, l0=0.73)
+    d = cosmo(h0=67, om0=0.27, l0=0.73)
+    assert d != c
 
 
 def test_cosmology_zgrid():
