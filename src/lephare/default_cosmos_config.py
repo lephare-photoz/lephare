@@ -27,12 +27,26 @@ default_cosmos_config = {
     "EM_DISPERSION": "0.5,0.75,1.,1.5,2.",
     "EM_LINES": "EMP_UV",
     "ERR_FACTOR": "1.5",
-    "ERR_SCALE": "0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.05,0.05,0.05,0.05,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.05,0.05,0.05,0.05,0.1,0.2,0.3",  # noqa: E501
+    "ERR_SCALE": (
+        "0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.05,0.05,0.05,0.05,0.02,0.02,"
+        "0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.05,0.05,0.05,0.05,"
+        "0.1,0.2,0.3"
+    ),
     "EXTERNALZ_FILE": "NONE",
-    "EXTINC_LAW": "SMC_prevot.dat,SB_calzetti.dat,SB_calzetti_bump1.dat,SB_calzetti_bump2.dat",
-    "FILTER_CALIB": "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1",
+    "EXTINC_LAW": ("SMC_prevot.dat,SB_calzetti.dat,SB_calzetti_bump1.dat,SB_calzetti_bump2.dat"),
+    "FILTER_CALIB": ("0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1",),
     "FILTER_FILE": "filter_cosmos",
-    "FILTER_LIST": "cosmos/u_cfht.lowres,cosmos/u_new.pb,hsc/gHSC.pb,hsc/rHSC.pb,hsc/iHSC.pb,hsc/zHSC.pb,hsc/yHSC.pb,vista/Y.lowres,vista/J.lowres,vista/H.lowres,vista/K.lowres,cosmos/IB427.lowres,cosmos/IB464.lowres,cosmos/IB484.lowres,cosmos/IB505.lowres,cosmos/IB527.lowres,cosmos/IB574.lowres,cosmos/IB624.lowres,cosmos/IB679.lowres,cosmos/IB709.lowres,cosmos/IB738.lowres,cosmos/IB767.lowres,cosmos/IB827.lowres,cosmos/NB711.lowres,cosmos/NB816.lowres,vista/NB118.lowres,cosmos/irac_ch1.lowres,cosmos/irac_ch2.lowres,cosmos/irac_ch3.lowres,cosmos/irac_ch4.lowres",  # noqa: E501
+    "FILTER_LIST": (
+        "cosmos/u_cfht.lowres,cosmos/u_new.pb,hsc/gHSC.pb,hsc/rHSC.pb,"
+        "hsc/iHSC.pb,hsc/zHSC.pb,hsc/yHSC.pb,vista/Y.lowres,vista/J.lowres,"
+        "vista/H.lowres,vista/K.lowres,cosmos/IB427.lowres,"
+        "cosmos/IB464.lowres,cosmos/IB484.lowres,cosmos/IB505.lowres,"
+        "cosmos/IB527.lowres,cosmos/IB574.lowres,cosmos/IB624.lowres,"
+        "cosmos/IB679.lowres,cosmos/IB709.lowres,cosmos/IB738.lowres,"
+        "cosmos/IB767.lowres,cosmos/IB827.lowres,cosmos/NB711.lowres,"
+        "cosmos/NB816.lowres,vista/NB118.lowres,cosmos/irac_ch1.lowres,"
+        "cosmos/irac_ch2.lowres,cosmos/irac_ch3.lowres,cosmos/irac_ch4.lowres"
+    ),
     "FILTER_REP": f"{lp.LEPHAREDIR}/filt",
     "FIR_CONT": "-1",
     "FIR_FREESCALE": "YES",
