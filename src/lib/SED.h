@@ -18,10 +18,16 @@
 #include "opa.h"
 
 //! types of object that LePHARE can treat distinctively
-enum object_type { GAL, QSO, STAR };
+enum object_type {
+  GAL, /*!< Galaxy object */
+  QSO, /*!< AGN object (QSO naming is historical) */
+  STAR /*!< Star object */
+};
 
-/*
- * General SED base class
+/*! \brief SED base class
+ *
+ * The SED class is in charge of representing a template and performing
+ * all the necessary computation on it.
  */
 class SED {
  protected:
@@ -46,21 +52,42 @@ class SED {
       index_z0;  ///< index in the full list of SEDs corresponding to the z=0
                  ///< version of the current SED.
 
-  double red, chi2 = HIGH_CHI2, dm, lnir, luv, lopt, inter;
-  double mass, age, sfr, ssfr,
-      ltir;  // need to put it out of GalSED since used in the PDF without
-             // knowing that it's a gal.
-  double ebv, mag0, distMod;
-  int extlawId;
+  double red,            ///< redshift of this SED
+      chi2 = HIGH_CHI2,  ///< best fit chi2 associated with this SED
+      dm,                ///< normalization of the SED
+      lnir,              ///< NIR luminosity \f$\int_{2.1\,\mu m}^{2.3\,\mu m}
+      luv,               ///< UV luminosity \f$\int_{0.21\,\mu m}^{0.25\,\mu m}
+                         ///< L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
+      lopt;  ///< optical luminosity \f$\int_{0.55\,\mu m}^{0.65\,\mu m}
+             ///< L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
+
+  double mass,  ///< mass in \f$M_\odot\f$
+      age,      ///< age in year (yr)
+      sfr,      ///< Star Formation Rate in \f$M_\odot\f$/yr
+      ssfr,     ///< Specific SFR, defined as sfr / mass
+      ltir;  ///< \f$\int_{8\,\mu m}^{1000\,\mu m}    L_\lambda\; d\lambda\f$ in
+             ///< Log unit of \f$L_\odot\f$
+
+  double ebv,  ///< E(B-V) extinction value applied to the SED
+      mag0, distMod;
+
+  int extlawId;  ///< index of the extinction law when dust attenuation has been
+                 ///< applied
+
   double qi[4];  ///< Store the number flux (phot/cm\f$^{-2}\f$s\f$^{-1}\f$) of
                  ///< ionizing photons for HeII, HeI, H, and H2. See
                  ///< SED::calc_ph. In practice, qi[2] only is used, and only
                  ///< for the physical modeling of emission lines
                  ///< (EM_LINES="PHYS", see GalMag::read_SED)
-  vector<oneElLambda> fac_line;
 
-  // Constructors defined in SED.cpp
-  SED(const string nameC, int nummodC = 0, string typeC = "G");
+  vector<oneElLambda> fac_line;  ///< oneElLambda vector storing emission lines
+
+  /*! Generic constructor
+   * \param name Arbitrary name for the SED object
+   * \param nummod Identification number of the SED object
+   * \param type One of g/G, q/Q or s/S for GAL, QSO, or Star type objects
+   */
+  SED(const string name, int nummod = 0, string type = "G");
   SED(const string nameC, double tauC, double ageC, int nummodC, string typeC,
       int idAgeC);
   SED(SED const &p) {
@@ -139,7 +166,7 @@ class SED {
   ///@param lmin start of the lambda vector
   ///@param lmax end of the lambda vector
   ///@param Nsteps number of intervals between $lambda values (hence there are
-  /// Nsteps+1 values of \lambda)
+  /// Nsteps+1 values of \f$\lambda\f$)
   ///@param calib: parameter FILTER_CALIB passed as argument to define the
   /// calibration function \f$C(\lambda)\f$
   /// - calib=0 : \f$C(\lambda)=\lambda^{-2}\f$
@@ -221,11 +248,23 @@ class SED {
    * Results are stored in the q_i array member of size 4 of the SED instance.
    */
   virtual void calc_ph() {};  // Number of inoizing photons
+
+  /*! Compute some integrals to be stored in the object
+   * This computes variables SED::luv, SED::lopt, SED::lnir, and SED::ltir
+   */
   virtual void SEDproperties() {};
+
+  /*! Generate spectrum at given redshift, with given normalization, and
+   * adding emission lines and extragalactic extinction
+   * \param zin Redshift of the SED
+   * \param dmin Scale normalization of the SED
+   * \param opaAll Vector of opacities to compute extinction along the line of
+   * sight
+   */
   void generate_spectra(double zin = 0.0, double dmin = 1.0,
                         vector<opa> opaAll = {});
 
-  // in read_lib for zphota
+  ///< clean content of base class
   virtual void clean() {
     lamb_flux.clear();
     mag.clear();
@@ -238,18 +277,46 @@ class SED {
     return ((*this).nummod == other.nummod && (*this).ebv == other.ebv &&
             (*this).age == other.age);
   }
-  pair<vector<double>, vector<double>> get_data_vector(double, double, bool,
+
+  /*!  Return the pair of vectors [lambdas, vals] of wavelength and spectrum
+   * values
+   * \param minl Minimum \f$\lambda\f$ of the vector
+   * \param maxl Maximum \f$\lambda\f$ of the vector
+   * \param mag If true, return magnitudes as vals
+   * instead of fluxes
+   * \param mag offset, mag system to be used in case mag is true.
+   */
+  pair<vector<double>, vector<double>> get_data_vector(double minl, double mxl,
+                                                       bool mag,
                                                        double offset = 0.0);
 
+  /*! Apply transformation of the sed based on the redshift (stored in variable
+   * red) \f$val\rightarrow val/(1+z)\f$ and \f$\lambda\rightarrow
+   * \lambda(1+z)\f$
+   */
   void redshift();
+
+  /*! Apply dust extinction to the SED (GAL and GSO only)
+   * \param ebv value of E(B-V)
+   * \param ext_obj instance of class ext
+   */
   void applyExt(const double ebv, const ext &oneext);
+
+  /*! Apply dust extinction to the emission lines (stored in fac_line)
+   * Only for galaxies and QSO
+   * \param ext_obj instance of class ext
+   */
   void applyExtLines(const ext &oneext);
+
   void applyOpa(const vector<opa> &opaAll);
 
-  // helper function for python binding
+  /// Helper function to append the oneElLambda(lambda, value) object to the sed
+  /// vector
   inline void emplace_back(const double lambda, const double value) {
     lamb_flux.emplace_back(lambda, value, 1);
   }
+
+  /// Helper function to set the sed vector as lambda=x and val = y
   inline void set_vector(const vector<double> &x, const vector<double> &y) {
     if (x.size() != y.size()) throw runtime_error("vector sizes are different");
     for (size_t k = 0; k < x.size(); k++) {
@@ -258,14 +325,17 @@ class SED {
   }
 };
 
-/// concrete SED implementation for galaxy objects
+/// concrete SED implementation for galaxy objects (object_type GAL)
 class GalSED : public SED {
  public:
   vector<double> flEm;
   string format;
-  double tau, zmet, d4000, fracEm;
+  double tau, zmet, d4000,
+      fracEm;  //< fraction of the emmission line considered
 
+  /// Copy constructor from base class
   GalSED(SED const &p) : SED(p) { nlib = GAL; };
+  /// Copy constructor
   GalSED(GalSED const &p) : SED(p) {
     flEm = p.flEm;
     format = p.format;
@@ -278,7 +348,7 @@ class GalSED : public SED {
     fracEm = p.fracEm;
   };
 
-  // Constructors defined in SED.cpp
+  /// Standard constructor
   GalSED(const string nameC, int nummodC = 0);
   GalSED(const string nameC, double tauC, double ageC, string formatC,
          int nummodC, string typeC, int idAgeC);
@@ -292,6 +362,9 @@ class GalSED : public SED {
   void generateEmPhys(double zmet, double qi);
   void generateEmSpectra(int nstep);
   void sumEmLines();
+
+  /// Compute the k-correction in each filter as :
+  /// \f$k = mag(z) - mag(z=0) - \mu\f$
   void kcorrec(const vector<double> &magz0);
   void rescaleEmLines();
   void zdepEmLines(int flag);
@@ -303,13 +376,15 @@ class GalSED : public SED {
   void writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
                 vector<flt> allFilters, string magtyp) const;
   void readMagBin(ifstream &ins);
+
+  ///< clean content of class
   void clean() {
     SED::clean();
     flEm.clear();
   }
 };
 
-/// concrete SED implementation for QSO objects
+/// concrete SED implementation for AGN/QSO objects (object_type QSO)
 class QSOSED : public SED {
  public:
   QSOSED(SED const &p) : SED(p) { nlib = QSO; };
@@ -323,7 +398,7 @@ class QSOSED : public SED {
   void readMagBin(ifstream &ins);
 };
 
-/// concrete SED implementation for star objects
+/// concrete SED implementation for star objects (object_type Star)
 class StarSED : public SED {
  public:
   StarSED(SED const &p) : SED(p) { nlib = STAR; };
