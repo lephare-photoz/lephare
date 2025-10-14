@@ -51,8 +51,8 @@ def test_nzprior():
     # What is the key behaviour we should be testing?
     p = lp.prior()
     s = lp.onesource(0, [0, 1])
-    # s.ab = [1.0e-9, 1.0e-9]
-    # s.busnorma = [1, 1]
+    s.ab = [1.0e-9, 1.0e-9]
+    s.busnorma = [1, 1]
     assert np.isclose(p.nz_prior(s, 0.0, 0.0, 0.0, 0.0, [0, 0]), 1)
 
 
