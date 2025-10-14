@@ -71,7 +71,7 @@ Mag::Mag(keymap &key_analysed) {
   outasc = ((key_analysed["LIB_ASCII"]).split_bool("NO", 1))[0];
 
   // keyword to add the LDUST component to the stellar component (e.g. in BC03)
-  addDust = key_analysed["ADD_DUSTEM"].value;
+  add_dust = key_analysed["ADD_DUSTEM"].split_bool("NO", 1)[0];
 
   // Want to display the template number on the screen
   // VERBOSE output  file -  YES default
@@ -333,11 +333,9 @@ void Mag::read_B12() {
 // Define the redshift grid
 // Associate it to a grid in age and distance modulus
 void Mag::def_zgrid() {
-  // redshift grid, depending on the method
-  gridz = zgrid(dz, zmin, zmax);
-
-  // Loop over the redshift grid and measure the age of the Universe and the
-  // distance modulus
+  set_zgrid(dz, zmin, zmax);
+  // Loop over the redshift grid and measure the age
+  // of the Universe and the distance modulus
   for (size_t k = 0; k < gridz.size(); k++) {
     gridT.push_back(lcdm.time(gridz[k]));
     gridDM.push_back(lcdm.distMod(gridz[k]));
@@ -534,7 +532,7 @@ vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
               if (oneSEDInt.ltir < 0 && dL > 0) oneSEDInt.ltir = log10(dL);
               // Rescale the B12 to the right dust luminosity (with energy
               // balance) and sum to the stellar continuum is option on.
-              if (addDust[0] == 'Y' || addDust[0] == 'y') {
+              if (add_dust) {
                 oneSEDInt.sumSpectra(B12SED[k], dL);
               }
 

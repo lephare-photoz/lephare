@@ -25,14 +25,14 @@ class Mag {
   string config;
   cosmo lcdm;
   string filtFile, magtyp;
-  bool outasc, verbose;
+  bool outasc, verbose, add_dust;
   vector<string> extlaw;
   int nextlaw;
   vector<double> ebv;
   int nebv;
   vector<int> modext;
   double dz, zmin, zmax;
-  string lib, colib, addDust;
+  string lib, colib;
 
   // only for the galaxy, but much easier to keep them here
   string emlines = "NO";
@@ -67,12 +67,22 @@ class Mag {
   /// read the filter curve and build the corresponding vectors stored in
   /// attribute allFlt
   void read_flt(const string &);
-  // Read the long wavelength Bethermin+2012 templates to add the dust emission
-  // to the BC03 templates
+
+  // Read the long wavelength Bethermin+2012 templates
+  // to add the dust emission to the BC03 templates
   void read_B12();
+
   /// define the vector of redshifts, and associate to it vectors of age and
   /// distance modulus, based on the lcdm attribute
   void def_zgrid();
+
+  /// helper function to set the grid of redshift
+  /// @param dz : step in z in the grid
+  /// @param zmin : minimum z
+  /// @param zmax : maximum z
+  inline void set_zgrid(double dz, double zmin, double zmax) {
+    gridz = zgrid(dz, zmin, zmax);
+  }
 
   /// Write in file sdocOut the documentation for the GALAXY/QSO/STAR case
   void write_doc();

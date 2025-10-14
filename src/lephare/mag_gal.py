@@ -114,7 +114,9 @@ class MagGal(Runner):
         # Define the redshift grid
         mag.def_zgrid()
         # Read B12 templates to add dust emission to BC03
-        mag.read_B12()
+        add_dust = self.keymap["ADD_DUSTEM"].split_bool("NO", 1)
+        if add_dust:
+            mag.read_B12()
         # Read sed, apply extinction and IGM opacity
         mag.read_SED()
         mag.write_doc()

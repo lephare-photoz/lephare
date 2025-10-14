@@ -242,6 +242,7 @@ PYBIND11_MODULE(_lephare, mod) {
        .def("read_B12", &c::read_B12)                      \
        .def("read_flt", &c::read_flt)                      \
        .def("def_zgrid", &c::def_zgrid)                    \
+       .def("set_zgrid", &c::set_zgrid)                    \
        .def("read_SED", &c::read_SED)                      \
        .def("write_doc", &c::write_doc)                    \
        .def("make_maglib", &c::make_maglib)                \
