@@ -11,6 +11,7 @@ This code also include functions to compute the quality of the estimated redshif
 ### Load libraries ###
 
 import os
+import sys
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import find_peaks
@@ -114,12 +115,15 @@ class PDZStats:
         mask = (self.zgrid < self.z_best - n_window * window) | (self.zgrid > self.z_best + n_window * window)
         return trapezoid(np.where(mask, self.pdz, 0.0), self.zgrid)
     
-
-def compute_pdz_score(pdz, zgrid, nb_peak_thresh=1, height_thresh=0.5, tail_thresh=0.2, peak_ratio_thresh=0.25, error_thresh=0.2, z_best=None):  
+id = 0
+def compute_pdz_score(pdz, zgrid, nb_peak_thresh=1, height_thresh=0.5, tail_thresh=0.2, peak_ratio_thresh=0.25, error_thresh=0.2, z_best=None, id=0):  
     """
     Returns a 4-bit integer score (0-31), higher = worse.
     Bitwise impact order: number_mod (8), tail_mass (4), peak_ratio (2), error (1), very_bad_error (16)
-    """
+    """ 
+    id +=1
+    sys.stdout.write(f"{id}")
+    sys.stdout.flush()
     pdz_stats = PDZStats(zgrid, pdz, z_best)
 
     score = 0
@@ -263,6 +267,7 @@ def load_and_write(catalog_path, flagged_catalog_path, star_pdf_path=None, pdz_p
         pdf_dict = {int(row[0]): Compute_Source_Type(row[1:], sed_list_path) for row in star_pdf_data}
         # print(pdf_dict)
     with open(catalog_path, 'r') as fin, open(flagged_catalog_path, 'w') as fout:
+        print("Add flag(s) to original output")
         for line in fin:
             #Edit header
             if line.startswith('#'):
@@ -284,29 +289,26 @@ def load_and_write(catalog_path, flagged_catalog_path, star_pdf_path=None, pdz_p
 
             if compute_pdz_flag:
                 pdz_score = pdz_dict.get(ident, -1.0)
-                tokens.append(f"{pdz_score:.4f}")
+                tokens.append(f"{int(pdz_score)}")
             if compute_source_type:
                 s_type = pdf_dict.get(ident, -1.0)
                 # print(s_type)
                 tokens.append(f"{s_type}")
-
+                # print(f"{tokens[0]} added")
             fout.write('          '.join(tokens) + '\n')
+    print("Output catalog with flagged sources saved at ", flagged_catalog_path)
 
 
 ### RUN ###
 ### Load zphota output catalog(s)
 base_dir = os.path.abspath(os.path.join(os.getcwd()))
 ### Tests on stars ###
-# CAT_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/DESstars_Buzzard_PICKLES_DES.out') #output catalog directory
-# PDZ_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/PDZs/DESstars_Buzzard_PICKLES_DES_MIN_ZG.prob')
-# STAR_PDF_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/PDFs/DESstars_Buzzard_PICKLES_DES_PDFstar.prob')
-# CAT_path_flagged = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/DESstars_Buzzard_PICKLES_DES_typed.out')
 
-### Tests on galaxies ###
-CAT_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/DC1_Buzzard_PICKLES_LSST.out') #output catalog directory
-PDZ_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/PDZs/DC1_Buzzard_PICKLES_LSST_MIN_ZG.prob')
-STAR_PDF_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/PDFs/DC1_Buzzard_PICKLES_LSST_PDFstar.prob')
-CAT_path_flagged = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/DC1_Buzzard_PICKLES_DES_typed.out')
+# ### Tests on galaxies ###
+# CAT_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/DC1_Buzzard_PICKLES_LSST.out') #output catalog directory
+# PDZ_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/PDZs/DC1_Buzzard_PICKLES_LSST_MIN_ZG.prob')
+# STAR_PDF_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/PDFs/DC1_Buzzard_PICKLES_LSST_PDFstar.prob')
+# CAT_path_flagged = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/DC1_Buzzard_PICKLES_DES_typed.out')
 
 ### Other paths ###
 SED_LIST_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/DES/DES_STARCAT/WORK_COMPLETE2/lib_bin/DES_STAR.list')
@@ -314,4 +316,4 @@ SED_LIST_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/DES/D
 ### zgrid
 ZMIN, ZMAX, ZSTEP = 0, 2, 0.01
 z_grid = np.arange(ZMIN, ZMAX + ZSTEP, ZSTEP)
-load_and_write(CAT_path, CAT_path_flagged, star_pdf_path=STAR_PDF_path, pdz_path=PDZ_path, zgrid=z_grid, sed_list_path=SED_LIST_path, compute_pdz_flag=False, compute_source_type=True)
+load_and_write(CAT_path, CAT_path_flagged, star_pdf_path=STAR_PDF_path, pdz_path=PDZ_path, zgrid=z_grid, sed_list_path=SED_LIST_path, compute_pdz_flag=True, compute_source_type=True)

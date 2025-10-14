@@ -13,9 +13,18 @@ A python cript to sort good from bad zphota computed data using :
 '''
 
 base_dir = os.path.abspath(os.path.join(os.getcwd()))
-CAT_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/DESstars_Buzzard_PICKLES_DES.out') #output catalog directory
-PDZ_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/PDZs/DESstars_Buzzard_PICKLES_DES_MIN_ZG.prob')
+
+### Galaxies ###
+CAT_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/DC1_Buzzard_PICKLES_LSST.out') #output catalog directory
+PDZ_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/PDZs/DC1_Buzzard_PICKLES_LSST_MIN_ZG.prob')
+# flagged_CAT_path = os.path.join(base_dir, 'simulation_catalogs/star_gal/DC1_Buzzard_PICKLES_LSST_typed.out')
+
+### Stars ###
+# CAT_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/DESstars_Buzzard_PICKLES_DES.out') #output catalog directory
+# PDZ_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/PDZs/DESstars_Buzzard_PICKLES_DES_MIN_ZG.prob')
 # flagged_CAT_path = os.path.join(base_dir, 'simulation_catalogs/star_gal/DESstars_Buzzard_PICKLES_DES_typed.out')
+
+
 ZMIN, ZMAX, ZSTEP = 0, 2, 0.01
 z_grid = np.arange(ZMIN, ZMAX + ZSTEP, ZSTEP)
 
@@ -156,7 +165,7 @@ def load_and_write(catalog_path, flagged_catalog_path, pdz_path, zgrid):
 
 # load_and_write(CAT_path, flagged_CAT_path, PDZ_path, z_grid)
 
-def plot_single_pdz(pdz_path, zgrid, row=None, nb_peak_thresh=1, height_thresh=0.75, tail_thresh=0.5, peak_ratio_thresh=0.4, error_thresh=0.1):
+def plot_single_pdz(pdz_path, zgrid, row=None, nb_peak_thresh=1, height_thresh=0.75, tail_thresh=0.5, peak_ratio_thresh=0.4, error_thresh=0.1, catalog_path = None):
     row = row if row is not None else 0
     pdz_file = np.loadtxt(pdz_path)
     pdz_row = pdz_file[row][1:] / np.max(pdz_file[row][1:])
@@ -181,16 +190,30 @@ def plot_single_pdz(pdz_path, zgrid, row=None, nb_peak_thresh=1, height_thresh=0
     plt.legend()
 
     # Annotate metrics
-    plt.text(0.02, 0.95, f"σ ≈ {sigma:.3f}\nTail mass ≈ {tail_mass:.3f}\nFlag = {score}", 
+    plt.text(0.8, 0.95, f"σ ≈ {sigma:.3f}\nTail mass ≈ {tail_mass:.3f}\nFlag = {score}\nz_best = {zbest:.3f}", 
              transform=plt.gca().transAxes, fontsize=10, va='top')
+    
+    # In case we have the z_spec in the input catalog
+    if catalog_path is not None:
+        with open(catalog_path, 'r') as fin:
+            for line in fin:
+                if line.startswith('#'):
+                    continue
+                else:
+                    tokens = line.strip().split()
+                    if int(tokens[0]) == int(pdz_file[row][0]):
+                        z_spec = float(tokens[-1])
+                        plt.text(0.8, 0.79, f"z_spec = {z_spec:.3f}", 
+                        transform=plt.gca().transAxes, fontsize=10, va='top')
+
 
 
     plt.tight_layout()
     plt.show()
 
 #plot one pdz for example
-plot_single_pdz(PDZ_path, z_grid, row=8779, nb_peak_thresh=1, height_thresh=0.75, tail_thresh=0.25, peak_ratio_thresh=0.75, error_thresh=0.125)
-#8779 intéréssant
+plot_single_pdz(PDZ_path, z_grid, row=23, nb_peak_thresh=1, height_thresh=0.75, tail_thresh=0.25, peak_ratio_thresh=0.75, error_thresh=0.125, catalog_path=CAT_path)
+#8779, 497, 2 intéréssant
 
 #display statistics from given catalog
 def average_stats(pdz_path, zgrid):
