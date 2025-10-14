@@ -153,8 +153,6 @@ class SED {
   int size() { return lamb_flux.size(); }
   /// rescale the lamb_flux.val as val *= scaleFac
   void rescale(double scaleFac);
-  /// apply  \a #shifts to the magnitude : mag += shifts
-  void applyShift(const vector<double> &shifts, const int imagm);
   /// compute magnitude from filters
   void compute_magnitudes(const vector<flt> &filters);
   /// compute fluxed from filters

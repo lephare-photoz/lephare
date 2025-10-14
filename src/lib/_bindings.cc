@@ -170,7 +170,6 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("resample", &SED::resample)
       .def("generateCalib", &SED::generateCalib)
       .def("rescale", &SED::rescale)
-      .def("applyShift", &SED::applyShift)
       .def("compute_magnitudes", &SED::compute_magnitudes)
       .def("compute_fluxes", &SED::compute_fluxes)
       .def("set_vector", &SED::set_vector)

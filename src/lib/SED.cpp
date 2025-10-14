@@ -68,27 +68,6 @@ SED::~SED() {
 }
 
 /*
-  Add a shift to the predicted magnitudes, valid for QSO/STARS/GAL
-*/
-void SED::applyShift(const vector<double> &shifts, const int imagm) {
-  // Check that the expected number of filters in the library matches the size
-  // of the vector shifts
-  if (imagm == int(shifts.size())) {
-    // Loop over the filters
-    for (int k = 0; k < imagm; k++) {
-      mag[k] = mag[k] + shifts[k];
-    }
-  } else {
-    if (shifts.size() > 1)
-      cout << "Not the same number of shifts (apply_shift) than the number of "
-              "filters in the library "
-           << imagm << " " << shifts.size() << endl;
-  }
-
-  return;
-}
-
-/*
   rescale the flux, valid for QSO/STARS/GAL
   input: rescaling factor
   output: void, modify the internal variable lamb_flux
