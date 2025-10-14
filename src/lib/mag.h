@@ -25,14 +25,14 @@ class Mag {
   string config;
   cosmo lcdm;
   string filtFile, magtyp;
-  bool outasc, verbose;
+  bool outasc, verbose, add_dust;
   vector<string> extlaw;
   int nextlaw;
   vector<double> ebv;
   int nebv;
   vector<int> modext;
   double dz, zmin, zmax;
-  string lib, colib, addDust;
+  string lib, colib;
 
   // only for the galaxy, but much easier to keep them here
   string emlines = "NO";

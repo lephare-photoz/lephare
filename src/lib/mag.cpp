@@ -71,7 +71,7 @@ Mag::Mag(keymap &key_analysed) {
   outasc = ((key_analysed["LIB_ASCII"]).split_bool("NO", 1))[0];
 
   // keyword to add the LDUST component to the stellar component (e.g. in BC03)
-  addDust = key_analysed["ADD_DUSTEM"].value;
+  add_dust = key_analysed["ADD_DUSTEM"].split_bool("NO", 1)[0];
 
   // Want to display the template number on the screen
   // VERBOSE output  file -  YES default
@@ -534,7 +534,7 @@ vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
               if (oneSEDInt.ltir < 0 && dL > 0) oneSEDInt.ltir = log10(dL);
               // Rescale the B12 to the right dust luminosity (with energy
               // balance) and sum to the stellar continuum is option on.
-              if (addDust[0] == 'Y' || addDust[0] == 'y') {
+              if (add_dust) {
                 oneSEDInt.sumSpectra(B12SED[k], dL);
               }
 
