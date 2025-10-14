@@ -193,7 +193,8 @@ class onesource {
            const vector<size_t> &valid, const double &funz0,
            const array<int, 2> &bp);
   void fitIR(vector<SED *> &fulllib, const vector<vector<double>> &flux,
-             const int imagm, const string fit_frsc, cosmo lcdm);
+             const vector<size_t> &valid, const int imagm,
+             const string fit_frsc, cosmo lcdm);
   // double nzprior(const double luv, const double lnir, const double reds,
   //                const array<int, 2> bp);
   //            const vector<size_t> &valid, const int imagm,

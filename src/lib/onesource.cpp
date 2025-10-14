@@ -457,9 +457,9 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
       // }
 
       // General prior
-      chi2loc[il] =
-          priorObj.update_chi2(this, chi2loc[il], fulllib[il], il, dmloc[il],
-                               funz0, bp, mabsGALprior, mabsAGNprior);
+      SED *sed = fulllib[i];
+      chi2loc = priorObj.update_chi2(this, chi2loc, fulllib[i], i, dmloc, funz0,
+                                     bp, mabsGALprior, mabsAGNprior);
 
       // keep track of the minimum chi2 for each object type, over the threads
       if (chi2loc < HIGH_CHI2) {
