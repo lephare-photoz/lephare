@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
   keymap key_analysed = analyse_keywords(argc, argv, list_keywords, nb_ref_key);
 
   // keyword to add the LDUST component to the stellar component (e.g. in BC03)
-  bool add_dust = key_analysed["ADD_DUSTEM"].split_bool("NO", 1);
+  bool add_dust = key_analysed["ADD_DUSTEM"].split_bool("NO", 1)[0];
 
   // Define a pointer of the basis class "Mag" which encompasses all the
   // elements to create the library
