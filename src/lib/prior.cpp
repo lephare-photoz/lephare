@@ -71,11 +71,11 @@ double prior::absmag_prior(onesource* source, double chi2, double reds,
   // Galaxy rejection
   if ((abs_mag <= source->priorLib[0] || abs_mag >= source->priorLib[1]) &&
       libtype == 0)
-    chi2 = 1.e9;
+    chi2 = HIGH_CHI2;
   // AGN rejection
   if ((abs_mag <= source->priorLib[2] || abs_mag >= source->priorLib[3]) &&
       libtype == 1)
-    chi2 = 1.e9;
+    chi2 = HIGH_CHI2;
 
   return chi2;
 }
