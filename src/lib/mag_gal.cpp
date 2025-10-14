@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
   keymap key_analysed = analyse_keywords(argc, argv, list_keywords, nb_ref_key);
 
   // keyword to add the LDUST component to the stellar component (e.g. in BC03)
-  string addDust = key_analysed["ADD_DUSTEM"].value;
+  bool add_dust = key_analysed["ADD_DUSTEM"].split_bool("NO", 1);
 
   // Define a pointer of the basis class "Mag" which encompasses all the
   // elements to create the library
@@ -117,7 +117,9 @@ int main(int argc, char *argv[]) {
   READ B12 TEMPLATES TO ADD DUST EMISSION TO BC03
   */
 
-  if (addDust[0] == 'Y' || addDust[0] == 'y') Magnitude->read_B12();
+  if (add_dust) {
+    Magnitude->read_B12();
+  }
 
   /*
   READ SED, APPLY EXTINCTION AND IGM OPACITY
