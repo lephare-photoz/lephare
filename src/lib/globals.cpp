@@ -72,7 +72,7 @@ If the string has a length of 0, return also false
 input: string to analyse
 output: boolean
 */
-bool check_first_char(string maligne) {
+bool check_first_char(const string &maligne) {
   for (string::const_iterator it = maligne.begin(); it != maligne.end(); it++) {
     if (*it == ' ' || *it == '\t') {
       continue;
@@ -131,4 +131,14 @@ int bdincl(int n, long cont, int max) {
     }
   }
   return res;
+}
+
+vector<size_t> indexes_in_vec(const double &value, const vector<double> &vec,
+                              const float &precision) {
+  vector<size_t> result;
+  for (size_t i = 0; i < vec.size(); i++) {
+    if (abs(vec[i] - value) < precision) result.push_back(i);
+  }
+
+  return result;
 }

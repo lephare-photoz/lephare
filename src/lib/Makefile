@@ -26,8 +26,8 @@
 #
 OS := $(shell uname -s)
 ifeq ($(OS), Darwin)
-    # For macOS, brew install gcc
-    FC         =   g++-13
+    # For macOS we hve had various issues on arm chips. The following should work after 'brew install llvm libomp gcc@13'
+    FC         = g++-13
     CFLAGS     = -g -std=c++17 -fopenmp -Wall -fno-inline -Wno-psabi
 endif
 ifeq ($(OS), Linux)

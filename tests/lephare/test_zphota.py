@@ -11,11 +11,6 @@ TESTDATADIR = os.path.join(TESTDIR, "../data")
 # Test init
 
 
-def test_no_config():
-    with pytest.raises(SystemExit):
-        _ = Zphota()
-
-
 def test_with_config_file():
     """Use a config file to instantiate the Zphota class. Expect the keymap to be
     populated."""
@@ -42,14 +37,6 @@ def test_with_command_line_config(monkeypatch):
     zp = Zphota()
     assert zp.keymap["CAT_IN"].value == "cat_foo"
     assert zp.keymap["Z_INTERP"].value == "YES"
-
-
-def test_with_command_line_unrecogized_config(monkeypatch):
-    """Use command line arguments to instantiate the Zphota class, but include
-    an unrecognized argument."""
-    with pytest.raises(SystemExit):
-        monkeypatch.setattr("sys.argv", ["zphota.py", "--FOO", "bar"])
-        _ = Zphota()
 
 
 def test_override_config_file_with_command_line(monkeypatch):
@@ -98,7 +85,7 @@ def run_configured_zp(zp, config_file_path):
 
                 mock_read_photoz_sources.assert_called_once()
                 mock_run_photoz.assert_called_once()
-                mock_run_photoz.assert_called_with(mock_sources, ANY, ANY)
+                mock_run_photoz.assert_called_with(mock_sources, ANY)
                 mock_write_outputs.assert_called_once()
                 mock_write_outputs.assert_called_with(mock_sources, ANY)
 

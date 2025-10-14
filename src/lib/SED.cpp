@@ -29,16 +29,7 @@ SED::SED(const string nameC, int nummodC, string type) {
   nummod = nummodC;  // number of the model in the list
 
   // Define nlib to have the type as an interger GAL=0, QSO=1, STAR=2
-  char t = toupper(type[0]);
-  if (t == 'S') {
-    nlib = STAR;
-  } else if (t == 'Q') {
-    nlib = QSO;
-  } else if (t == 'G') {
-    nlib = GAL;
-  } else {
-    throw invalid_argument("Object type not recognized: " + type);
-  }
+  nlib = string_to_object(type);
 
   has_emlines = false;
   idAge = 0;     // index of the age into the SED
@@ -52,8 +43,8 @@ SED::SED(const string nameC, int nummodC, string type) {
   ebv = 0.;      // E(B-V) applied to the SED
   extlawId =
       0;  // index of the extinction law when dust attenuation has been applied
-  chi2 = 1.e9;  // chi2 of the fit
-  dm = -999.;   // Rescaling of the template
+  chi2 = HIGH_CHI2;  // chi2 of the fit
+  dm = -999.;        // Rescaling of the template
   distMod = 0;
 }
 
@@ -123,7 +114,8 @@ void SED::read(const string &sedFile) {
   // open the SED template file into a stream
   ssed.open(sedFile.c_str());
   if (!ssed) {
-    throw invalid_argument("Can't open SED file " + sedFile);
+    throw invalid_argument(
+        "Can't open the file with the list of SED to be used " + sedFile);
   }
 
   // Take the stream line by line
@@ -229,11 +221,10 @@ void SED::warning_integrateSED(const vector<flt> &filters, bool verbose) {
       lamb_flux.emplace(lamb_flux.begin(), 0, 0, 1);
     }
 
-    if ((((lamb_flux.end() - 1)->lamb) * (1. + red) < filter.lmax()) &&
-        (red == 0)) {
-      if (verbose) {
+    if (((lamb_flux.end() - 1)->lamb) * (1. + red) < filter.lmax()) {
+      if (verbose && (red == 0)) {
         cout << "A problem could occur since maximum of SED "
-             << (lamb_flux.end() - 1)->lamb << " below max of the filter "
+             << lamb_flux.back().lamb << " below max of the filter "
              << filter.lmax();
         cout << " with filters redder than " << filter.name << " and SED "
              << name << " and z " << red << ".";
@@ -245,7 +236,7 @@ void SED::warning_integrateSED(const vector<flt> &filters, bool verbose) {
       // SED in the red part This is a linear extrapolation from the last point
       // defined in the SED. The extrapolation should be done in the template
       // itself, with a physical meaning. Need to avoid such situation.
-      lamb_flux.emplace_back(1.e8, 0, 1);
+      lamb_flux.emplace_back(1.e8 * (1. + red), 0, 1);
     }
   }
 }
@@ -730,9 +721,14 @@ void SED::applyExtLines(const ext &oneext) {
   if (longEL != 65) cout << " Error with size of ebv lines " << longEL << endl;
   // If you want to use the redshift dependency of the attenuation line versus
   // continuum F=F(z=0)+a*z If such option is re-activated, absolutely need to
-  // change the code in read_lib and onesource.cpp double a=0.2; No redshift
-  // dependency
+  // change the code in read_lib and onesource.cpp
+  // double a=0.2;
+  // No redshift dependency
   double a = 0.;
+
+  // needed to establish the escape fraction. Relation by Hayes et al 2011.
+  double CLya = 0.445;
+  double kLya = 13.8;
 
   // if needed because E(b-V)>0
   if (ebv > 1.e-20) {
@@ -770,6 +766,11 @@ void SED::applyExtLines(const ext &oneext) {
           if (new_ext[k].ori < 0) new_ext[k].val = 0.;
           val =
               (line_all[k]).val * pow(10., (-0.4 * ebv / f * (new_ext[k]).val));
+          // Relation by Hayes et al 2011 to derive the escape fraction
+          if (line_all[k].lamb > 1215. && line_all[k].lamb < 1216.) {
+            double f_esc_Lya = CLya * pow(10., (-0.4 * ebv / f * kLya));
+            val = val * f_esc_Lya;
+          }
         }
         // Count what is the line according to the original fac_line
         l++;
@@ -1271,12 +1272,13 @@ void GalSED::generateEmEmpUV(double MNUV_int, double NUVR) {
   // attenuation seems to be alreay included I took OIII5007/OIII4959=3 I
   // took 4.081 betwen 5007 and Hbeta, as the physical recipes. This ratio will
   // be modified later as a function of redshift. I took 0.3 for NII/Halpha
-  // according to the BPT diagram 6 for Lyman_alpha, but no real idea
+  // according to the BPT diagram. For Lyman_alpha, use the same factor as for
+  // physical recipes since fescape fraction is applied.
   // double Z0_line[65] =
   // {6,0,0,0,0,0,0,1.425,1.425,0,0,0,0,0,0,0,0,0,0,0,1,1.36,4.081,0,0,0,0,0,0,2.85,0.86,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
   // Original ratio used in 2009 paper
-  double Z0_line[65] = {1.62, 0, 0, 0,    0,  0, 0, 0.81, 0.81, 0,    0, 0, 0,
+  double Z0_line[65] = {22.2, 0, 0, 0,    0,  0, 0, 0.81, 0.81, 0,    0, 0, 0,
                         0,    0, 0, 0,    0,  0, 0, 1,    0.21, 0.59, 0, 0, 0,
                         0,    0, 0, 2.90, 0., 0, 0, 0,    0,    0,    0, 0, 0,
                         0,    0, 0, 0,    0,  0, 0, 0,    0,    0,    0, 0, 0,
@@ -1330,12 +1332,13 @@ void GalSED::generateEmEmpSFR(double sfr, double NUVR) {
   // attenuation seems to be alreay included I took OIII5007/OIII4959=3 I
   // took 4.081 betwen 5007 and Hbeta, as the physical recipes. This ratio will
   // be modified later as a function of redshift. I took 0.3 for NII/Halpha
-  // according to the BPT diagram 6 for Lyman_alpha, but no real idea
-  double Z0_line[65] = {6, 0,    0,    0, 0, 0, 0, 1.425, 1.425, 0, 0, 0, 0, 0,
-                        0, 0,    0,    0, 0, 0, 1, 1.36,  4.081, 0, 0, 0, 0, 0,
-                        0, 2.85, 0.86, 0, 0, 0, 0, 0,     0,     0, 0, 0, 0, 0,
-                        0, 0,    0,    0, 0, 0, 0, 0,     0,     0, 0, 0, 0, 0,
-                        0, 0,    0,    0, 0, 0, 0, 0,     0};
+  // according to the BPT diagram. For Lyman_alpha, use the same factor as for
+  // physical recipes since fescape fraction is applied.
+  double Z0_line[65] = {
+      22.2, 0, 0, 0, 0,    0,     0, 1.425, 1.425, 0, 0, 0, 0,    0,    0, 0, 0,
+      0,    0, 0, 1, 1.36, 4.081, 0, 0,     0,     0, 0, 0, 2.85, 0.86, 0, 0, 0,
+      0,    0, 0, 0, 0,    0,     0, 0,     0,     0, 0, 0, 0,    0,    0, 0, 0,
+      0,    0, 0, 0, 0,    0,     0, 0,     0,     0, 0, 0, 0,    0};
   // Checks
   longEL = sizeof(Z0_line) / sizeof(Z0_line[0]);
   if (longEL != 65) cout << " Error with size of lines Z0 " << longEL << endl;
@@ -1628,7 +1631,8 @@ void GalSED::writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
   if (outasc) {
     // Write output
     ofsDat << setw(6) << nummod << " ";
-    ofsDat << setw(3) << extlawId << " ";
+    // start the numbering of attenuation curves at 1 in output
+    ofsDat << setw(3) << extlawId + 1 << " ";
     ofsDat << setw(3) << ebv << " ";
     ofsDat << setw(12) << ltir << " ";
     ofsDat << setw(5) << red << " ";
@@ -1889,7 +1893,8 @@ void QSOSED::writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
   if (outasc) {
     // Write output
     ofsDat << setw(6) << nummod << " ";
-    ofsDat << setw(3) << extlawId << " ";
+    // start the numbering of attenuation curves at 1 in output
+    ofsDat << setw(3) << extlawId + 1 << " ";
     ofsDat << setw(3) << ebv << " ";
     ofsDat << setw(5) << red << " ";
     ofsDat << setw(12) << distMod << " ";

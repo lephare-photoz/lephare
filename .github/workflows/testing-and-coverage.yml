@@ -17,15 +17,15 @@ jobs:
       INCLUDE_COVERAGE: TRUE
     strategy:
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: recursive
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -43,12 +43,14 @@ jobs:
 
     - name: Collect C++ coverage
       run: |
+        find build -name '_bindings.cc.gcda' -delete
+        geninfo --ignore-errors gcov --debug build --keep-going --exclude '/home/runner/work/lephare/lephare/src/lib/_bindings.cc'
         lcov --output-file coverage.cpp --capture --directory build
         lcov --output-file coverage.cpp --extract coverage.cpp $PWD/src/"*"
         cat coverage.lcov coverage.cpp > coverage.txt
 
     - name: Upload coverage report to codecov
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
       with:
         files: coverage.txt
         token: ${{ secrets.CODECOV_TOKEN }}

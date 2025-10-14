@@ -16,6 +16,7 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
+    "Programming Language :: C++",
 ]
 dynamic = ["version"]
 requires-python = ">=3.9"
@@ -27,6 +28,7 @@ dependencies = [
     "requests",
     "pooch",
     "platformdirs",
+    "wurlitzer",#allows C++ cout to be captured in a jupyter notebook and forwarded to standard output on terminal
 ]
 
 [project.scripts]
@@ -36,7 +38,7 @@ mag_gal = "lephare.mag_gal:main"
 zphota = "lephare.zphota:main"
 
 [project.urls]
-"Source Code" = "https://github.com/lincc-frameworks/lephare"
+"Source Code" = "https://github.com/lephare-photoz/lephare"
 
 # On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
 [project.optional-dependencies]
@@ -47,6 +49,7 @@ dev = [
     "pytest-cov", # Used to report total code coverage
     "ruff", # Used for static linting of files
     "sphinx", # Used to generate documentation
+    "sphinx-tabs", # Used to generate documentation
     "breathe", # Used to generate documentation
     "exhale", # Used to generate documentation
 ]
@@ -111,6 +114,8 @@ select = [
     "D300",
     "D417",
     "D419",
+    # Update numpy to 2.0 
+    "NPY201",
 ]
 
 ignore = [

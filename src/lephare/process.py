@@ -1,5 +1,6 @@
 import os
 import shutil
+import time
 
 import numpy as np
 
@@ -10,7 +11,15 @@ __all__ = ["object_types", "process", "table_to_data", "calculate_offsets", "loa
 object_types = ["STAR", "GAL", "QSO"]
 
 
-def process(config, input, col_names=None, standard_names=False, filename=None, offsets=None, prior=None):
+def process(
+    config,
+    input,
+    col_names=None,
+    standard_names=False,
+    filename=None,
+    write_outputs=False,
+    prior=None,
+):
     """Run all required steps to produce photometric redshift estimates
 
     Parameters
@@ -26,18 +35,19 @@ def process(config, input, col_names=None, standard_names=False, filename=None, 
         If true we assume standard names.
     filename : str
         Output file name for the output catalogue.
-    offsets : list
-        If offsets are set autoadapt is not run but the set values are used.
     prior : function
         Function that converts a lephare.SED into a weight. We loop over all
         SEDs to get the list of weights.
+    write_outputs : bool
+        Whether to write the output spectra, PDF, and ascii file if specified
+        in the config. By default these are not written to save space.
 
     Returns
     =======
     output : astropy.table.Table
         The output table.
-    pdf : np.array
-        Array of pdfs for each object
+    photozlist : list of lephare.onesource
+        List of lephare onesource objects.
     """
     # ensure that all values in the keymap are keyword objects
     config = lp.all_types_to_keymap(config)
@@ -53,28 +63,18 @@ def process(config, input, col_names=None, standard_names=False, filename=None, 
     srclist = []
     for i in range(ng):
         one_obj = lp.onesource(i, photz.gridz)
-        one_obj.readsource(str(i), flux[i], flux_err[i], context[i], zspec[i], string_data[i])
+        one_obj.readsource(str(i), flux[i], flux_err[i], context[i], zspec[i], str(string_data[i]))
         photz.prep_data(one_obj)
         srclist.append(one_obj)
 
     # If AUTO_ADAPT set compute offsets
-    if offsets is not None:
-        print("Using user supplied offsets")
-        a0 = offsets[0]
-        a1 = offsets[1]
-        try:
-            assert len(a0) == n_filters
-            assert len(a1) == n_filters
-        except AssertionError as e:
-            raise Exception("Length of offset overrides not equal to the number of filters.") from e
-    elif config["AUTO_ADAPT"].value == "YES":
-        a0, a1 = photz.run_autoadapt(srclist)
+    if config["AUTO_ADAPT"].value == "YES":
+        a0 = photz.run_autoadapt(srclist)
         offsets = ",".join(np.array(a0).astype(str))
-        offsets = "Offsets from auto-adapt: " + offsets + "\n"
-        print(offsets)
+        print("Offsets from auto-adapt: " + offsets)
     else:
-        a0, a1 = np.full(n_filters, 0), np.full(n_filters, 0)  # Do we need to set values?
-        print("AUTO_ADAPT set to NO and no user supplied offsets. Using zero offsets.")
+        a0 = np.full(n_filters, 0)
+        print("AUTO_ADAPT set to NO. Using zero offsets.")
 
     # create the onesource objects
     photozlist = []
@@ -89,17 +89,13 @@ def process(config, input, col_names=None, standard_names=False, filename=None, 
         photozlist.append(one_obj)
 
     # Perform the main run
-    photz.run_photoz(photozlist, a0, a1)
-    # Get the pdfs
-    pdfs = []
-    for i in range(ng):
-        pdf = photozlist[i].pdfmap[11]
-        pdf, zgrid = np.array(pdf.vPDF), np.array(pdf.xaxis)
-        pdfs.append(pdf)
-
-    # Loop over objects to compute photoz
+    photz.run_photoz(photozlist, a0)
+    # Write outputs if requested
+    if write_outputs:
+        photz.write_outputs(photozlist, int(time.time()))
     output = photz.build_output_tables(photozlist, para_out=None, filename=filename)
-    return output, np.array(pdfs), np.array(zgrid)
+    # Return the table and all the onesource objects
+    return output, photozlist
 
 
 def calculate_offsets(config, input, col_names=None, standard_names=False):
@@ -122,8 +118,6 @@ def calculate_offsets(config, input, col_names=None, standard_names=False):
 
     Returns
     =======
-    a1 : np.array
-        Offsets a1
     a0 : np.array
         Offsets a0
     """
@@ -139,15 +133,15 @@ def calculate_offsets(config, input, col_names=None, standard_names=False):
     srclist = []
     for i in range(ng):
         one_obj = lp.onesource(i, photz.gridz)
-        one_obj.readsource(str(i), flux[i], flux_err[i], context[i], zspec[i], string_data[i])
+        one_obj.readsource(str(i), flux[i], flux_err[i], context[i], zspec[i], str(string_data[i]))
         photz.prep_data(one_obj)
         srclist.append(one_obj)
 
-    a0, a1 = photz.run_autoadapt(srclist)
+    a0 = photz.run_autoadapt(srclist)
     offsets = ",".join(np.array(a0).astype(str))
     offsets = "Offsets from auto-adapt: " + offsets + "\n"
     print(offsets)
-    return a0, a1
+    return a0
 
 
 def table_to_data(config, input, col_names=None, standard_names=False):
@@ -184,7 +178,7 @@ def table_to_data(config, input, col_names=None, standard_names=False):
         The context determining flux usage
     zspec : np.array
         The spectroscopic redshifts.
-    string_data : np.array
+    string_input : np.array
         Additional notes as a string.
     """
     n_filters = len(config["FILTER_LIST"].value.split(","))
@@ -202,7 +196,7 @@ def table_to_data(config, input, col_names=None, standard_names=False):
             col_names += [f"ferr_{f}"]
         col_names += ["context"]
         col_names += ["zspec"]
-        col_names += ["string_data"]
+        col_names += ["string_input"]
     else:
         print("Using user columns from input table assuming they are in the standard order.")
         assert len(input.colnames) == 2 * n_filters + 4

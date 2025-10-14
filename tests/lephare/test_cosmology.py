@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from lephare import cosmo, indexz, zgrid
 
 
@@ -15,24 +16,12 @@ def test_cosmology_zgrid():
     zmax = 1
     dz = 0.1
     # test linear grid
-    grid = zgrid(0, dz, zmin, zmax)
+    grid = zgrid(dz, zmin, zmax)
     dummy = np.arange(zmin, zmax, dz)
     if zmin > 0:
         dummy = np.insert(dummy, 0, 0)
     if dummy[-1] != zmax:
         pygrid = np.insert(dummy, len(dummy), zmax)
-    assert np.testing.assert_almost_equal(grid, pygrid) is None
-
-    # test (1+z)dz grid
-    grid = zgrid(1, dz, zmin, zmax)
-    pygrid = np.array([])
-    z = zmin
-    while z < zmax:
-        pygrid = np.append(pygrid, z)
-        z = z + (1 + z) * dz
-    pygrid = np.append(pygrid, zmax)
-    if zmin > 0:
-        pygrid = np.insert(pygrid, 0, 0)
     assert np.testing.assert_almost_equal(grid, pygrid) is None
 
 
@@ -58,3 +47,13 @@ def test_cosmology_indexz():
     assert indexz(2.5, grid) == 2
     # test value smaller and close to a grid value
     assert indexz(2.9, grid) == 2
+
+
+def test_flux_rescaling():
+    c = cosmo()
+    z1 = 0.1
+    dm1 = c.distMod(z1)
+    z2 = 0.2
+    dm2 = c.distMod(z2)
+    assert c.flux_rescaling(z1, z1) == 1.0
+    assert c.flux_rescaling(z1, z2) == pytest.approx(np.power(10, 0.4 * (dm2 - dm1)))

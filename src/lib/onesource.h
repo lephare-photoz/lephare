@@ -34,8 +34,14 @@ static unordered_map<string, int> maptype = {
     {"AGE", 5},     {"COL1", 6},    {"COL2", 7},   {"MREF", 8},  {"MIN_ZG", 9},
     {"MIN_ZQ", 10}, {"BAY_ZG", 11}, {"BAY_ZQ", 12}};
 
+//! @class onesource
+/*!
+represents an object from a catalogue, and manages its fitting to an SED.
+*/
 class onesource {
  private:
+  bool verbose;
+
  public:
   //{"MASS_BEST","SFR_BEST","SSFR_BEST","LDUST_BEST","LUM_TIR_BEST","AGE_BEST","EBV_BEST","EXTLAW_BEST","LUM_NUV_BEST","LUM_R_BEST","LUM_K_BEST",}
   unordered_map<string, double> results = {
@@ -54,7 +60,7 @@ class onesource {
   vector<int> busnorma, busul, busfir, bscfir, absfilt;
   string spec, str_inp;
   int pos, nbused, nbul, nbusIR, indminSec, indminIR;
-  double zs, dm, consiz, closest_red;
+  double zs, dm, consiz;
   array<double, 3> zmin, chimin, dmmin;
   array<int, 3> indmin, imasmin;
   double zminIR, chiminIR, dmminIR, imasminIR;
@@ -81,21 +87,20 @@ class onesource {
 
   // Minimal constructor of the source
   onesource() {
-    spec = "1";  // ident
-    zs = -99.9;  // spectroscopic redshift
-    cont = 0;    // context
-    closest_red = 0.;
+    spec = "1";      // ident
+    zs = INVALID_Z;  // spectroscopic redshift
+    cont = 0;        // context
     str_inp = ' ';
     for (int k = 0; k < 3; k++) {
-      zmin[k] = -99.9;
-      indmin[k] = -99;
-      chimin[k] = 1.e9;
-      imasmin[k] = -99;
+      zmin[k] = INVALID_Z;
+      indmin[k] = INVALID_INDEX;
+      chimin[k] = HIGH_CHI2;
+      imasmin[k] = INVALID_INDEX;
     }
-    zminIR = -99.9;
-    indminIR = -99;
-    chiminIR = 1.e9;
-    imasminIR = -99;
+    zminIR = INVALID_Z;
+    indminIR = INVALID_INDEX;
+    chiminIR = HIGH_CHI2;
+    imasminIR = INVALID_INDEX;
     nbused = 0;
     pos = 0;
   }
@@ -160,11 +165,21 @@ class onesource {
     busnorma.clear();
   }
 
+  //! Set verbosity
+  /*!
+    @param v bool specifying whether output should be verbose or not.
+   */
+  inline void set_verbosity(const bool v) { verbose = v; }
+  //! Get verbosity
+  /*!
+    @return bool specifying whether output is verbose or not.
+   */
+  inline bool get_verbosity() const { return verbose; }
+
   // Prototype
   void readsource(const string &identifier, const vector<double> vals,
                   const vector<double> err_vals, const long context,
                   const double z_spec, const string additional_input);
-  void considered_red(const bool zfix, const string methz);
   void setPriors(const array<double, 2> magabsB,
                  const array<double, 2> magabsF);
   void fltUsed(const long gbcont, const long contforb, const int imagm);
@@ -173,8 +188,7 @@ class onesource {
   void convertFlux(const string &catmag, const vector<flt> allFilters);
   void rescale_flux_errors(const vector<double> min_err,
                            const vector<double> fac_err);
-  vector<size_t> validLib(vector<SED *> &fulllib, const bool &zfix,
-                          const double &consideredZ);
+
   void fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
            const vector<size_t> &valid, const double &funz0,
            const array<int, 2> &bp);
@@ -182,10 +196,13 @@ class onesource {
              const int imagm, const string fit_frsc, cosmo lcdm);
   // double nzprior(const double luv, const double lnir, const double reds,
   //                const array<int, 2> bp);
+  //            const vector<size_t> &valid, const int imagm,
+  //            const string fit_frsc, cosmo lcdm);
+  // double nzprior(const double luv, const double lnir, const double reds,
+  //                const array<int, 2> bp);
   void rm_discrepant(vector<SED *> &fulllib, const vector<vector<double>> &flux,
                      const vector<size_t> &valid, const double funz0,
-                     const array<int, 2> bp, double thresholdChi2,
-                     bool verbose);
+                     const array<int, 2> bp, double thresholdChi2);
   void write_out(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
                  ofstream &stout, vector<string> outkeywords);
   void write_pdz_header(vector<string> pdztype,
@@ -195,7 +212,20 @@ class onesource {
                  unordered_map<string, ofstream> &stpdz);
   void convertMag();
   void keepOri();
-  void interp(const bool zfix, const bool zintp, cosmo lcdm);
+
+  //! Update the solution of the fit based on execution flags
+  /*!
+    \param zfix bool that sets whether to set solution to a given redshift,
+    typically a true or spectroscopic redshift \param zintp bool that sets
+    whether to improve the determination of the minimum on the chi2 curve, using
+    the method PDF::int_parabL
+
+    \param[out] zmin and dmmin are reevaluated, for types GAL and QSO
+
+    Note that zfix and zintp are not supposed to both be set. In case it
+    happens, zintp is discarded here.
+   */
+  void interp(const bool zfix, const bool zintp, const cosmo &lcdm);
   void uncertaintiesMin();
   void uncertaintiesBay();
   void secondpeak(vector<SED *> &fulllib, const double dz_win,
@@ -205,7 +235,7 @@ class onesource {
   void generatePDF_IR(vector<SED *> &fulllib);
   void mode();
   void interp_lib(vector<SED *> &fulllib, const int imagm, cosmo lcdm);
-  void adapt_mag(vector<double> a0, vector<double> a1);
+  void adapt_mag(vector<double> a0);
   void substellar(const bool substar, vector<flt> allFilters);
   void absmag(const vector<vector<int>> &bestFlt,
               const vector<vector<double>> &maxkcolor, cosmo lcdm,

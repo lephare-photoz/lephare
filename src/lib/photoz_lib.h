@@ -3,7 +3,6 @@
 
 #include <ctime>   // date
 #include <string>  // use string
-#include <tuple>   // use std::make_tuple
 #include <vector>  // manipulate vector
 
 #include "SED.h"  // to read the libraries
@@ -22,9 +21,16 @@ class PhotoZ {
   double fir_lmin, fir_cont, fir_scale;
   bool verbose;
   array<double, 2> magabsB, magabsF, zrange, ebvrange;
-  bool outchi, zintp, zfix;
-  string cat, methz, typm, catmag, cattyp, zmulti, outf, outsp, outpdz, outpdm;
-  vector<double> shifts0, shifts1, min_err, fac_err, int_pdz, zbmin, zbmax;
+  bool outchi,  /// Whether or not to output th chi2 values in ascii
+      zintp,    /// Whether or not to interpolate the z solution from the grid
+                /// result
+      zfix,     /// Whether or not to run with a fixed redshift, typically the
+                /// true/spectro z
+      methz;    /// If true, set z to the MEDIAN solution rather than the BEST
+                /// solution, when computing physical parameters.
+
+  string cat, typm, catmag, cattyp, zmulti, outf, outsp, outpdz, outpdm;
+  vector<double> shifts0, min_err, fac_err, int_pdz, zbmin, zbmax;
   vector<flt> allFiltersAdd;
   vector<vector<int>> goodFlt;
   vector<vector<double>> maxkcol;
@@ -32,10 +38,10 @@ class PhotoZ {
   vector<string> colib;
   vector<int> bapp, bappOp, pdz_fabs, emMod;
   cosmo lcdm;
-  vector<size_t> valid;
 
  public:
   vector<vector<double>> flux, fluxIR;
+  vector<double> zLib, zLibIR;
   vector<SED *> fullLib, fullLibIR, lightLib;
   vector<flt> allFilters;
   vector<double> gridz;
@@ -47,14 +53,17 @@ class PhotoZ {
   PhotoZ(keymap &key_analysed);
 
   virtual ~PhotoZ() {
+    for (auto &sed : fullLib) delete sed;
+    for (auto &sed : fullLibIR) delete sed;
+    for (auto &sed : lightLib) delete sed;
     fullLib.clear();
     fullLibIR.clear();
+    lightLib.clear();
   }
 
-  std::tuple<vector<double>, vector<double>> run_autoadapt(vector<onesource *>);
+  vector<double> run_autoadapt(vector<onesource *>);
 
-  void run_photoz(vector<onesource *> sources, const vector<double> &a0,
-                  const vector<double> &a1);
+  void run_photoz(vector<onesource *> sources, const vector<double> &a0);
 
   string prep_header(vector<string> outkeywords);
 
@@ -78,6 +87,21 @@ class PhotoZ {
   vector<onesource *> read_photoz_sources();
   void prep_data(vector<onesource *> sources);
   void prep_data(onesource *oneObj);
+
+  //! Return the indexes over zlib vector on which to run the fit
+  /*!
+    \param zlib The vector of redshifts of each template in the full library, in
+    the same order \param zfix If true only take indexes of the templates whose
+    redshifts are the closest to the true/spectro z. onesource::closest_red
+    needs to have been set, else the the return vector will contain all the
+    indexes, as closest_red is initialized to a negative unphysical value.
+
+    \param ir whether tje selection is done on the main template library or on
+    the IR one.
+
+    \return Vector of indexes to be used on the full library.
+  */
+  vector<size_t> validLib(const double &redshift, const bool &ir = false);
 };
 
 keymap read_keymap_from_doc(const string libName);
@@ -85,7 +109,7 @@ keymap read_keymap_from_doc(const string libName);
 vector<string> readOutKeywords(const string outpara);
 
 void auto_adapt(const vector<onesource *> adaptSources, vector<double> &a0,
-                vector<double> &a1, int &converge, int &iteration);
+                int &converge, int &iteration);
 
 vector<vector<int>> bestFilter(int nbFlt, vector<double> gridz,
                                vector<SED *> fullLib, int method,

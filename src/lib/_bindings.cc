@@ -35,6 +35,12 @@ void applySEDLibTemplate(modT &m, std::string name) {
 }
 
 PYBIND11_MODULE(_lephare, mod) {
+  /*object_type enum for python*/
+  py::enum_<object_type>(mod, "object_type")
+      .value("GAL", object_type::GAL)
+      .value("QSO", object_type::QSO)
+      .value("STAR", object_type::STAR);
+
   /******** CLASS ONEELLAMBDA *********/
   py::class_<oneElLambda>(mod, "oneElLambda")
       .def(py::init<double, double, int>(), py::arg("lambin"), py::arg("valin"),
@@ -48,16 +54,18 @@ PYBIND11_MODULE(_lephare, mod) {
 
   /******** CLASS COSMOLOGY*********/
   py::class_<cosmo>(mod, "cosmo")
-      .def(py::init<double, double, double>(), py::arg("h0") = 70,
-           py::arg("om0") = 0.3, py::arg("l0") = 0.7, "standard constructor")
-      .def("distMod", &cosmo::distMod, py::arg("z"))
-      .def("distMet", &cosmo::distMet, py::arg("z"))
-      .def("time", &cosmo::time, py::arg("z"))
-      .def("distMod", py::vectorize(&cosmo::distMod))
-      .def("distMet", py::vectorize(&cosmo::distMet))
-      .def("time", py::vectorize(&cosmo::time));
-  mod.def("zgrid", &zgrid);
-  mod.def("indexz", &indexz);
+      .def(py::init<double, double, double>(), "Standard constructor",
+           py::arg("h0") = 70, py::arg("om0") = 0.3, py::arg("l0") = 0.7)
+      .def("distMod", py::vectorize(&cosmo::distMod),
+           "Compute distance modulus given redshift z.", py::arg("z"))
+      .def("distMet", py::vectorize(&cosmo::distMet),
+           "Compute metric distance given redshift z.", py::arg("z"))
+      .def("time", py::vectorize(&cosmo::time), "Compute time at redshift z.",
+           py::arg("z"))
+      .def("flux_rescaling", &cosmo::flux_rescaling, "Compute flux rescaling.");
+
+  mod.def("zgrid", &zgrid, "Generate a redshift grid.");
+  mod.def("indexz", &indexz, "Get the index for a redshift value.");
 
   /******** CLASS OPA *********/
   py::class_<opa>(mod, "opa")
@@ -65,10 +73,9 @@ PYBIND11_MODULE(_lephare, mod) {
            "standard constructor")
       .def_readwrite("lamb_opa", &opa::lamb_opa)
       .def_readwrite("opared", &opa::red)
-      .def("read", &opa::read)
-      //   .def("lmin", &opa::lmin, "return smallest wavelength stored")
-      //   .def("lmax", &opa::lmax, "return largest wavelength stored")
-      ;
+      .def("read", &opa::read);
+  //   .def("lmin", &opa::lmin, "return smallest wavelength stored")
+  //   .def("lmax", &opa::lmax, "return largest wavelength stored")
 
   /******** CLASS EXT *********/
   py::class_<ext>(mod, "ext")
@@ -128,14 +135,14 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readwrite("lamb_trans", &flt::lamb_trans)
       .def("data", [](const flt &f) {
         int N = f.lamb_trans.size();
-        py::array_t<double> result = py::array_t<double>(N * 2);
+        // Create a 2D array with shape (2, N) (transposed)
+        py::array_t<double> result({2, N});
         py::buffer_info buf = result.request();
-        double *ptr = (double *)buf.ptr;
+        double *ptr = static_cast<double *>(buf.ptr);
         for (size_t i = 0; i < N; i++) {
-          ptr[i] = f.lamb_trans[i].lamb;
-          ptr[N + i] = f.lamb_trans[i].val;
+          ptr[i] = f.lamb_trans[i].lamb;     // First row
+          ptr[N + i] = f.lamb_trans[i].val;  // Second row
         }
-        result.resize({N, N});
         return result;
       });
   mod.def("write_output_filter", &write_output_filter);
@@ -159,6 +166,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readwrite("lnir", &SED::lnir)
       .def_readwrite("mag0", &SED::mag0)
       .def_readwrite("red", &SED::red)
+      .def("string_to_object", &SED::string_to_object)
       .def("is_gal", &SED::is_gal)
       .def("is_star", &SED::is_star)
       .def("is_qso", &SED::is_qso)
@@ -179,14 +187,14 @@ PYBIND11_MODULE(_lephare, mod) {
                                      const string &)>(&SED::writeSED))
       .def("data", [](const SED &f) {
         int N = f.lamb_flux.size();
-        py::array_t<double> result = py::array_t<double>(N * 2);
+        // Create a 2D array with shape (2, N) (transposed)
+        py::array_t<double> result({2, N});
         py::buffer_info buf = result.request();
-        double *ptr = (double *)buf.ptr;
+        double *ptr = static_cast<double *>(buf.ptr);
         for (size_t i = 0; i < N; i++) {
-          ptr[i] = f.lamb_flux[i].lamb;
-          ptr[N + i] = f.lamb_flux[i].val;
+          ptr[i] = f.lamb_flux[i].lamb;     // First row
+          ptr[N + i] = f.lamb_flux[i].val;  // Second row
         }
-        result.resize({N, N});
         return result;
       });
 
@@ -254,6 +262,7 @@ PYBIND11_MODULE(_lephare, mod) {
   //   ;
 
   /******** FUNCTIONS IN GLOBALS.H *********/
+  mod.attr("HIGH_CHI2") = HIGH_CHI2;
   mod.def("get_lephare_env", &get_lephare_env);
   mod.def("check_first_char", &check_first_char);
   mod.def("blackbody", &blackbody);
@@ -264,6 +273,7 @@ PYBIND11_MODULE(_lephare, mod) {
   mod.def("LOG10D_FAST", &LOG10D_FAST);
   mod.def("mag2flux", &mag2flux);
   mod.def("flux2mag", &flux2mag);
+  mod.def("indexes_in_vec", &indexes_in_vec);
 
   /******** FUNCTIONS IN PHOTOZ_LIB.H *********/
   py::class_<PhotoZ>(mod, "PhotoZ")
@@ -271,6 +281,8 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("fluxIR", &PhotoZ::fluxIR)
       .def_readonly("imagm", &PhotoZ::imagm)
       .def_readonly("fullLib", &PhotoZ::fullLib)
+      .def_readonly("zLib", &PhotoZ::zLib)
+      .def_readonly("flux", &PhotoZ::flux)
       .def_readonly("fullLibIR", &PhotoZ::fullLibIR)
       .def_readonly("allFilters", &PhotoZ::allFilters)
       .def_readonly("gridz", &PhotoZ::gridz)
@@ -287,7 +299,8 @@ PYBIND11_MODULE(_lephare, mod) {
            static_cast<void (PhotoZ::*)(onesource *)>(&PhotoZ::prep_data))
       .def("run_autoadapt", &PhotoZ::run_autoadapt)
       .def("run_photoz", &PhotoZ::run_photoz)
-      .def("write_outputs", &PhotoZ::write_outputs);
+      .def("write_outputs", &PhotoZ::write_outputs)
+      .def("validLib", &PhotoZ::validLib);
   // mod.def("read_lib", [](const string& libName, int ind, vector<int> emMod,
   // int babs) { 			vector<SED*> libFull;
   // int nummodpre[3]; 			string filtname;
@@ -321,6 +334,8 @@ PYBIND11_MODULE(_lephare, mod) {
            static_cast<void (onesource::*)(
                const string &, const vector<double>, const vector<double>,
                const long, const double, const string)>(&onesource::readsource))
+      .def("set_verbosity", &onesource::set_verbosity)
+      .def("get_verbosity", &onesource::get_verbosity)
       .def("fltUsed", &onesource::fltUsed)
       .def("convertFlux", &onesource::convertFlux)
       .def("convertMag", &onesource::convertMag)
@@ -328,14 +343,13 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("keepOri", &onesource::keepOri)
       .def("adapt_mag", &onesource::adapt_mag)
       .def("fit", &onesource::fit)
-      .def("validLib", &onesource::validLib)
+      .def("mode", &onesource::mode)
       .def("rm_discrepant", &onesource::rm_discrepant)
       .def("generatePDF", &onesource::generatePDF)
       .def("interp", &onesource::interp)
       .def("uncertaintiesMin", &onesource::uncertaintiesMin)
       .def("uncertaintiesBay", &onesource::uncertaintiesBay)
       .def("secondpeak", &onesource::secondpeak)
-      .def("considered_red", &onesource::considered_red)
       .def("interp_lib", &onesource::interp_lib)
       .def("absmag", &onesource::absmag)
       .def("limits", &onesource::limits)
@@ -360,10 +374,14 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("pos", &onesource::pos)
       .def_readonly("cont", &onesource::cont)
       .def_readonly("pdfmap", &onesource::pdfmap)
+      .def_readonly("busnorma", &onesource::busnorma)
+      .def_readonly("busul", &onesource::busul)
       .def_readonly("nbused", &onesource::nbused)
       .def_readonly("nbul", &onesource::nbul)
       .def_readonly("dm", &onesource::dm)
       .def_readonly("zs", &onesource::zs)
+      .def_readonly("ab", &onesource::ab)
+      .def_readonly("ab_ori", &onesource::ab_ori)
       .def_readonly("sab", &onesource::sab)
       .def_readonly("mab", &onesource::mab)
       .def_readonly("msab", &onesource::msab)
@@ -448,8 +466,11 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("get_maxid", &PDF::get_maxid)
       .def("secondMax", &PDF::secondMax)
       .def("size", &PDF::size)
+      .def("cumulant", &PDF::cumulant)
       .def("levelCumu2x", &PDF::levelCumu2x)
       .def("credible_interval", &PDF::credible_interval)
+      .def("confidence_interval", &PDF::confidence_interval)
+      .def("improve_extremum", &PDF::improve_extremum)
       .def_readwrite("vPDF", &PDF::vPDF)
       .def_readwrite("xaxis", &PDF::xaxis)
       .def_readwrite("chi2", &PDF::chi2)
@@ -457,4 +478,5 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readwrite("secondP", &PDF::secondP)
       .def_readwrite("ind", &PDF::ind)
       .def_readwrite("secondInd", &PDF::secondInd);
+  mod.def("quadratic_extremum", &quadratic_extremum);
 }  // PYBIND11_MODULE

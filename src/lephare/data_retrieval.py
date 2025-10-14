@@ -1,4 +1,7 @@
-"""This module provides functionality for downloading and managing data files using pooch."""
+"""
+This module provides functionality for downloading and managing data files using
+`pooch <https://pypi.org/project/pooch/0.5.2/>`__.
+"""
 
 import concurrent.futures
 import os
@@ -84,7 +87,7 @@ def _check_registry_is_latest_version(remote_registry_url, local_registry_file):
     local_registry_hash = pooch.file_hash(local_registry_file, alg="sha256")
     remote_hash_url = os.path.splitext(remote_registry_url)[0] + "_hash.sha256"
 
-    remote_hash_response = requests.get(remote_hash_url, timeout=60)
+    remote_hash_response = requests.get(remote_hash_url, headers={"User-Agent": "LePHARE"}, timeout=60)
     remote_hash_response.raise_for_status()  # Raise exceptions for non-200 status codes
 
     return remote_hash_response.text.strip() == local_registry_hash
@@ -121,13 +124,14 @@ def download_registry_from_github(url="", outfile=""):
         return
 
     # Download the registry file
-    response = requests.get(url, timeout=120)
+    response = requests.get(url, headers={"User-Agent": "LePHARE"}, timeout=120)
     response.raise_for_status()  # Raise exceptions for non-200 status codes
 
     with open(outfile, "w", encoding="utf-8") as file:
         file.write(response.text)
 
     print(f"Registry file downloaded and saved as {outfile}.")
+    return response.text
 
 
 def read_list_file(list_file, prefix=""):
@@ -155,7 +159,7 @@ def read_list_file(list_file, prefix=""):
 
     # Check if the list_file is a URL
     if urlparse(list_file).scheme in ("http", "https"):
-        response = requests.get(list_file, timeout=60)
+        response = requests.get(list_file, headers={"User-Agent": "LePHARE"}, timeout=60)
         response.raise_for_status()
         content = response.text
     else:
@@ -240,7 +244,7 @@ def _create_directories_from_files(file_names):
             print(f"Created directory: {directory}")
 
 
-def download_file(retriever, file_name, ignore_registry=False):
+def download_file(retriever, file_name, ignore_registry=False, downloader=None):
     """Download a file using the retriever, optionally ignoring the registry.
 
     Parameters
@@ -251,12 +255,16 @@ def download_file(retriever, file_name, ignore_registry=False):
         The name of the file to download.
     ignore_registry : bool
         If True, download the file without checking its hash against the registry.
+    downloader : pooch.HTTPDownloader
+        The downloader is required to set the user for building on readthedocs
 
     Returns
     -------
     str
         The path to the downloaded file.
     """
+    if downloader is None:
+        downloader = pooch.HTTPDownloader(headers={"User-Agent": "LePHARE"})
     if ignore_registry:
         print(f"Downloading without registry: {file_name}...")
         return pooch.retrieve(
@@ -264,9 +272,14 @@ def download_file(retriever, file_name, ignore_registry=False):
             known_hash=None,
             fname=file_name,
             path=retriever.path,
+            # The following may now be required by GitHub
+            downloader=downloader,
         )
     else:
-        return retriever.fetch(file_name)
+        return retriever.fetch(
+            file_name,
+            downloader=downloader,
+        )
 
 
 def download_all_files(retriever, file_names, ignore_registry=False, retry=MAX_RETRY_ATTEMPTS):
@@ -396,8 +409,15 @@ def config_to_required_files(keymap, base_url=None):
     sed_keys = ["STAR_SED", "GAL_SED", "QSO_SED"]
     for key in sed_keys:
         try:
-            list_file = base_url + keymap[key].value
-            required_files += [keymap[key].value]
+            # If find sed/ in the path, assume the list is present in lephare-data
+            # and try to retreive the files
+            list_file = keymap[key].value
+            # Remove the beginning of the path before sed/
+            if list_file.find("sed/") > 0:
+                list_file = (list_file[list_file.find("sed/") :]).strip()
+            required_files += [list_file]
+            # Add the url to retrieve the files
+            list_file = base_url + list_file
             file_names = read_list_file(list_file, prefix=f"sed/{key.split('_')[0]}/")
             required_files += file_names
         except KeyError:
@@ -413,7 +433,7 @@ def config_to_required_files(keymap, base_url=None):
     return required_files
 
 
-def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=None):
+def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=None, clone=True):
     """Get all auxiliary data required to run lephare.
 
     This gets all the filters, seds, and other data files.
@@ -428,19 +448,25 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
         The config dictionary.
     additional_files : list
         Any additional files to be downloaded from the auxiliary file repo.
+    clone : bool
+        If keymap is None, clone=True will git clone the lephare-data repoitory,
+        else it will copy all the lephare-data files over into lephare_dir. This is
+        useful e.g. for developers wanting the exact same code environment as in
+        legacy lephare version.
     """
 
     # ensure that all values in the keymap are keyword objects
-    keymap = all_types_to_keymap(keymap)
+    if keymap is not None:
+        keymap = all_types_to_keymap(keymap)
 
     # Get the registry file
-    download_registry_from_github()
+    file_text = download_registry_from_github()
     base_url = DEFAULT_BASE_DATA_URL
     repo_name = "lephare-data"
     repo_url = f"https://github.com/lephare-photoz/{repo_name}"
     registry_file = DEFAULT_REGISTRY_FILE
     data_path = lephare_dir
-    if keymap is None:
+    if keymap is None and clone is True:
         # Assume if filt is present assume everything is.
         if os.path.isdir(f"{lephare_dir}/filt"):
             warnings.warn(
@@ -454,7 +480,11 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
             os.system(f"git clone {repo_url} {lephare_dir}")
     else:
         retriever = make_retriever(base_url=base_url, registry_file=registry_file, data_path=data_path)
-        file_list = config_to_required_files(keymap)
+        if keymap is not None:
+            file_list = config_to_required_files(keymap)
+        else:
+            file_list = np.array(file_text.split())[0:-1:2]
         download_all_files(retriever, file_list, ignore_registry=False)
     if additional_files is not None:
         download_all_files(retriever, additional_files, ignore_registry=False)
+    os.system(f"rm {registry_file}")

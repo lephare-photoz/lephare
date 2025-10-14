@@ -115,9 +115,15 @@ double cosmo::time(double z) const {
   return timy;
 }
 
+double cosmo::flux_rescaling(double z, double target_z) const {
+  double current_dm = distMod(z);
+  double target_dm = distMod(target_z);
+  return POW10D(0.4 * (target_dm - current_dm));
+}
+
 // Two possible grid in redshift : linear or in (1+z)
 // Possible now to define a minimum redshift to be considered
-vector<double> zgrid(int gridType, double dz, double zmin, double &zmax) {
+vector<double> zgrid(double dz, double zmin, double &zmax) {
   if (zmax < zmin) {
     throw invalid_argument(
         "You are probably using the old parametrisation of "
@@ -135,28 +141,14 @@ vector<double> zgrid(int gridType, double dz, double zmin, double &zmax) {
   unsigned int count = 1;
   double zinter = zmin;
   // Define a vector with the redshift grid according to the given type
-  switch (gridType) {
-      // grid in dz*(1+z)
-    case 1:
-      while (zinter < zmax) {
-        // Step in dz*(1+z)
-        zinter = zinter + (1. + zinter) * dz;
-        // keep only in the redshift range zmin-zmax defined in Z_STEP
-        if (zinter > zmin && zinter < zmax) z.push_back(zinter);
-      }
-      break;
-      // Linear grid in redshift
-    default:
-      while (zinter < zmax) {
-        // Step in dz
-        zinter = zmin + count * dz;
-        // keep only in the redshift range zmin-zmax defined in Z_STEP
-        if (zinter > zmin && zinter < zmax) {
-          z.push_back(zinter);
-        }
-        count++;
-      }
-      break;
+  while (zinter < zmax) {
+    // Step in dz
+    zinter = zmin + count * dz;
+    // keep only in the redshift range zmin-zmax defined in Z_STEP
+    if (zinter > zmin && zinter < zmax) {
+      z.push_back(zinter);
+    }
+    count++;
   }
   z.push_back(zmax);
 

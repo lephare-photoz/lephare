@@ -17,6 +17,7 @@
 #include "onesource.h"
 #include "opa.h"
 
+//! types of object that LePHARE can treat distinctively
 enum object_type { GAL, QSO, STAR };
 
 /*
@@ -35,10 +36,17 @@ class SED {
   string name;
   bool has_emlines;  ///< True if the emission lines have been computed, false
                      ///< if not
-  int nummod;
+
+  //! object type of the SED
   object_type nlib;
-  int index, index_z0, posz = -1;
-  double red, chi2 = 1.e9, dm, lnir, luv, lopt, inter;
+
+  int nummod,    ///< index in the initial list of rest frame SEDs
+      index,     ///< index in the full list of SED, redshifted, and modified by
+                 ///< extinction, etc...
+      index_z0;  ///< index in the full list of SEDs corresponding to the z=0
+                 ///< version of the current SED.
+
+  double red, chi2 = HIGH_CHI2, dm, lnir, luv, lopt, inter;
   double mass, age, sfr, ssfr,
       ltir;  // need to put it out of GalSED since used in the PDF without
              // knowing that it's a gal.
@@ -78,9 +86,40 @@ class SED {
     fac_line = p.fac_line;
     distMod = p.distMod;
   };
+
+  //! Convert string to object_type
+  /*!
+    \param type String starting with either g, q, or s,
+    in either lower or upper case. If it is not the case,
+    throw invalid argument exception.
+
+    \return object_type corresponding to input, if valid.
+   */
+  inline static object_type string_to_object(const string &type) {
+    char t = toupper(type[0]);
+    if (t == 'S') {
+      return STAR;
+    } else if (t == 'Q') {
+      return QSO;
+    } else if (t == 'G') {
+      return GAL;
+    } else {
+      throw invalid_argument("Object type not recognized: " + type);
+    }
+  }
+
+  //! Return the object type
+  object_type get_object_type() const { return nlib; }
+
+  //! Return true if SED is of object_type GAL, false if not
   bool is_gal() { return nlib == GAL ? true : false; }
+
+  //! Return true if SED is of object_type QSO, false if not
   bool is_qso() { return nlib == QSO ? true : false; }
+
+  //! Return true if SED is of object_type STAR, false if not
   bool is_star() { return nlib == STAR ? true : false; }
+
   virtual ~SED();
   ///\brief Read sedFile assumed to be ASCII and build the #lamb_flux vector of
   /// oneElLambda elements.
@@ -133,20 +172,24 @@ class SED {
     ofstream sdocOut, sphysOut, sbinOut;
     sdocOut.open(docFile.c_str());
     if (!sdocOut) {
-      throw invalid_argument("Can't open doc file " + docFile);
+      throw invalid_argument("Can't open doc file compiling the SED " +
+                             docFile);
     }
     sbinOut.open(binFile.c_str(), ios::binary | ios::out);
     if (!sbinOut) {
-      throw invalid_argument("Can't open bin file " + binFile);
+      throw invalid_argument("Can't open binary file compiling the SED " +
+                             binFile);
     }
     if (nlib == GAL) {
       sphysOut.open(physFile.c_str());
       if (!sphysOut) {
-        throw invalid_argument("Can't open phys file " + physFile);
+        throw invalid_argument(
+            "Can't open physical para file associated to SED " + physFile);
       }
     }
     writeSED(sbinOut, sphysOut, sdocOut);
   };
+
   virtual void writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
                         vector<flt> allFilters, string magtyp) {};
 
@@ -154,7 +197,8 @@ class SED {
     ifstream sbinIn;
     sbinIn.open(fname.c_str(), ios::binary);
     if (!sbinIn) {
-      throw invalid_argument("Can't open file " + fname);
+      throw invalid_argument("Can't open the binary file compiling the SED " +
+                             fname);
     }
     readSEDBin(sbinIn);
   }

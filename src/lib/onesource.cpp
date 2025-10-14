@@ -7,7 +7,9 @@
 
 #include "onesource.h"
 
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 
 #include <algorithm>
 #include <cmath>
@@ -40,27 +42,9 @@ void onesource::readsource(const string &identifier, const vector<double> vals,
   ab = vals;
   sab = err_vals;
   zs = z_spec;
+  cont = context;
   str_inp = additional_input;
   prior priorObj;  // Initialise the prior so that weights can be overwritten.
-}
-
-/*
- Fixed the redshift considered for abs mag, etc depending on the option
-*/
-void onesource::considered_red(const bool zfix, const string methz) {
-  // if zfix is not fixed
-  if (!zfix) {
-    if (methz[0] == 'M' || methz[0] == 'm') {
-      // if considered redshift is the median of the PDF
-      consiz = zgmed[0];
-    } else {
-      // if considered redshift is the minimum of the chi2
-      consiz = zmin[0];
-    }
-  } else {
-    // if considered redshift is the spectroscopic redshift
-    consiz = zs;
-  }
 }
 
 /*
@@ -84,12 +68,14 @@ void onesource::setPriors(const array<double, 2> magabsB,
 void onesource::fltUsed(const long gbcont, const long contforb,
                         const int imagm) {
   vector<int> bused;
-
+  busnorma.clear();
+  busul.clear();
   // Replace the context by the global context if defined
   if (gbcont >= 0) cont = gbcont;
 
   int nf = 0;
   nbul = 0;
+  nbused = 0;
   // Loop over each filter
   for (int k = 0; k < imagm; k++) {
     // Define if the band should be used based on the context
@@ -135,7 +121,8 @@ void onesource::fltUsed(const long gbcont, const long contforb,
     // Count the bands used as upper-limits
     if (busul[k] == 1) nbul++;
   }
-  if (nf == 0) cout << "WARNING: No scaling --> No z " << spec << endl;
+  if (nf == 0 && verbose)
+    cout << "WARNING: No scaling --> No z " << spec << endl;
 }
 
 /*
@@ -144,6 +131,8 @@ void onesource::fltUsed(const long gbcont, const long contforb,
 void onesource::fltUsedIR(const long fir_cont, const long fir_scale,
                           const int imagm, vector<flt> allFilters,
                           const double fir_lmin) {
+  busfir.clear();
+  bscfir.clear();
   // Loop over each filter
   for (int k = 0; k < imagm; k++) {
     // Define if the band should be used based on the context
@@ -240,16 +229,19 @@ void onesource::keepOri() {
 }
 
 /*
- MODIFY THE OBSERVED MAGNITUDES WITH THE VALUE A0 and A1
+ MODIFY THE OBSERVED MAGNITUDES WITH THE VALUE A0
 */
-void onesource::adapt_mag(vector<double> a0, vector<double> a1) {
+void onesource::adapt_mag(vector<double> a0) {
   double corr;
   // Loop over each filter
   for (size_t k = 0; k < ab.size(); k++) {
     // Define the correction to be applied to the observed magnitudes (same
     // convention as before)
-    corr = a0[k] + a1[k] * 0.;
+    corr = a0[k];
     // Observed magnitudes and flux with the correction
+    // apply the offset a0, in mag. Offset of +2.5 mag multiplies the flux by 10
+    // Convention inverted: it's like applying the offset to the model (or to
+    // the data but sign inverted) That's why the sab aren't changed
     if (ab_ori[k] > 0 || sab[k] > 0) ab[k] = ab_ori[k] * pow(10., 0.4 * corr);
     if (ab[k] > 0)
       mab[k] = flux2mag(ab[k]);
@@ -257,25 +249,6 @@ void onesource::adapt_mag(vector<double> a0, vector<double> a1) {
       mab[k] = HIGH_MAG;
   }
   return;
-}
-
-/*
- RETURN THE INDEX OF THE LIBRARY TO BE CONSIDERED (MAINLY ZFIX CASE)
-*/
-vector<size_t> onesource::validLib(vector<SED *> &thelib, const bool &zfix,
-                                   const double &consideredZ) {
-  vector<size_t> val;
-  // Condition with the redshift set ZFIX YES
-  if (zfix) {
-    for (size_t i = 0; i < thelib.size(); i++) {
-      if ((thelib[i])->red == closest_red) val.push_back(i);
-    }
-  } else {
-    // If not fixed redshift, use everything
-    for (size_t i = 0; i < thelib.size(); i++) val.push_back(i);
-  }
-
-  return val;
 }
 
 /*
@@ -324,7 +297,6 @@ void onesource::substellar(const bool substar, vector<flt> allFilters) {
 void onesource::rescale_flux_errors(const vector<double> min_err,
                                     const vector<double> fac_err) {
   size_t imagm = ab.size();
-
   // check if the number of filters in min_err corresponds to the expected one
   if ((size_t)imagm == min_err.size() || min_err.size() == 1) {
     for (size_t k = 0; k < imagm; k++) {
@@ -378,13 +350,18 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
     }
   }
 
-  // Do a local minimisation per thread (store chi2 and index)
-  // Catch first the number of threads
+  // Reinitialise the chi2 for each library because the fit could be run several
+  // times on the same source
+  for (int k = 0; k < 3; k++) chimin[k] = HIGH_CHI2;
+
+    // Do a local minimisation per thread (store chi2 and index)
+    // Catch first the number of threads
 #ifdef _OPENMP
   number_threads = omp_get_max_threads();
 #endif
-  vector<vector<double>> locChi2(3, vector<double>(number_threads, 1.e9));
-  vector<vector<int>> locInd(3, vector<int>(number_threads, -1));
+  vector<vector<double>> chi2_vals(number_threads,
+                                   vector<double>(3, HIGH_CHI2));
+  vector<vector<int>> chi2_idx(number_threads, vector<int>(3, -1));
 
   // Compute some quantities linked to ab and sab to save computational time in
   // the fit. invsab = busnorma / sab busnorma here ensures that all the
@@ -406,14 +383,11 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
   bool mabsGALprior = (priorLib[0] < 0 && priorLib[1] < 0);
   bool mabsAGNprior = (priorLib[2] < 0 && priorLib[3] < 0);
 
-  // parrallellize over each SED
-  vector<double> chi2loc(fulllib.size(), 1.e9), dmloc(fulllib.size(), -999.);
-  size_t il;
 #ifdef _OPENMP
   // double start = omp_get_wtime();
 #pragma omp parallel shared(fulllib)                                    \
     firstprivate(s2n, invsab, invsabSq, abinvsabSq, imagm, nbul, busul, \
-                     priorLib, number_threads, thread_id) private(il)
+                     priorLib, number_threads, thread_id)
   {
     // Catch the name of the local thread in the parrallelisation
     thread_id = omp_get_thread_num();
@@ -421,36 +395,34 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
 
     // Compute normalisation and chi2
 #pragma omp for schedule(static, 10000)
-    for (size_t i = 0; i < va.size(); i++) {
+    for (size_t v = 0; v < va.size(); v++) {
       // index to be considered because of ZFIX=YES
-      il = va[i];
-      // Initialize
-      chi2loc[il] = 1.e9;
-      dmloc[il] = -999.;
+      size_t i = va[v];
 
       // Measurement of scaling factor dm only with (fobs>flim), dchi2/ddm = 0
       double avmago = 0., avmagt = 0.;
+      double dmloc = -999.;
       for (size_t k = 0; k < imagm; k++) {
-        double fluxin = flux[il][k];
+        double fluxin = flux[i][k];
         avmago += fluxin * abinvsabSq[k];
         avmagt += fluxin * fluxin * invsabSq[k];
       }
       // Normalisation
-      if (avmagt > 0) dmloc[il] = avmago / avmagt;
+      if (avmagt > 0) dmloc = avmago / avmagt;
 
       // Measurement of chi^2
-      chi2loc[il] = 0;
+      double chi2loc = 0;
       for (size_t k = 0; k < imagm; k++) {
-        double inter = s2n[k] - dmloc[il] * flux[il][k] * invsab[k];
-        chi2loc[il] += inter * inter;
+        double inter = s2n[k] - dmloc * flux[i][k] * invsab[k];
+        chi2loc += inter * inter;
       }
 
       // Upper-limits. Check first if some bands have upper-limits, before
       // applying the condition
       if (nbul > 0) {
         for (size_t k = 0; k < imagm; k++) {
-          if ((dmloc[il] * busul[k] * flux[il][k]) > ab[k] && busnorma[k] == 1)
-            chi2loc[il] = 1.e9;
+          if ((dmloc * busul[k] * flux[i][k]) > ab[k] && busnorma[k] == 1)
+            chi2loc = HIGH_CHI2;
         }
       }
 
@@ -489,20 +461,18 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
           priorObj.update_chi2(this, chi2loc[il], fulllib[il], il, dmloc[il],
                                funz0, bp, mabsGALprior, mabsAGNprior);
 
-      // keep the minimum chi2
-      if (chi2loc[il] < 0.99e9) {
-        int nlibloc = (fulllib[il])->nlib;
-        // If local minimum inside the thread, store the new minimum for the
-        // thread done per type s (0 gal, 1 AGN, 2 stars)
-        if (locChi2[nlibloc][thread_id] > chi2loc[il]) {
-          locChi2[nlibloc][thread_id] = chi2loc[il];
-          locInd[nlibloc][thread_id] = (fulllib[il])->index;
+      // keep track of the minimum chi2 for each object type, over the threads
+      if (chi2loc < HIGH_CHI2) {
+        object_type type = sed->get_object_type();
+        if (chi2_vals[thread_id][type] > chi2loc) {
+          chi2_vals[thread_id][type] = chi2loc;
+          chi2_idx[thread_id][type] = sed->index;
         }
       }
 
       // Write the chi2
-      fulllib[il]->chi2 = chi2loc[il];
-      fulllib[il]->dm = dmloc[il];
+      sed->chi2 = chi2loc;
+      sed->dm = dmloc;
     }
 
 #ifdef _OPENMP
@@ -517,9 +487,9 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
   for (int k = 0; k < 3; k++) {
     for (int j = 0; j < number_threads; j++) {
       // Minimum over the full redshift range for the galaxies
-      if (chimin[k] > locChi2[k][j]) {
-        chimin[k] = locChi2[k][j];
-        indmin[k] = locInd[k][j];
+      if (chimin[k] > chi2_vals[j][k]) {
+        chimin[k] = chi2_vals[j][k];
+        indmin[k] = chi2_idx[j][k];
       }
     }
   }
@@ -552,7 +522,9 @@ void onesource::compute_best_fit_physical_quantities(vector<SED *> &fulllib) {
     double age = best_gal_sed->age;
     results["AGE_BEST"] = (age != INVALID_PHYS) ? LOG10D(age) : INVALID_PHYS;
     results["EBV_BEST"] = best_gal_sed->ebv;
-    results["EXTLAW_BEST"] = best_gal_sed->extlawId;
+    // Add +1 to have the first dust attenuation curve starting at 1 in the
+    // output
+    results["EXTLAW_BEST"] = best_gal_sed->extlawId + 1;
     results["LUM_NUV_BEST"] =
         best_gal_sed->luv + LOG10D(3.e18 * 400 / pow(2300, 2) * tmp2);
     results["LUM_R_BEST"] =
@@ -664,8 +636,7 @@ void onesource::compute_best_fit_physical_quantities(vector<SED *> &fulllib) {
 void onesource::rm_discrepant(vector<SED *> &fulllib,
                               const vector<vector<double>> &flux,
                               const vector<size_t> &va, const double funz0,
-                              const array<int, 2> bp, double thresholdChi2,
-                              bool verbose) {
+                              const array<int, 2> bp, double thresholdChi2) {
   size_t imagm = busnorma.size();
   double newmin, improvedChi2;
   // Start with the best chi2 among the libraries
@@ -716,15 +687,16 @@ void onesource::rm_discrepant(vector<SED *> &fulllib,
  Compute the chi2 for the IR library
 */
 void onesource::fitIR(vector<SED *> &fulllibIR,
-                      const vector<vector<double>> &fluxIR, const int imagm,
+                      const vector<vector<double>> &fluxIR,
+                      const vector<size_t> &va, const int imagm,
                       const string fit_frsc, cosmo lcdm) {
-  int number_threads = 1;
+  int number_threads = 1, thread_id = 0;
 // Do a local minimisation per thread (store chi2 and index)
 // Catch first the number of threads
 #ifdef _OPENMP
   number_threads = omp_get_max_threads();
 #endif
-  vector<double> locChi2(number_threads, 1.e9);
+  vector<double> locChi2(number_threads, HIGH_CHI2);
   vector<int> locInd(number_threads, -1);
 
   // Compute some quantities linked to ab and sab to save computational time in
@@ -740,72 +712,59 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
 // parrallellize over each SED
 #ifdef _OPENMP
 // double start = omp_get_wtime();
-#pragma omp parallel firstprivate(lcdm) shared(fulllibIR)
+#pragma omp parallel firstprivate(lcdm, thread_id) shared(fulllibIR)
   {
+    // Catch the name of the local thread in the parrallelisation
+    thread_id = omp_get_thread_num();
 #endif
 
 #pragma omp for schedule(static, 10000)
-    // Loop over all SEDs from the library
-    for (size_t i = 0; i < fulllibIR.size(); i++) {
-      if (fulllibIR[i]->red == closest_red) {
-        // Difference between the distance modulus at the redshift of the
-        // library and the finel one considered
-        double dmcor;
-        dmcor = pow(10., (0.4 * (lcdm.distMod(fulllibIR[i]->red) -
-                                 lcdm.distMod(consiz))));
+    for (size_t v = 0; v < va.size(); v++) {
+      size_t i = va[v];
+      SED *sed = fulllibIR[i];
+      double dmcor;
+      dmcor = pow(10., (0.4 * (lcdm.distMod(sed->red) - lcdm.distMod(consiz))));
 
-        // normalization
-        // Measurement of scaling factor dm only with (fobs>flim), dchi2/ddm = 0
-        double avmago = 0.0, avmagt = 0.0, dmloc = -99.0;
-        int nbusIR = 0;
-        nbusIR = accumulate(bscfir.begin(), bscfir.end(), 0);
-        for (int k = 0; k < imagm; k++) {
-          double fluxin = fluxIR[i][k];
-          avmago += fluxin * dmcor * bscfir[k] * abinvsabSq[k];
-          avmagt += fluxin * fluxin * dmcor * dmcor * bscfir[k] * invsabSq[k];
-        }
-        // Check that the normalisation should be computed (if the scaling
-        // should be free)
-        if (nbusIR < 1) {
+      // normalization
+      // Measurement of scaling factor dm only with (fobs>flim), dchi2/ddm = 0
+      double avmago = 0.0, avmagt = 0.0, dmloc = -99.0;
+      int nbusIR = 0;
+      nbusIR = accumulate(bscfir.begin(), bscfir.end(), 0);
+      for (int k = 0; k < imagm; k++) {
+        double fluxin = fluxIR[i][k];
+        avmago += fluxin * dmcor * bscfir[k] * abinvsabSq[k];
+        avmagt += fluxin * fluxin * dmcor * dmcor * bscfir[k] * invsabSq[k];
+      }
+      // Check that the normalisation should be computed (if the scaling
+      // should be free)
+      if (nbusIR < 1) {
+        if (verbose)
           cout << "WARNING: No scaling in IR " << spec << " " << nbusIR << " "
                << endl;
-        } else {
-          dmloc = avmago / avmagt;
-        }
-        // If one band or no free scale, use directly the scaling from the
-        // template to find the best fit template
-        double dmEff = dmloc;
-        if (nbusIR <= 1 || fit_frsc[0] == 'n' || fit_frsc[0] == 'N')
-          dmEff = 1.0;
-
-        double chi2loc = 0;
-        // Measurement of chi^2
-        for (int k = 0; k < imagm; k++) {
-          double inter = (s2n[k] - (dmEff * fluxIR[i][k] * dmcor * invsab[k]));
-          chi2loc += busfir[k] * inter * inter;
-        }
-        // Associate results to the SED
-        fulllibIR[i]->dm = dmEff;
-        fulllibIR[i]->chi2 = chi2loc;
-
       } else {
-        fulllibIR[i]->chi2 = 1.e9;
+        dmloc = avmago / avmagt;
       }
-    }
+      // If one band or no free scale, use directly the scaling from the
+      // template to find the best fit template
+      double dmEff = dmloc;
+      if (nbusIR <= 1 || fit_frsc[0] == 'n' || fit_frsc[0] == 'N') dmEff = 1.0;
 
-// Catch the name of the local thread in the parallelisation
-#ifdef _OPENMP
-    int thread_id = omp_get_thread_num();
-#pragma omp for
-#endif
-    // Loop over all SEDs from the library
-    for (size_t i = 0; i < fulllibIR.size(); i++) {
-      // If local minimum inside the thread, store the new minimum for the
-      // thread done per type s (0 gal, 1 AGN, 2 stars)
-      if (locChi2[thread_id] > fulllibIR[i]->chi2) {
-        locChi2[thread_id] = fulllibIR[i]->chi2;
-        locInd[thread_id] = fulllibIR[i]->index;
+      double chi2loc = 0;
+      // Measurement of chi^2
+      for (int k = 0; k < imagm; k++) {
+        double inter = (s2n[k] - (dmEff * fluxIR[i][k] * dmcor * invsab[k]));
+        chi2loc += busfir[k] * inter * inter;
       }
+
+      // keep track of the minimum chi2 for each object type, over the threads
+      if (locChi2[thread_id] > chi2loc) {
+        locChi2[thread_id] = chi2loc;
+        locInd[thread_id] = sed->index;
+      }
+
+      // Associate results to the SED
+      sed->dm = dmEff;
+      sed->chi2 = chi2loc;
     }
 
 #ifdef _OPENMP
@@ -821,12 +780,13 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
       indminIR = locInd[j];
     }
   }
-  zminIR = fulllibIR[indminIR]->red;
-  dmminIR = fulllibIR[indminIR]->dm;
-  imasminIR = fulllibIR[indminIR]->nummod;
 
-  if (indminIR >= 0)
+  if (indminIR >= 0) {
+    zminIR = fulllibIR[indminIR]->red;
+    dmminIR = fulllibIR[indminIR]->dm;
+    imasminIR = fulllibIR[indminIR]->nummod;
     results["LUM_TIR_BEST"] = fulllibIR[indminIR]->ltir + log10(dmminIR);
+  }
 
   return;
 }
@@ -848,9 +808,10 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
   // Do a local minimisation per thread (store chi2 and index) dim 1: type, dim
   // 2: thread, 3: index of the redshift grid
   vector<vector<vector<double>>> locChi2(
-      3, vector<vector<double>>(dimzg, vector<double>(number_threads, 1.e9)));
+      number_threads,
+      vector<vector<double>>(3, vector<double>(dimzg, HIGH_CHI2)));
   vector<vector<vector<int>>> locInd(
-      3, vector<vector<int>>(dimzg, vector<int>(number_threads, -1)));
+      number_threads, vector<vector<int>>(3, vector<int>(dimzg, -1)));
 
   // to create the marginalized PDF
   int pos = 0;
@@ -861,34 +822,34 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
   // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] / 5:["AGE"] /
   // 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] / 10:["MIN_ZQ"] /
   // 11:["BAY_ZG"] / 12:["BAY_ZQ"]
-  double PDFzloc[pdfmap[11].size()];
+  vector<double> PDFzloc(pdfmap[11].size());
   for (size_t i = 0; i < pdfmap[11].size(); ++i) PDFzloc[i] = 0.0;
 
-  double PDFzqloc[pdfmap[12].size()];
+  vector<double> PDFzqloc(pdfmap[12].size());
   for (size_t i = 0; i < pdfmap[12].size(); ++i) PDFzqloc[i] = 0.0;
 
-  double PDFmassloc[pdfmap[0].size()];
+  vector<double> PDFmassloc(pdfmap[0].size());
   for (size_t i = 0; i < pdfmap[0].size(); ++i) PDFmassloc[i] = 0.0;
 
-  double PDFSFRloc[pdfmap[1].size()];
+  vector<double> PDFSFRloc(pdfmap[1].size());
   for (size_t i = 0; i < pdfmap[1].size(); ++i) PDFSFRloc[i] = 0.0;
 
-  double PDFsSFRloc[pdfmap[2].size()];
+  vector<double> PDFsSFRloc(pdfmap[2].size());
   for (size_t i = 0; i < pdfmap[2].size(); ++i) PDFsSFRloc[i] = 0.0;
 
-  double PDFAgeloc[pdfmap[5].size()];
+  vector<double> PDFAgeloc(pdfmap[5].size());
   for (size_t i = 0; i < pdfmap[5].size(); ++i) PDFAgeloc[i] = 0.0;
 
-  double PDFLdustloc[pdfmap[3].size()];
+  vector<double> PDFLdustloc(pdfmap[3].size());
   for (size_t i = 0; i < pdfmap[3].size(); ++i) PDFLdustloc[i] = 0.0;
 
-  double PDFcol1loc[pdfmap[6].size()];
+  vector<double> PDFcol1loc(pdfmap[6].size());
   for (size_t i = 0; i < pdfmap[6].size(); ++i) PDFcol1loc[i] = 0.0;
 
-  double PDFcol2loc[pdfmap[7].size()];
+  vector<double> PDFcol2loc(pdfmap[7].size());
   for (size_t i = 0; i < pdfmap[7].size(); ++i) PDFcol2loc[i] = 0.0;
 
-  double PDFmrefloc[pdfmap[8].size()];
+  vector<double> PDFmrefloc(pdfmap[8].size());
   for (size_t i = 0; i < pdfmap[8].size(); ++i) PDFmrefloc[i] = 0.0;
 
   // Decide if the uncertainties on the rest-frame colors should be analysed
@@ -896,66 +857,88 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
   colAnalysis = ((fltColRF[0] >= 0) && (fltColRF[1] >= 0) &&
                  (fltColRF[2] >= 0) && (fltColRF[3] >= 0) && (fltREF >= 0));
 
+  // Prepare direct references for all variables stored inside slow containers
+  auto &pdfmass = pdfmap[0];
+  auto &pdfsfr = pdfmap[1];
+  auto &pdfssfr = pdfmap[2];
+  auto &pdfldust = pdfmap[3];
+  auto &pdflir = pdfmap[4];
+  auto &pdfage = pdfmap[5];
+  auto &pdfcol1 = pdfmap[6];
+  auto &pdfcol2 = pdfmap[7];
+  auto &pdfmref = pdfmap[8];
+  auto &pdfminzg = pdfmap[9];
+  auto &pdfminzq = pdfmap[10];
+  auto &pdfbayzg = pdfmap[11];
+  auto &pdfbayzq = pdfmap[12];
+
   // parrallellize over each SED
 #ifdef _OPENMP
   // double start = omp_get_wtime();
 #pragma omp parallel private(pos, col1, col2, rfSED, prob) firstprivate( \
         thread_id, dimzg, number_threads) shared(locChi2, locInd, fulllib)
   {
+// We need to define the vector reduction we want, which is elementwise addition
+#pragma omp declare reduction(                                  \
+        vec_double_plus : std::vector<double> : std::transform( \
+                omp_out.begin(), omp_out.end(), omp_in.begin(), \
+                    omp_out.begin(), std::plus<double>()))      \
+    initializer(omp_priv = omp_orig)
+
     // Catch the name of the local thread in the parallelisation
     thread_id = omp_get_thread_num();
-#pragma omp for schedule(static, 10000) reduction(                           \
-        + : PDFzloc, PDFzqloc, PDFmassloc, PDFSFRloc, PDFsSFRloc, PDFAgeloc) \
-    nowait
+#pragma omp for schedule(static, 10000)                                       \
+    reduction(vec_double_plus : PDFzloc, PDFzqloc, PDFmassloc, PDFSFRloc,     \
+                  PDFsSFRloc, PDFAgeloc, PDFLdustloc, PDFcol1loc, PDFcol2loc, \
+                  PDFmrefloc) nowait
 #endif
     // Loop over all SEDs, which is parallelized
     for (size_t i = 0; i < va.size(); i++) {
       size_t il = va[i];
-
+      SED *sed = fulllib[il];
       // Check that the model has a defined probability
-      if (fulllib[il]->chi2 < 0.99e9) {
-        // nlib, index z=0
-        int nlibloc = fulllib[il]->nlib;
+      if (sed->chi2 < HIGH_CHI2) {
+        object_type nlibloc = sed->get_object_type();
 
         // Marginalization for the galaxies
-        if (nlibloc == 0) {
+        if (nlibloc == object_type::GAL) {
           // probability exp(-chi2/2), but multiplied by a common factor
           // exp(-chi2_min/2) for the same object Since the the PDF is
           // normalized later, this factor vanishes. It allows to compute
           // probabities with chi2>>1000 (not feasible with double type)
-          prob = exp(-0.5 * (fulllib[il]->chi2 - chimin[0]));
+          prob = exp(-0.5 * (sed->chi2 - chimin[0]));
           // photo-z PDF of galaxies
           // Sum the proba to marginalize
-          pos = pdfmap[11].index(fulllib[il]->red);
+          pos = pdfbayzg.index(sed->red);
           PDFzloc[pos] += prob;
 
           // If able to determine a normalisation and get a the mass (assume
           // that the other are feasible in this case)
-          double dmloc = fulllib[il]->dm;
-          double massloc = fulllib[il]->mass;
+          double dmloc = sed->dm;
+          double massloc = sed->mass;
           if (dmloc > 0 && massloc > 0) {
             // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] /
             // 5:["AGE"] / 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] /
             // 10:["MIN_ZQ"] / 11:["BAY_ZG"] / 12:["BAY_ZQ"] stellar mass PDF of
             // galaxies
-            pos = pdfmap[0].index(LOG10D(dmloc * massloc));
+            pos = pdfmass.index(LOG10D(dmloc * massloc));
             PDFmassloc[pos] += prob;
 
             // SFR PDF of galaxies
-            pos = pdfmap[1].index(LOG10D(fulllib[il]->sfr * dmloc));
+            pos = pdfsfr.index(LOG10D(sed->sfr * dmloc));
             PDFSFRloc[pos] += prob;
 
             // sSFR PDF of galaxies
-            pos = pdfmap[2].index(LOG10D(fulllib[il]->ssfr));
+            pos = pdfssfr.index(LOG10D(sed->ssfr));
             PDFsSFRloc[pos] += prob;
 
             // Age PDF of galaxies
-            pos = pdfmap[5].index(LOG10D(fulllib[il]->age));
+            pos = pdfage.index(LOG10D(sed->age));
             PDFAgeloc[pos] += prob;
 
             // Ldust PDF of galaxies, ltir already in log
-            if (fulllib[il]->ltir >= 0) {
-              pos = pdfmap[3].index(fulllib[il]->ltir + log10(dmloc));
+            if (sed->ltir >= 0) {
+              pos = pdfldust.index(sed->ltir + log10(dmloc));
               PDFLdustloc[pos] += prob;
             }
           }
@@ -963,29 +946,29 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
           // Only if we need an analysis of the colors
           if (colAnalysis) {
             // Retrieved the corresponding SED at z=0
-            rfSED = fulllib[fulllib[il]->index_z0];
+            rfSED = fulllib[sed->index_z0];
 
             // First rest-frame color
             col1 = rfSED->mag[fltColRF[0] - 1] - rfSED->mag[fltColRF[1] - 1];
-            pos = pdfmap[6].index(col1);
+            pos = pdfcol1.index(col1);
             PDFcol1loc[pos] += prob;
 
             // Second rest-frame color
             col2 = rfSED->mag[fltColRF[2] - 1] - rfSED->mag[fltColRF[3] - 1];
-            pos = pdfmap[7].index(col2);
+            pos = pdfcol2.index(col2);
             PDFcol2loc[pos] += prob;
 
             // Reference absolute magnitude
-            pos = pdfmap[8].index(rfSED->mag[fltREF - 1] - 2.5 * log10(dmloc));
+            pos = pdfmref.index(rfSED->mag[fltREF - 1] - 2.5 * log10(dmloc));
             PDFmrefloc[pos] += prob;
           }
 
           // marginalization for the QSO
-        } else if (nlibloc == 1) {
-          prob = exp(-0.5 * (fulllib[il]->chi2 - chimin[1]));
+        } else if (nlibloc == object_type::QSO) {
+          prob = exp(-0.5 * (sed->chi2 - chimin[1]));
 
           // photo-z PDF of QSO
-          pos = pdfmap[12].index(fulllib[il]->red);
+          pos = pdfbayzq.index(sed->red);
           PDFzqloc[pos] += prob;
         }
       }
@@ -999,18 +982,19 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
 #pragma omp for schedule(static, 10000)
       for (size_t i = 0; i < va.size(); i++) {
         size_t il = va[i];
+        SED *sed = fulllib[il];
         // Index of the considered redshift into the PDF
-        double chi2loc = fulllib[il]->chi2;
-        if (chi2loc < 0.99e9) {
+        double chi2loc = sed->chi2;
+        if (chi2loc < HIGH_CHI2) {
           // 11: BAYZG
-          int poszloc = pdfmap[11].index(fulllib[il]->red);
-          int nlibloc = fulllib[il]->nlib;
-          int indloc = fulllib[il]->index;
+          int poszloc = pdfbayzg.index(sed->red);
+          object_type nlibloc = sed->get_object_type();
+          int indloc = sed->index;
           // If local minimum inside the thread, store the new minimum for the
           // thread
-          if (locChi2[nlibloc][poszloc][thread_id] > chi2loc) {
-            locChi2[nlibloc][poszloc][thread_id] = chi2loc;
-            locInd[nlibloc][poszloc][thread_id] = indloc;
+          if (locChi2[thread_id][nlibloc][poszloc] > chi2loc) {
+            locChi2[thread_id][nlibloc][poszloc] = chi2loc;
+            locInd[thread_id][nlibloc][poszloc] = indloc;
           }
         }
       }
@@ -1019,18 +1003,21 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
 #pragma omp for
       for (int i = 0; i < dimzg; i++) {
         for (int j = 0; j < number_threads; j++) {
-          // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] /
-          // 5:["AGE"] / 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] /
-          // 10:["MIN_ZQ"] / 11:["BAY_ZG"] / 11:["BAY_ZQ"] look for the new
-          // minimum among the threads / Galaxies
-          if (pdfmap[9].chi2[i] > locChi2[0][i][j]) {
-            pdfmap[9].chi2[i] = locChi2[0][i][j];
-            pdfmap[9].ind[i] = locInd[0][i][j];
-          }
-          // look for the new minimum among the threads / AGN
-          if (pdfmap[10].chi2[i] > locChi2[1][i][j]) {
-            pdfmap[10].chi2[i] = locChi2[1][i][j];
-            pdfmap[10].ind[i] = locInd[1][i][j];
+// 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] /
+// 5:["AGE"] / 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] /
+// 10:["MIN_ZQ"] / 11:["BAY_ZG"] / 11:["BAY_ZQ"] look for the new
+// minimum among the threads / Galaxies
+#pragma omp critical
+          {
+            if (pdfminzg.chi2[i] > locChi2[j][0][i]) {
+              pdfminzg.chi2[i] = locChi2[j][0][i];
+              pdfminzg.ind[i] = locInd[j][0][i];
+            }
+            // look for the new minimum among the threads / AGN
+            if (pdfminzq.chi2[i] > locChi2[j][1][i]) {
+              pdfminzq.chi2[i] = locChi2[j][1][i];
+              pdfminzq.ind[i] = locInd[j][1][i];
+            }
           }
         }
       }
@@ -1046,26 +1033,16 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
   // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] / 5:["AGE"] /
   // 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] / 10:["MIN_ZQ"] /
   // 11:["BAY_ZG"] / 12:["BAY_ZQ"] Put back 1 dimension array into PDF objects
-  for (size_t k = 0; k < pdfmap[11].size(); k++)
-    pdfmap[11].vPDF[k] = PDFzloc[k];
-  for (size_t k = 0; k < pdfmap[12].size(); k++)
-    pdfmap[12].vPDF[k] = PDFzqloc[k];
-  for (size_t k = 0; k < pdfmap[0].size(); k++)
-    pdfmap[0].vPDF[k] = PDFmassloc[k];
-  for (size_t k = 0; k < pdfmap[1].size(); k++)
-    pdfmap[1].vPDF[k] = PDFSFRloc[k];
-  for (size_t k = 0; k < pdfmap[2].size(); k++)
-    pdfmap[2].vPDF[k] = PDFsSFRloc[k];
-  for (size_t k = 0; k < pdfmap[5].size(); k++)
-    pdfmap[5].vPDF[k] = PDFAgeloc[k];
-  for (size_t k = 0; k < pdfmap[3].size(); k++)
-    pdfmap[3].vPDF[k] = PDFLdustloc[k];
-  for (size_t k = 0; k < pdfmap[6].size(); k++)
-    pdfmap[6].vPDF[k] = PDFcol1loc[k];
-  for (size_t k = 0; k < pdfmap[7].size(); k++)
-    pdfmap[7].vPDF[k] = PDFcol2loc[k];
-  for (size_t k = 0; k < pdfmap[8].size(); k++)
-    pdfmap[8].vPDF[k] = PDFcol2loc[k];
+  pdfbayzg.vPDF = PDFzloc;
+  pdfbayzq.vPDF = PDFzqloc;
+  pdfmass.vPDF = PDFmassloc;
+  pdfsfr.vPDF = PDFSFRloc;
+  pdfssfr.vPDF = PDFsSFRloc;
+  pdfage.vPDF = PDFAgeloc;
+  pdfldust.vPDF = PDFLdustloc;
+  pdfcol1.vPDF = PDFcol1loc;
+  pdfcol2.vPDF = PDFcol2loc;
+  pdfmref.vPDF = PDFmrefloc;
 
   // Normalize the PDF
 
@@ -1074,8 +1051,8 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
 
   // Convert minimum chi2 at a given redshift into proba
   //  9:["MIN_ZG"] / 10:["MIN_ZQ"]
-  pdfmap[9].chi2toPDF();
-  pdfmap[10].chi2toPDF();
+  pdfminzg.chi2toPDF();
+  pdfminzq.chi2toPDF();
 
   return;
 }
@@ -1098,18 +1075,19 @@ void onesource::generatePDF_IR(vector<SED *> &fulllib) {
 #endif
 
     // Loop over all SEDs
-    for (vector<SED *>::iterator it = fulllib.begin(); it < fulllib.end();
+    for (vector<SED *>::const_iterator it = fulllib.begin(); it < fulllib.end();
          ++it) {
-      double prob = exp(-0.5 * ((*it)->chi2 - chiminIR));
+      const SED *sed = *it;
+      double prob = exp(-0.5 * (sed->chi2 - chiminIR));
 
       // Check that the model has a defined probability
-      if ((*it)->chi2 >= 0 && (*it)->chi2 < 0.99e9) {
+      if (sed->chi2 >= 0 && sed->chi2 < HIGH_CHI2) {
         // If able to determine a normalisation
-        if ((*it)->dm > 0) {
+        if (sed->dm > 0) {
           // LIR PDF of galaxies, ltir already in log
-          if ((*it)->ltir > 0) {
+          if (sed->ltir > 0) {
             // Index of the considered library age into the PDF
-            int pos = pdfmap[4].index((*it)->ltir + log10((*it)->dm));
+            int pos = pdfmap[4].index(sed->ltir + log10(sed->dm));
             // Sum the proba to marginalize
             PDFlirloc[pos] += prob;
           }
@@ -1363,9 +1341,10 @@ void onesource::write_out(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
     // ABSOLUTE MAGNITUDES
     stout.setf(ios::fixed);
     stout.precision(0);  // Integer:
+    // Add +1 to the filter to have the first filter starting at 1 in the output
     if (outkey == "MABS_FILT()") {
       for (size_t l = 0; l < absfilt.size(); l++)
-        stout << setw(4) << absfilt[l] << " ";
+        stout << setw(4) << absfilt[l] + 1 << " ";
     }
     stout.setf(ios::fixed, ios::floatfield);
     stout.precision(3);  // Float:
@@ -1548,31 +1527,28 @@ void onesource::interp_lib(vector<SED *> &fulllib, const int imagm,
 /*
  REDSHIFT INTERPOLATION  if  ZINTP=true
 */
-void onesource::interp(const bool zfix, const bool zintp, cosmo lcdm) {
-  // keep distance modulus before interpolation
-  double distGbef = lcdm.distMod(zmin[0]);
-  double distQbef = lcdm.distMod(zmin[1]);
-
-  // If zfix=yes, use the spec-z as best value
+void onesource::interp(const bool zfix, const bool zintp, const cosmo &lcdm) {
   if (zfix) {
-    // Modify the zmin for the galaxy
+    dmmin[0] *= lcdm.flux_rescaling(zmin[0], zs);
     zmin[0] = zs;
+    dmmin[1] *= lcdm.flux_rescaling(zmin[1], zs);
     zmin[1] = zs;
-  } else {
-    // If zfix=no but an interpolation is required
-    if (zintp) {
-      // The new zmin is coming from the PDF, the one with the minimum chi2
-      zmin[0] = pdfmap[9].int_parab();   // Galaxies
-      zmin[1] = pdfmap[10].int_parab();  // AGN
-    }
+    return;
   }
 
-  // Need to rescale the normalisation accoring to the new redshift
-  // distance modulus after interpolation
-  double distGaft = lcdm.distMod(zmin[0]);
-  double distQaft = lcdm.distMod(zmin[1]);
-  dmmin[0] = dmmin[0] * pow(10., (0.4 * (distGaft - distGbef)));
-  dmmin[1] = dmmin[1] * pow(10., (0.4 * (distQaft - distQbef)));
+  if (zintp) {
+    if (zmin[0] != INVALID_Z) {
+      double target_z_gal = pdfmap[9].int_parab();
+      dmmin[0] *= lcdm.flux_rescaling(zmin[0], target_z_gal);
+      zmin[0] = target_z_gal;
+    }
+    if (zmin[1] != INVALID_Z) {
+      double target_z_qso = pdfmap[10].int_parab();
+      dmmin[1] *= lcdm.flux_rescaling(zmin[1], target_z_qso);
+      zmin[1] = target_z_qso;
+    }
+    return;
+  }
 }
 
 /*
@@ -1698,7 +1674,7 @@ void onesource::secondpeak(vector<SED *> &fulllib, const double dz_win,
   pdfmap[9].secondMax(dz_win);
   // Default measurement
   zsec = -99.9;
-  zsecChi2 = 1.e9;
+  zsecChi2 = HIGH_CHI2;
   zsecEbv = -99.;
   zsecExtlaw = -99;
   zsecScale = -99.;
@@ -2290,7 +2266,7 @@ void onesource::writeFullChi(vector<SED *> &fulllib) {
     // Normalisation
     sca = fulllib[k]->dm;
     // Write
-    stochi << fulllib[k]->nlib << " ";
+    stochi << fulllib[k]->get_object_type() << " ";
     stochi << fulllib[k]->red << " ";
     stochi << fulllib[k]->nummod << " ";
     stochi << fulllib[k]->age << " ";

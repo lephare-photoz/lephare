@@ -21,7 +21,8 @@
 /// magnitudes
 class Mag {
  protected:
-  string config, typ;
+  object_type object;
+  string config;
   cosmo lcdm;
   string filtFile, magtyp;
   bool outasc, verbose;
@@ -30,7 +31,6 @@ class Mag {
   vector<double> ebv;
   int nebv;
   vector<int> modext;
-  int gridType;
   double dz, zmin, zmax;
   string lib, colib, addDust;
 

@@ -56,12 +56,13 @@ int main(int argc, char *argv[]) {
   */
 
   // List of the keywords to be found in the config file/command line
-  string list_keywords[] = {
-      "t",           "COSMOLOGY",     "FILTER_FILE",  "MAGTYPE",
-      "EXTINC_LAW",  "EB_V",          "MOD_EXTINC",   "ZGRID_TYPE",
-      "Z_STEP",      "GAL_LIB_IN",    "QSO_LIB_IN",   "STAR_LIB_IN",
-      "GAL_LIB_OUT", "QSO_LIB_OUT",   "STAR_LIB_OUT", "LIB_ASCII",
-      "EM_LINES",    "EM_DISPERSION", "ADD_DUSTEM",   "VERBOSE"};
+  string list_keywords[] = {"t",           "COSMOLOGY",     "FILTER_FILE",
+                            "MAGTYPE",     "EXTINC_LAW",    "EB_V",
+                            "MOD_EXTINC",  "Z_STEP",        "GAL_LIB_IN",
+                            "QSO_LIB_IN",  "STAR_LIB_IN",   "GAL_LIB_OUT",
+                            "QSO_LIB_OUT", "STAR_LIB_OUT",  "LIB_ASCII",
+                            "EM_LINES",    "EM_DISPERSION", "ADD_DUSTEM",
+                            "VERBOSE"};
   // Number of keywords
   int nb_ref_key = (int)(sizeof(list_keywords) / sizeof(list_keywords[0]));
 
@@ -69,31 +70,23 @@ int main(int argc, char *argv[]) {
   // them into a vector
   keymap key_analysed = analyse_keywords(argc, argv, list_keywords, nb_ref_key);
 
-  // type of source which is read (Galaxy G, QSO Q, Star S)
-  string typ = key_analysed["t"].value;
-
   // keyword to add the LDUST component to the stellar component (e.g. in BC03)
   string addDust = key_analysed["ADD_DUSTEM"].value;
 
   // Define a pointer of the basis class "Mag" which encompasses all the
   // elements to create the library
   Mag *Magnitude;
-
-  // GALAXY CASE
-  if (typ[0] == 'G' || typ[0] == 'g') {
-    Magnitude = new GalMag(key_analysed);
-
-    // QSO CASE
-  } else if (typ[0] == 'Q' || typ[0] == 'q') {
-    Magnitude = new QSOMag(key_analysed);
-
-    // STAR CASE
-  } else if (typ[0] == 'S' || typ[0] == 's') {
-    Magnitude = new StarMag(key_analysed);
-
-  } else {
-    cout << "The type is not correctly indicated with -t " << endl;
-    exit(1);
+  object_type object = SED::string_to_object(key_analysed["t"].value);
+  switch (object) {
+    case GAL:
+      Magnitude = new GalMag(key_analysed);
+      break;
+    case QSO:
+      Magnitude = new QSOMag(key_analysed);
+      break;
+    case STAR:
+      Magnitude = new StarMag(key_analysed);
+      break;
   }
 
   /*

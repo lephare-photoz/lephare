@@ -1,29 +1,54 @@
 import os
 import tempfile
 
+import lephare as lp
 import numpy as np
+import pytest
 from lephare import QSOSED, SED, GalSED, StarSED, flt
 
 TESTDIR = os.path.abspath(os.path.dirname(__file__))
 TESTDATADIR = os.path.join(TESTDIR, "../data")
 
 
+def test_string_to_object():
+    for t in ["s", "S", "sOap", "STAR"]:
+        a = lp.SED.string_to_object(t)
+        assert a == lp.object_type.STAR
+    for t in ["g", "G", "GAGA", "GAL"]:
+        a = lp.SED.string_to_object(t)
+        assert a == lp.object_type.GAL
+    for t in ["q", "Q", "QUASI", "QSO"]:
+        a = lp.SED.string_to_object(t)
+        assert a == lp.object_type.QSO
+    with pytest.raises(ValueError):
+        _ = lp.SED.string_to_object("wrong")
+
+
+def sed_get_object_type():
+    sed = SED("dummy", 0, "GAL")
+    assert sed.get_object_type == lp.object_type.GAL
+    sed = SED("dummy", 0, "QSO")
+    assert sed.get_object_type == lp.object_type.QSO
+    sed = SED("dummy", 0, "STAR")
+    assert sed.get_object_type == lp.object_type.STAR
+
+
 def test_sed_constructors():
-    sed = SED("toto", 10, "GAL")
-    assert sed.name == "toto"
+    sed = SED("dummy", 10, "GAL")
+    assert sed.name == "dummy"
     assert sed.nummod == 10
     assert sed.is_gal()
     sed2 = StarSED(sed)
     assert sed2.is_star()
-    assert sed2.name == "toto"
+    assert sed2.name == "dummy"
     assert sed2.nummod == 10
     sed2 = QSOSED(sed)
     assert sed2.is_qso()
-    assert sed2.name == "toto"
+    assert sed2.name == "dummy"
     assert sed2.nummod == 10
     sed2 = GalSED(sed)
     assert sed2.is_gal()
-    assert sed2.name == "toto"
+    assert sed2.name == "dummy"
     assert sed2.nummod == 10
 
 

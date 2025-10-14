@@ -27,7 +27,7 @@ Mag::Mag(keymap &key_analysed) {
   config = key_analysed["c"].value;
 
   // type of source which is read (Galaxy G, QSO Q, Star S)
-  typ = key_analysed["t"].value;
+  object = SED::string_to_object(key_analysed["t"].value);
 
   // Instantiate cosmology
   double h0 = (key_analysed["COSMOLOGY"].split_double("70", 3))[0];
@@ -57,9 +57,6 @@ Mag::Mag(keymap &key_analysed) {
   nebv = int(ebv.size());
   // model ranges for each extinction curve
   modext = (key_analysed["MOD_EXTINC"]).split_int("0,0", nextlaw * 2);
-
-  // type of the grid in redshift
-  gridType = ((key_analysed["ZGRID_TYPE"]).split_int("0", 1))[0];
 
   // define the grid in redshift
   dz = ((key_analysed["Z_STEP"]).split_double("0.04", 3))[0];
@@ -107,7 +104,8 @@ void Mag::open_files() {
   ssedIn.open(sedlibFile.c_str(), ios::binary);
   // Check if file is opened
   if (!ssedIn) {
-    throw invalid_argument("Can't open file " + sedlibFile);
+    throw invalid_argument("Can't open binary file compiling all SEDs " +
+                           sedlibFile);
   }
 
   // Name of the input SED doc file
@@ -118,7 +116,8 @@ void Mag::open_files() {
   sdocOut.open(docFile.c_str());
   // Check if file is opened
   if (!sdocOut) {
-    throw invalid_argument("Can't open file " + docFile);
+    throw invalid_argument("Can't open the doc file compiling all SEDs " +
+                           docFile);
   }
 
   // Name of the output binary and doc files, open it in binary
@@ -126,7 +125,8 @@ void Mag::open_files() {
   sbinOut.open(binOutFile.c_str(), ios::binary | ios::out);
   // Check if file is opened
   if (!sbinOut) {
-    throw invalid_argument("Can't open file " + binOutFile);
+    throw invalid_argument(
+        "Can't open the binary file with the predicted flux " + binOutFile);
   }
 
   // Open an ascii file to store the predicted magnitudes
@@ -136,16 +136,37 @@ void Mag::open_files() {
     sdatOut.open(datFile.c_str());
     // Check if file is opened
     if (!sdatOut) {
-      throw invalid_argument("Can't open file " + datFile);
+      throw invalid_argument(
+          "Can't open the ascii file with the predicted flux " + datFile);
     }
+
+    sdatOut << "# Filter list: \n";
+    if (allFlt.size() != 0) {
+      for (const auto f : allFlt) {
+        sdatOut << "#" << f.name << "\n";
+      }
+    }
+
     // header of the .dat file
-    sdatOut
-        << "# model ext_law E(B-V) L_T(IR) redshift dist_modulus age record "
-           "N_filt magnitude_vector kcorr_vector em_lines_fluxes_vector "
-        << endl;
+    switch (object) {
+      case object_type::GAL:
+        sdatOut
+            << "# model ext_law E(B-V) L_T(IR) redshift dist_modulus age "
+               "N_filt magnitude[N_filt] kcorr[N_filt] em_lines_fluxes[N_filt] "
+            << endl;
+        break;
+      case object_type::QSO:
+        sdatOut << "# model ext_law E(B-V) redshift dist_modulus "
+                   "N_filt magnitude[N_filt] kcorr[N_filt] "
+                << endl;
+        break;
+      case object_type::STAR:
+        sdatOut << "# model N_filt magnitude[N_filt]" << endl;
+        break;
+    }
   }
 
-  cout << " All files opened " << endl;
+  if (verbose) cout << " All files opened " << endl;
 }
 
 // open the opacity files
@@ -156,7 +177,7 @@ ifstream Mag::open_opa_files() {
   stream.open(opaListFile.c_str());
   // Check if file is opened
   if (!stream) {
-    throw invalid_argument("Can't open file " + opaListFile);
+    throw invalid_argument("Can't open file with opacity " + opaListFile);
   }
   return stream;
 }
@@ -230,7 +251,8 @@ void Mag::read_flt(const string &inputfile) {
   sfiltIn.open(inputfile.c_str());
   // Check if file is opened
   if (!sfiltIn) {
-    throw invalid_argument("Can't open file " + inputfile);
+    throw invalid_argument("Can't open file compiling all filters in " +
+                           inputfile);
   }
 
   string dummy;
@@ -312,7 +334,7 @@ void Mag::read_B12() {
 // Associate it to a grid in age and distance modulus
 void Mag::def_zgrid() {
   // redshift grid, depending on the method
-  gridz = zgrid(gridType, dz, zmin, zmax);
+  gridz = zgrid(dz, zmin, zmax);
 
   // Loop over the redshift grid and measure the age of the Universe and the
   // distance modulus
@@ -336,12 +358,16 @@ void Mag::print_info() {
 // Write the documentation in the GALAXY/QSO/STAR case
 void Mag::write_doc() {
   sdocOut << "CONFIG_FILE    " << config << endl;
-  if (typ[0] == 'G' || typ[0] == 'g') {
-    sdocOut << "LIB_TYPE  GALAXY" << endl;
-  } else if (typ[0] == 'Q' || typ[0] == 'q') {
-    sdocOut << "LIB_TYPE  QSO" << endl;
-  } else if (typ[0] == 'S' || typ[0] == 's') {
-    sdocOut << "LIB_TYPE  STAR" << endl;
+  switch (object) {
+    case object_type::GAL:
+      sdocOut << "LIB_TYPE  GALAXY" << endl;
+      break;
+    case object_type::QSO:
+      sdocOut << "LIB_TYPE  QSO" << endl;
+      break;
+    case object_type::STAR:
+      sdocOut << "LIB_TYPE  STAR" << endl;
+      break;
   }
   sdocOut << "LIB_NAME      " << lib << endl;
   sdocOut << "FILTER_FILE     " << filtFile << endl;
@@ -355,8 +381,7 @@ void Mag::write_doc() {
   sdocOut << endl << "FLUX_COR   ";
   for (vector<flt>::iterator itf = allFlt.begin(); itf < allFlt.end(); ++itf)
     sdocOut << itf->fcorrec() << ",";
-  sdocOut << endl << "ZGRID_TYPE   " << gridType << endl;
-  sdocOut << "Z_STEP   " << dz << "," << zmin << "," << zmax << endl;
+  sdocOut << endl << "Z_STEP   " << dz << "," << zmin << "," << zmax << endl;
   sdocOut << "COSMOLOGY   " << lcdm << endl;
   sdocOut << "EXTINC_LAW   ";
   for (int k = 0; k < nextlaw; k++) {
@@ -434,8 +459,6 @@ void GalMag::read_SED() {
     GalSED oneSED("");
     // read one SED in the binary file
     oneSED.readSEDBin(ssedIn);
-    //// Check that the lambda coverage is correct
-    // oneSED.warning_integrateSED(allFlt, verbose);
     // build the library of SEDs that modify the initial template SED
     vector<GalSED> seds = make_maglib(oneSED);
     // write the result in file
@@ -627,7 +650,6 @@ void GalMag::print_info() {
        << lepharework + "/lib_bin/" + lib + "(.doc & .bin)" << endl;
   cout << "# GAL_LIB_OUT   :"
        << lepharework + "/lib_mag/" + colib + "(.doc & .bin)" << endl;
-  cout << "# ZGRID_TYPE   :" << gridType << endl;
   cout << "# Z_STEP   :" << dz << " " << zmin << " " << zmax << endl;
   cout << "# COSMOLOGY   :" << lcdm << endl;
   cout << "# EXTINC_LAW   :";
@@ -676,7 +698,6 @@ void QSOMag::print_info() {
        << lepharework + "/lib_bin/" + lib + "(.doc & .bin)" << endl;
   cout << "# QSO_LIB_OUT   :"
        << lepharework + "/lib_mag/" + colib + "(.doc & .bin)" << endl;
-  cout << "# ZGRID_TYPE   :" << gridType << endl;
   cout << "# Z_STEP   :" << dz << " " << zmin << " " << zmax << endl;
   cout << "# COSMOLOGY   :" << lcdm << endl;
   cout << "# EXTINC_LAW   :";
@@ -719,8 +740,6 @@ void QSOMag::read_SED() {
     QSOSED oneSED("");
     oneSED.clean();
     oneSED.readSEDBin(ssedIn);
-    //// Check that the lambda coverage is correct
-    // oneSED.warning_integrateSED(allFlt, verbose);
     // build the library of SEDs that modify the initial template SED
     vector<QSOSED> seds = make_maglib(oneSED);
     // write the result in file

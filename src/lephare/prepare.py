@@ -72,14 +72,17 @@ def prepare(config, star_config=None, gal_config=None, qso_config=None):
         mag_output = os.path.join(os.environ["LEPHAREWORK"], "lib_mag", mag_out_name)
         # Run sedtolib
         sedlib = lp.Sedtolib(config_keymap=updated_config)
-        list_loc = os.path.join(lp.LEPHAREDIR, updated_config[f"{object_type}_SED"].value)
+        list_loc = updated_config[f"{object_type}_SED"].value
+        # if find sed/ in the path, assume it is in lephare-data and not an absolute path
+        if list_loc.find("sed/") >= 0:
+            list_loc = os.path.join(lp.LEPHAREDIR, list_loc)
         sedtolib_kwargs = {f"{object_type.lower()}_sed": list_loc}
-        print(sedtolib_kwargs)
         sedlib.run(typ=object_type, **sedtolib_kwargs)
         write_yaml_config(updated_config, sed_output)
         # Run mag_gal
+        print(updated_config["VERBOSE"])
         maglib = lp.MagGal(config_keymap=updated_config)
-        maglib.run(typ=object_type)
+        maglib.run(typ=object_type, verbose=False)
         write_yaml_config(updated_config, mag_output)
 
 

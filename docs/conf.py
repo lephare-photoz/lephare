@@ -5,15 +5,8 @@
 
 
 import os
-import subprocess
 import sys
 from importlib.metadata import version
-
-read_the_docs_build = os.environ.get("READTHEDOCS", None) == "True"
-
-# If building on read the docs, build the doxygen documentation
-if read_the_docs_build:
-    subprocess.call("cd doxygen; doxygen ./Doxyfile", shell=True)
 
 # Define path to the code to be documented **relative to where conf.py (this file) is kept**
 sys.path.insert(0, os.path.abspath("../src/"))
@@ -22,8 +15,8 @@ sys.path.insert(0, os.path.abspath("../src/"))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "lephare"
-copyright = "2023, Johann Cohen-Tanugi"
-author = "Johann Cohen-Tanugi"
+copyright = "2023, the LePHARE collaboration"
+author = "The LePHARE collaboration"
 release = version("lephare")
 # for example take major/minor
 version = ".".join(release.split(".")[:2])
@@ -31,7 +24,14 @@ version = ".".join(release.split(".")[:2])
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ["breathe", "exhale", "sphinx.ext.mathjax", "sphinx.ext.napoleon", "sphinx.ext.viewcode"]
+extensions = [
+    "breathe",
+    "exhale",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
+    "sphinx_tabs.tabs",
+]
 
 extensions.append("autoapi.extension")
 extensions.append("nbsphinx")
@@ -55,6 +55,9 @@ master_doc = "index"
 html_show_sourcelink = False
 # Remove namespaces from class/method signatures
 add_module_names = False
+# Use the custom css
+html_static_path = ["_static"]
+html_css_files = ["custom.css"]
 
 autoapi_type = "python"
 autoapi_dirs = ["../src"]
@@ -69,6 +72,8 @@ breathe_default_project = "lephare"
 
 nbsphinx_kernel_name = "python3"
 
+numfig = True
+
 # Setup the exhale extension
 exhale_args = {
     # These arguments are required
@@ -78,5 +83,6 @@ exhale_args = {
     "rootFileTitle": "C Library API",
     "createTreeView": True,
     "exhaleExecutesDoxygen": True,
-    "exhaleDoxygenStdin": "INPUT = ../src/lib",
+    "exhaleUseDoxyfile": True,
+    #    "exhaleDoxygenStdin": "INPUT = ../src/lib",
 }
