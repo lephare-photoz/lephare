@@ -1,4 +1,3 @@
-#include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -364,13 +363,10 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("writeFullChi", &onesource::writeFullChi)
       //    .def("write_pdz", &onesource::write_pdz)
       .def("best_spec_vec", &onesource::best_spec_vec)
-      .def_readwrite("ab", &onesource::ab)
       .def_readwrite("spec", &onesource::spec)
       .def_readwrite("consiz", &onesource::consiz)
-      .def_readwrite("closest_red", &onesource::closest_red)
-      // The prior for overwriting the weights
+      // The prior for overwriting from Python
       .def_readwrite("priorObj", &onesource::priorObj)
-      .def_readwrite("busnorma", &onesource::busnorma)
       .def_readonly("pos", &onesource::pos)
       .def_readonly("cont", &onesource::cont)
       .def_readonly("pdfmap", &onesource::pdfmap)
