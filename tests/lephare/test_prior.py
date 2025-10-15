@@ -30,10 +30,10 @@ def test_prior(test_data_dir: str):
     # initialise the prior
     def example_prior(lib, obj):
         """An example prior which prohibits redshift above 2"""
-        weight = 1.0  # Be default do not change prior
-        if lib.red > 2:
-            weight = 1.0e-9
-        return weight
+        weights = np.full(1.0, len(lib))  # Be default do not change prior
+        reds = [sed.red for sed in lib]
+        weights[reds > 2] = 1.0e-9
+        return weights
 
     output, pdfs = lp.process(config, input[reduced_cols], prior=example_prior)
     # Check one of the outputs (results are terrible with just one filter and sparse z grid)
