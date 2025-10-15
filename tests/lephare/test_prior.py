@@ -31,7 +31,7 @@ def test_prior(test_data_dir: str):
     def example_prior(lib, obj):
         """An example prior which prohibits redshift above 2"""
         weights = np.full(len(lib), 1.0)  # Be default do not change prior
-        reds = [sed.red for sed in lib]
+        reds = np.array([sed.red for sed in lib])
         weights[reds > 2] = 1.0e-9
         return weights
 
