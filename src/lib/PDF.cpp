@@ -447,7 +447,6 @@ double PDF::levelCumu2x(float level) {
 
 //
 // Find the index in the PDF of the considered value
-// If out of range, output a negative value
 // Only grid with constant step accepted
 size_t PDF::index(const double inVal) const {
   size_t res = 0;
@@ -455,8 +454,6 @@ size_t PDF::index(const double inVal) const {
   if (inVal >= scaleMin && inVal <= scaleMax) {
     res = int(round((inVal - scaleMin) * invScaleStep));
   } else {
-    // cout << " Value is out of range for the PDF:" << inVal << " " << scaleMin
-    // << " " <<scaleMax<< endl;
     if (inVal < scaleMin) {
       res = 0;
     } else {
