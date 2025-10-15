@@ -98,7 +98,7 @@ def test_cumulant():
 
 
 def test_index():
-    #0, 0.33, 0.66,..., 2.66, 3 (10 values)
+    # 0, 0.33, 0.66,..., 2.66, 3 (10 values)
     pdf = lp.PDF(0, 3, 10)
     assert pdf.index(-1) == 0
     assert pdf.index(20) == 9

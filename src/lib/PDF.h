@@ -76,12 +76,12 @@ class PDF {
   double probaBay(
       double xvalue);  ///< return the inverse cumulative function at xvalue
 
-    /* return the vector index where the pdf vector is closest to inVal
-     *
-     * @param inVal: input value
-     * @output : return i so that pdf[i]<=inVal<pdf[i+1] if possible
-     * else return i=0 if inVal<pdf[0] or i=size-1 if inVal>pdf[size-1]
-     */
+  /* return the vector index where the pdf vector is closest to inVal
+   *
+   * @param inVal: input value
+   * @output : return i so that pdf[i]<=inVal<pdf[i+1] if possible
+   * else return i=0 if inVal<pdf[0] or i=size-1 if inVal>pdf[size-1]
+   */
   size_t index(
       const double inVal) const;     ///< return the vector index where the
                                      ///< pdf vector is closest to inVal
