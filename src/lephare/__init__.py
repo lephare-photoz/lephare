@@ -10,6 +10,16 @@ dm = DataManager()
 dm.configure_directories()  # noqa: F405
 LEPHAREDIR = dm.LEPHAREDIR
 
+try:
+    from ._version import version as __version__
+except ImportError:
+    # fallback if not built with setuptools-scm
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        __version__ = version("lephare")
+    except PackageNotFoundError:
+        __version__ = "0.0.0"
 
 from ._lephare import *
 
