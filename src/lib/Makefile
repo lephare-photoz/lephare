@@ -60,7 +60,7 @@ OBJECTS = \
         keyword.o\
         flt.o\
         SED.o\
-	SEDLib.o\
+        SEDLib.o\
         ext.o\
         opa.o\
         mag.o\
@@ -68,7 +68,8 @@ OBJECTS = \
         cosmology.o\
         onesource.o\
         PDF.o\
-	photoz_lib.o\
+        photoz_lib.o\
+        prior.o\
 
 all: $(FILES)
 	if [ ! -d "../../bin" ]; then mkdir ../../bin; fi

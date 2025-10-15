@@ -19,6 +19,7 @@
 #include <iostream>  // print standard file
 #include <numeric>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -26,6 +27,7 @@
 #include "SED.h"
 #include "globals.h"
 #include "opa.h"
+#include "prior.h"
 
 using namespace std;
 
@@ -42,6 +44,7 @@ void onesource::readsource(const string &identifier, const vector<double> vals,
   zs = z_spec;
   cont = context;
   str_inp = additional_input;
+  prior priorObj;  // Initialise the prior so that weights can be overwritten.
 }
 
 /*
@@ -340,6 +343,13 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
   int number_threads = 1, thread_id = 0;
   size_t imagm = ab.size();
 
+  // Check weights are correct if used
+  if (priorObj.apply_weights == 1) {
+    if (fulllib.size() != priorObj.weights.size()) {
+      throw std::length_error("weights and fullLib are not the same length.");
+    }
+  }
+
   // Reinitialise the chi2 for each library because the fit could be run several
   // times on the same source
   for (int k = 0; k < 3; k++) chimin[k] = HIGH_CHI2;
@@ -418,31 +428,38 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
 
       // Model rejection based on prior
       // Abs mag rejection
-      double reds;
-      int libtype;
+      // double reds;
+      // int libtype;
+      // reds = (fulllib[il])->red;
+      // libtype = (fulllib[il])->nlib;
+      // // Abs Magnitude from model @ z=0 for rejection for galaxies and AGN
+      // if ((mabsGALprior && libtype == 0) || (mabsAGNprior && libtype == 1)) {
+      //   // predicted magnitudes within the babs filter renormalized by the
+      //   // scaling
+      //   double abs_mag;
+      //   abs_mag = (fulllib[il])->mag0 - 2.5 * log10(dmloc[il]);
+      //   // specific case when the redshift is 0
+      //   if (reds < 1.e-10) abs_mag = abs_mag - funz0;
+      //   // Galaxy rejection
+      //   if ((abs_mag <= priorLib[0] || abs_mag >= priorLib[1]) && libtype ==
+      //   0)
+      //     chi2loc[il] = 1.e9;
+      //   // AGN rejection
+      //   if ((abs_mag <= priorLib[2] || abs_mag >= priorLib[3]) && libtype ==
+      //   1)
+      //     chi2loc[il] = 1.e9;
+      // }
+      // // Prior N(z)
+      // if (bp[0] >= 0 && libtype == 0) {
+      //   double pweight =
+      //       nzprior((fulllib[il])->luv, (fulllib[il])->lnir, reds, bp);
+      //   chi2loc[il] = chi2loc[il] - 2. * log(pweight);
+      // }
+
+      // General prior
       SED *sed = fulllib[i];
-      reds = sed->red;
-      libtype = sed->nlib;
-      // Abs Magnitude from model @ z=0 for rejection for galaxies and AGN
-      if ((mabsGALprior && libtype == 0) || (mabsAGNprior && libtype == 1)) {
-        // predicted magnitudes within the babs filter renormalized by the
-        // scaling
-        double abs_mag;
-        abs_mag = sed->mag0 - 2.5 * log10(dmloc);
-        // specific case when the redshift is 0
-        if (reds < 1.e-10) abs_mag = abs_mag - funz0;
-        // Galaxy rejection
-        if ((abs_mag <= priorLib[0] || abs_mag >= priorLib[1]) && libtype == 0)
-          chi2loc = HIGH_CHI2;
-        // AGN rejection
-        if ((abs_mag <= priorLib[2] || abs_mag >= priorLib[3]) && libtype == 1)
-          chi2loc = HIGH_CHI2;
-      }
-      // Prior N(z)
-      if (bp[0] >= 0 && libtype == 0) {
-        double pweight = nzprior(sed->luv, sed->lnir, reds, bp);
-        chi2loc = chi2loc - 2. * log(pweight);
-      }
+      chi2loc = priorObj.update_chi2(this, chi2loc, fulllib[i], i, dmloc, funz0,
+                                     bp, mabsGALprior, mabsAGNprior);
 
       // keep track of the minimum chi2 for each object type, over the threads
       if (chi2loc < HIGH_CHI2) {
@@ -521,94 +538,95 @@ void onesource::compute_best_fit_physical_quantities(vector<SED *> &fulllib) {
 /*
   Use prior info on N(z) as a function of magnitude (Iband) and of the type.
 */
-double onesource::nzprior(const double luv, const double lnir,
-                          const double reds, const array<int, 2> bp) {
-  double val = 1.;
-  int mod;
-  double zot = 0., kt = 0., alpt0 = 0.;
+// double onesource::nzprior(const double luv, const double lnir,
+//                           const double reds, const array<int, 2> bp) {
+//   double val = 1.;
+//   int mod;
+//   double zot = 0., kt = 0., alpt0 = 0.;
 
-  // Define the NUV-R rest-frame color corrected for dust-extinction
-  double nuvk = -2.5 * (luv - lnir);
+//   // Define the NUV-R rest-frame color corrected for dust-extinction
+//   double nuvk = -2.5 * (luv - lnir);
 
-  // Apparent magnitude in i band, if possible
-  double mi = -99.;
-  if (busnorma[bp[0]] == 1) {
-    mi = flux2mag(ab[bp[0]]);
-  } else if (busnorma[bp[1]] == 1) {
-    mi = flux2mag(ab[bp[1]]);
-  } else
-    return val;
+//   // Apparent magnitude in i band, if possible
+//   double mi = -99.;
+//   if (busnorma[bp[0]] == 1) {
+//     mi = flux2mag(ab[bp[0]]);
+//   } else if (busnorma[bp[1]] == 1) {
+//     mi = flux2mag(ab[bp[1]]);
+//   } else
+//     return val;
 
-  // Bright case I<20, no solution above 1, don't compute the prior
-  if (mi < 20.) {
-    if (reds > 1) val = 0;
-    return val;
-  }
-  // Bright case I<22, no solution above 2, but compute the prior
-  if (mi < 22. && reds > 2) {
-    val = 0;
-    return val;
-  }
+//   // Bright case I<20, no solution above 1, don't compute the prior
+//   if (mi < 20.) {
+//     if (reds > 1) val = 0;
+//     return val;
+//   }
+//   // Bright case I<22, no solution above 2, but compute the prior
+//   if (mi < 22. && reds > 2) {
+//     val = 0;
+//     return val;
+//   }
 
-  // Set up the parameters to define the redshift distribution
-  if (nuvk > 4.25) {
-    // Case E/S0
-    // Color UV-K of PHOTO_230506/El_cww.sed.resample.new.resample15.inter
-    mod = 0;
-    zot = 0.45181;
-    kt = 0.13677;
-    alpt0 = 3.33078;
-  } else if (nuvk > 3.19 && nuvk < 4.25) {
-    // Case Sbc
-    // Color UV-K of PHOTO_230506/Sbc_cww.sed.resample.new.resample8.inter
-    mod = 1;
-    zot = 0.16560;
-    kt = 0.12983;
-    alpt0 = 1.42815;
-  } else if (nuvk > 1.9 && nuvk < 3.19) {
-    // Case Scd
-    // Color UV-K of PHOTO_230506/Scd_cww.sed.resample.new.resample7.inter
-    // -19.4878 + 21.1501
-    mod = 2;
-    zot = 0.21072;
-    kt = 0.14008;
-    alpt0 = 1.58310;
-  } else {
-    // Case Irr
-    mod = 3;
-    zot = 0.20418;
-    kt = 0.13773;
-    alpt0 = 1.34500;
-  }
+//   // Set up the parameters to define the redshift distribution
+//   if (nuvk > 4.25) {
+//     // Case E/S0
+//     // Color UV-K of PHOTO_230506/El_cww.sed.resample.new.resample15.inter
+//     mod = 0;
+//     zot = 0.45181;
+//     kt = 0.13677;
+//     alpt0 = 3.33078;
+//   } else if (nuvk > 3.19 && nuvk < 4.25) {
+//     // Case Sbc
+//     // Color UV-K of PHOTO_230506/Sbc_cww.sed.resample.new.resample8.inter
+//     mod = 1;
+//     zot = 0.16560;
+//     kt = 0.12983;
+//     alpt0 = 1.42815;
+//   } else if (nuvk > 1.9 && nuvk < 3.19) {
+//     // Case Scd
+//     // Color UV-K of PHOTO_230506/Scd_cww.sed.resample.new.resample7.inter
+//     // -19.4878 + 21.1501
+//     mod = 2;
+//     zot = 0.21072;
+//     kt = 0.14008;
+//     alpt0 = 1.58310;
+//   } else {
+//     // Case Irr
+//     mod = 3;
+//     zot = 0.20418;
+//     kt = 0.13773;
+//     alpt0 = 1.34500;
+//   }
 
-  // P(z|T,m0)
-  double zmax = zot + kt * (mi - 20);
-  double pz = pow(reds, alpt0) * exp(-pow((reds / zmax), alpt0));
+//   // P(z|T,m0)
+//   double zmax = zot + kt * (mi - 20);
+//   double pz = pow(reds, alpt0) * exp(-pow((reds / zmax), alpt0));
 
-  // P(T|m0)
-  double ktf[4] = {0.47165, 0.30663, 0.12715, -0.34437};
-  double ft[4] = {0.43199, 0.07995, 0.31162, 0.21220};
+//   // P(T|m0)
+//   double ktf[4] = {0.47165, 0.30663, 0.12715, -0.34437};
+//   double ft[4] = {0.43199, 0.07995, 0.31162, 0.21220};
 
-  // Ratio for each type
-  double rappSum =
-      ft[0] * exp(-ktf[0] * (mi - 20.0)) + ft[1] * exp(-ktf[1] * (mi - 20.0)) +
-      ft[2] * exp(-ktf[2] * (mi - 20.0)) + ft[3] * exp(-ktf[3] * (mi - 20.0));
-  double rapp = ft[mod] * exp(-ktf[mod] * (mi - 20.0));
+//   // Ratio for each type
+//   double rappSum =
+//       ft[0] * exp(-ktf[0] * (mi - 20.0)) + ft[1] * exp(-ktf[1] * (mi - 20.0))
+//       + ft[2] * exp(-ktf[2] * (mi - 20.0)) + ft[3] * exp(-ktf[3] * (mi
+//       - 20.0));
+//   double rapp = ft[mod] * exp(-ktf[mod] * (mi - 20.0));
 
-  // Normalisation of the probability function
-  // pcal=exp(gammln(1.0/alpt0(mod)+1.0))
-  double pcal;
-  if (mod == 0) pcal = 0.89744;
-  if (mod == 1) pcal = 0.90868;
-  if (mod == 2) pcal = 0.89747;
-  if (mod == 3) pcal = 0.91760;
-  pcal = pow(zmax, alpt0 + 1) / alpt0 * pcal;
+//   // Normalisation of the probability function
+//   // pcal=exp(gammln(1.0/alpt0(mod)+1.0))
+//   double pcal;
+//   if (mod == 0) pcal = 0.89744;
+//   if (mod == 1) pcal = 0.90868;
+//   if (mod == 2) pcal = 0.89747;
+//   if (mod == 3) pcal = 0.91760;
+//   pcal = pow(zmax, alpt0 + 1) / alpt0 * pcal;
 
-  // Final value
-  val = pz / pcal * rapp / rappSum;
+//   // Final value
+//   val = pz / pcal * rapp / rappSum;
 
-  return val;
-}
+//   return val;
+// }
 
 /*
  Check for discrepant band
