@@ -35,12 +35,12 @@ def process(
         If true we assume standard names.
     filename : str
         Output file name for the output catalogue.
-    prior : function
-        Function that converts a lephare.SED into a weight. We loop over all
-        SEDs to get the list of weights.
     write_outputs : bool
         Whether to write the output spectra, PDF, and ascii file if specified
         in the config. By default these are not written to save space.
+    prior : function
+        Function that converts a list of lephare.SED and the lephare.onesource
+        into a list of weights.
 
     Returns
     =======
@@ -82,7 +82,8 @@ def process(
         one_obj = lp.onesource(i, photz.gridz)
         one_obj.readsource(str(i), flux[i], flux_err[i], context[i], zspec[i], " ")
         if prior is not None:
-            weights = [prior(lib, one_obj) for lib in photz.fullLib]
+            # Get weights from prior
+            weights = prior(photz.fullLib, one_obj)
             one_obj.priorObj.apply_weights = 1
             one_obj.priorObj.weights = weights
         photz.prep_data(one_obj)
