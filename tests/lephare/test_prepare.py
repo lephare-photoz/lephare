@@ -5,6 +5,11 @@ from astropy.table import Table
 from lephare.prepare import all_types_to_keymap
 
 
+def test_version():
+    """Check we have a version."""
+    assert isinstance(lp.__version__, str)
+
+
 def test_prepare(test_data_dir: str):
     test_dir = os.path.abspath(os.path.dirname(__file__))
     os.environ["LEPHAREDIR"] = os.path.join(test_dir, "../data")
@@ -32,20 +37,27 @@ def test_all_types_to_keymap():
 
 
 def test_config_formatting():
-    """Some simple tests of configs"""
+    """Some simple tests of configs and switching between formats"""
     test_dir = os.path.abspath(os.path.dirname(__file__))
     os.environ["LEPHAREDIR"] = os.path.join(test_dir, "../data")
     os.environ["LEPHAREWORK"] = os.path.join(test_dir, "../tmp")
+    # Make a string dict config and keymap
     config = lp.default_cosmos_config.copy()
     keymap = all_types_to_keymap(config)
-    assert config["FILTER_FILE"] == "filter_cosmos"
-    assert keymap["FILTER_FILE"].value == "filter_cosmos"
+    # Check they are consistent
+    assert config["FILTER_FILE"] == keymap["FILTER_FILE"].value
+    # Check the type of the keymap is a lephare.keyword
     assert type(keymap["Z_STEP"]) == lp.keyword
     lp.write_para_config(config, os.path.join(os.environ["LEPHAREWORK"], "test.para"))
+    # Check it made the file
     assert os.path.exists(os.path.join(os.environ["LEPHAREWORK"], "test.para"))
     os.remove(os.path.join(os.environ["LEPHAREWORK"], "test.para"))
+    # Make the file again from the keymap instead
     lp.write_para_config(keymap, os.path.join(os.environ["LEPHAREWORK"], "test.para"))
+    # Check it also made the file from the keymap
     assert os.path.exists(os.path.join(os.environ["LEPHAREWORK"], "test.para"))
     os.remove(os.path.join(os.environ["LEPHAREWORK"], "test.para"))
+    # Check it converts correctly back to a string dict
     assert lp.string_dict_to_keymap(config)["FILTER_FILE"].value == "filter_cosmos"
+    # Check the reverse conversion
     assert lp.keymap_to_string_dict(keymap)["FILTER_FILE"] == "filter_cosmos"
