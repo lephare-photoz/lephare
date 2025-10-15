@@ -56,6 +56,7 @@ class SED {
       chi2 = HIGH_CHI2,  ///< best fit chi2 associated with this SED
       dm,                ///< normalization of the SED
       lnir,              ///< NIR luminosity \f$\int_{2.1\,\mu m}^{2.3\,\mu m}
+                         ///< L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
       luv,               ///< UV luminosity \f$\int_{0.21\,\mu m}^{0.25\,\mu m}
                          ///< L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
       lopt;  ///< optical luminosity \f$\int_{0.55\,\mu m}^{0.65\,\mu m}
@@ -69,7 +70,8 @@ class SED {
              ///< Log unit of \f$L_\odot\f$
 
   double ebv,  ///< E(B-V) extinction value applied to the SED
-      mag0, distMod;
+      mag0,
+      distMod;  ///< Distance modulus of the SED object.
 
   int extlawId;  ///< index of the extinction law when dust attenuation has been
                  ///< applied
@@ -308,6 +310,10 @@ class SED {
    */
   void applyExtLines(const ext &oneext);
 
+  /*! Apply extinction due to intergalactic medium (only for GAL and QSO)
+   * \param opaAll Vector of opacities to compute extinction
+   * along the line of sight
+   */
   void applyOpa(const vector<opa> &opaAll);
 
   /// Helper function to append the oneElLambda(lambda, value) object to the sed
