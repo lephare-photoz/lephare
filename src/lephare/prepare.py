@@ -130,6 +130,7 @@ def write_yaml_config(keymap, yaml_file_path):
     for k in keymap:
         config_dict[keymap[k].name] = keymap[k].value
     with open(yaml_file_path, "w") as yaml_file:
+        yaml_file.write("# File written automatically at {now} by lephare version {lp.__version__}\n")
         yaml.dump(config_dict, yaml_file)
 
 
@@ -145,7 +146,7 @@ def write_para_config(keymap, para_file_path):
     """
     keymap = lp.all_types_to_keymap(keymap)
     now = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
-    para_contents = f"# File written automatically at {now}\n"
+    para_contents = f"# File written automatically at {now} by lephare version {lp.__version__}\n"
     for k in keymap:
         para_contents += f"{k} {keymap[k].value}\n"
     with open(para_file_path, "w") as file_handle:
