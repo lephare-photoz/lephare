@@ -29,3 +29,23 @@ def test_all_types_to_keymap():
             assert out_dict[o].__class__ == lp.keyword
             assert out_dict[o].name == "key"
             assert out_dict[o].value == "map"
+
+
+def test_config_formatting():
+    """Some simple tests of configs"""
+    test_dir = os.path.abspath(os.path.dirname(__file__))
+    os.environ["LEPHAREDIR"] = os.path.join(test_dir, "../data")
+    os.environ["LEPHAREWORK"] = os.path.join(test_dir, "../tmp")
+    config = lp.default_cosmos_config.copy()
+    keymap = all_types_to_keymap(config)
+    assert config["FILTER_FILE"] == "filter_cosmos"
+    assert keymap["FILTER_FILE"].value == "filter_cosmos"
+    assert type(keymap["Z_STEP"]) == lp.keyword
+    lp.write_para_config(config, os.path.join(os.environ["LEPHAREWORK"], "test.para"))
+    assert os.path.exists(os.path.join(os.environ["LEPHAREWORK"], "test.para"))
+    os.remove(os.path.join(os.environ["LEPHAREWORK"], "test.para"))
+    lp.write_para_config(keymap, os.path.join(os.environ["LEPHAREWORK"], "test.para"))
+    assert os.path.exists(os.path.join(os.environ["LEPHAREWORK"], "test.para"))
+    os.remove(os.path.join(os.environ["LEPHAREWORK"], "test.para"))
+    assert lp.string_dict_to_keymap(config)["FILTER_FILE"].value == "filter_cosmos"
+    assert lp.keymap_to_string_dict(keymap)["FILTER_FILE"] == "filter_cosmos"
