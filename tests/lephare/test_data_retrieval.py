@@ -176,9 +176,13 @@ def test_get_auxiliary_data(test_data_dir: str):
     os.environ["LEPHAREDIR"] = os.path.join(test_dir, "../data")
     os.environ["LEPHAREWORK"] = os.path.join(test_dir, "../tmp")
     config = lp.default_cosmos_config.copy()
+    # Set to a filter that is not in the test directory
     config["FILTER_LIST"] = "lsst/total_g.dat"
+    # Check the downloader runs
     lp.data_retrieval.get_auxiliary_data(keymap=config)
     filter_file_path = os.path.join(test_dir, "../data/filt/lsst/total_g.dat")
+    # Check it was downloaded
     assert os.path.exists(filter_file_path)
     os.remove(filter_file_path)
+    # Check it was deleted
     assert not os.path.exists(filter_file_path)
