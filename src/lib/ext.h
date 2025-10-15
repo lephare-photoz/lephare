@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "oneElLambda.h"
+#include "flt.h"
 
 using std::string;
 using std::vector;
@@ -43,5 +44,7 @@ class ext {
   /// add a single element
   void add_element(double lam, double val, double ori);
 };
+
+double compute_filter_extinction(const flt &filter, const ext &extinction);
 
 #endif

@@ -86,8 +86,11 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readwrite("numext", &ext::numext)
       .def_readonly("lmin", &ext::lmin, "return smallest wavelength stored")
       .def_readonly("lmax", &ext::lmax, "return largest wavelength stored")
-      .def("read", &ext::read, py::arg("extFile"), "read an extinction file");
-
+      .def("read", &ext::read, py::arg("extFile"), "read an extinction file")
+      .def("add_element", &ext::add_element)
+      ;
+  mod.def("compute_filter_extinction", &compute_filter_extinction, "Compute extinction in a filter band.");
+  
   /******** CLASS KEYWORD *********/
   py::class_<keyword>(mod, "keyword")
       .def_readwrite("name", &keyword::name)
@@ -128,7 +131,8 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("lambdaEff", &flt::lambdaEff)
       .def("magsun", &flt::magsun)
       .def("width", &flt::width)
-      .def("peak", &flt::peak)
+      .def("lmin", &flt::lmin)
+      .def("lmax", &flt::lmax)
       .def_readonly("name", &flt::name)
       .def_readonly("lmean", &flt::lmean)
       .def_readonly("dwidth", &flt::dwidth)

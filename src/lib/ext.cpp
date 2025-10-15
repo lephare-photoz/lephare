@@ -17,6 +17,7 @@
 
 #include "globals.h"
 #include "oneElLambda.h"
+#include "SED.h"
 
 using namespace std;
 
@@ -74,4 +75,46 @@ void ext::add_element(double lam, double val, double ori) {
   lmax = (lamb_ext[lamb_ext.size() - 1]).lamb;
 
   return;
+}
+
+
+double compute_filter_extinction(const flt &oneFlt, const ext &oneExt) {
+  // work with the original lamb_flux
+  vector<oneElLambda> lamb_all = oneFlt.lamb_trans;
+
+  // Concatenate two vectors composed of "oneElLambda" including this spectra
+  // and the one to be added
+  lamb_all.insert(lamb_all.end(), oneExt.lamb_ext.begin(),
+                  oneExt.lamb_ext.end());
+
+  // Sort the vector in increasing lambda
+  sort(lamb_all.begin(), lamb_all.end());
+
+  // Resample the filter into a common lambda range
+  vector<oneElLambda> new_lamb_flt;
+  SED::resample(lamb_all, new_lamb_flt, 0, 0, 1.e50);
+  // Resample the extinction into a common lambda range
+  vector<oneElLambda> new_lamb_ext;
+  SED::resample(lamb_all, new_lamb_ext, 2, 0, 1.e50);
+
+  double fint = 0;
+  double aint = 0;
+
+  // integrate the extinction curve through the filter
+  for (size_t i = 0; i < new_lamb_flt.size() - 1; i++) {
+    // Integral of the transmission by the filter
+    fint += (new_lamb_flt[i].val + new_lamb_flt[i + 1].val) / 2. *
+            (new_lamb_flt[i + 1].lamb - new_lamb_flt[i].lamb);
+    // Integral of the transmission by the filter x extinction
+    aint += (new_lamb_flt[i].val + new_lamb_flt[i + 1].val) *
+            (new_lamb_flt[i + 1].lamb - new_lamb_flt[i].lamb) *
+            (new_lamb_ext[i].val + new_lamb_ext[i + 1].val) / 4.;
+  }
+
+  // clean
+  lamb_all.clear();
+  new_lamb_flt.clear();
+  new_lamb_ext.clear();
+
+  return (aint /= fint);
 }
