@@ -6,7 +6,7 @@ import numpy as np
 
 import lephare as lp
 
-__all__ = ["object_types", "process", "table_to_data", "calculate_offsets", "load_sed_list"]
+__all__ = ["object_types", "process", "table_to_data", "calculate_offsets_from_input", "load_sed_list"]
 
 object_types = ["STAR", "GAL", "QSO"]
 
@@ -63,14 +63,11 @@ def process(
         photz.prep_data(one_obj)
         srclist.append(one_obj)
 
-    # If AUTO_ADAPT set compute offsets
-    if config["AUTO_ADAPT"].value == "YES":
-        a0 = photz.run_autoadapt(srclist)
-        offsets = ",".join(np.array(a0).astype(str))
-        print("Offsets from auto-adapt: " + offsets)
-    else:
-        a0 = np.full(n_filters, 0)
-        print("AUTO_ADAPT set to NO. Using zero offsets.")
+    # compute the offset, depending on the option in the code (AUTO_ADAPT, or APPLY_SYSSHIFT
+    a0 = photz.compute_offsets(srclist)
+    offsets = ",".join(np.array(a0).astype(str))
+    offsets = "# Offsets added to the modeled magnitudes (or substracted to the observed): " + offsets + "\n"
+    print(offsets)
 
     # create the onesource objects
     photozlist = []
@@ -90,7 +87,7 @@ def process(
     return output, photozlist
 
 
-def calculate_offsets(config, input, col_names=None, standard_names=False):
+def calculate_offsets_from_input(config, input, col_names=None, standard_names=False):
     """Calculate the zero point offsets for objects with spectroscopic redshifts
 
     We want to have this available as an independent method so that it can be
@@ -129,7 +126,7 @@ def calculate_offsets(config, input, col_names=None, standard_names=False):
         photz.prep_data(one_obj)
         srclist.append(one_obj)
 
-    a0 = photz.run_autoadapt(srclist)
+    a0 = photz.compute_offsets(srclist)
     offsets = ",".join(np.array(a0).astype(str))
     offsets = "Offsets from auto-adapt: " + offsets + "\n"
     print(offsets)
