@@ -54,20 +54,22 @@ class SED {
 
   double red,            ///< redshift of this SED
       chi2 = HIGH_CHI2,  ///< best fit chi2 associated with this SED
-      dm,                ///< normalization of the SED
-      lnir,              ///< NIR luminosity \f$\int_{2.1\,\mu m}^{2.3\,\mu m}
-                         ///< L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
-      luv,               ///< UV luminosity \f$\int_{0.21\,\mu m}^{0.25\,\mu m}
-                         ///< L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
-      lopt;  ///< optical luminosity \f$\int_{0.55\,\mu m}^{0.65\,\mu m}
-             ///< L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
+      dm;                ///< normalization of the SED
+
+  double
+      luv,  ///< monochromatic UV luminosity \f$\int_{0.21\,\mu m}^{0.25\,\mu m}
+            /// L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
+      lopt,  ///< optical luminosity \f$\int_{0.55\,\mu m}^{0.65\,\mu m}
+             /// L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
+      lnir,  ///< NIR luminosity \f$\int_{2.1\,\mu m}^{2.3\,\mu m}
+             /// L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
+      ltir;  ///< IR luminosity \f$\int_{8\,\mu m}^{1000\,\mu m}    L_\lambda\;
+             ///< d\lambda\f$ in Log unit of \f$L_\odot\f$
 
   double mass,  ///< mass in \f$M_\odot\f$
       age,      ///< age in year (yr)
       sfr,      ///< Star Formation Rate in \f$M_\odot\f$/yr
-      ssfr,     ///< Specific SFR, defined as sfr / mass
-      ltir;  ///< \f$\int_{8\,\mu m}^{1000\,\mu m}    L_\lambda\; d\lambda\f$ in
-             ///< Log unit of \f$L_\odot\f$
+      ssfr;     ///< Specific SFR, defined as sfr / mass
 
   double ebv,  ///< E(B-V) extinction value applied to the SED
       mag0,
@@ -249,10 +251,21 @@ class SED {
    *
    * Results are stored in the q_i array member of size 4 of the SED instance.
    */
-  virtual void calc_ph() {};  // Number of inoizing photons
+  virtual void calc_ph() {};
 
   /*! Compute some integrals to be stored in the object
    * This computes variables SED::luv, SED::lopt, SED::lnir, and SED::ltir
+   * luv, lopt, lnir, are monochromatic equivalent luminosities, for a source
+   * at 10 parsecs. As the SED unit is taken as erg/cm2/s/Hz, the monochromatic
+   * luminosity is obtained by integrating the SED in an interval [lmin, lmax],
+   * divided by (lmax-lmin) and multiplied by \f$4\pi(10pc)^2\f$. Note that
+   * given the units of an SED, it is defined as dF/dnu for F the corresponding
+   * flux. As a result the integral shows a \f$\lambda^2/c\f$ term so that
+   * \f$\frac{dF}{d\nu} = \frac{dF}{d\lambda} \frac{\lambda^2}{c}\f$ can be
+   * integrated in \f$\lambda\f$. For the variables computed here, in order to
+   * speed computation, \f$\lambda^2/c\f$ is evaluated at the center of the
+   * interval and taken out of the integral.
+   *
    */
   virtual void SEDproperties() {};
 
