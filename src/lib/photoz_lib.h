@@ -61,6 +61,7 @@ class PhotoZ {
     lightLib.clear();
   }
 
+  vector<double> compute_offsets(vector<onesource *>);
   vector<double> run_autoadapt(vector<onesource *>);
 
   void run_photoz(vector<onesource *> sources, const vector<double> &a0);

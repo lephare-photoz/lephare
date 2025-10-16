@@ -98,12 +98,15 @@ def test_cumulant():
 
 
 def test_index():
+    # 0, 0.33, 0.66,..., 2.66, 3 (10 values)
     pdf = lp.PDF(0, 3, 10)
     assert pdf.index(-1) == 0
     assert pdf.index(20) == 9
     assert pdf.index(2) == 6
     assert pdf.index(2.1) == 6
     assert pdf.index(2.2) == 7
+    assert pdf.index(0) == 0
+    assert pdf.index(3) == 9
 
 
 def test_set_yvals():
