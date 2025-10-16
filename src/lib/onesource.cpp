@@ -654,10 +654,9 @@ void onesource::rm_discrepant(vector<SED *> &fulllib,
       newmin = min({chimin[0], chimin[1], chimin[2]});
       // One band has been removed in the fit
       nbused--;
-      if (verbose)
-        cout << "Source " << spec << " // Band " << flDis
-             << " removed to improve the chi2, with old and new chi2 "
-             << oldchi2 << " " << newmin << endl;
+      cout << "Source " << spec << " // Band " << flDis
+           << " removed to improve the chi2, with old and new chi2 " << oldchi2
+           << " " << newmin << endl;
       nbRemoved++;
     } else
       break;
