@@ -248,7 +248,7 @@ vector<opa> Mag::read_opa() {
 // Function of the basis class which read all the filters
 vector<flt> Mag::read_flt(const string &inputfile) {
   vector<flt> flts;
-    
+
   ifstream sfiltIn;
   sfiltIn.open(inputfile.c_str());
   // Check if file is opened

@@ -158,8 +158,9 @@ class SED {
   void read(const string &sedFile);
   void warning_integrateSED(const vector<flt> &filters, bool verbose = false);
   vector<double> integrateSED(const flt &filter);
-  static void resample(vector<oneElLambda> &lamb_all, vector<oneElLambda> &lamb_new,
-                const int origine, const double lmin, const double lmax);
+  static void resample(vector<oneElLambda> &lamb_all,
+                       vector<oneElLambda> &lamb_new, const int origine,
+                       const double lmin, const double lmax);
 
   ///\brief Generate a calibration SED based on the argument calib
   ///

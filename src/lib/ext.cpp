@@ -15,9 +15,9 @@
 #include <string>
 #include <vector>
 
+#include "SED.h"
 #include "globals.h"
 #include "oneElLambda.h"
-#include "SED.h"
 
 using namespace std;
 
@@ -76,7 +76,6 @@ void ext::add_element(double lam, double val, double ori) {
 
   return;
 }
-
 
 double compute_filter_extinction(const flt &oneFlt, const ext &oneExt) {
   // work with the original lamb_flux
