@@ -1566,6 +1566,8 @@ If the photometric catalogue contains a large number of objects, you can save ti
 
 | **Note 2**: when using adaptive mode the redshift, for objects that meet the criteria from ADAPT_LIM and ADAPT_ZBIN, is automatically fixed to the spectroscopic value during the adaptation, and will be let free when adaptation is finished. Do not use the adaption with ``ZFIX YES``.
 
+| **Note 3**: If values are given in ``APPLY_SYSSHIFT``, the adaptation of the zero-points will be turn off automatically, even if the user set ``AUTO_ADAPT YES``. 
+
 In python, you can run only the training part with:
 
 
