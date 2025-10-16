@@ -2,7 +2,6 @@ import time
 from contextlib import suppress
 
 from ._lephare import (
-    GalMag,
     PhotoZ,
     keyword,
 )
@@ -230,16 +229,10 @@ Need 1 or N values
         self.keymap["c"] = keyword("c", self.config)
 
         photoz = PhotoZ(self.keymap)
-        autoadapt = (self.keymap["AUTO_ADAPT"]).split_bool("NO", 1)[0]
-        if autoadapt:
-            adapt_srcs = photoz.read_autoadapt_sources()
-            a0 = photoz.run_autoadapt(adapt_srcs)
-        else:
-            a0 = []
-            for _ in range(photoz.imagm):
-                a0.append(0.0)
 
-        opa_out = GalMag.read_opa()  # noqa: F841
+        # Compute offsets depending on the AUTO_ADAPT and APPLY_SYSSHIFT options (0 if none)
+        adapt_srcs = photoz.read_autoadapt_sources()
+        a0 = photoz.compute_offsets(adapt_srcs)
 
         fit_srcs = photoz.read_photoz_sources()
         photoz.run_photoz(fit_srcs, a0)

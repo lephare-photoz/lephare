@@ -310,7 +310,8 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("run_autoadapt", &PhotoZ::run_autoadapt)
       .def("run_photoz", &PhotoZ::run_photoz)
       .def("write_outputs", &PhotoZ::write_outputs)
-      .def("validLib", &PhotoZ::validLib);
+      .def("validLib", &PhotoZ::validLib)
+      .def("compute_offsets", &PhotoZ::compute_offsets);
   // mod.def("read_lib", [](const string& libName, int ind, vector<int> emMod,
   // int babs) { 			vector<SED*> libFull;
   // int nummodpre[3]; 			string filtname;
