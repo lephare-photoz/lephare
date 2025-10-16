@@ -56,17 +56,18 @@ class SED {
       chi2 = HIGH_CHI2,  ///< best fit chi2 associated with this SED
       dm,                ///< normalization of the SED
       lnir,              ///< NIR luminosity \f$\int_{2.1\,\mu m}^{2.3\,\mu m}
+                         ///< L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
       luv,               ///< UV luminosity \f$\int_{0.21\,\mu m}^{0.25\,\mu m}
                          ///< L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
-      lopt;  ///< optical luminosity \f$\int_{0.55\,\mu m}^{0.65\,\mu m}
+      lopt,  ///< optical luminosity \f$\int_{0.55\,\mu m}^{0.65\,\mu m}
              ///< L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
+      ltir;  ///< IR luminosity \f$\int_{8\,\mu m}^{1000\,\mu m}    L_\lambda\; d\lambda\f$ in
+             ///< Log unit of \f$L_\odot\f$
 
   double mass,  ///< mass in \f$M_\odot\f$
       age,      ///< age in year (yr)
       sfr,      ///< Star Formation Rate in \f$M_\odot\f$/yr
-      ssfr,     ///< Specific SFR, defined as sfr / mass
-      ltir;  ///< \f$\int_{8\,\mu m}^{1000\,\mu m}    L_\lambda\; d\lambda\f$ in
-             ///< Log unit of \f$L_\odot\f$
+      ssfr;     ///< Specific SFR, defined as sfr / mass
 
   double ebv,  ///< E(B-V) extinction value applied to the SED
       mag0, distMod;
