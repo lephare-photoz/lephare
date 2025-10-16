@@ -384,6 +384,7 @@ def config_to_required_files(keymap, base_url=None):
     base_url : str
         Url to overwrite default base.
     """
+    keymap = all_types_to_keymap(keymap)
     if base_url is None:
         base_url = DEFAULT_BASE_DATA_URL
     required_files = []
