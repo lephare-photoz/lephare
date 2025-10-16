@@ -10,10 +10,8 @@ __all__ = [
 
 config_keys = {
     "verbose": "increase onscreen verbosity",
-    "FILTER_FILE": (
-        "path to filter file on which to compute extinction, output of the "
-        "`filter` execution, to be found in $LEPHAREWORK/filt"
-    ),
+    "FILTER_FILE": "path to filter file on which to compute extinction,\
+    output of the `filter` execution, to be found in $LEPHAREWORK/filt",
     "EXT_CURVE": "extinction law to use, to be searched in $LEPHAREDIR/ext if relative",
     "GAL_CURVE": "extinction curve in the galaxy, to be searched in $LEPHAREDIR/ext if relative",
     "OUTPUT": "output file name",
@@ -55,13 +53,14 @@ class FiltExt(Runner):
         keymap = self.keymap
 
         filters = keymap["FILTER_FILE"].split_string("unknown", 1)[0]
+        if not os.path.isabs(filters):
+            filters = os.path.join(os.environ["LEPHAREWORK"], "filt", filters)
         atmec = keymap["EXT_CURVE"].split_string("unknown", 1)[0]
         galec = keymap["GAL_CURVE"].split_string("CARDELLI", 1)[0]
         output = keymap["OUTPUT"].split_string("filter_extinc.dat", 1)[0]
 
         atmec_file = os.path.join(os.environ["LEPHAREDIR"], "ext", atmec)
         galec_file = os.path.join(os.environ["LEPHAREDIR"], "ext", galec)
-        filtfile = os.path.join(os.environ["LEPHAREWORK"], "filt", filters)
 
         if self.verbose:
             print("#######################################")
@@ -80,7 +79,7 @@ class FiltExt(Runner):
         galactic_ext = ext(galec, 1)
         if galec != "CARDELLI":
             galactic_ext.read(galec_file)
-        all_flt = GalMag.read_flt(filtfile)
+        all_filters = GalMag.read_flt(filters)
 
         rv = 3.1  # Use by default Cardelli
         if galec == "SMC_prevot":
@@ -95,9 +94,9 @@ class FiltExt(Runner):
         aint = []
         albd = []
         albdav = []
-        for filter in all_flt:
+        for f in all_filters:
             if atmec != "NONE":
-                aint.append(compute_filter_extinction(filter, atmospheric_ext))
+                aint.append(compute_filter_extinction(f, atmospheric_ext))
             else:
                 aint.append(99.0)
 
@@ -105,13 +104,13 @@ class FiltExt(Runner):
                 # galactic curves given in k(lbda) (=A(lbda)/E(B-V))
                 #  -> A(lbda)/Av = A(lbda)/E(B-V) / Rv)
                 #  Rv=3.1 except for Calzetti law (4.05) and SMC Prevot (2.72)
-                inter = compute_filter_extinction(filter, galactic_ext)
+                inter = compute_filter_extinction(f, galactic_ext)
                 albd.append(inter)
                 albdav.append(inter / rv)
             else:
                 # If cardelli (hardcoded)
                 # output A(lbd)/Av->A(lbd)/(Rv*E(B-V))->A(lbd)/E(B-V)=Rv*A(lbd)/Av
-                inter = cardelli_ext(filter)
+                inter = cardelli_ext(f)
                 albd.append(inter * 3.1)
                 albdav.append(inter)
 
@@ -126,19 +125,19 @@ class FiltExt(Runner):
             out.write(f"# Output file: {output}\n")
             out.write("#######################################\n")
             out.write(" Filters Ext(mag/airmass) Albda/Av Albda/E(B-V) \n")
-            for k, f in enumerate(all_flt):
-                short_name = os.path.basename(f.name)
-                out.write(f"{short_name:20} {aint[k]:<20} {albdav[k]:<20} {albd[k]:<20}\n")
+            for k, f in enumerate(all_filters):
+                name = os.path.basename(f.name)
+                out.write(f"{name:20} {aint[k]:<20} {albdav[k]:<20} {albd[k]:<20}\n")
                 if self.verbose:
-                    print(f"{short_name:20} {aint[k]:<20} {albdav[k]:<20} {albd[k]:<20}")
+                    print(f"{name:20} {aint[k]:<20} {albdav[k]:<20} {albd[k]:<20}")
             return
 
 
 # compute galactic extinction in the filter based on Cardelli et al., 1989, ApJ 345
-def cardelli_ext(one_flt: flt):
+def cardelli_ext(filt: flt):
     # Define the limits of this filter
-    lmin = one_flt.lmin()
-    lmax = one_flt.lmax()
+    lmin = filt.lmin()
+    lmax = filt.lmax()
     one_ext = ext("CARDELLI", 2)
 
     # computes the galactic extinction
@@ -148,7 +147,7 @@ def cardelli_ext(one_flt: flt):
         extg = cardelli_law(lextg)
         one_ext.add_element(lextg, extg, 2)
 
-    return compute_filter_extinction(one_flt, one_ext)
+    return compute_filter_extinction(filt, one_ext)
 
 
 #  compute albd/av at a given lambda (A) for the Cardelli law
