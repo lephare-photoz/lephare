@@ -10,6 +10,13 @@
 #include "flt.h"  // to read the libraries
 #include "mag.h"
 
+/*! \brief Class managing photo-z computation.
+ *
+ * The PhotoZ class is the central executor of photo-z estimation : it manages
+ * most configuration parameters, reads synthetic magnitudes inputs and object
+ * catalogs, performs the fit, and is in charge of producing results and saving
+ * them to files.
+ */
 class PhotoZ {
  private:
   keymap keys;
