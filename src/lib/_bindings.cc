@@ -90,6 +90,16 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("add_element", &ext::add_element);
   mod.def("compute_filter_extinction", &compute_filter_extinction,
           "Compute extinction in a filter band.");
+  mod.def("cardelli_ext", &cardelli_ext,
+          "Compute galactic extinction in the filter based on Cardelli et "
+          "al., 1989, ApJ 345",
+          py::arg("oneFlt"));
+  mod.def("cardelli_law", &cardelli_law,
+          "compute albd/av at a given lambda (A) for the Cardelli law",
+          py::arg("lb"));
+  mod.def("resample", &resample, py::arg("lamb_all"), py::arg("lamb_interp"),
+          py::arg("origine"), py::arg("lmin"), py::arg("lmax"));
+  mod.def("read_flt", &read_flt, py::arg("sfiltIn"));
 
   /******** CLASS KEYWORD *********/
   py::class_<keyword>(mod, "keyword")

@@ -46,5 +46,10 @@ class ext {
 };
 
 double compute_filter_extinction(const flt &filter, const ext &extinction);
+double cardelli_ext(flt &oneFlt);
+double cardelli_law(double lb);
+void resample(vector<oneElLambda> &lamb_all, vector<oneElLambda> &lamb_interp,
+              const int origine, const double lmin, const double lmax);
+vector<flt> read_flt(ifstream &sfiltIn);
 
 #endif

@@ -3,7 +3,9 @@ from contextlib import suppress
 
 import numpy as np
 
-from ._lephare import GalMag, compute_filter_extinction, ext, flt
+import lephare as lp
+
+from ._lephare import GalMag, compute_filter_extinction, ext
 from .runner import Runner
 
 __all__ = [
@@ -76,7 +78,7 @@ class FiltExt(Runner):
         if galec == "CARDELLI":
             # If cardelli (hardcoded) with Rv=3.1 by  default
             # output A(lbd)/Av->A(lbd)/(Rv*E(B-V))->A(lbd)/E(B-V)=Rv*A(lbd)/Av
-            albdav = np.array([cardelli_ext(f) for f in all_filters])
+            albdav = np.array([lp.cardelli_ext(f) for f in all_filters])
             albd = albdav * 3.1
         else:
             if not os.path.isabs(galec):
@@ -126,52 +128,6 @@ class FiltExt(Runner):
             for k, f in enumerate(all_filters):
                 name = os.path.basename(f.name)
                 out.write(f"{name:20} {aint[k]:<20} {albdav[k]:<20} {albd[k]:<20}\n")
-
-
-# compute galactic extinction in the filter based on Cardelli et al., 1989, ApJ 345
-def cardelli_ext(filt: flt):
-    # Define the limits of this filter
-    lmin = filt.lmin()
-    lmax = filt.lmax()
-    one_ext = ext("CARDELLI", 2)
-
-    # computes the galactic extinction
-    dlbd = (lmax - lmin) / 400.0
-    for i in range(402):
-        lextg = lmin + (i - 1) * dlbd
-        extg = cardelli_law(lextg)
-        one_ext.add_element(lextg, extg, 2)
-
-    return compute_filter_extinction(filt, one_ext)
-
-
-#  compute albd/av at a given lambda (A) for the Cardelli law
-def cardelli_law(lb):
-    rv = 3.1
-    x = 10000.0 / lb
-    y = x - 1.82
-
-    if x <= 1.1:
-        f1 = 0.574 * pow(x, 1.61)
-        f2 = -0.527 * pow(x, 1.61)
-    elif x > 1.1 and x < 3.3:
-        f1 = 1 + 0.17699 * y - 0.50447 * y * y - 0.02427 * y * y * y + 0.72085 * y * y * y * y
-        f1 = f1 + 0.01979 * pow(y, 5) - 0.77530 * pow(y, 6) + 0.32999 * pow(y, 7)
-        f2 = 1.41338 * y + 2.28305 * y * y + 1.07233 * y * y * y
-        f2 = f2 - 5.38434 * pow(y, 4) - 0.62251 * pow(y, 5) + 5.30260 * pow(y, 6) - 2.09002 * pow(y, 7)
-    elif x >= 3.3 and x < 5.9:
-        f1 = 1.752 - 0.316 * x - 0.104 / ((x - 0.467) * (x - 0.467) + 0.341)
-        f2 = -3.090 + 1.825 * x + 1.206 / ((x - 4.62) * (x - 4.62) + 0.262)
-    elif x >= 5.9 and x < 8:
-        fa = -0.04473 * (x - 5.9) * (x - 5.9) - 0.009779 * (x - 5.9) * (x - 5.9) * (x - 5.9)
-        fb = 0.2130 * (x - 5.9) * (x - 5.9) + 0.1207 * (x - 5.9) * (x - 5.9) * (x - 5.9)
-        f1 = 1.752 - 0.316 * x - 0.104 / ((x - 0.467) * (x - 0.467) + 0.341) + fa
-        f2 = -3.090 + 1.825 * x + 1.206 / ((x - 4.62) * (x - 4.62) + 0.262) + fb
-    else:
-        f1 = -1.073 - 0.628 * (x - 8) + 0.137 * (x - 8) * (x - 8) - 0.070 * (x - 8) * (x - 8) * (x - 8)
-        f2 = 13.670 + 4.257 * (x - 8) - 0.420 * (x - 8) * (x - 8) + 0.374 * (x - 8) * (x - 8) * (x - 8)
-
-    return f1 + f2 / rv
 
 
 def main():  # pragma no cover
