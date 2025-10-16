@@ -1,5 +1,4 @@
 import os
-import shutil
 
 import lephare as lp
 
@@ -9,16 +8,9 @@ def test_filter_extinc():
     test_dir = os.path.abspath(os.path.dirname(__file__))
     os.environ["LEPHAREDIR"] = os.path.join(test_dir, "../data")
     os.environ["LEPHAREWORK"] = os.path.join(test_dir, "../tmp")
-    os.makedirs(os.path.join(test_dir, "../tmp", "filt"), exist_ok=True)
-    # Move filter file into the tmp WORK directory
-    src = os.path.join(
-        test_dir, "../data", "filt", "LSST_FILTERS.dat"
-    )  # replace 'myfile.txt' with your filename
-    dst = os.path.join(test_dir, "../tmp", "filt", "LSST_FILTERS.dat")
-    shutil.copy(src, dst)
-    out_file = os.path.join(test_dir, "tmp", "filter_extinc.dat")
+    out_file = os.path.join(test_dir, "../tmp", "filter_extinc.dat")
     options = {
-        "FILTER_FILE": "LSST_FILTERS.dat",
+        "FILTER_FILE": os.path.join(test_dir, "../data", "filt", "LSST_FILTERS.dat"),
         "EXT_CURVE": "SB_calzetti.dat",
         "GAL_CURVE": "CARDELLI",
         "OUTPUT": out_file,
