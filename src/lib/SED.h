@@ -61,8 +61,8 @@ class SED {
                          ///< L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
       lopt,  ///< optical luminosity \f$\int_{0.55\,\mu m}^{0.65\,\mu m}
              ///< L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
-      ltir;  ///< IR luminosity \f$\int_{8\,\mu m}^{1000\,\mu m}    L_\lambda\; d\lambda\f$ in
-             ///< Log unit of \f$L_\odot\f$
+      ltir;  ///< IR luminosity \f$\int_{8\,\mu m}^{1000\,\mu m}    L_\lambda\;
+             ///< d\lambda\f$ in Log unit of \f$L_\odot\f$
 
   double mass,  ///< mass in \f$M_\odot\f$
       age,      ///< age in year (yr)
