@@ -453,4 +453,5 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readwrite("ind", &PDF::ind)
       .def_readwrite("secondInd", &PDF::secondInd);
   mod.def("quadratic_extremum", &quadratic_extremum);
+  mod.def("original_code", &original_code);
 }  // PYBIND11_MODULE

@@ -121,4 +121,6 @@ class PDF {
 
 pair<double, double> quadratic_extremum(double x1, double x2, double x3,
                                         double y1, double y2, double y3);
+double original_code(double x1, double x2, double x3,
+		     double y1, double y2, double y3);
 #endif
