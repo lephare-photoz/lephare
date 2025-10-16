@@ -1,5 +1,6 @@
 import os
 from contextlib import suppress
+
 import numpy as np
 
 from ._lephare import GalMag, compute_filter_extinction, ext, flt
@@ -57,10 +58,10 @@ class FiltExt(Runner):
         if not os.path.isabs(filters):
             filters = os.path.join(os.environ["LEPHAREWORK"], "filt", filters)
         all_filters = GalMag.read_flt(filters)
-        
+
         atmec = keymap["EXT_CURVE"].split_string("NONE", 1)[0]
-        if atmec is "NONE":
-            aint = 99.*np.ones(len(all_filters)).tolist()
+        if atmec == "NONE":
+            aint = 99.0 * np.ones(len(all_filters)).tolist()
         else:
             if not os.path.isabs(atmec):
                 atmec = os.path.join(os.environ["LEPHAREDIR"], "ext", atmec)
@@ -68,7 +69,6 @@ class FiltExt(Runner):
             atmospheric_ext.read(atmec)
             aint = [compute_filter_extinction(f, atmospheric_ext) for f in all_filters]
 
-        
         output = keymap["OUTPUT"].split_string("filter_extinc.dat", 1)[0]
 
         galec = keymap["GAL_CURVE"].split_string("CARDELLI", 1)[0]
@@ -85,7 +85,7 @@ class FiltExt(Runner):
             galactic_ext.read(galec)
 
             #  Rv=3.1 except for Calzetti law (4.05) and SMC Prevot (2.72)
-            rv = 3.1  
+            rv = 3.1
             if "SMC_prevot" in galec:
                 rv = 2.72
                 if "calzetti" in galec:

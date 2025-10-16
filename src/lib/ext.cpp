@@ -103,7 +103,7 @@ double compute_filter_extinction(const flt &oneFlt, const ext &oneExt) {
   for (size_t i = 0; i < new_lamb_flt.size() - 1; i++) {
     // Integral of the transmission by the filter
     oneElLambda pos = new_lamb_flt[i];
-    oneElLambda next = new_lamb_flt[i+1];
+    oneElLambda next = new_lamb_flt[i + 1];
     double delta = next.lamb - pos.lamb;
     double mid_flt = (pos.val + next.val) / 2.;
     double mid_ext = (new_lamb_ext[i].val + new_lamb_ext[i + 1].val) / 2.;
