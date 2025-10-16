@@ -10,6 +10,7 @@ from .runner import Runner
 
 __all__ = [
     "FiltExt",
+    "calculate_extinction_values",
 ]
 
 config_keys = {
@@ -55,49 +56,17 @@ class FiltExt(Runner):
         """
         super().run(**kwargs)
         keymap = self.keymap
-
+        # Get the parameters
         filters = keymap["FILTER_FILE"].split_string("unknown", 1)[0]
         if not os.path.isabs(filters):
             filters = os.path.join(os.environ["LEPHAREWORK"], "filt", filters)
-        all_filters = GalMag.read_flt(filters)
-
         atmec = keymap["EXT_CURVE"].split_string("NONE", 1)[0]
-        if atmec == "NONE":
-            aint = 99.0 * np.ones(len(all_filters)).tolist()
-        else:
-            if not os.path.isabs(atmec):
-                atmec = os.path.join(os.environ["LEPHAREDIR"], "ext", atmec)
-            atmospheric_ext = ext(atmec, 0)
-            atmospheric_ext.read(atmec)
-            aint = [compute_filter_extinction(f, atmospheric_ext) for f in all_filters]
-
         output = keymap["OUTPUT"].split_string("filter_extinc.dat", 1)[0]
-
         galec = keymap["GAL_CURVE"].split_string("CARDELLI", 1)[0]
 
-        if galec == "CARDELLI":
-            # If cardelli (hardcoded) with Rv=3.1 by  default
-            # output A(lbd)/Av->A(lbd)/(Rv*E(B-V))->A(lbd)/E(B-V)=Rv*A(lbd)/Av
-            albdav = np.array([lp.cardelli_ext(f) for f in all_filters])
-            albd = albdav * 3.1
-        else:
-            if not os.path.isabs(galec):
-                galec = os.path.join(os.environ["LEPHAREDIR"], "ext", galec)
-            galactic_ext = ext(galec, 1)
-            galactic_ext.read(galec)
-
-            #  Rv=3.1 except for Calzetti law (4.05) and SMC Prevot (2.72)
-            rv = 3.1
-            if "SMC_prevot" in galec:
-                rv = 2.72
-                if "calzetti" in galec:
-                    rv = 4.05
-            if self.verbose:
-                print(f"assuming Rv={rv} for this Extinction law {galec}")
-            # galactic curves given in k(lbda) (=A(lbda)/E(B-V))
-            #  -> A(lbda)/Av = A(lbda)/E(B-V) / Rv)
-            albd = np.array([compute_filter_extinction(f, galactic_ext) for f in all_filters])
-            albdav = albd / rv
+        all_filters, aint, albdav, albd = calculate_extinction_values(
+            filters, atmec, galec, verbose=self.verbose
+        )
 
         if self.verbose:
             print("#######################################")
@@ -128,6 +97,67 @@ class FiltExt(Runner):
             for k, f in enumerate(all_filters):
                 name = os.path.basename(f.name)
                 out.write(f"{name:20} {aint[k]:<20} {albdav[k]:<20} {albd[k]:<20}\n")
+
+
+def calculate_extinction_values(filters, atmec, galec, verbose=False):
+    """Calculate the extinction values for a set of filters
+
+    Parameters
+    filters :  str
+        The file containing the lephare compiled filter list
+    atmec : str
+        Extinction law to use, to be searched in $LEPHAREDIR/ext if relative
+    galec : str
+        Extinction curve in the galaxy, to be searched in $LEPHAREDIR/ext if relative
+    verbose : bool
+        Increase onscreen verbosity
+
+    Returns
+    =======
+
+    all_filters : list of lephare.GalMag
+        The list of filter objects
+    aint : np.array
+        Atmospheric extinction in each filter (mag/airmass)
+    albdav : np.array
+        Galactic extinction in each filter A(lbd)/Av
+    albd : np.array
+        Galactic extinction in each filter A(lbd)/E(B-V)
+    """
+    all_filters = GalMag.read_flt(filters)
+    if atmec == "NONE":
+        aint = 99.0 * np.ones(len(all_filters)).tolist()
+    else:
+        if not os.path.isabs(atmec):
+            atmec = os.path.join(os.environ["LEPHAREDIR"], "ext", atmec)
+        atmospheric_ext = ext(atmec, 0)
+        atmospheric_ext.read(atmec)
+        aint = [compute_filter_extinction(f, atmospheric_ext) for f in all_filters]
+
+    if galec == "CARDELLI":
+        # If cardelli (hardcoded) with Rv=3.1 by  default
+        # output A(lbd)/Av->A(lbd)/(Rv*E(B-V))->A(lbd)/E(B-V)=Rv*A(lbd)/Av
+        albdav = np.array([lp.cardelli_ext(f) for f in all_filters])
+        albd = albdav * 3.1
+    else:
+        if not os.path.isabs(galec):
+            galec = os.path.join(os.environ["LEPHAREDIR"], "ext", galec)
+        galactic_ext = ext(galec, 1)
+        galactic_ext.read(galec)
+
+        #  Rv=3.1 except for Calzetti law (4.05) and SMC Prevot (2.72)
+        rv = 3.1
+        if "SMC_prevot" in galec:
+            rv = 2.72
+            if "calzetti" in galec:
+                rv = 4.05
+        if verbose:
+            print(f"assuming Rv={rv} for this Extinction law {galec}")
+        # galactic curves given in k(lbda) (=A(lbda)/E(B-V))
+        #  -> A(lbda)/Av = A(lbda)/E(B-V) / Rv)
+        albd = np.array([compute_filter_extinction(f, galactic_ext) for f in all_filters])
+        albdav = albd / rv
+    return all_filters, aint, albdav, albd
 
 
 def main():  # pragma no cover
