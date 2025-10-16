@@ -1,7 +1,7 @@
 import os
 from contextlib import suppress
 
-from ._lephare import flt, GalMag, ext, compute_filter_extinction
+from ._lephare import GalMag, compute_filter_extinction, ext, flt
 from .runner import Runner
 
 __all__ = [
@@ -10,7 +10,8 @@ __all__ = [
 
 config_keys = {
     "verbose": "increase onscreen verbosity",
-    "FILTER_FILE": "path to filter file on which to compute extinction, output of the `filter` execution, to be found in $LEPHAREWORK/filt",
+    "FILTER_FILE": "path to filter file on which to compute extinction,\
+    output of the `filter` execution, to be found in $LEPHAREWORK/filt",
     "EXT_CURVE": "extinction law to use, to be searched in $LEPHAREDIR/ext if relative",
     "GAL_CURVE": "extinction curve in the galaxy, to be searched in $LEPHAREDIR/ext if relative",
     "OUTPUT": "output file name",
@@ -24,7 +25,8 @@ class FiltExt(Runner):
     verbose
                 increase onscreen verbosity
     FILTER_FILE
-                path to filter file on which to compute extinction, output of the `filter` execution, to be found in $LEPHAREWORK/filt 
+                path to filter file on which to compute extinction,
+                output of the `filter` execution, to be found in $LEPHAREWORK/filt
     EXT_CURVE
                 extinction law to use, to be searched in $LEPHAREDIR/ext if relative
     GAL_CURVE
@@ -49,15 +51,16 @@ class FiltExt(Runner):
         """
         super().run(**kwargs)
         keymap = self.keymap
-        
+
         filters = keymap["FILTER_FILE"].split_string("unknown", 1)[0]
+        if not os.path.isabs(filters):
+            filters = os.path.join(os.environ["LEPHAREWORK"], "filt", filters)
         atmec = keymap["EXT_CURVE"].split_string("unknown", 1)[0]
         galec = keymap["GAL_CURVE"].split_string("CARDELLI", 1)[0]
         output = keymap["OUTPUT"].split_string("filter_extinc.dat", 1)[0]
 
         atmec_file = os.path.join(os.environ["LEPHAREDIR"], "ext", atmec)
         galec_file = os.path.join(os.environ["LEPHAREDIR"], "ext", galec)
-        filtfile = os.path.join(os.environ["LEPHAREWORK"], "filt", filters)
 
         if self.verbose:
             print("#######################################")
@@ -70,15 +73,15 @@ class FiltExt(Runner):
             print(f"# Output file: {output}")
             print("#######################################")
             print(" Filters Ext(mag/airmass) Albda/Av Albda/E(B-V) ")
-        
+
         Atmospheric_Ext = ext(atmec, 0)
         Atmospheric_Ext.read(atmec_file)
         Galactic_Ext = ext(galec, 1)
         if galec != "CARDELLI":
-            Galactic_Ext.read(galec_file)        
+            Galactic_Ext.read(galec_file)
         allFlt = GalMag.read_flt(filters)
 
-        rv = 3.1 # Use by default Cardelli
+        rv = 3.1  # Use by default Cardelli
         if galec == "SMC_prevot":
             rv = 2.72
         if galec == "SMC_prevot":
@@ -90,28 +93,28 @@ class FiltExt(Runner):
 
         aint = []
         albd = []
-        albdav = [] 
+        albdav = []
         for flt in allFlt:
             if atmec != "NONE":
                 aint.append(compute_filter_extinction(flt, Atmospheric_Ext))
             else:
-                aint.append(99.)
+                aint.append(99.0)
 
             if galec != "CARDELLI":
                 # galactic curves given in k(lbda) (=A(lbda)/E(B-V))
                 #  -> A(lbda)/Av = A(lbda)/E(B-V) / Rv)
                 #  Rv=3.1 except for Calzetti law (4.05) and SMC Prevot (2.72)
                 inter = compute_filter_extinction(flt, Galactic_Ext)
-                albd.append( inter )
-                albdav.append( inter/rv )
+                albd.append(inter)
+                albdav.append(inter / rv)
             else:
                 # If cardelli (hardcoded)
                 # output A(lbd)/Av->A(lbd)/(Rv*E(B-V))->A(lbd)/E(B-V)=Rv*A(lbd)/Av
-                inter = cardelli_ext(flt);
-                albd.append( inter * 3.1 );
-                albdav.append( inter );
-            
-        with open(output, 'w') as out:
+                inter = cardelli_ext(flt)
+                albd.append(inter * 3.1)
+                albdav.append(inter)
+
+        with open(output, "w") as out:
             out.write("#######################################\n")
             out.write("# Computing ATMOSPHERIC AND GALACTIC EXTINCTION \n")
             out.write("# with the following options:\n")
@@ -121,55 +124,58 @@ class FiltExt(Runner):
             out.write(f"# GAL_CURVE (Galactic extinction curve: {galec}\n")
             out.write(f"# Output file: {output}\n")
             out.write("#######################################\n")
-            out.write(f" Filters Ext(mag/airmass) Albda/Av Albda/E(B-V) \n")
-            for k,f in enumerate(allFlt):
+            out.write(" Filters Ext(mag/airmass) Albda/Av Albda/E(B-V) \n")
+            for k, f in enumerate(allFlt):
                 shortName = os.path.basename(f.name)
                 out.write(f"{shortName:20} {aint[k]:<20} {albdav[k]:<20} {albd[k]:<20}\n")
             return
 
-# compute galactic extinction in the filter based on Cardelli et al., 1989, ApJ 345
-def cardelli_ext(oneFlt : flt) :
-  # Define the limits of this filter
-  lmin = oneFlt.lmin()
-  lmax = oneFlt.lmax()
-  oneExt = ext("CARDELLI", 2)
 
-  # computes the galactic extinction
-  dlbd = (lmax - lmin) / 400.
-  for i in range(402) :
-    lextg = lmin + (i - 1) * dlbd
-    extg = cardelli_law(lextg)
-    oneExt.add_element(lextg, extg, 2)
-  
-  return compute_filter_extinction(oneFlt, oneExt)
+# compute galactic extinction in the filter based on Cardelli et al., 1989, ApJ 345
+def cardelli_ext(oneFlt: flt):
+    # Define the limits of this filter
+    lmin = oneFlt.lmin()
+    lmax = oneFlt.lmax()
+    oneExt = ext("CARDELLI", 2)
+
+    # computes the galactic extinction
+    dlbd = (lmax - lmin) / 400.0
+    for i in range(402):
+        lextg = lmin + (i - 1) * dlbd
+        extg = cardelli_law(lextg)
+        oneExt.add_element(lextg, extg, 2)
+
+    return compute_filter_extinction(oneFlt, oneExt)
+
 
 #  compute albd/av at a given lambda (A) for the Cardelli law
-def cardelli_law(lb) :
-  rv = 3.1
-  x = 10000. / lb
-  y = x - 1.82
+def cardelli_law(lb):
+    rv = 3.1
+    x = 10000.0 / lb
+    y = x - 1.82
 
-  if x <= 1.1:
-    f1 = 0.574 * pow(x, 1.61)
-    f2 = -0.527 * pow(x, 1.61)
-  elif (x > 1.1 and x < 3.3) :
-    f1 = 1 + 0.17699 * y - 0.50447 * y * y - 0.02427 * y * y * y + 0.72085 * y * y * y * y
-    f1 = f1 + 0.01979 * pow(y, 5) - 0.77530 * pow(y, 6) + 0.32999 * pow(y, 7)
-    f2 = 1.41338 * y + 2.28305 * y * y + 1.07233 * y * y * y
-    f2 = f2 - 5.38434 * pow(y, 4) - 0.62251 * pow(y, 5) +        5.30260 * pow(y, 6) - 2.09002 * pow(y, 7)
-  elif (x >= 3.3 and x < 5.9) :
-    f1 = 1.752 - 0.316 * x - 0.104 / ((x - 0.467) * (x - 0.467) + 0.341)
-    f2 = -3.090 + 1.825 * x + 1.206 / ((x - 4.62) * (x - 4.62) + 0.262)
-  elif (x >= 5.9 and x < 8) :
-    fa = -0.04473 * (x - 5.9) * (x - 5.9) -         0.009779 * (x - 5.9) * (x - 5.9) * (x - 5.9)
-    fb = 0.2130 * (x - 5.9) * (x - 5.9) +         0.1207 * (x - 5.9) * (x - 5.9) * (x - 5.9)
-    f1 = 1.752 - 0.316 * x - 0.104 / ((x - 0.467) * (x - 0.467) + 0.341) + fa
-    f2 = -3.090 + 1.825 * x + 1.206 / ((x - 4.62) * (x - 4.62) + 0.262) + fb
-  else:
-    f1 = -1.073 - 0.628 * (x - 8) + 0.137 * (x - 8) * (x - 8) -         0.070 * (x - 8) * (x - 8) * (x - 8)
-    f2 = 13.670 + 4.257 * (x - 8) - 0.420 * (x - 8) * (x - 8) +         0.374 * (x - 8) * (x - 8) * (x - 8)
+    if x <= 1.1:
+        f1 = 0.574 * pow(x, 1.61)
+        f2 = -0.527 * pow(x, 1.61)
+    elif x > 1.1 and x < 3.3:
+        f1 = 1 + 0.17699 * y - 0.50447 * y * y - 0.02427 * y * y * y + 0.72085 * y * y * y * y
+        f1 = f1 + 0.01979 * pow(y, 5) - 0.77530 * pow(y, 6) + 0.32999 * pow(y, 7)
+        f2 = 1.41338 * y + 2.28305 * y * y + 1.07233 * y * y * y
+        f2 = f2 - 5.38434 * pow(y, 4) - 0.62251 * pow(y, 5) + 5.30260 * pow(y, 6) - 2.09002 * pow(y, 7)
+    elif x >= 3.3 and x < 5.9:
+        f1 = 1.752 - 0.316 * x - 0.104 / ((x - 0.467) * (x - 0.467) + 0.341)
+        f2 = -3.090 + 1.825 * x + 1.206 / ((x - 4.62) * (x - 4.62) + 0.262)
+    elif x >= 5.9 and x < 8:
+        fa = -0.04473 * (x - 5.9) * (x - 5.9) - 0.009779 * (x - 5.9) * (x - 5.9) * (x - 5.9)
+        fb = 0.2130 * (x - 5.9) * (x - 5.9) + 0.1207 * (x - 5.9) * (x - 5.9) * (x - 5.9)
+        f1 = 1.752 - 0.316 * x - 0.104 / ((x - 0.467) * (x - 0.467) + 0.341) + fa
+        f2 = -3.090 + 1.825 * x + 1.206 / ((x - 4.62) * (x - 4.62) + 0.262) + fb
+    else:
+        f1 = -1.073 - 0.628 * (x - 8) + 0.137 * (x - 8) * (x - 8) - 0.070 * (x - 8) * (x - 8) * (x - 8)
+        f2 = 13.670 + 4.257 * (x - 8) - 0.420 * (x - 8) * (x - 8) + 0.374 * (x - 8) * (x - 8) * (x - 8)
 
-  return (f1 + f2 / rv)
+    return f1 + f2 / rv
+
 
 def main():  # pragma no cover
     runner = FiltExt()
