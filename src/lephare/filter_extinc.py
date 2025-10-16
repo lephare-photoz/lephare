@@ -103,6 +103,8 @@ def calculate_extinction_values(filters, atmec, galec, verbose=False):
     """Calculate the extinction values for a set of filters
 
     Parameters
+    ==========
+
     filters :  str
         The file containing the lephare compiled filter list
     atmec : str
