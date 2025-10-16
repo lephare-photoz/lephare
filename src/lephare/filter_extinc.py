@@ -24,16 +24,16 @@ class FiltExt(Runner):
     The specific arguments to the Filter class are
 
     verbose
-                increase onscreen verbosity
+        increase onscreen verbosity
     FILTER_FILE
-                path to filter file on which to compute extinction,
-                output of the `filter` execution, to be found in $LEPHAREWORK/filt
+        Path to filter file on which to compute extinction, output of the
+        `filter` execution, to be found in $LEPHAREWORK/filt
     EXT_CURVE
-                extinction law to use, to be searched in $LEPHAREDIR/ext if relative
+        Extinction law to use, to be searched in $LEPHAREDIR/ext if relative
     GAL_CURVE
-                extinction curve in the galaxy, to be searched in $LEPHAREDIR/ext if relative
+        Extinction curve in the galaxy, to be searched in $LEPHAREDIR/ext if relative
     OUTPUT
-                output file name
+        Output file name
     """
 
     def update_help(self):
@@ -126,8 +126,6 @@ class FiltExt(Runner):
             for k, f in enumerate(all_filters):
                 name = os.path.basename(f.name)
                 out.write(f"{name:20} {aint[k]:<20} {albdav[k]:<20} {albd[k]:<20}\n")
-                
-        return
 
 
 # compute galactic extinction in the filter based on Cardelli et al., 1989, ApJ 345
