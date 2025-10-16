@@ -1,5 +1,6 @@
 import os
 from contextlib import suppress
+import numpy as np
 
 from ._lephare import GalMag, compute_filter_extinction, ext, flt
 from .runner import Runner
@@ -55,12 +56,46 @@ class FiltExt(Runner):
         filters = keymap["FILTER_FILE"].split_string("unknown", 1)[0]
         if not os.path.isabs(filters):
             filters = os.path.join(os.environ["LEPHAREWORK"], "filt", filters)
-        atmec = keymap["EXT_CURVE"].split_string("unknown", 1)[0]
-        galec = keymap["GAL_CURVE"].split_string("CARDELLI", 1)[0]
+        all_filters = GalMag.read_flt(filters)
+        
+        atmec = keymap["EXT_CURVE"].split_string("NONE", 1)[0]
+        if atmec is "NONE":
+            aint = 99.*np.ones(len(all_filters)).tolist()
+        else:
+            if not os.path.isabs(atmec):
+                atmec = os.path.join(os.environ["LEPHAREDIR"], "ext", atmec)
+            atmospheric_ext = ext(atmec, 0)
+            atmospheric_ext.read(atmec)
+            aint = [compute_filter_extinction(f, atmospheric_ext) for f in all_filters]
+
+        
         output = keymap["OUTPUT"].split_string("filter_extinc.dat", 1)[0]
 
-        atmec_file = os.path.join(os.environ["LEPHAREDIR"], "ext", atmec)
-        galec_file = os.path.join(os.environ["LEPHAREDIR"], "ext", galec)
+        galec = keymap["GAL_CURVE"].split_string("CARDELLI", 1)[0]
+
+        if galec == "CARDELLI":
+            # If cardelli (hardcoded) with Rv=3.1 by  default
+            # output A(lbd)/Av->A(lbd)/(Rv*E(B-V))->A(lbd)/E(B-V)=Rv*A(lbd)/Av
+            albdav = np.array([cardelli_ext(f) for f in all_filters])
+            albd = albdav * 3.1
+        else:
+            if not os.path.isabs(galec):
+                galec = os.path.join(os.environ["LEPHAREDIR"], "ext", galec)
+            galactic_ext = ext(galec, 1)
+            galactic_ext.read(galec)
+
+            #  Rv=3.1 except for Calzetti law (4.05) and SMC Prevot (2.72)
+            rv = 3.1  
+            if "SMC_prevot" in galec:
+                rv = 2.72
+                if "calzetti" in galec:
+                    rv = 4.05
+            if self.verbose:
+                print(f"assuming Rv={rv} for this Extinction law {galec}")
+            # galactic curves given in k(lbda) (=A(lbda)/E(B-V))
+            #  -> A(lbda)/Av = A(lbda)/E(B-V) / Rv)
+            albd = np.array([compute_filter_extinction(f, galactic_ext) for f in all_filters])
+            albdav = albd / rv
 
         if self.verbose:
             print("#######################################")
@@ -73,46 +108,9 @@ class FiltExt(Runner):
             print(f"# Output file: {output}")
             print("#######################################")
             print(" Filters Ext(mag/airmass) Albda/Av Albda/E(B-V) ")
-
-        atmospheric_ext = ext(atmec, 0)
-        atmospheric_ext.read(atmec_file)
-        galactic_ext = ext(galec, 1)
-        if galec != "CARDELLI":
-            galactic_ext.read(galec_file)
-        all_filters = GalMag.read_flt(filters)
-
-        rv = 3.1  # Use by default Cardelli
-        if galec == "SMC_prevot":
-            rv = 2.72
-        if galec == "SMC_prevot":
-            rv = 2.72
-        if galec == "SB_calzetti" or galec == "calzetti":
-            rv = 4.05
-        if self.verbose:
-            print(f"assuming Rv={rv} for this Extinction law {galec}")
-
-        aint = []
-        albd = []
-        albdav = []
-        for f in all_filters:
-            if atmec != "NONE":
-                aint.append(compute_filter_extinction(f, atmospheric_ext))
-            else:
-                aint.append(99.0)
-
-            if galec != "CARDELLI":
-                # galactic curves given in k(lbda) (=A(lbda)/E(B-V))
-                #  -> A(lbda)/Av = A(lbda)/E(B-V) / Rv)
-                #  Rv=3.1 except for Calzetti law (4.05) and SMC Prevot (2.72)
-                inter = compute_filter_extinction(f, galactic_ext)
-                albd.append(inter)
-                albdav.append(inter / rv)
-            else:
-                # If cardelli (hardcoded)
-                # output A(lbd)/Av->A(lbd)/(Rv*E(B-V))->A(lbd)/E(B-V)=Rv*A(lbd)/Av
-                inter = cardelli_ext(f)
-                albd.append(inter * 3.1)
-                albdav.append(inter)
+            for k, f in enumerate(all_filters):
+                name = os.path.basename(f.name)
+                print(f"{name:20} {aint[k]:<20} {albdav[k]:<20} {albd[k]:<20}")
 
         with open(output, "w") as out:
             out.write("#######################################\n")
@@ -128,7 +126,8 @@ class FiltExt(Runner):
             for k, f in enumerate(all_filters):
                 name = os.path.basename(f.name)
                 out.write(f"{name:20} {aint[k]:<20} {albdav[k]:<20} {albd[k]:<20}\n")
-            return
+                
+        return
 
 
 # compute galactic extinction in the filter based on Cardelli et al., 1989, ApJ 345
