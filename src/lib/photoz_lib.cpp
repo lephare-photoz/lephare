@@ -251,11 +251,6 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   zbmax = (key_analysed["MABS_ZBIN"]).split_double("6", nbBinZ + 1);
   zbmax.erase(zbmax.begin(), zbmax.begin() + 1);
 
-  /*  AUTO-ADAPT */
-  // APPLY_SYSSHIFT shift to be applied in each filter.
-  // vector
-  shifts0 = (key_analysed["APPLY_SYSSHIFT"]).split_double("0.", -1);
-
   /* PDZ OUTPUT */
   // PDZ_OUT pdz output file
   outpdz = (key_analysed["PDZ_OUT"]).split_string(nonestring, 1)[0];
@@ -978,6 +973,44 @@ vector<onesource *> PhotoZ::read_autoadapt_sources() {
 }
 
 /*
+   Decide which offsets to be used depending on the AUTO_ADAPT and
+   APPLY_SYSSHIFT option
+*/
+vector<double> PhotoZ::compute_offsets(vector<onesource *> adaptSources) {
+  // Offsets stored in a0
+  vector<double> a0;
+
+  // Check if autoadapt
+  bool autoadapt = keys["AUTO_ADAPT"].split_bool("NO", 1)[0];
+  // APPLY_SYSSHIFT shift to be applied in each filter.
+  shifts0 = (keys["APPLY_SYSSHIFT"]).split_double("0.", -1);
+
+  // If APPLY_SYSSHIFT exists, use the associated values and turn off auto-adapt
+  if (shifts0.size() == imagm) {
+    for (int k = 0; k < imagm; ++k) {
+      a0.push_back(shifts0[k]);
+      if (autoadapt) {
+        cout << "Auto adapt is turned off because systematic shifts are "
+                "applied manually"
+             << std::endl;
+        autoadapt = false;
+      }
+    }
+  } else {
+    // If adaptation is yes, compute the offset. Can not be done with systematic
+    // shifts defined
+    if (autoadapt) {
+      a0 = run_autoadapt(adaptSources);
+    } else {
+      // If nothing, initialize at 0
+      for (int i = 0; i < imagm; ++i) a0.push_back(0.0);
+    }
+  }
+
+  return a0;
+}
+
+/*
   Run the fit in order to get an adaptation of the zero-points
   Median of the difference between the modeled magnitudes and the observed ones
 */
@@ -1432,12 +1465,6 @@ void PhotoZ::prep_data(onesource *oneObj) {
   oneObj->convertMag();
   // Keep original magnitudes
   oneObj->keepOri();
-  // Correct the observed magnitudes and fluxes with the coefficients
-  // given in APPLY_SHIFTS
-  if (shifts0.size() == (size_t)imagm) {
-    oneObj->adapt_mag(shifts0);
-    oneObj->keepOri();  // Include the shifts in the original flux
-  }
   // Define the filters used for the fit based on the context
   oneObj->fltUsed(gbcont, contforb, imagm);
   return;
@@ -1456,8 +1483,6 @@ void PhotoZ::prep_data(vector<onesource *> sources) {
 */
 void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
   // Open the output file
-  // AUTO_ADAPT adaptation of the zero-points
-  bool autoadapt = keys["AUTO_ADAPT"].split_bool("NO", 1)[0];
   // RM_DISCREPANT_BD
   // Threshold in chi2 to consider. Remove <3 bands, stop when below this chi2
   // threshold
@@ -1555,18 +1580,12 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
 
   // Specify the offsets in the header
   string offsets;
-  if (autoadapt) {
-    for (int k = 0; k < imagm; k++) offsets = offsets + to_string(a0[k]) + ",";
-    offsets = "# Offsets from auto-adapt: " + offsets + '\n';
-    outputHeader += offsets;
-  }
-  if (shifts0.size() == (size_t)imagm) {
-    offsets = "";
-    for (int k = 0; k < imagm; k++)
-      offsets = offsets + to_string(shifts0[k]) + ",";
-    offsets = "# Offsets applied directly from keyword: " + offsets + '\n';
-    outputHeader += offsets;
-  }
+  for (int k = 0; k < imagm; k++) offsets = offsets + to_string(a0[k]) + ",";
+  offsets =
+      "# Offsets added to the modeled magnitudes (substracted to the "
+      "observed): " +
+      offsets + '\n';
+  outputHeader += offsets;
 
   unsigned int nobj = 0;
   for (auto &oneObj : sources) {
@@ -1575,7 +1594,8 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
            << flush;
     nobj++;
     // auto-adapt
-    if (autoadapt) oneObj->adapt_mag(a0);
+    // Apply offset anyway (should be 0 if no auto-adapt or no systematic shifts
+    oneObj->adapt_mag(a0);
     // set the prior on the redshift, abs mag, ebv, etc on the object
     oneObj->setPriors(magabsB, magabsF);
     // If ZFIX=YES select the templates with the closest redshift to zs,
