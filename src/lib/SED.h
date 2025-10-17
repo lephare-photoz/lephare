@@ -54,13 +54,15 @@ class SED {
 
   double red,            ///< redshift of this SED
       chi2 = HIGH_CHI2,  ///< best fit chi2 associated with this SED
-      dm,                ///< normalization of the SED
-      lnir,              ///< NIR luminosity \f$\int_{2.1\,\mu m}^{2.3\,\mu m}
-                         ///< L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
-      luv,               ///< UV luminosity \f$\int_{0.21\,\mu m}^{0.25\,\mu m}
-                         ///< L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
+      dm;                ///< normalization of the SED
+
+  double
+      luv,  ///< monochromatic UV luminosity \f$\int_{0.21\,\mu m}^{0.25\,\mu m}
+            /// L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
       lopt,  ///< optical luminosity \f$\int_{0.55\,\mu m}^{0.65\,\mu m}
-             ///< L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
+             /// L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
+      lnir,  ///< NIR luminosity \f$\int_{2.1\,\mu m}^{2.3\,\mu m}
+             /// L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
       ltir;  ///< IR luminosity \f$\int_{8\,\mu m}^{1000\,\mu m}    L_\lambda\;
              ///< d\lambda\f$ in Log unit of \f$L_\odot\f$
 
@@ -70,7 +72,8 @@ class SED {
       ssfr;     ///< Specific SFR, defined as sfr / mass
 
   double ebv,  ///< E(B-V) extinction value applied to the SED
-      mag0, distMod;
+      mag0,
+      distMod;  ///< Distance modulus of the SED object.
 
   int extlawId;  ///< index of the extinction law when dust attenuation has been
                  ///< applied
@@ -249,10 +252,21 @@ class SED {
    *
    * Results are stored in the q_i array member of size 4 of the SED instance.
    */
-  virtual void calc_ph() {};  // Number of inoizing photons
+  virtual void calc_ph() {};
 
   /*! Compute some integrals to be stored in the object
    * This computes variables SED::luv, SED::lopt, SED::lnir, and SED::ltir
+   * luv, lopt, lnir, are monochromatic equivalent luminosities, for a source
+   * at 10 parsecs. As the SED unit is taken as erg/cm2/s/Hz, the monochromatic
+   * luminosity is obtained by integrating the SED in an interval [lmin, lmax],
+   * divided by (lmax-lmin) and multiplied by \f$4\pi(10pc)^2\f$. Note that
+   * given the units of an SED, it is defined as dF/dnu for F the corresponding
+   * flux. As a result the integral shows a \f$\lambda^2/c\f$ term so that
+   * \f$\frac{dF}{d\nu} = \frac{dF}{d\lambda} \frac{\lambda^2}{c}\f$ can be
+   * integrated in \f$\lambda\f$. For the variables computed here, in order to
+   * speed computation, \f$\lambda^2/c\f$ is evaluated at the center of the
+   * interval and taken out of the integral.
+   *
    */
   virtual void SEDproperties() {};
 
@@ -273,8 +287,14 @@ class SED {
     kcorr.clear();
     fac_line.clear();
   };
-  virtual void setOthers() {};
+
   void fit_normalization(const onesource &source, const int imagm);
+
+  /*! Check if the SED is identical to another one
+   * @param other: the SED to compare to
+   * equality of the following attributes are compared:
+   * `nummod`, `ebv`, and `age`
+   !*/
   inline bool is_same_model(const SED &other) {
     return ((*this).nummod == other.nummod && (*this).ebv == other.ebv &&
             (*this).age == other.age);
@@ -282,13 +302,12 @@ class SED {
 
   /*!  Return the pair of vectors [lambdas, vals] of wavelength and spectrum
    * values
-   * \param minl Minimum \f$\lambda\f$ of the vector
-   * \param maxl Maximum \f$\lambda\f$ of the vector
-   * \param mag If true, return magnitudes as vals
-   * instead of fluxes
-   * \param mag offset, mag system to be used in case mag is true.
+   * \param minl: Minimum \f$\lambda\f$ of the vector
+   * \param maxl: Maximum \f$\lambda\f$ of the vector
+   * \param mag: If true, return magnitudes as vals instead of fluxes
+   * \param offset: offset of the mag system to be used in case mag is true.
    */
-  pair<vector<double>, vector<double>> get_data_vector(double minl, double mxl,
+  pair<vector<double>, vector<double>> get_data_vector(double minl, double maxl,
                                                        bool mag,
                                                        double offset = 0.0);
 
@@ -300,16 +319,20 @@ class SED {
 
   /*! Apply dust extinction to the SED (GAL and GSO only)
    * \param ebv value of E(B-V)
-   * \param ext_obj instance of class ext
+   * \param obj instance of class ext
    */
-  void applyExt(const double ebv, const ext &oneext);
+  void applyExt(const double ebv, const ext &obj);
 
-  /*! Apply dust extinction to the emission lines (stored in fac_line)
+  /*! Apply dust extinction to the emission lines (stored in `fac_line`)
    * Only for galaxies and QSO
-   * \param ext_obj instance of class ext
+   * \param obj instance of class `ext`
    */
-  void applyExtLines(const ext &oneext);
+  void applyExtLines(const ext &obj);
 
+  /*! Apply extinction due to intergalactic medium (only for GAL and QSO)
+   * \param opaAll Vector of opacities to compute extinction
+   * along the line of sight
+   */
   void applyOpa(const vector<opa> &opaAll);
 
   /// Helper function to append the oneElLambda(lambda, value) object to the sed
@@ -403,11 +426,16 @@ class QSOSED : public SED {
 /// concrete SED implementation for star objects (object_type Star)
 class StarSED : public SED {
  public:
+  /// copy constructor from `SED` class
   StarSED(SED const &p) : SED(p) { nlib = STAR; };
+  /// copy constructor from `StarSED` class
   StarSED(StarSED const &p) : SED(p){};
-  StarSED(const string nameC, int nummodC = 0) : SED(nameC, nummodC, "STAR") {
-    ;
-  }
+  /*! constructor
+   * @param name: name given to the SED object
+   * @param nummod: identity number given to the SED object
+   !*/
+  StarSED(const string name, int nummod = 0) : SED(name, nummod, "STAR") { ; }
+  /// destructor (does nothing)
   ~StarSED() { ; }
 
   void writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,

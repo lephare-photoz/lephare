@@ -102,7 +102,7 @@ vector<string> keyword::split_string(string default_val, int nbItems) {
   }
   stringstream ss(value);
 
-  // Split it according to the delimitor
+  // Split it according to the delimiter
   while (getline(ss, item, delim)) {
     item.erase(std::remove(item.begin(), item.end(), '\t'), item.end());
     item.erase(std::remove(item.begin(), item.end(), ' '), item.end());

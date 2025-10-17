@@ -170,6 +170,7 @@ def table_to_data(config, input, col_names=None, standard_names=False):
     string_input : np.array
         Additional notes as a string.
     """
+    config = lp.all_types_to_keymap(config)
     n_filters = len(config["FILTER_LIST"].value.split(","))
     if col_names is not None:
         print("Using user defined column names based on ordering.")

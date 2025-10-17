@@ -10,7 +10,6 @@ dm = DataManager()
 dm.configure_directories()  # noqa: F405
 LEPHAREDIR = dm.LEPHAREDIR
 
-
 from ._lephare import *
 from ._version import *
 

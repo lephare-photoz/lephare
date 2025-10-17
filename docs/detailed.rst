@@ -411,7 +411,10 @@ The goal of this step is to:
 - store them in a common library in ``$LEPHAREWORK/filt/``.
 
   
-Several sets of filters from different telescopes/instruments are available in the directory ``$LEPHAREDIR/filt/``. You could find in this directory most of the standard filters (like the Johnson-Kron-Cousins in ``filt/jkc``). New set of filters can be added in this directory.  You could also store new filters in another directory than ``$LEPHAREDIR/filt/`` using the keyword ``FILTER_REP``.
+Several sets of filters from different telescopes/instruments are available in the directory ``$LEPHAREDIR/filt/``. You could find in this directory most of the standard filters (like the Johnson-Kron-Cousins in ``filt/jkc``). In order to know the existing filters in lephare-data, the simplest is to look at https://github.com/lephare-photoz/lephare-data/tree/main/filt, or the directory lephare-data if everything was cloned. The filters  will be downloaded automatically if a clone of the full lephare-data wasn't done.
+
+
+You could also store new filters in another directory than ``$LEPHAREDIR/filt/`` using the keyword ``FILTER_REP``.
 
 
 
@@ -570,11 +573,11 @@ The python interface allows to load the filters from a yml file, with the possib
 
 .. code-block:: python
 
-  filterLibSVO = lp.FilterSvc.from_yaml(f"{lp.LEPHAREDIR}/examples/config.yml")
+  filterLibSVO = lp.FilterSvc.from_yaml(f"{lp.LEPHAREDIR}/examples/config_svo_filters.yml")
   filter_output = os.path.join(os.environ["LEPHAREWORK"], "filt", keymap["FILTER_FILE"].value)
   lp.write_output_filter(filter_output + "_svo.dat", filter_output + "_svo.doc", filterLibSVO)
 
-where ``$LEPHAREDIR/examples/config.yml`` is a yml file including the name of filters to be downloaded. They are store in ``LEPHAREWORK/filt/`` and name defined according to the keyword ``FILTER_FILE``.
+where ``$LEPHAREDIR/examples/config_svo_filters.yml`` is a yml file including the name of filters to be downloaded. You can copy the yaml file into your own directory and modify the names of the filters according to the ones in the SVO website. The transmission type is given in the SVO webpage. The filters will be stored in ``LEPHAREWORK/filt/`` and name defined according to the keyword ``FILTER_FILE``.
 
 
 
@@ -1518,7 +1521,11 @@ A prior could be applied to avoid unrealistically bright galaxies. The keyword `
 |                |          |                  | number indicates |
 |                |          |                  | which band to    |
 |                |          |                  | use if first     |
-|                |          |                  | undefined.       |
+|                |          |                  | undefined. A     |
+|                |          |                  | second value     |
+|                |          |                  | isn't mandatory  |
+|                |          |                  |                  |
+|                |          |                  |                  |
 |                |          |                  |                  |
 |                |          |                  | Negative value   |
 |                |          |                  | means no prior.  |

@@ -654,10 +654,9 @@ void onesource::rm_discrepant(vector<SED *> &fulllib,
       newmin = min({chimin[0], chimin[1], chimin[2]});
       // One band has been removed in the fit
       nbused--;
-      if (verbose)
-        cout << "Source " << spec << " // Band " << flDis
-             << " removed to improve the chi2, with old and new chi2 "
-             << oldchi2 << " " << newmin << endl;
+      cout << "Source " << spec << " // Band " << flDis
+           << " removed to improve the chi2, with old and new chi2 " << oldchi2
+           << " " << newmin << endl;
       nbRemoved++;
     } else
       break;
@@ -1099,8 +1098,8 @@ error
 void onesource::mode() {
   // First element of zgmode is the mode of the marginalized PDF
   // Use the parabolic interpolation for galaxies and QSO
-  zgmode.push_back(pdfmap[11].int_parabL());
-  zqmode.push_back(pdfmap[12].int_parabL());
+  zgmode.push_back(pdfmap[11].improve_extremum(false).first);
+  zqmode.push_back(pdfmap[12].improve_extremum(false).first);
 
   // Define the confidence levels
   double confLev[3] = {68, 90, 99};
@@ -1520,12 +1519,12 @@ void onesource::interp(const bool zfix, const bool zintp, const cosmo &lcdm) {
 
   if (zintp) {
     if (zmin[0] != INVALID_Z) {
-      double target_z_gal = pdfmap[9].int_parab();
+      double target_z_gal = pdfmap[9].improve_extremum(true).first;
       dmmin[0] *= lcdm.flux_rescaling(zmin[0], target_z_gal);
       zmin[0] = target_z_gal;
     }
     if (zmin[1] != INVALID_Z) {
-      double target_z_qso = pdfmap[10].int_parab();
+      double target_z_qso = pdfmap[10].improve_extremum(true).first;
       dmmin[1] *= lcdm.flux_rescaling(zmin[1], target_z_qso);
       zmin[1] = target_z_qso;
     }

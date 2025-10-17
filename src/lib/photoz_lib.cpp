@@ -309,7 +309,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
                   to_string(magabsF[1]) + '\n';
   outputHeader += "# MAG_REF                : " + to_string(babs + 1) + '\n';
   outputHeader += "# NZ_PRIOR               : " + to_string(bp[0] + 1) + ' ' +
-                  to_string(bp[1]) + '\n';
+                  to_string(bp[1] + 1) + '\n';
   outputHeader += "# Z_INTERP               : " + bool2string(zintp) + '\n';
   outputHeader +=
       "# Z_METHOD               : " + string(methz ? "MED" : "BEST") + '\n';
