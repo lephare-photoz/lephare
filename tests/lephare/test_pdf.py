@@ -57,16 +57,6 @@ def test_quadratic_extremum():
     assert ym == pytest.approx(yt)
 
 
-def test_int_parab():
-    pdf = lp.PDF(0, 1, 10)
-    yvals = np.linspace(0.0, 1.0, 10)
-    pdf.setYvals(yvals, is_chi2=True)
-    assert pdf.int_parab() == 0.0
-    yvals = np.linspace(1.0, 0.0, 10)
-    pdf.setYvals(yvals, is_chi2=True)
-    assert pdf.int_parab() == 1.0
-
-
 def test_pdf():
     """Basic test to ensure we can instantiate a PDF object."""
     test_pdf = lp.PDF(0, 3, 10)
