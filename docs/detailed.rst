@@ -1518,7 +1518,11 @@ A prior could be applied to avoid unrealistically bright galaxies. The keyword `
 |                |          |                  | number indicates |
 |                |          |                  | which band to    |
 |                |          |                  | use if first     |
-|                |          |                  | undefined.       |
+|                |          |                  | undefined. A     |
+|                |          |                  | second value     |
+|                |          |                  | isn't mandatory  |
+|                |          |                  |                  |
+|                |          |                  |                  |
 |                |          |                  |                  |
 |                |          |                  | Negative value   |
 |                |          |                  | means no prior.  |
