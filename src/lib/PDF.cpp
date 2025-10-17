@@ -19,38 +19,6 @@
 
 using namespace std;
 
-double original_code(double x0, double x1, double x2,
-		     double y0, double y1, double y2) {
-    // if one of the chi2 necessary for the interpolation k-1 -> k+1 too high,
-    // can't interpolate
-    double xmin = -99;
-    double dxb, dxa, num, den;
-
-    if (y0 > HIGH_CHI2 || y1 > HIGH_CHI2 || y2 > HIGH_CHI2) {
-      // keep the original value
-      xmin = x1;
-    } else {
-      // compute the best value from the parabolic interpolation of chi2
-      // define the step for the interpolation (before and after the considered
-      // point)
-      dxb = x1 - x0;
-      dxa = x2 - x1;
-      num = (y0 - y1) * pow(dxa, 2.) - (y2 - y1) * pow(dxb, 2.);
-      den = (y0 - y1) * dxa + (y2 - y1) * dxb;
-      if (den == 0.e0 || abs(dxa) > 0.5 || abs(dxb) > 0.5) {
-        xmin = x1;
-      } else {
-        // parabolic interpolation possible
-        // old version. True only if the x step is constant
-        // xmin=xaxis[ib+1]-dxb*( (chi2[ib+1]-chi2[ib]) /
-        // (chi2[ib+1]-2*chi2[ib]+chi2[ib-1]) +0.5); New generic version with
-        // flexible step
-        xmin = x1 + 0.5 * num / den;
-      }
-    }
-    return xmin;
-}
-
 pair<double, double> quadratic_extremum(double x1, double x2, double x3,
                                         double y1, double y2, double y3) {
   double x23 = x2 - x3;
@@ -58,7 +26,7 @@ pair<double, double> quadratic_extremum(double x1, double x2, double x3,
   double x12 = x1 - x2;
   double delta = x23 * x1 * x1 + x31 * x2 * x2 + x12 * x3 * x3;
   double a = y1 * x23 + y2 * x31 + y3 * x12;
-  if (a == 0. || delta==0.) { // possibly fragile
+  if (a == 0. || delta == 0.) {  // possibly fragile
     throw invalid_argument("The three points are aligned");
   }
   double b = y1 * (x2 * x2 - x3 * x3) - y2 * (x1 * x1 - x3 * x3) +
@@ -186,40 +154,13 @@ pair<double, double> PDF::improve_extremum(bool is_chi2) const {
     if (!is_chi2 && y[k] == 0.) return make_pair(xaxis[id], vPDF[id]);
   }
 
-  //limit the separation between the three consecutive points
-  //this can happen if the zgrid does not start at 0, and 0 is
-  //added by the code; then the first bin in the zgrid can be too large.
-  if (abs(x[1]-x[0]) > 0.5 || abs(x[2]-x[1]) > 0.5) {
-      return make_pair(x[1], y[1]);
+  // limit the separation between the three consecutive points
+  // this can happen if the zgrid does not start at 0, and 0 is
+  // added by the code; then the first bin in the zgrid can be too large.
+  if (abs(x[1] - x[0]) > 0.5 || abs(x[2] - x[1]) > 0.5) {
+    return make_pair(x[1], y[1]);
   }
   return quadratic_extremum(x[0], x[1], x[2], y[0], y[1], y[2]);
-}
-
-/*
- Interpolation into the chi2 distribution
- Description : Parabolic interpolation for minmum Chi2
- Origine     : Bevington book
-*/
-double PDF::int_parab() {
-  double xmin = -99;
-  
-  // Find the index of the minimum chi2
-  int ib = this->chi2mini();
-  // if the index is at the limit of the xaxis, can't do any interpolation
-  if (ib == 0 || (size_t)ib == (xaxis.size() - 1)) {
-    // keep the original value
-    xmin = xaxis[ib];
-  } else {
-    double x[3];
-    double y[3];
-    for (size_t k = 0; k < 3; k++) {
-	x[ib] = xaxis[ib-1+k];
-	y[ib] = chi2[ib-1+k];
-    }
-    xmin = original_code(x[0], x[1], x[2], y[0], y[1], y[2]);
-  }
-
-  return xmin;
 }
 
 /*

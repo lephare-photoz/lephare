@@ -310,6 +310,56 @@ def test_improve_extremum():
     assert a == pytest.approx(0.45)
     assert b == pytest.approx(0.2)
 
+    # Problematic situations
+    pdf = lp.PDF(0, 1, 101)
+    xaxis = np.array(pdf.xaxis)
+    # extrememum at upper boundary
+    pdf.setYvals((xaxis - 1.1) ** 2 + 0.2, True)
+    a, b = pdf.improve_extremum(True)
+    assert a == 1.0
+    assert b == pytest.approx((a - 1.1) ** 2 + 0.2)
+    pdf.setYvals(-((xaxis - 1.1) ** 2) + 2, False)
+    a, b = pdf.improve_extremum(False)
+    assert a == 1.0
+    assert b == pytest.approx(-((a - 1.1) ** 2) + 2)
+    # extrememum at lower boundary
+    pdf = lp.PDF(0, 1, 101)
+    xaxis = np.array(pdf.xaxis)
+    # extrememum at upper boundary
+    pdf.setYvals((xaxis) ** 2 + 0.2, True)
+    a, b = pdf.improve_extremum(True)
+    assert a == 0.0
+    assert b == pytest.approx((a) ** 2 + 0.2)
+    pdf.setYvals(-((xaxis) ** 2) + 2, False)
+    a, b = pdf.improve_extremum(False)
+    assert a == 0.0
+    assert b == pytest.approx(-((a) ** 2) + 2)
+    # HIGH_CHI2 issue
+    pdf = lp.PDF(0, 1, 101)
+    xaxis = np.array(pdf.xaxis)
+    for i in range(3):
+        # chi2 and a val at HIGH_CHI2
+        yvals = (xaxis - 0.5) ** 2 + 0.2
+        yvals[50 - 1 + i] = lp.HIGH_CHI2
+        pdf.setYvals(yvals, True)
+        a, b = pdf.improve_extremum(True)
+        expected_min = 0.49 if i == 1 else 0.5
+        assert a == pytest.approx(expected_min)
+        assert b == pytest.approx((a - 0.5) ** 2 + 0.2)
+        # vPDF and a val at 0
+        yvals = -((xaxis - 0.5) ** 2) + 0.3
+        yvals[50 - 1 + i] = 0
+        pdf.setYvals(yvals, False)
+        a, b = pdf.improve_extremum(False)
+        expected_min = 0.49 if i == 1 else 0.5
+        assert a == pytest.approx(expected_min)
+        assert b == pytest.approx(-((a - 0.5) ** 2) + 0.3)
+    # check the delta_x<0.5 condition
+    pdf = lp.PDF(0, 1, 3)
+    pdf.setYvals([0, 1, 0], False)
+    assert a == 0.5
+    assert b == 0.3  # normalized
+
 
 def test_confidence_interval():
     pdf = lp.PDF(-5, 5, 1001)

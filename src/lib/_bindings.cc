@@ -433,7 +433,6 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("normalization", &PDF::normalization)
       .def("chi2toPDF", &PDF::chi2toPDF)
       .def("chi2mini", &PDF::chi2mini)
-      .def("int_parab", &PDF::int_parab)
       .def("uncMin", &PDF::uncMin)
       .def("index", &PDF::index)
       .def("get_max", &PDF::get_max)
@@ -453,5 +452,4 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readwrite("ind", &PDF::ind)
       .def_readwrite("secondInd", &PDF::secondInd);
   mod.def("quadratic_extremum", &quadratic_extremum);
-  mod.def("original_code", &original_code);
 }  // PYBIND11_MODULE
