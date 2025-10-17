@@ -72,16 +72,18 @@ class SEDLib {
   // writes the SED library to the output files (bin and doc)
   // template class<T>
   void write_SED_lib();
-  /// \brief read content of one SED file into a SED vector
-  ///
-  /// @param sedFile the file to read the SED from
-  /// @param sedFormat format of \a sedFile : can be B(C03), P or F for PEGASE
-  /// type, or else plain ASCII
-  /// @param nummod index of the SED; see SED
-  /// @param type type of the SED S|Q|G for star|qso|galaxy; see SED
-  // template class<T>
+
+  /*! \brief read content of one SED file into a SED vector
+   *
+   * @param sedFile the file to read the SED from
+   * @param sedFormat format of \a sedFile : can be B(C03), P or F for PEGASE
+   * type, or else plain ASCII
+   * @param nummod index of the SED; see SED
+   * @param type type of the SED S|Q|G for star|qso|galaxy; see SED
+   !*/
   virtual void readSED(string sedFile, string sedFormat, int nummod,
                        string type);
+
   /// For GAL, read the file with the selected galaxy ages, provided as kw
   /// SEL_AGE
   void read_age(string ageFich);

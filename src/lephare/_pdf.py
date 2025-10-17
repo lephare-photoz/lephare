@@ -19,7 +19,7 @@ class PDF:  # noqa
             yvals2[yvals >= HIGH_CHI2] = 0.0
             self.vPDF = yvals2
         else:
-            if np.any(yvals < 0):
+            if np.any(np.array(yvals) < 0):
                 raise ValueError("input array has negative values")
             self.vPDF = yvals
             yvals2 = np.zeros_like(yvals)
