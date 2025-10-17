@@ -33,6 +33,7 @@ dependencies = [
 
 [project.scripts]
 filter = "lephare.filter:main"
+filter_extinc = "lephare.filter_extinc:main"
 sedtolib = "lephare.sedtolib:main"
 mag_gal = "lephare.mag_gal:main"
 zphota = "lephare.zphota:main"

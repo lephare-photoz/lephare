@@ -66,7 +66,7 @@ class Mag {
   static vector<opa> read_opa();
   /// read the filter curve and build the corresponding vectors stored in
   /// attribute allFlt
-  void read_flt(const string &);
+  static vector<flt> read_flt(const string &);
 
   // Read the long wavelength Bethermin+2012 templates
   // to add the dust emission to the BC03 templates
