@@ -28,6 +28,14 @@ class PDF {
 
   size_t vsize;
 
+  inline double linear_interp(double x, double x1, double y1, double x2,
+                              double y2) {
+    if (x2 > x1)
+      return y1 + (x - x1) * (y2 - y1) / (x2 - x1);
+    else
+      return y1;
+  }
+
  public:
   vector<double> vPDF;
   vector<double> chi2, xaxis, secondX, secondP;
@@ -106,22 +114,32 @@ class PDF {
    !*/
   pair<double, double> improve_extremum(bool is_chi2) const;
 
+  /*! Compute the confidence interval around the chi2min
+   *  @param level: confidence level (value to add to the min chi2
+   * to define the interval)
+   * @return pair: the bounds of the interval
+  !*/
   pair<double, double> confidence_interval(float level);
 
+  /*! Compute a credible interval on the PDF
+   * @param level: confidence level
+   * @param val: the value around which the interval is computed
+   * The interval is symmetric as built : level/2 is the mass on each
+   * side of `val`, unless the boundaries are met. In this case
+   * the mass is maximised to the boundary, and the rest is allocated on
+   * the other side
+  !*/
   pair<double, double> credible_interval(float level, double val);
 
+  //! Get the index of the PDF max value
   inline size_t get_maxid() const {
     return max_element(vPDF.begin(), vPDF.end()) - vPDF.begin();
   }
-  inline double get_max() const { return xaxis[get_maxid()]; }
-  inline double linear_interp(double x, double x1, double y1, double x2,
-                              double y2) {
-    if (x2 > x1)
-      return y1 + (x - x1) * (y2 - y1) / (x2 - x1);
-    else
-      return y1;
-  }
 
+  //! Get the x value at PDF maximum (as returned by `get_maxid`)
+  inline double get_max() const { return xaxis[get_maxid()]; }
+
+  //! Return the size of the x array
   inline size_t size() const { return vsize; }
 };
 

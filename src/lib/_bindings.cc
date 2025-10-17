@@ -92,7 +92,6 @@ PYBIND11_MODULE(_lephare, mod) {
   py::class_<keyword>(mod, "keyword")
       .def_readwrite("name", &keyword::name)
       .def_readwrite("value", &keyword::value)
-      .def_readwrite("def", &keyword::def)
       .def(py::init())
       .def(py::init<string, string>(), py::arg("n"), py::arg("v"))
       .def("expand_path", &keyword::expand_path)

@@ -34,40 +34,20 @@ class keyword {
   string name,  ///< keyword name
       value;    ///< keyword value
 
-  int def;  ///< indicate if the keyword is provided in the config or user input
-
   /* MP: added constructor and destructor*/
   keyword() {
     name = "No name";
     value = "";
-    def = 0;
   };
   keyword(string n, string v) {
     name = n;
     value = v;
-    def = 0;
     expand_path();
   }
   ~keyword(){};
 
   /// expand $HOME and $LEPHAREDIR if they are found in string value
   void expand_path();
-
-  /// return default_val or value depending on def equal to or different from 0;
-  template <typename T>
-  T one(T default_val) {
-    T result;
-
-    // Case in which the keyword is not defined
-    if (def == 0) {
-      // replace its value by the default one
-      result = default_val;
-    } else {
-      result = value;
-    }
-
-    return result;
-  }
 
   template <typename T>
   vector<T> split(string default_val, int nbItems) {
@@ -83,13 +63,29 @@ class keyword {
     return dkey;
   }
 
-  /* Template functions are added */
+  /*! split keyword value into an array of strings
+   *
+   * \param default_val: default value to use, if provided
+   * \param nbItems: size of the expected array
+   *
+   * The delimiter is the comma.
+   * If nbItems is negative, no check on the size of the
+   * output array is made. If nbItems is positive and does not match the array
+   obtained
+   * from the input, a warning is printed out and an array of size
+   * nbItems filled with default_val is returned.
+   * If the input is a singleton, the returned array will be of size
+   * nbItems filled with the singleton value
+   !*/
   vector<string> split_string(string default_val, int nbItems);
+  /// split into an array of strings, then convert to integer
   vector<int> split_int(string default_val, int nbItems);
+  /// split into an array of strings, then convert to long integer
   vector<long> split_long(string default_val, int nbItems);
+  /// split into an array of strings, then convert to double
   vector<double> split_double(string default_val, int nbItems);
+  /// split into an array of strings, then convert to boolean
   vector<bool> split_bool(string default_val, int nbItems);
-  // template<class Te> vector<Te> split(string default_val, int nbItems);
 };
 
 typedef map<string, keyword> keymap;

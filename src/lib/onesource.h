@@ -208,15 +208,16 @@ class onesource {
 
   //! Update the solution of the fit based on execution flags
   /*!
-    \param zfix bool that sets whether to set solution to a given redshift,
-    typically a true or spectroscopic redshift \param zintp bool that sets
-    whether to improve the determination of the minimum on the chi2 curve, by
-    parabolic approximation
-
-    \param[out] zmin and dmmin are reevaluated, for types GAL and QSO
-
-    Note that zfix and zintp are not supposed to both be set. In case it
-    happens, zintp is discarded here.
+   * @param zfix: bool that sets whether to set solution to a given redshift,
+   * typically a true or spectroscopic redshift
+   * @param zintp: bool that sets whether to improve the determination
+   * of the minimum on the chi2 curve, by parabolic approximation
+   * @param lcdm: `cosmo` object to access the `distMod`
+   * and `distDet` functions
+   * @return zmin and dmmin are reevaluated, for types GAL and QSO
+   *
+   * Note that zfix and zintp are not supposed to both be set. In case it
+   * happens, zintp is discarded here.
    */
   void interp(const bool zfix, const bool zintp, const cosmo &lcdm);
   void uncertaintiesMin();
