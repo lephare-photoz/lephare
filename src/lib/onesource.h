@@ -210,8 +210,8 @@ class onesource {
   /*!
     \param zfix bool that sets whether to set solution to a given redshift,
     typically a true or spectroscopic redshift \param zintp bool that sets
-    whether to improve the determination of the minimum on the chi2 curve, using
-    the method PDF::int_parabL
+    whether to improve the determination of the minimum on the chi2 curve, by
+    parabolic approximation
 
     \param[out] zmin and dmmin are reevaluated, for types GAL and QSO
 
