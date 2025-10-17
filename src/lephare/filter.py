@@ -93,11 +93,12 @@ class Filter(Runner):
             vec_flt.append(one_filt)
 
         write_output_filter(filtfile, filtdoc, vec_flt)
+        return vec_flt
 
 
 def main():  # pragma no cover
     runner = Filter()
-    runner.run()
+    _ = runner.run()
     runner.end()
 
 
