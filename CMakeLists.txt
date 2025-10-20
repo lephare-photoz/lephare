@@ -46,6 +46,7 @@ set(SOURCES
   "${SOURCE_DIR}/opa.cpp"
   "${SOURCE_DIR}/PDF.cpp"
   "${SOURCE_DIR}/photoz_lib.cpp"
+  "${SOURCE_DIR}/prior.cpp"
   "${SOURCE_DIR}/SED.cpp"
   "${SOURCE_DIR}/SEDLib.cpp"
 )

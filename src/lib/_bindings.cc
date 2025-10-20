@@ -18,6 +18,7 @@ namespace py = pybind11;
 #include "oneElLambda.h"
 #include "opa.h"
 #include "photoz_lib.h"
+#include "prior.h"
 
 template <typename x, typename modT>
 void applySEDLibTemplate(modT &m, std::string name) {
@@ -175,6 +176,10 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("nummod", &SED::nummod)
       .def_readonly("mag", &SED::mag)
       .def_readwrite("index_z0", &SED::index_z0)
+      .def_readwrite("luv", &SED::luv)
+      .def_readwrite("lnir", &SED::lnir)
+      .def_readwrite("mag0", &SED::mag0)
+      .def_readwrite("red", &SED::red)
       .def("string_to_object", &SED::string_to_object)
       .def("is_gal", &SED::is_gal)
       .def("is_star", &SED::is_star)
@@ -376,16 +381,18 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("best_spec_vec", &onesource::best_spec_vec)
       .def_readwrite("spec", &onesource::spec)
       .def_readwrite("consiz", &onesource::consiz)
+      // The prior for overwriting from Python
+      .def_readwrite("priorObj", &onesource::priorObj)
       .def_readonly("pos", &onesource::pos)
       .def_readonly("cont", &onesource::cont)
       .def_readonly("pdfmap", &onesource::pdfmap)
-      .def_readonly("busnorma", &onesource::busnorma)
+      .def_readwrite("busnorma", &onesource::busnorma)
       .def_readonly("busul", &onesource::busul)
       .def_readonly("nbused", &onesource::nbused)
       .def_readonly("nbul", &onesource::nbul)
       .def_readonly("dm", &onesource::dm)
       .def_readonly("zs", &onesource::zs)
-      .def_readonly("ab", &onesource::ab)
+      .def_readwrite("ab", &onesource::ab)
       .def_readonly("ab_ori", &onesource::ab_ori)
       .def_readonly("sab", &onesource::sab)
       .def_readonly("mab", &onesource::mab)
@@ -439,6 +446,24 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("zsecChi2", &onesource::zsecMod)
       .def_readonly("zsecScale", &onesource::zsecMod)
       .def_readonly("zsecAge", &onesource::zsecAge);
+
+  /******** CLASS prior, functions in prior.h *********/
+  py::class_<prior>(
+      mod, "prior",
+      "The prior class which allows Python overwriting of the weights")
+      .def(py::init(),
+           "Constructor for prior class initialised with a onesource instance")
+      .def("set_weights_function", &prior::set_weights_function,
+           "Set a new weights function from Python")
+      .def("absmag_prior", &prior::absmag_prior)
+      .def("nz_prior", &prior::nz_prior)
+      .def("update_chi2", &prior::update_chi2)
+      .def_readwrite("apply_nz", &prior::apply_nz,
+                     "int 1 if apply nzlim prior.")
+      .def_readwrite("apply_weights", &prior::apply_weights,
+                     "int 1 to apply weights.")
+      .def_readwrite("weights", &prior::weights,
+                     "The weights to apply to the fulllib models.");
 
   py::class_<PDF>(mod, "PDF")
       .def(py::init<double, double, size_t>(), py::arg("min"), py::arg("max"),
