@@ -128,7 +128,7 @@ def calculate_extinction_values(filters, atmec, galec, verbose=False):
     """
     all_filters = GalMag.read_flt(filters)
     if atmec == "NONE":
-        aint = 99.0 * np.ones(len(all_filters)).tolist()
+        aint = np.full(len(all_filters), 99.0).tolist()
     else:
         if not os.path.isabs(atmec):
             atmec = os.path.join(os.environ["LEPHAREDIR"], "ext", atmec)
