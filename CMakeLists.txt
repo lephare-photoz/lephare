@@ -105,32 +105,6 @@ if(OpenMP_CXX_FOUND)
     target_link_libraries(lepharelib PUBLIC OpenMP::OpenMP_CXX)
 endif()
 
-# Build the LePhare executables
-add_executable(filter
-  "${SOURCE_DIR}/filter.cpp"
-  )
-target_link_libraries(filter lepharelib)
-
-add_executable(sedtolib
-  "${SOURCE_DIR}/sedtolib.cpp"  
-  )
-target_link_libraries(sedtolib lepharelib)
-
-add_executable(mag_gal
-  "${SOURCE_DIR}/mag_gal.cpp"  
-  )
-target_link_libraries(mag_gal lepharelib)
-
-add_executable(zphota
-  "${SOURCE_DIR}/zphota.cpp"  
-  )
-target_link_libraries(zphota lepharelib)
-
-add_executable(filter_extinc
-  "${SOURCE_DIR}/filter_extinc.cpp"
-  )
-target_link_libraries(filter_extinc lepharelib)
-
 # Build the python module
 add_subdirectory(extern/pybind11/)
 pybind11_add_module(_lephare ${SOURCES} "${SOURCE_DIR}/_bindings.cc")
@@ -142,8 +116,3 @@ if(OpenMP_CXX_FOUND)
     target_link_libraries(_lephare PUBLIC OpenMP::OpenMP_CXX)
 endif()
 
-install(TARGETS filter RUNTIME DESTINATION bin)
-install(TARGETS sedtolib RUNTIME DESTINATION bin)
-install(TARGETS mag_gal RUNTIME DESTINATION bin)
-install(TARGETS zphota RUNTIME DESTINATION bin)
-install(TARGETS filter_extinc RUNTIME DESTINATION bin)

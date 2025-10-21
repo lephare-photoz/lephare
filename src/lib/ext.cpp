@@ -163,6 +163,8 @@ double cardelli_ext(flt &oneFlt) {
 }
 
 //  compute albd/av at a given lambda (A) for the Cardelli law
+// value straight from The Astrophysical Journal, 345:245-256,1989
+// https://articles.adsabs.harvard.edu/pdf/1989ApJ...345..245C
 double cardelli_law(double lb) {
   double rv = 3.1;
   double x = 10000. / lb;
