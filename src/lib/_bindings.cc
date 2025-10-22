@@ -115,7 +115,17 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("split_bool", &keyword::split_bool)
       .def("__repr__", [](const keyword &a) {
         return "(" + a.name + ", " + a.value + ")";
-      });
+      })
+      .def("split", [](keyword& self, const std::string& default_val,
+		       int nbItems, const std::string& type) {
+        if (type == "int")
+            return py::cast(self.split<int>(default_val, nbItems));
+        else if (type == "str")
+            return py::cast(self.split<std::string>(default_val, nbItems));
+        throw std::invalid_argument("Unsupported type: " + type);
+    }, py::arg("default_val"), py::arg("nbItems"), py::arg("type"));
+
+      ;
 
   mod.def("read_command", [](std::vector<std::string> args) {
     std::vector<char *> cstrs;
