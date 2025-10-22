@@ -7,7 +7,8 @@ import requests
 import yaml
 
 from lephare import LEPHAREDIR
-from lephare._lephare import check_first_char, flt
+
+from ._lephare import check_first_char, flt
 
 __all__ = [
     "FilterSvc",
@@ -168,10 +169,10 @@ class FilterSvc:
         try:
             query = f"{SVO_URL}/fps.php?PhotCalID={filter_id}/{system}"
             r = requests.get(query, timeout=5)
-        except ConnectionRefusedError:
+        except ConnectionRefusedError:  # pragma no cover
             print(f"request {query} failed due to failure to connect to the server.")
             return None
-        except requests.ConnectTimeout:
+        except requests.ConnectTimeout:  # pragma no cover
             print("Timeout on SVO server")
             return None
         try:

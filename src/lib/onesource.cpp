@@ -7,7 +7,9 @@
 
 #include "onesource.h"
 
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 
 #include <algorithm>
 #include <cmath>
@@ -1467,23 +1469,23 @@ void onesource::write_pdz(vector<string> pdztype,
 /*
  write the header and the PDF(spectral_type) for stars
 */
-void onesource::write_pdz_header_stars(ofstream &starpdz, const time_t &ti1) {
-  starpdz << "# Creation date: " << asctime(localtime(&ti1));
-  starpdz << "# Probability associated to star spectral types" << endl;
-  starpdz << "# Id ";
+void onesource::write_pdf_header_stars(ofstream &starpdf, const time_t &ti1) {
+  starpdf << "# Creation date: " << asctime(localtime(&ti1));
+  starpdf << "# Probability associated to star spectral types" << endl;
+  starpdf << "# Id ";
   for (size_t i = 0; i < vPDF_star.size(); ++i) {
-    starpdz << "P" << i << " ";
+    starpdf << "P" << i << " ";
   }
-  starpdz << endl;
+  starpdf << endl;
 }
 
 // Write the star PDF
-void onesource::write_pdz_stars(ofstream &starpdz) {
-  starpdz << setw(15) << std::fixed << setprecision(4) << spec << " ";
+void onesource::write_pdf_stars(ofstream &starpdf) {
+  starpdf << setw(15) << std::fixed << setprecision(4) << spec << " ";
   for (const auto &val : vPDF_star) {
-    starpdz << setw(16) << std::scientific << val << " ";
+    starpdf << setw(16) << std::scientific << val << " ";
   }
-  starpdz << endl;
+  starpdf << endl;
 }
 
 /*
@@ -1594,12 +1596,16 @@ void onesource::interp(const bool zfix, const bool zintp, const cosmo &lcdm) {
   }
 
   if (zintp) {
-    double target_z_gal = pdfmap[9].int_parab();
-    double target_z_qso = pdfmap[10].int_parab();
-    dmmin[0] *= lcdm.flux_rescaling(zmin[0], target_z_gal);
-    zmin[0] = target_z_gal;
-    dmmin[1] *= lcdm.flux_rescaling(zmin[1], target_z_qso);
-    zmin[1] = target_z_qso;
+    if (zmin[0] != INVALID_Z) {
+      double target_z_gal = pdfmap[9].int_parab();
+      dmmin[0] *= lcdm.flux_rescaling(zmin[0], target_z_gal);
+      zmin[0] = target_z_gal;
+    }
+    if (zmin[1] != INVALID_Z) {
+      double target_z_qso = pdfmap[10].int_parab();
+      dmmin[1] *= lcdm.flux_rescaling(zmin[1], target_z_qso);
+      zmin[1] = target_z_qso;
+    }
     return;
   }
 }

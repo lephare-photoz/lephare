@@ -15,7 +15,9 @@
 #include <iomanip>
 
 // Le Phare
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 
 #include "SED.h"        //our own class to read the keywords
 #include "cosmology.h"  // in order to measure the distance modulus
@@ -196,10 +198,6 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   // MIN_THRES threshold to trigger the detection - 0.1 by default
   min_thres = ((key_analysed["MIN_THRES"]).split_double("0.1", 1))[0];
 
-  // PROB_INTZ Integrated PDFz over Z ranges - 0. by default
-  int_pdz = (key_analysed["PROB_INTZ"]).split_double("0.", -1);
-  int npdz = int(int_pdz.size());
-
   /* Output */
 
   // SPEC_OUT Output individual spectra - NO default
@@ -265,10 +263,6 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   // PDZ_TYPE type of PZD (BAY_ZG,BAY_ZQ,MIN_ZG,MIN_ZQ,MASS,SFR,SSFR,AGE)
   outpdf_star = ((keys["STAR_PDF_OUT"]).split_string(nonestring, 1))[0];
   pdftype = ((key_analysed["PDZ_TYPE"]).split_string("BAY_ZG", -1));
-  // PDZ_MABS_FILT filter in which we want the mag abs in each pdz
-  pdz_fabs = (key_analysed["PDZ_MABS_FILT"]).split_int("0", -1);
-  // // PDM_OUT pdf(stellar mass) output file
-  // outpdm = ((key_analysed["PDM_OUT"]).split_string(nonestring,1))[0];
 
   // ADD_EMLINES
   // minimum and maximum models to add emission lines
@@ -326,11 +320,6 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   outputHeader += "# Z_INTERP               : " + bool2string(zintp) + '\n';
   outputHeader +=
       "# Z_METHOD               : " + string(methz ? "MED" : "BEST") + '\n';
-  outputHeader += "# PROB_INTZ              : ";
-  for (int k = 0; k < npdz; k++) {
-    outputHeader += to_string(int_pdz[k]) + ' ';
-  };
-  outputHeader += '\n';
 
   outputHeader += "# MABS_METHOD            : " + to_string(method) + '\n';
   outputHeader += "# MABS_CONTEXT           : ";
@@ -450,7 +439,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 }
 
 keymap read_keymap_from_doc(const string libName) {
-  // List of the keywords to be found in the config file/command line
+  // List of the keywords to be found in the mag_gal doc output.
   string list_keywords[] = {
       "LIB_TYPE", "NUMBER_ROWS", "FILTER_FILE", "FILTERS",   "EM_LINES",
       "LIB_NAME", "NUMBER_SED",  "Z_STEP",      "COSMOLOGY", "EXTINC_LAW",

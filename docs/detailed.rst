@@ -190,7 +190,7 @@ However, we also added a function ``lp.prepare`` which first compute the full pr
   # This line run together all the library preparation 
   lp.prepare(config)
   # Calculate the photometric redshifts
-  output, pdfs, zgrid = lp.process(config, input_table)
+  output, pdfs = lp.process(config, input_table)
 
 
 		
@@ -1127,7 +1127,7 @@ You can run the photometric redshift with the function ``lp.process``  prepared 
   # This line run together all the library preparation 
   lp.prepare(config)
   # Calculate the photometric redshifts
-  output, pdfs, zgrid = lp.process(config, input_table)
+  output, pdfs = lp.process(config, input_table)
 
 The ``input_table`` is a python table with a pre-defined format (explained below).
 
@@ -1288,7 +1288,7 @@ There is two different methods to create the input source list and run the photo
   input_table["string_data"] = "arbitrary_info"
 
   # Calculate the photometric redshifts using the function process
-  output, pdfs, zgrid = lp.process(config, input_table)
+  output, pdfs = lp.process(config, input_table)
 
 **Method 2**
 

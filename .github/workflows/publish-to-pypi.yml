@@ -97,12 +97,12 @@ jobs:
 
     steps:
       - name: Checkout LePhare
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: recursive
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.23.2
+        uses: pypa/cibuildwheel@v3.2.0
         env:
           # CIBW_ARCHS_MACOS: auto universal2
           CIBW_BEFORE_ALL_MACOS: brew install llvm libomp
@@ -124,7 +124,7 @@ jobs:
     name: Make SDist
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 0  # Optional, use if you use setuptools_scm
         submodules: recursive  # Optional, use if you have submodules
@@ -149,7 +149,7 @@ jobs:
 
     steps:
       - name: Download distribution files
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           # unpacks all CIBW artifacts into dist/
           pattern: cibw-*

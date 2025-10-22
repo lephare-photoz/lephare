@@ -7,6 +7,7 @@
 #define SEDLIB_H_
 
 #include <ctime>
+#include <filesystem>
 
 #include "SED.h"
 #include "globals.h"
@@ -255,12 +256,15 @@ void SEDLib<T>::read_model_list() {
       // Read the name of the SED and the format which need to be used to read
       // it
       ss >> nameSED;
+      // check if nameSED is an absolute path
+      if (std::filesystem::path(nameSED).is_relative())
+        nameSED = lepharedir + path + nameSED;
+
       formatSED = 'A';  // Default: ascii
       if (!ss.eof()) ss >> formatSED;
-      string list = lepharedir + path + nameSED;
       // Read the file and output a vector of SED
       // (in some file, you have several SEDs with different ages)
-      readSED(list, formatSED, nbSED + 1, typ);
+      readSED(nameSED, formatSED, nbSED + 1, typ);
       nbSED++;
     }
   }

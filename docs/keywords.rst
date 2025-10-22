@@ -104,9 +104,6 @@ mag_gal
    * - MOD_EXTINC
      - 0,0[def] 
      - Range of models for which extinction will be applied. Two values per attenutation curves, separated by comma.
-   * - ZGRID_TYPE
-     - 0[def] or 1
-     - constant step in redshift if 0; evolving step in redshift as (1+z) if 1.
    * - Z_STEP
      - 0.04,0,6 [def] 
      - dz,zmin,zmax: redshift step (dz), the minimum (zmin) and the maximum redshift (zmax)
