@@ -29,7 +29,7 @@ class oneElLambda {
    * @param origin: an arbitrary integer that flags the provenance
    * of the oneElLambda object, when part of a vector (used in SED::resample
    * for instance
-   !*/
+   */
   oneElLambda(double lambda, double value, int origin) {
     lamb = lambda;
     val = value;
@@ -53,7 +53,7 @@ class oneElLambda {
    * @param next: oneElLambda after current lambda
    * @return If correctly ordered, set current value to the linear
    * interpolation at lambda between `previous` and `next`
-   !*/
+   */
   void interp(const oneElLambda &previous, const oneElLambda &next);
 
   /// Check that current lamb < rhs.lamb

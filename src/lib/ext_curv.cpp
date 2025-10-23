@@ -277,4 +277,3 @@ double ext_gal(double lb) {
 
   return (f1 + f2 / rv);
 }
-

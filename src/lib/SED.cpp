@@ -355,9 +355,8 @@ double SED::trapzd() {
 }
 
 vector<oneElLambda> SED::resample(vector<oneElLambda> &lamb_all,
-				  const int origine,
-				  const double lmin, const double lmax)
-{
+                                  const int origine, const double lmin,
+                                  const double lmax) {
   vector<oneElLambda> lamb_interp;
   // Initialize the previous and next element used for the interpolation
   oneElLambda prevEl(-999, -999, -999);
