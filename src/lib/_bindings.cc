@@ -97,8 +97,6 @@ PYBIND11_MODULE(_lephare, mod) {
   mod.def("cardelli_law", &cardelli_law,
           "compute albd/av at a given lambda (A) for the Cardelli law",
           py::arg("lb"));
-  mod.def("resample", &resample, py::arg("lamb_all"), py::arg("lamb_interp"),
-          py::arg("origine"), py::arg("lmin"), py::arg("lmax"));
   mod.def("read_flt", &read_flt, py::arg("sfiltIn"));
 
   /******** CLASS KEYWORD *********/
