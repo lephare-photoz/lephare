@@ -8,6 +8,11 @@
 #ifndef ONEEL_H  // check that this keyword has been set already
 #define ONEEL_H  // define the keyword to be checked
 
+#include <algorithm>
+#include <vector>
+
+using namespace std;
+
 /// Small class structure to store one extinction element, including lambda,
 /// value, and origin
 class oneElLambda {
@@ -24,7 +29,7 @@ class oneElLambda {
    * @param origin: an arbitrary integer that flags the provenance
    * of the oneElLambda object, when part of a vector (used in SED::resample
    * for instance
-   !*/
+   */
   oneElLambda(double lambda, double value, int origin) {
     lamb = lambda;
     val = value;
@@ -48,7 +53,7 @@ class oneElLambda {
    * @param next: oneElLambda after current lambda
    * @return If correctly ordered, set current value to the linear
    * interpolation at lambda between `previous` and `next`
-   !*/
+   */
   void interp(const oneElLambda &previous, const oneElLambda &next);
 
   /// Check that current lamb < rhs.lamb
@@ -57,5 +62,23 @@ class oneElLambda {
     return lamb < rhs.lamb;
   }
 };
+
+/*! merge two oneElLambda vectors into a sorted one
+ *
+ * @param v1: first vector of oneElLambda
+ * @param v2: second vector of oneElLambda
+ *
+ * @return vector merging v1 and v2 into a single vector,
+ * ordered by increasing lambda. Each oneElLambda keeps its
+ * original attribute `ori`, which allows to keep track of the
+ * origin of this element as coming from v1 or v2
+ */
+inline vector<oneElLambda> concatenate_and_sort(const vector<oneElLambda> &v1,
+                                                const vector<oneElLambda> &v2) {
+  vector<oneElLambda> res = v1;
+  res.insert(res.end(), v2.begin(), v2.end());
+  sort(res.begin(), res.end());
+  return res;
+}
 
 #endif
