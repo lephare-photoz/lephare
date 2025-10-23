@@ -212,11 +212,9 @@ double comp_ext(flt *oneFlt, ext *oneExt) {
   sort(lamb_all.begin(), lamb_all.end());
 
   // Resample the filter into a common lambda range
-  vector<oneElLambda> new_lamb_flt;
-  resample(lamb_all, new_lamb_flt, 0, 0, 1.e50);
+  vector<oneElLambda> new_lamb_flt SED::resample(lamb_all, 0, 0, 1.e50);
   // Resample the extinction into a common lambda range
-  vector<oneElLambda> new_lamb_ext;
-  resample(lamb_all, new_lamb_ext, 2, 0, 1.e50);
+  vector<oneElLambda> new_lamb_ext SED::resample(lamb_all, 2, 0, 1.e50);
 
   double fint = 0;
   double aint = 0;
