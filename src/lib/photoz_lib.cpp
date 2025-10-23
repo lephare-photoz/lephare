@@ -1720,9 +1720,9 @@ void PhotoZ::write_outputs(vector<onesource *> sources, const time_t &ti1) {
 
     if (!oneObj->chi2_star_models.empty()) {
       if (outpdf_star != nonestring && first_obj)
-        oneObj->write_pdz_header_stars(starpdf_out, ti1);
+        oneObj->write_pdf_header_stars(starpdf_out, ti1);
       if (outpdf_star != nonestring)
-        oneObj->write_pdz_stars(starpdf_out);
+        oneObj->write_pdf_stars(starpdf_out);
     }
 
     first_obj = false;

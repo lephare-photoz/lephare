@@ -212,7 +212,7 @@ def plot_single_pdz(pdz_path, zgrid, row=None, nb_peak_thresh=1, height_thresh=0
     plt.show()
 
 #plot one pdz for example
-plot_single_pdz(PDZ_path, z_grid, row=23, nb_peak_thresh=1, height_thresh=0.75, tail_thresh=0.25, peak_ratio_thresh=0.75, error_thresh=0.125, catalog_path=CAT_path)
+plot_single_pdz(PDZ_path, z_grid, row=8779, nb_peak_thresh=1, height_thresh=0.75, tail_thresh=0.25, peak_ratio_thresh=0.75, error_thresh=0.125, catalog_path=CAT_path)
 #8779, 497, 2 intéréssant
 
 #display statistics from given catalog
