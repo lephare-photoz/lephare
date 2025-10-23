@@ -49,6 +49,9 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readwrite("ori", &oneElLambda::ori)
       .def("interp", &oneElLambda::interp, py::arg("previousEl"),
            py::arg("nextEl"));
+  mod.def("concatenate_and_sort", &concatenate_and_sort,
+          "concatenate and sorttwo vector of oneElLambda objects. Sorting is "
+          "in increasing lambda.");
 
   /******** CLASS COSMOLOGY*********/
   py::class_<cosmo>(mod, "cosmo")
