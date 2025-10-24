@@ -114,16 +114,12 @@ class PDZStats:
             return 0
         mask = (self.zgrid < self.z_best - n_window * window) | (self.zgrid > self.z_best + n_window * window)
         return trapezoid(np.where(mask, self.pdz, 0.0), self.zgrid)
-    
-id = 0
+
 def compute_pdz_score(pdz, zgrid, nb_peak_thresh=1, height_thresh=0.5, tail_thresh=0.2, peak_ratio_thresh=0.25, error_thresh=0.2, z_best=None, id=0):  
     """
     Returns a 4-bit integer score (0-31), higher = worse.
     Bitwise impact order: number_mod (8), tail_mass (4), peak_ratio (2), error (1), very_bad_error (16)
     """ 
-    id +=1
-    sys.stdout.write(f"{id}")
-    sys.stdout.flush()
     pdz_stats = PDZStats(zgrid, pdz, z_best)
 
     score = 0
@@ -305,10 +301,17 @@ base_dir = os.path.abspath(os.path.join(os.getcwd()))
 ### Tests on stars ###
 
 # ### Tests on galaxies ###
-# CAT_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/DC1_Buzzard_PICKLES_LSST.out') #output catalog directory
-# PDZ_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/PDZs/DC1_Buzzard_PICKLES_LSST_MIN_ZG.prob')
-# STAR_PDF_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/PDFs/DC1_Buzzard_PICKLES_LSST_PDFstar.prob')
-# CAT_path_flagged = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/DC1_Buzzard_PICKLES_DES_typed.out')
+# CAT_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/DC1_Buzzard_PICKLES_LSST_kk.out') #output catalog directory
+# PDZ_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/PDZs/DC1_Buzzard_PICKLES_LSST_kk_MIN_ZG.prob')
+# STAR_PDF_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/PDFs/DC1_Buzzard_PICKLES_LSST_kk_PDFstar.prob')
+# CAT_path_flagged = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/DC1_Buzzard_PICKLES_LSST_kk_typed.out')
+
+### Tests on galaxies ###
+CAT_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/DESstars_Buzzard_PICKLES_DES_kk.out') #output catalog directory
+PDZ_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/PDZs/DESstars_Buzzard_PICKLES_DES_kk_MIN_ZG.prob')
+STAR_PDF_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/PDFs/DESstars_Buzzard_PICKLES_DES_kk_PDFstar.prob')
+CAT_path_flagged = os.path.join(base_dir, 'training_stats/simulation_catalogs/star_gal/DESstars_Buzzard_PICKLES_DES_kk_typed.out')
+
 
 ### Other paths ###
 SED_LIST_path = os.path.join(base_dir, 'training_stats/simulation_catalogs/DES/DES_STARCAT/WORK_COMPLETE2/lib_bin/DES_STAR.list')

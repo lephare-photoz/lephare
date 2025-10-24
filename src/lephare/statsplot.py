@@ -139,7 +139,7 @@ def handle_inputs_for_plot(x=None, y=None, data=None, x_col=None, y_col=None,
 
 
 def scatter_vs_hist2D(x=None, y=None, data=None, x_col='ZSPEC', y_col='Z_BEST',
-                      deltaz=None, xlabel=None, ylabel=None, labels=None):
+                      deltaz=None, xlabel=None, ylabel=None, labels=None, cmaps='viridis'):
     """
     Plot y vs x as scatter + 2D histogram with marginal histograms.
 
@@ -200,8 +200,9 @@ def scatter_vs_hist2D(x=None, y=None, data=None, x_col='ZSPEC', y_col='Z_BEST',
     colors = cmap(np.linspace(0, 1, n_series))
 
     # --- Figure layout ---
-    width_ratios = [2, 0.5, 2, 0.15]
-    height_ratios = [0.5, 2]
+    width_ratios = [2, 0.35, 2, 0.15]
+    height_ratios = [0.35, 2]
+
     fig = plt.figure(
         constrained_layout=False,
         figsize=(2.2 * sum(width_ratios), 2.2 * sum(height_ratios))
@@ -216,10 +217,11 @@ def scatter_vs_hist2D(x=None, y=None, data=None, x_col='ZSPEC', y_col='Z_BEST',
     ax_hist2d = fig.add_subplot(gs[1, 2])
     ax_cbar = fig.add_subplot(gs[1, 3])
 
+
     # --- Scatter plots ---
     for i in range(n_series):
         ax_scatter.scatter(
-            x[:, i], y[:, i], s=10, alpha=0.3, color=colors[i], label=labels[i]
+            x[:, i], y[:, i], s=10, alpha=0.15, color=colors[i], label=labels[i]
         )
 
     ax_scatter.plot([0, np.max(x)], [0, np.max(x)], 'r--', label='y = x')
@@ -246,11 +248,11 @@ def scatter_vs_hist2D(x=None, y=None, data=None, x_col='ZSPEC', y_col='Z_BEST',
     # --- Marginal histograms (same colors + labels) ---
     for i in range(n_series):
         ax_histx.hist(
-            x[:, i], bins=40, alpha=0.5, edgecolor='black',
+            x[:, i], bins=40, alpha=0.3, edgecolor='black',
             color=colors[i], label=labels[i]
         )
         ax_histy.hist(
-            y[:, i], bins=40, alpha=0.5, edgecolor='black',
+            y[:, i], bins=40, alpha=0.3, edgecolor='black',
             orientation='horizontal', color=colors[i], label=labels[i]
         )
 
@@ -261,9 +263,9 @@ def scatter_vs_hist2D(x=None, y=None, data=None, x_col='ZSPEC', y_col='Z_BEST',
     ax_histy.set_xlabel('Counts')
 
     # --- 2D histogram of all points combined ---
-    h = ax_hist2d.hist2d(x.flatten(), y.flatten(), bins=80, cmap='viridis')
+    h = ax_hist2d.hist2d(x.flatten(), y.flatten(), bins=80, cmap=cmaps)
     ax_hist2d.plot([0, np.max(x)], [0, np.max(x)], 'r--')
-    ax_hist2d.set_xlim(0, np.max(x))
+    ax_hist2d.set_xlim(0.01, np.max(x))
     ax_hist2d.set_ylim(0, np.max(x))
     ax_hist2d.set_aspect('equal', adjustable='box')
     ax_hist2d.set_xlabel(xlabel)
@@ -277,6 +279,51 @@ def scatter_vs_hist2D(x=None, y=None, data=None, x_col='ZSPEC', y_col='Z_BEST',
     plt.setp(ax_histy.get_yticklabels(), visible=False)
     plt.setp(ax_hist2d.get_yticklabels(), visible=False)
     plt.tight_layout()
+
+    # --- Final manual layout tuning ---
+    plt.subplots_adjust(wspace=0.05, hspace=0.02)
+
+    for ax in [ax_histx, ax_histy]:
+        ax.margins(0)
+    for ax in [ax_scatter, ax_histx, ax_histy, ax_hist2d]:
+        ax.set_anchor('C')
+
+    pos_scatter = ax_scatter.get_position()
+    pos_histy = ax_histy.get_position()
+    ax_histy.set_position([
+        pos_histy.x0, pos_scatter.y0,
+        pos_histy.width, pos_scatter.height
+        
+    ])
+    pos_histx = ax_histx.get_position()
+    ax_histx.set_position([
+        pos_scatter.x0, pos_histx.y0,
+        pos_scatter.width, pos_histx.height-0.01
+    ])
+
+    pos_scatter = ax_scatter.get_position()
+    pos_hist2d = ax_hist2d.get_position()
+    pos_cbar = ax_cbar.get_position()
+
+    # aligne verticalement le 2D hist sur le scatter
+    ax_hist2d.set_position([
+        pos_histy.x1 + 0.03,    # décalé vers la droite
+        pos_scatter.y0,             # même bas que le scatter
+        pos_hist2d.width,           # garde la largeur du 2D hist
+        pos_scatter.height          # même hauteur que le scatter
+    ])
+
+    new_pos_hist2d = ax_hist2d.get_position()
+    ax_cbar.set_position([
+        new_pos_hist2d.x1 + 0.01,
+        new_pos_hist2d.y0,
+        pos_cbar.width * 0.7,
+        new_pos_hist2d.height
+    ])
+
+
+
+
     plt.show()
 
 # z_spec = np.random.uniform(0, 2, (1000, 3))
@@ -286,7 +333,7 @@ def scatter_vs_hist2D(x=None, y=None, data=None, x_col='ZSPEC', y_col='Z_BEST',
 
 
 def pit_qqplot(x=None, y=None, data=None, x_col='ZSPEC', y_col='Z_BEST',
-               dist='norm', xlabel=None, ylabel=None, bins=40):
+               dist='norm', xlabel=None, ylabel=None, bins=30):
     """
     Display QQ-plot, QQ residuals, histograms of both distributions,
     and the Probability Integral Transform (PIT) in a compact GridSpec layout.
@@ -320,65 +367,65 @@ def pit_qqplot(x=None, y=None, data=None, x_col='ZSPEC', y_col='Z_BEST',
     y = np.sort(y)[:n]
 
     # --- Fit distribution for PIT and PDF overlay ---
-    if isinstance(dist, str):
-        dist = getattr(stats, dist)
-    params = dist.fit(x)
+    x_df, x_loc, x_scale = stats.chi2.fit(x)
+    pit_values = stats.chi2.cdf(y, x_df, loc=x_loc, scale=x_scale)
 
-    # --- Create GridSpec layout ---
-    width_ratios=[2, 1]
-    height_ratios=[2, 0.5]
-    fig = plt.figure(figsize=(3*sum(width_ratios), 3*sum(height_ratios)))
-    gs = gridspec.GridSpec(2, 2, width_ratios=width_ratios, height_ratios=width_ratios)
+        # --- Create layout ---
+    fig = plt.figure(figsize=(10, 7))
+    gs = gridspec.GridSpec(2, 2, width_ratios=[1, 1], height_ratios=[1.5, 1.0])
+    plt.subplots_adjust(wspace=0.3, hspace=0.35)
 
-    # === QQ-Plot (top-left) ===
+    # === QQ-Plot ===
     ax_qq = fig.add_subplot(gs[0, 0])
-    pp_x = sm.ProbPlot(x)
-    pp_y = sm.ProbPlot(y)
-    sm.qqplot_2samples(pp_x, pp_y, line="45", ax=ax_qq,
-                       xlabel=f"{xlabel} quantiles", ylabel=f"{ylabel} quantiles")
-    ax_qq.set_title("QQ-Plot: Comparison of Quantiles", fontsize=13)
-    ax_qq.grid(True, alpha=0.4)
+    sm.qqplot_2samples(x, y, line="45", ax=ax_qq)
+    ax_qq.set_title("QQ-Plot: Quantile Comparison", fontsize=13, weight='bold')
+    ax_qq.set_xlabel(f"{xlabel} quantiles", fontsize=11)
+    ax_qq.set_ylabel(f"{ylabel} quantiles", fontsize=11)
+    ax_qq.grid(alpha=0.3)
 
-    # === QQ Residuals (bottom-left) ===
+    # === QQ Residuals ===
     ax_resid = fig.add_subplot(gs[1, 0], sharex=ax_qq)
-    ax_resid.plot(x, y - x, 'o', alpha=0.6, markersize=3)
-    ax_resid.axhline(0, color='red', linestyle='--', lw=1)
-    ax_resid.set_xlabel(f"{xlabel} quantiles")
-    ax_resid.set_ylabel(f"{ylabel} - {xlabel}")
-    ax_resid.set_title("QQ-Plot Residuals", fontsize=12)
-    ax_resid.grid(True, alpha=0.3)
+    ax_resid.plot(x, y - x, 'o', alpha=0.4, markersize=3)
+    ax_resid.axhline(0, color='red', linestyle='--', lw=1.5)
+    ax_resid.set_xlabel(f"{xlabel} quantiles", fontsize=11)
+    ax_resid.set_ylabel("Residuals (y - x)", fontsize=11)
+    ax_resid.set_title("QQ Residuals", fontsize=13, weight='bold')
+    ax_resid.grid(alpha=0.3)
 
-    # === Histograms (top-right) ===
+    # === Histograms ===
     ax_hist = fig.add_subplot(gs[0, 1])
-    ax_hist.hist(x, bins=bins, density=True, alpha=0.5, edgecolor='black', label=f'{xlabel}')
-    ax_hist.hist(y, bins=bins, density=True, alpha=0.5, edgecolor='black', label=f'{ylabel}')
-    
-    # Fitted PDF from dist
+    ax_hist.hist(x, bins=bins, density=True, alpha=0.6,
+                 edgecolor='black', label=f"{xlabel}", range=(0,2))
+    ax_hist.hist(y, bins=bins, density=True, alpha=0.6,
+                 edgecolor='black', label=f"{ylabel}", range=(0,2))
+
     xx = np.linspace(min(x), max(x), 1000)
-    pdf_x = dist.pdf(xx, *params)
-    ax_hist.plot(xx, pdf_x, 'r-', lw=2, label=f'{xlabel} fit ({dist.name})')
+    x_pdf = stats.chi2.pdf(xx, x_df, loc=x_loc, scale=x_scale)
+    ax_hist.plot(xx, x_pdf, 'r-', lw=1.5, label=f'{xlabel} fit')
+    ax_hist.set_xlim(0, 2)
     
-    ax_hist.set_xlabel("Value")
-    ax_hist.set_ylabel("Density (normalized)")
-    ax_hist.legend(fontsize=10)
-    ax_hist.set_title("Distribution Comparison & Fit", fontsize=13)
-    ax_hist.grid(True, alpha=0.3)
+    ax_hist.set_title("Distribution Comparison", fontsize=13, weight='bold')
+    ax_hist.set_xlabel("Value", fontsize=11)
+    ax_hist.set_ylabel("Density (normalized)", fontsize=11)
+    ax_hist.legend(frameon=False, fontsize=10)
+    ax_hist.grid(alpha=0.3)
 
-    # === PIT (bottom-right) ===
+    # === PIT histogram ===
     ax_pit = fig.add_subplot(gs[1, 1])
-    pit = dist.cdf(y, *params)
-    ax_pit.hist(pit, bins=bins, edgecolor='black', alpha=0.7, density=False)
-    ax_pit.axhline(len(pit)/bins, color='red', linestyle='--', lw=1)
+    ax_pit.hist(pit_values, bins=bins, edgecolor='black', alpha=0.6, range=(0,1))
+    ax_pit.axhline(len(pit_values) / bins, linestyle='--', color='red', lw=1.5)
     ax_pit.set_xlim(0, 1)
-    ax_pit.set_xlabel("Binned cumulative probability (PIT)")
-    ax_pit.set_ylabel("Frequency")
-    ax_pit.set_title("Probability Integral Transform (PIT)", fontsize=13)
-    ax_pit.grid(True, alpha=0.3)
+    ax_pit.set_xlabel("PIT value", fontsize=11)
+    ax_pit.set_ylabel("Frequency", fontsize=11)
+    ax_pit.set_title("Probability Integral Transform", fontsize=13, weight='bold')
+    ax_pit.grid(alpha=0.3)
 
-    # --- Adjustments ---
+    # --- Final touches ---
+    for ax in [ax_qq, ax_resid, ax_hist, ax_pit]:
+        ax.tick_params(labelsize=10)
+
     plt.tight_layout()
     plt.show()
-
 # z_spec = np.random.chisquare(df=4, size=1000)
 # z_photo = z_spec + np.random.normal(0, 0.3, 1000)
 # pit_qqplot(z_spec, z_photo, dist='chi2', xlabel="z_spec", ylabel="z_photo")
@@ -464,14 +511,14 @@ def chi_stats(x=None, y=None, data=None, x_col='CHI_STAR', y_col='CHI_BEST',
         ax_star.set_xscale("log")
     if log:
         print(logbins)
-    ax_star.hist(x, bins=logbins if log else bins, alpha=0.7, edgecolor='black', range=hist_range)
+    ax_star.hist(x, bins=logbins if log else bins, alpha=0.7, edgecolor='black', range=(0, mask_max))
     ax_star.set_title(f"{xlabel} distribution")
     ax_star.set_xlabel("Chi² value")
     ax_star.set_ylabel("Count")
 
     # --- [0,1] Histogram of CHI_BEST ---
     ax_best = fig.add_subplot(gs[0, 1])
-    ax_best.hist(y, bins=bins, alpha=0.7, edgecolor='black', color='orange', range=hist_range)
+    ax_best.hist(y, bins=bins, alpha=0.7, edgecolor='black', color='orange', range=(0, mask_max))
     ax_best.set_title(f"{ylabel} distribution")
     ax_best.set_xlabel("Chi² value")
     ax_best.set_ylabel("Count")
@@ -491,11 +538,11 @@ def chi_stats(x=None, y=None, data=None, x_col='CHI_STAR', y_col='CHI_BEST',
     # --- [1,1] Scatter CHI_STAR vs CHI_BEST ---
     ax_scatter = fig.add_subplot(gs[1, 1])
     ax_scatter.scatter(x, y, s=5, alpha=0.5, c='teal')
-    ax_scatter.plot([0, max(scatter_xlim[1], scatter_ylim[1])],
-                    [0, max(scatter_xlim[1], scatter_ylim[1])],
-                    'r--', label="y=x")
-    ax_scatter.set_xlim(*scatter_xlim)
-    ax_scatter.set_ylim(*scatter_ylim)
+    # ax_scatter.plot([0, max(scatter_xlim[1], scatter_ylim[1])],
+    #                 [0, max(scatter_xlim[1], scatter_ylim[1])],
+    #                 'r--', label="y=x")
+    ax_scatter.set_xlim(-scatter_xlim[1]/50, scatter_xlim[1])
+    ax_scatter.set_ylim(-scatter_ylim[1]/50, scatter_ylim[1])
     ax_scatter.set_title(f"{xlabel} vs {ylabel}")
     ax_scatter.set_xlabel(xlabel)
     ax_scatter.set_ylabel(ylabel)
@@ -513,3 +560,127 @@ def chi_stats(x=None, y=None, data=None, x_col='CHI_STAR', y_col='CHI_BEST',
 # chi_best = np.random.chisquare(df=3, size=3000)
 # chi_stats(x=chi_star, y=chi_best, log=False)
 # # chi_stats(x=chi_star, y=chi_best, mask_max=20, log=True)
+
+
+def more_chi_stats(x=None, y=None, data=None, x_col='CHI_STAR', y_col='CHI_BEST',
+              xlabel=None, ylabel=None, mask_min=None, mask_max=None, bins=100, log=False):
+    """
+    Plot the Chi² statistics of a LePhare run (template fitting on galaxies and stars),
+    showing model comparison between galaxy and star fits.
+
+    Supports direct array input (x, y) or a pandas DataFrame with column names.
+
+    Parameters
+    ----------
+    x, y : array-like, optional
+        Chi² values for star and best-fit galaxy models.
+    data : pandas.DataFrame, optional
+        Input DataFrame containing chi² columns.
+    x_col, y_col : str, optional
+        Column names to use from the DataFrame (defaults: 'CHI_STAR' and 'CHI_BEST').
+    xlabel, ylabel : str, optional
+        Axis labels (inferred automatically if None).
+    mask_min, mask_max : float, optional
+        Minimum/maximum χ² values to keep. If None, no clipping.
+    bins : int, optional
+        Number of bins for histograms. Default = 100.
+    log : bool, optional
+        If True, sets log-scale on x-axis for histograms and scatter.
+
+    Returns
+    -------
+    None
+        Displays a 2x2 grid:
+            [0,0] ΔCHI histogram
+            [0,1] CHI_BEST vs ΔCHI scatter
+            [1,0] CHI_STAR vs ΔCHI scatter
+            [1,1] 
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    # --- Handle input ---
+    x, y, xlabel, ylabel = handle_inputs_for_plot(x, y, data, x_col, y_col, xlabel, ylabel)
+
+    # --- Clean / mask data ---
+    x = np.asarray(x)
+    y = np.asarray(y)
+
+    # Set sensible defaults if None
+    if mask_min is None:
+        mask_min = 1e-3 if log else np.nanmin([np.nanmin(x), np.nanmin(y)])
+    if mask_max is None:
+        mask_max = 1e9 if log else np.nanmax([np.nanmax(x), np.nanmax(y)])
+
+    # Apply mask
+    mask = np.isfinite(x) & np.isfinite(y) & (x >= mask_min) & (y <= mask_max)
+    x, y = x[mask], y[mask]
+    delta_chi = x - y
+
+
+    # --- Determine plotting ranges dynamically ---
+    hist_range = (mask_min, mask_max)
+    scatter_xlim = (
+        np.nanmin(x) if mask_min is None else mask_min,
+        np.nanmax(x) if mask_max is None else mask_max
+    )
+    scatter_ylim = (
+        np.nanmin(y) if mask_min is None else mask_min,
+        np.nanmax(y) if mask_max is None else mask_max
+    )
+
+    # --- Setup figure ---
+    fig = plt.figure(constrained_layout=False, figsize=(10, 10))
+    gs = fig.add_gridspec(2, 2, height_ratios=[1, 1], width_ratios=[1, 1], hspace=0.35, wspace=0.3)
+
+    # --- [0,0] Histogram of DELTA CHI ---
+    ax_delta = fig.add_subplot(gs[0, 0])
+    ax_delta.hist(delta_chi, bins=bins, alpha=0.7, edgecolor='black', color='purple', range=hist_range)
+    ax_delta.axvline(0, color='gray', linestyle='--')
+    ax_delta.set_title(f"ΔChi² = {xlabel} - {ylabel}")
+    ax_delta.set_xlabel("ΔChi²")
+    ax_delta.set_ylabel("Count")
+    if log:
+        ax_delta.set_xscale("log")
+
+    # --- [0,1] CHI_BEST vs DELTA_CHI ---
+    ax_scatter = fig.add_subplot(gs[0, 1])
+    ax_scatter.scatter(y, x-y, s=5, alpha=0.5, c='orange')
+    ax_scatter.set_xlim(*scatter_xlim)
+    ax_scatter.set_ylim(*scatter_ylim)
+    ax_scatter.set_title(f"{ylabel} vs ΔChi²")
+    ax_scatter.set_xlabel(ylabel)
+    ax_scatter.set_ylabel("ΔChi²")
+    ax_scatter.legend(loc='upper left', fontsize=8, frameon=False)
+    if log:
+        ax_scatter.set_xscale("log")
+        ax_scatter.set_yscale("log")
+
+    # --- [1,0] CHI_STAR vs DELTA_CHI ---
+    ax_scatter = fig.add_subplot(gs[1, 0])
+    ax_scatter.scatter(x, x-y, s=5, alpha=0.5, c='blue')
+    ax_scatter.set_xlim(*scatter_xlim)
+    ax_scatter.set_ylim(*scatter_ylim)
+    ax_scatter.set_title(f"{xlabel} vs ΔChi²")
+    ax_scatter.set_xlabel(xlabel)
+    ax_scatter.set_ylabel("ΔChi²")
+    ax_scatter.legend(loc='upper left', fontsize=8, frameon=False)
+    if log:
+        ax_scatter.set_xscale("log")
+        ax_scatter.set_yscale("log")
+
+    # --- [1,1] Scatter CHI_STAR vs CHI_BEST ---
+    ax_scatter = fig.add_subplot(gs[1, 1])
+    ax_scatter.scatter(x, y, s=5, alpha=0.5, c='teal')
+    ax_scatter.set_xlim(-scatter_xlim[1]/50, scatter_xlim[1])
+    ax_scatter.set_ylim(-scatter_ylim[1]/50, scatter_ylim[1])
+    ax_scatter.set_title(f"{xlabel} vs {ylabel}")
+    ax_scatter.set_xlabel(xlabel)
+    ax_scatter.set_ylabel(ylabel)
+    ax_scatter.legend(loc='upper left', fontsize=8, frameon=False)
+    if log:
+        ax_scatter.set_xscale("log")
+        ax_scatter.set_yscale("log")
+
+    plt.tight_layout()
+    plt.show()

@@ -449,9 +449,6 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
       // keep track of the minimum chi2 for each object type, over the threads
       if (chi2loc < HIGH_CHI2) {
         object_type type = sed->get_object_type();
-        if (sed->is_star()) {
-          chi2_star_models[i] = chi2loc;
-        }
         if (chi2_vals[thread_id][type] > chi2loc) {
           chi2_vals[thread_id][type] = chi2loc;
           chi2_idx[thread_id][type] = sed->index;
@@ -461,6 +458,9 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
       // Write the chi2
       sed->chi2 = chi2loc;
       sed->dm = dmloc;
+      if (sed->is_star()) {
+          chi2_star_models[i] = sed->chi2;
+        }
     }
 
 #ifdef _OPENMP
@@ -1082,15 +1082,15 @@ void onesource::generatePDF_stars() {
 
   // Convert to PDF
   for (const auto& kv : chi2_star_models) {
-    double pdf_val = std::exp(-0.5 * kv.second);///sum_chi2);
+    double pdf_val = kv.second; //std::exp(-0.5 * kv.second);///sum_chi2);
     // double pdf_val = kv.second/max_chi2_star;// just a test
     vPDF_star.push_back(pdf_val);
     sum_pdf += pdf_val;
   }
-  // Normalize
-  for (auto& val : vPDF_star) {
-    val /= sum_pdf;
-  }
+  // // Normalize
+  // for (auto& val : vPDF_star) {
+  //   val /= sum_pdf;
+  // }
 }
 
 /*
