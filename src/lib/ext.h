@@ -42,7 +42,7 @@ class ext {
   void read(string extFile);
 
   /// add a single element
-  void add_element(double lam, double val, double ori);
+  void add_element(double lam, double val, short ori);
 };
 
 double compute_filter_extinction(const flt &filter, const ext &extinction);

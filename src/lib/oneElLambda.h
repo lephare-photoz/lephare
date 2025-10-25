@@ -13,10 +13,10 @@
 class oneElLambda {
  public:
   double lamb,  ///< lambda value
-      val,      ///< extinction value at lambda
-      ori;  ///< index : index referring to filter transmission (ori=0), or SED
-            ///< flux (ori=1), or attenuation law (ori=2), or opacity (ori=3),
-            ///< or emission line (ori=5)
+      val;      ///< extinction value at lambda
+  short ori;    ///< index : index referring to filter transmission (ori=0), or
+                ///< SED flux (ori=1), or attenuation law (ori=2), or opacity
+                ///< (ori=3), or emission line (ori=5)
 
   /*! Constructor
    * @param lambda: the \f$\lambda\f$ value
@@ -25,7 +25,7 @@ class oneElLambda {
    * of the oneElLambda object, when part of a vector (used in SED::resample
    * for instance
    !*/
-  oneElLambda(double lambda, double value, int origin) {
+  oneElLambda(double lambda, double value, short origin) {
     lamb = lambda;
     val = value;
     ori = origin;
