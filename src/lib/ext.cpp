@@ -66,7 +66,7 @@ void ext::read(string extFile) {
 /*
 Add a value to the extinction law
 */
-void ext::add_element(double lam, double val, double ori) {
+void ext::add_element(double lam, double val, short ori) {
   // fill the lambda/trans values of the SED
   lamb_ext.emplace_back(lam, val, ori);
 
