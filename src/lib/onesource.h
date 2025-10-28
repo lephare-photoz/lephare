@@ -196,8 +196,11 @@ class onesource {
   void rm_discrepant(vector<SED *> &fulllib, const vector<vector<double>> &flux,
                      const vector<size_t> &valid, const double funz0,
                      const array<int, 2> bp, double thresholdChi2);
-  void write_out(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
-                 ofstream &stout, vector<string> outkeywords);
+  /*! Write output in the lephare ascii format
+   * @param stout: stream object pointing to the output file
+   * @param outkeywords: list of keywords to be output
+   */
+  void write_out(ofstream &stout, const vector<string> &outkeywords);
   void write_pdz_header(vector<string> pdztype,
                         unordered_map<string, ofstream> &stpdz,
                         const time_t &ti1);

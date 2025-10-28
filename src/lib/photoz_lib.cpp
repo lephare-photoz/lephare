@@ -1713,7 +1713,8 @@ void PhotoZ::write_outputs(vector<onesource *> sources, const time_t &ti1) {
   static bool first_obj = true;
   for (auto &oneObj : sources) {
     // write the object in output
-    oneObj->write_out(fullLib, fullLibIR, stout, outkeywords);
+    oneObj->write_out(stout, outkeywords);
+
     // Write an ascii file with the best fit template
     if (outsp.compare("NO") != 0)
       oneObj->writeSpec(fullLib, fullLibIR, lcdm, opaOut, allFilters, outsp);
