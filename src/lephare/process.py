@@ -59,7 +59,7 @@ def process(
     srclist = []
     for i in range(ng):
         one_obj = lp.onesource(i, photz.gridz)
-        one_obj.readsource(str(i), flux[i], flux_err[i], context[i], zspec[i], str(string_data[i]))
+        one_obj.readsource(str(id[i]), flux[i], flux_err[i], context[i], zspec[i], str(string_data[i]))
         photz.prep_data(one_obj)
         srclist.append(one_obj)
 
