@@ -2231,7 +2231,7 @@ void onesource::writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
 /*
  WRITE FULL CHI2 FILE
 */
-void onesource::writeFullChi(vector<SED *> &fulllib) {
+void onesource::writeFullChi(const vector<SED *> &fulllib) {
   double sca;
 
   // open the output file

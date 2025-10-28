@@ -240,7 +240,11 @@ class onesource {
   void writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR, cosmo lcdm,
                  vector<opa> opaAll, const vector<flt> &allFilters,
                  const string outspdir);
-  void writeFullChi(vector<SED *> &fulllib);
+  /*! Write out in a Id<source id>.chi file the chi2 of all the templates
+   * participating to the fit.
+   * @param fulllib : the library of SED objects.
+   */
+  void writeFullChi(const vector<SED *> &fulllib);
   void computePredMag(vector<SED *> &fulllib, cosmo lcdm, vector<opa> opaAll,
                       vector<flt> allFltAdd);
   void computePredAbsMag(vector<SED *> &fulllib, cosmo lcdm, vector<opa> opaAll,
