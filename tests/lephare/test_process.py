@@ -40,7 +40,7 @@ def test_process(test_data_dir: str):
 
     assert ~np.isclose(output["Z_BEST"][0], 3.5877994546919934)
     assert os.path.isfile("zphot.out")
-    assert output['IDENT'][0]==str(input['id'][0])
+    assert output['IDENT'][0] == str(input['id'][0])
 
     a0 = lp.calculate_offsets_from_input(config, input[reduced_cols])
     assert len(a0) == 2
