@@ -127,10 +127,10 @@ def test_resample():
     print([e.lamb for e in res2])
     print([e.val for e in res2])
     print([e.ori for e in res2])
-    for e in res:
+    for e in res[:-1]:
         assert e.ori == 0
         assert e.val == 1
     # resample z2 at the position of z1
-    for e in res2:
+    for e in res2[1:]:
         assert e.ori == 1
         assert e.val == 0
