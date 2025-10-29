@@ -1,7 +1,7 @@
 import subprocess
 
 
-def test_command_line_tests():
+def test_command_line_tasks():
     """Simply check that they are there and return basic outputs"""
     for task in ["filter", "mag_gal", "sedtolib", "zphota", "filter_extinc"]:
         result = subprocess.run(
