@@ -385,7 +385,7 @@ vector<oneElLambda> SED::resample(vector<oneElLambda> &lamb_all,
     } else {
       // Check if the lower value is already defined, which is required for the
       // interpolation
-      if (prevEl.lamb > 0) {
+      if (prevEl.lamb >= 0) {
         // Increase the iterator to reach the next item with the right origin
         for (vector<oneElLambda>::iterator kt = it; kt < lamb_interp.end();
              ++kt) {
@@ -406,6 +406,7 @@ vector<oneElLambda> SED::resample(vector<oneElLambda> &lamb_all,
         it->interp(prevEl, nextEl);
         // If the interpolation was possible
         if (it->ori >= 0) it->ori = origine;
+
       } else {
         // If the interpolation wasn't possible
         it->val = -99;
