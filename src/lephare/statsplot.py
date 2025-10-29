@@ -79,34 +79,26 @@ def handle_inputs_for_plot(x=None, y=None, data=None, x_col=None, y_col=None,
                            xlabel=None, ylabel=None):
     """
     Handle DataFrame inputs for plotting or further applications.
-    Parameters
-    ----------
-    data : pandas.DataFrame, optional
-        Input table. If provided, x and y are taken from columns `x_col` and `y_col`.
-    x, y : array-like or 2D arrays, optional
-        Input data. Ignored if `data` is provided.
-    x_col, y_col : str, optional
-        Column names to use from the DataFrame. Defaults are 'ZSPEC' and 'Z_BEST'.
-    xlabel, ylabel : str, optional
-        Axis labels. If not provided, inferred from variable or column names.
-
-    
-    Returns
-    -------
-    x, y : array-like or 2D arrays, optional
-        Input data for the scatter plot and 2D histogram.
-    xlabel, ylabel : str, optional
-        Axis labels.
     """
-
     # --- Handle DataFrame input ---
     if data is not None:
-        if not isinstance(data, pd.DataFrame):
-            raise TypeError("`data` must be a pandas DataFrame if provided.")
-        if x_col not in data.columns or y_col not in data.columns:
-            raise KeyError(f"Columns '{x_col}' and/or '{y_col}' not found in DataFrame.")
-        x = data[x_col].to_numpy()
-        y = data[y_col].to_numpy()
+        if isinstance(data, (list, tuple)):  # multiple DataFrames
+            x_list, y_list = [], []
+            for df in data:
+                if not isinstance(df, pd.DataFrame):
+                    raise TypeError("All elements in `data` must be pandas DataFrames.")
+                if x_col not in df.columns or y_col not in df.columns:
+                    raise KeyError(f"Columns '{x_col}' and/or '{y_col}' not found in one DataFrame.")
+                x_list.append(df[x_col].to_numpy())
+                y_list.append(df[y_col].to_numpy())
+            x, y = x_list, y_list
+        else:  # single DataFrame
+            if not isinstance(data, pd.DataFrame):
+                raise TypeError("`data` must be a pandas DataFrame if provided.")
+            if x_col not in data.columns or y_col not in data.columns:
+                raise KeyError(f"Columns '{x_col}' and/or '{y_col}' not found in DataFrame.")
+            x = [data[x_col].to_numpy()]
+            y = [data[y_col].to_numpy()]
         if xlabel is None:
             xlabel = x_col
         if ylabel is None:
@@ -130,201 +122,113 @@ def handle_inputs_for_plot(x=None, y=None, data=None, x_col=None, y_col=None,
             if ylabel is None:
                 ylabel = "y"
 
-
-    # --- Prepare data shape ---
-    x = np.asarray(x)
-    y = np.asarray(y)
+        # Handle x, y as possibly lists of arrays or single arrays
+        if isinstance(x, (list, tuple)) and isinstance(y, (list, tuple)):
+            x = [np.asarray(xx) for xx in x]
+            y = [np.asarray(yy) for yy in y]
+        else:
+            x = [np.asarray(x)]
+            y = [np.asarray(y)]
 
     return x, y, xlabel, ylabel
 
 
+def make_bins(mask_min, mask_max, nbins, logscale=False):
+    if logscale:
+        return np.logspace(np.log10(max(mask_min, 1e-6)),
+                            np.log10(mask_max), nbins)
+    else:
+        return np.linspace(mask_min, mask_max, nbins)
+
+
 def scatter_vs_hist2D(x=None, y=None, data=None, x_col='ZSPEC', y_col='Z_BEST',
-                      deltaz=None, xlabel=None, ylabel=None, labels=None, cmaps='viridis'):
+                      deltaz=None, xlabel=None, ylabel=None, labels=None,
+                      zmax=None, xrange=None, yrange=None, cmaps='viridis', dline=True):
     """
     Plot y vs x as scatter + 2D histogram with marginal histograms.
-
-    Supports both 1D and 2D input arrays, or a pandas DataFrame.
-    If x and y are 2D (same shape), each pair (x_i, y_i) is plotted 
-    with a different color (shared across scatter and histograms).
-    
-    Optionally, you can provide custom labels for each data component.
-
-    Parameters
-    ----------
-    data : pandas.DataFrame, optional
-        Input table. If provided, x and y are taken from columns `x_col` and `y_col`.
-    x, y : array-like or 2D arrays, optional
-        Input data for the scatter plot and 2D histogram. Ignored if `data` is provided.
-    x_col, y_col : str, optional
-        Column names to use from the DataFrame. Defaults are 'ZSPEC' and 'Z_BEST'.
-    deltaz : float, optional
-        If given, adds dashed blue lines representing ±Δz tolerance around the y=x line.
-    xlabel, ylabel : str, optional
-        Axis labels. If not provided, inferred from variable or column names.
-    labels : list of str, optional
-        Labels for each series (used in legend). Matches number of columns in x/y.
-
-    Returns
-    -------
-    None
-        Displays the combined figure.
+    Supports multiple datasets (lists of arrays or DataFrames).
     """
 
     # --- Handle input ---
-    x, y, xlabel, ylabel = handle_inputs_for_plot(x, y, data, x_col, y_col, xlabel, ylabel)
+    x_list, y_list, xlabel, ylabel = handle_inputs_for_plot(x, y, data, x_col, y_col, xlabel, ylabel)
+    n_series = len(x_list)
 
-
-    # --- Prepare data shape ---
-    x = np.asarray(x)
-    y = np.asarray(y)
-
-    if x.shape != y.shape:
-        raise ValueError("x and y must have the same shape.")
-
-    # Convert 1D inputs to 2D for consistent looping
-    if x.ndim == 1:
-        x = x[:, None]
-        y = y[:, None]
-
-    n_series = x.shape[1]
-
-    # --- Handle custom labels ---
+    # --- Handle labels ---
     if labels is None:
-        labels = [f"Set {i+1}" for i in range(n_series)]
-    else:
-        if len(labels) != n_series:
-            raise ValueError("Length of 'labels' must match the number of series (columns in x).")
+        labels = [None for _ in range(n_series)]
+    elif len(labels) != n_series:
+        raise ValueError("Length of 'labels' must match number of datasets.")
 
-    # --- Colors ---
-    cmap = plt.cm.tab10  # consistent color palette
-    colors = cmap(np.linspace(0, 1, n_series))
-
-    # --- Figure layout ---
+    # --- Layout ---
     width_ratios = [2, 0.35, 2, 0.15]
     height_ratios = [0.35, 2]
-
-    fig = plt.figure(
-        constrained_layout=False,
-        figsize=(2.2 * sum(width_ratios), 2.2 * sum(height_ratios))
-    )
-    gs = fig.add_gridspec(
-        2, 4, width_ratios=width_ratios, height_ratios=height_ratios
-    )
+    fig = plt.figure(constrained_layout=False,
+                     figsize=(2.2 * sum(width_ratios), 2.2 * sum(height_ratios)))
+    gs = fig.add_gridspec(2, 4, width_ratios=width_ratios, height_ratios=height_ratios)
 
     ax_scatter = fig.add_subplot(gs[1, 0])
-    ax_histx = fig.add_subplot(gs[0, 0])
-    ax_histy = fig.add_subplot(gs[1, 1])
+    ax_histx = fig.add_subplot(gs[0, 0], sharex=ax_scatter)
+    ax_histy = fig.add_subplot(gs[1, 1], sharey=ax_scatter)
     ax_hist2d = fig.add_subplot(gs[1, 2])
     ax_cbar = fig.add_subplot(gs[1, 3])
 
+    # --- Limits and bins ---
+    allx = np.concatenate(x_list)
+    ally = np.concatenate(y_list)
+    x_min, x_max = (np.nanmin(allx), np.nanmax(allx))
+    y_min, y_max = (np.nanmin(ally), np.nanmax(ally))
 
-    # --- Scatter plots ---
-    for i in range(n_series):
-        ax_scatter.scatter(
-            x[:, i], y[:, i], s=10, alpha=0.15, color=colors[i], label=labels[i]
-        )
+    if xrange is None:
+        xrange = (x_min, x_max)
+    if yrange is None:
+        yrange = (y_min, y_max)
 
-    ax_scatter.plot([0, np.max(x)], [0, np.max(x)], 'r--', label='y = x')
+    bins_x = np.linspace(xrange[0], xrange[1], 100)
+    bins_y = np.linspace(yrange[0], yrange[1], 100)
 
+    # --- Scatter + histograms ---
+    for i, (xx, yy) in enumerate(zip(x_list, y_list)):
+        xx = np.ravel(xx)
+        yy = np.ravel(yy)
+        ax_scatter.scatter(xx, yy, s=10, alpha=0.25, label=labels[i])
+        ax_histx.hist(xx, bins=bins_x, alpha=0.35, edgecolor='black')
+        ax_histy.hist(yy, bins=bins_y, alpha=0.35, edgecolor='black', orientation='horizontal')
+
+    # --- Scatter decorations ---
+    if dline:
+        ax_scatter.plot([xrange[0], xrange[1]], [yrange[0], yrange[1]], 'r--', label='y = x')
     if deltaz is not None:
-        ax_scatter.plot(
-            [0, np.max(x)],
-            [deltaz, np.max(x) + deltaz * (1 + np.max(x))],
-            'b--', label=r'Upper cut ($+\Delta z$)'
-        )
-        ax_scatter.plot(
-            [0, np.max(x)],
-            [-deltaz, np.max(x) - deltaz * (1 + np.max(x))],
-            'b--', label=r'Lower cut ($-\Delta z$)'
-        )
+        ax_scatter.plot([0, xrange[1]], [deltaz, yrange[1] + deltaz * (1 + xrange[1])], 'b--', label=r'+Δz')
+        ax_scatter.plot([0, xrange[1]], [-deltaz, yrange[1] - deltaz * (1 + xrange[1])], 'b--', label=r'-Δz')
 
-    ax_scatter.set_xlim(0, np.max(x))
-    ax_scatter.set_ylim(0, np.max(x))
-    ax_scatter.set_aspect('equal', adjustable='box')
+    ax_scatter.set_xlim(xrange)
+    ax_scatter.set_ylim(yrange)
+    ax_scatter.set_aspect('auto', adjustable='box')
     ax_scatter.set_xlabel(xlabel)
     ax_scatter.set_ylabel(ylabel)
     ax_scatter.legend(fontsize='small', loc='upper left', frameon=False)
 
-    # --- Marginal histograms (same colors + labels) ---
-    for i in range(n_series):
-        ax_histx.hist(
-            x[:, i], bins=40, alpha=0.3, edgecolor='black',
-            color=colors[i], label=labels[i]
-        )
-        ax_histy.hist(
-            y[:, i], bins=40, alpha=0.3, edgecolor='black',
-            orientation='horizontal', color=colors[i], label=labels[i]
-        )
-
-    ax_histx.tick_params(axis="x", bottom=False)
-    ax_histx.set_ylabel('Counts')
-
-    ax_histy.tick_params(axis="y", left=False)
-    ax_histy.set_xlabel('Counts')
-
-    # --- 2D histogram of all points combined ---
-    h = ax_hist2d.hist2d(x.flatten(), y.flatten(), bins=80, cmap=cmaps)
-    ax_hist2d.plot([0, np.max(x)], [0, np.max(x)], 'r--')
-    ax_hist2d.set_xlim(0.01, np.max(x))
-    ax_hist2d.set_ylim(0, np.max(x))
-    ax_hist2d.set_aspect('equal', adjustable='box')
+    # --- 2D Histogram ---
+    h = ax_hist2d.hist2d(allx, ally, bins=[bins_x, bins_y], cmap=cmaps)
+    if dline:
+        ax_hist2d.plot([xrange[0], xrange[1]], [yrange[0], yrange[1]], 'r--')
+    ax_hist2d.set_xlim(xrange)
+    ax_hist2d.set_ylim(yrange)
+    ax_hist2d.set_aspect('auto', adjustable='box')
     ax_hist2d.set_xlabel(xlabel)
     ax_hist2d.tick_params(axis="y", left=False)
 
     # --- Colorbar ---
     plt.colorbar(h[3], cax=ax_cbar, label="Counts")
 
-    # --- Final layout tweaks ---
+    # --- Clean up ---
     plt.setp(ax_histx.get_xticklabels(), visible=False)
     plt.setp(ax_histy.get_yticklabels(), visible=False)
     plt.setp(ax_hist2d.get_yticklabels(), visible=False)
     plt.tight_layout()
-
-    # --- Final manual layout tuning ---
     plt.subplots_adjust(wspace=0.05, hspace=0.02)
 
-    for ax in [ax_histx, ax_histy]:
-        ax.margins(0)
-    for ax in [ax_scatter, ax_histx, ax_histy, ax_hist2d]:
-        ax.set_anchor('C')
 
-    pos_scatter = ax_scatter.get_position()
-    pos_histy = ax_histy.get_position()
-    ax_histy.set_position([
-        pos_histy.x0, pos_scatter.y0,
-        pos_histy.width, pos_scatter.height
-        
-    ])
-    pos_histx = ax_histx.get_position()
-    ax_histx.set_position([
-        pos_scatter.x0, pos_histx.y0,
-        pos_scatter.width, pos_histx.height-0.01
-    ])
-
-    pos_scatter = ax_scatter.get_position()
-    pos_hist2d = ax_hist2d.get_position()
-    pos_cbar = ax_cbar.get_position()
-
-    # aligne verticalement le 2D hist sur le scatter
-    ax_hist2d.set_position([
-        pos_histy.x1 + 0.03,    # décalé vers la droite
-        pos_scatter.y0,             # même bas que le scatter
-        pos_hist2d.width,           # garde la largeur du 2D hist
-        pos_scatter.height          # même hauteur que le scatter
-    ])
-
-    new_pos_hist2d = ax_hist2d.get_position()
-    ax_cbar.set_position([
-        new_pos_hist2d.x1 + 0.01,
-        new_pos_hist2d.y0,
-        pos_cbar.width * 0.7,
-        new_pos_hist2d.height
-    ])
-
-
-
-
-    plt.show()
 
 # z_spec = np.random.uniform(0, 2, (1000, 3))
 # z_photo = z_spec + np.random.normal(0, 0.1, (1000, 3))
@@ -360,6 +264,8 @@ def pit_qqplot(x=None, y=None, data=None, x_col='ZSPEC', y_col='Z_BEST',
     x, y, xlabel, ylabel = handle_inputs_for_plot(x, y, data, x_col, y_col, xlabel, ylabel)
 
     # --- Clean and align data ---
+    x = np.asarray(x)
+    y = np.asarray(y)
     x = x[~np.isnan(x)]
     y = y[~np.isnan(y)]
     n = min(len(x), len(y))
@@ -388,7 +294,7 @@ def pit_qqplot(x=None, y=None, data=None, x_col='ZSPEC', y_col='Z_BEST',
     ax_resid.plot(x, y - x, 'o', alpha=0.4, markersize=3)
     ax_resid.axhline(0, color='red', linestyle='--', lw=1.5)
     ax_resid.set_xlabel(f"{xlabel} quantiles", fontsize=11)
-    ax_resid.set_ylabel("Residuals (y - x)", fontsize=11)
+    ax_resid.set_ylabel("Residuals", fontsize=11)
     ax_resid.set_title("QQ Residuals", fontsize=13, weight='bold')
     ax_resid.grid(alpha=0.3)
 
@@ -432,125 +338,139 @@ def pit_qqplot(x=None, y=None, data=None, x_col='ZSPEC', y_col='Z_BEST',
 
 
 def chi_stats(x=None, y=None, data=None, x_col='CHI_STAR', y_col='CHI_BEST',
-              xlabel=None, ylabel=None, mask_min=None, mask_max=None, bins=100, log=False):
+              xlabel=None, ylabel=None, labels=None,
+              mask_min=None, mask_max=None, bins=100, log=False,
+              scatter_xlim=(None, None), scatter_ylim=(None, None)):
     """
-    Plot the Chi² statistics of a LePhare run (template fitting on galaxies and stars),
-    showing model comparison between galaxy and star fits.
+    Plot Chi² statistics (e.g. CHI_STAR vs CHI_BEST) for one or several datasets.
+    Shows histograms and scatter plots, supports log scaling and multiple inputs.
 
-    Supports direct array input (x, y) or a pandas DataFrame with column names.
+    Compatible with handle_inputs_for_plot() and scatter_vs_hist2D().
 
     Parameters
     ----------
-    x, y : array-like, optional
-        Chi² values for star and best-fit galaxy models.
-    data : pandas.DataFrame, optional
-        Input DataFrame containing chi² columns.
+    x, y : array-like, list of arrays, or None
+        Chi² values for comparison (if DataFrame not provided).
+    data : pandas.DataFrame or list of DataFrames, optional
+        Source data for x and y columns.
     x_col, y_col : str, optional
-        Column names to use from the DataFrame (defaults: 'CHI_STAR' and 'CHI_BEST').
+        Column names in the DataFrame(s).
     xlabel, ylabel : str, optional
-        Axis labels (inferred automatically if None).
+        Axis labels.
+    labels : list of str, optional
+        Names for each dataset.
     mask_min, mask_max : float, optional
-        Minimum/maximum χ² values to keep. If None, no clipping.
+        Clip values below/above these limits (for histograms only).
     bins : int, optional
-        Number of bins for histograms. Default = 100.
+        Number of histogram bins.
     log : bool, optional
-        If True, sets log-scale on x-axis for histograms and scatter.
-
-    Returns
-    -------
-    None
-        Displays a 2x2 grid:
-            [0,0] CHI_STAR histogram
-            [0,1] CHI_BEST histogram
-            [1,0] ΔCHI histogram
-            [1,1] CHI_STAR vs CHI_BEST scatter
+        If True, use log-scale on x-axes for histograms and scatter plot.
+    scatter_xlim, scatter_ylim : tuple, optional
+        Limits for scatter plot axes.
     """
+
     import numpy as np
     import matplotlib.pyplot as plt
 
     # --- Handle input ---
-    x, y, xlabel, ylabel = handle_inputs_for_plot(x, y, data, x_col, y_col, xlabel, ylabel)
-
-    # --- Clean / mask data ---
-    x = np.asarray(x)
-    y = np.asarray(y)
-
-    # Set sensible defaults if None
-    if mask_min is None:
-        mask_min = 1e-3 if log else np.nanmin([np.nanmin(x), np.nanmin(y)])
-    if mask_max is None:
-        mask_max = 1e9 if log else np.nanmax([np.nanmax(x), np.nanmax(y)])
-
-    # Apply mask
-    mask = np.isfinite(x) & np.isfinite(y) & (x >= mask_min) & (y <= mask_max)
-    x, y = x[mask], y[mask]
-    delta_chi = x - y
-
-
-    # --- Determine plotting ranges dynamically ---
-    hist_range = (mask_min, mask_max)
-    scatter_xlim = (
-        np.nanmin(x) if mask_min is None else mask_min,
-        np.nanmax(x) if mask_max is None else mask_max
+    x_list, y_list, xlabel, ylabel = handle_inputs_for_plot(
+        x, y, data, x_col, y_col, xlabel, ylabel
     )
-    scatter_ylim = (
-        np.nanmin(y) if mask_min is None else mask_min,
-        np.nanmax(y) if mask_max is None else mask_max
-    )
+    n_series = len(x_list)
 
-    # --- Setup figure ---
-    fig = plt.figure(constrained_layout=False, figsize=(10, 10))
-    gs = fig.add_gridspec(2, 2, height_ratios=[1, 1], width_ratios=[1, 1], hspace=0.35, wspace=0.3)
+    # --- Labels ---
+    if labels is None:
+        labels = [None for i in range(n_series)]
+    elif len(labels) != n_series:
+        raise ValueError("Length of 'labels' must match number of datasets.")
 
-    # --- [0,0] Histogram of CHI_STAR ---
+    # --- Figure layout ---
+    fig = plt.figure(figsize=(10, 10))
+    gs = fig.add_gridspec(2, 2, hspace=0.35, wspace=0.3)
     ax_star = fig.add_subplot(gs[0, 0])
-    print(x)
-    if log:
-        logbins = np.logspace(np.log10(np.min(x)),
-                            np.log10(np.max(x)), int(np.log10(np.max(x))-np.log10(np.min(x))+1))
-        ax_star.set_xscale("log")
-    if log:
-        print(logbins)
-    ax_star.hist(x, bins=logbins if log else bins, alpha=0.7, edgecolor='black', range=(0, mask_max))
-    ax_star.set_title(f"{xlabel} distribution")
-    ax_star.set_xlabel("Chi² value")
-    ax_star.set_ylabel("Count")
-
-    # --- [0,1] Histogram of CHI_BEST ---
     ax_best = fig.add_subplot(gs[0, 1])
-    ax_best.hist(y, bins=bins, alpha=0.7, edgecolor='black', color='orange', range=(0, mask_max))
-    ax_best.set_title(f"{ylabel} distribution")
-    ax_best.set_xlabel("Chi² value")
-    ax_best.set_ylabel("Count")
-    if log:
-        ax_best.set_xscale("log")
-
-    # --- [1,0] Histogram of ΔCHI ---
     ax_delta = fig.add_subplot(gs[1, 0])
-    ax_delta.hist(delta_chi, bins=bins, alpha=0.7, edgecolor='black', color='purple', range=hist_range)
-    ax_delta.axvline(0, color='gray', linestyle='--')
-    ax_delta.set_title(f"ΔChi² = {xlabel} - {ylabel}")
-    ax_delta.set_xlabel("ΔChi²")
-    ax_delta.set_ylabel("Count")
-    if log:
-        ax_delta.set_xscale("log")
-
-    # --- [1,1] Scatter CHI_STAR vs CHI_BEST ---
     ax_scatter = fig.add_subplot(gs[1, 1])
-    ax_scatter.scatter(x, y, s=5, alpha=0.5, c='teal')
-    # ax_scatter.plot([0, max(scatter_xlim[1], scatter_ylim[1])],
-    #                 [0, max(scatter_xlim[1], scatter_ylim[1])],
-    #                 'r--', label="y=x")
-    ax_scatter.set_xlim(-scatter_xlim[1]/50, scatter_xlim[1])
-    ax_scatter.set_ylim(-scatter_ylim[1]/50, scatter_ylim[1])
-    ax_scatter.set_title(f"{xlabel} vs {ylabel}")
+
+    # --- Loop over datasets ---
+    for i, (xx, yy) in enumerate(zip(x_list, y_list)):
+        xx = np.ravel(xx)
+        yy = np.ravel(yy)
+
+        # Always scatter valid finite points (no masking)
+        mask_scatter = np.isfinite(xx) & np.isfinite(yy)
+        xx_scat = xx[mask_scatter]
+        yy_scat = yy[mask_scatter]
+        ax_scatter.scatter(xx_scat, yy_scat, s=5, alpha=0.3, label=labels[i])
+
+        # For histograms: apply mask_min/max
+        mask_x_hist = np.isfinite(xx)
+        mask_y_hist = np.isfinite(yy)
+        if mask_min is not None:
+            mask_x_hist &= xx >= mask_min
+            mask_y_hist &= yy >= mask_min
+        if mask_max is not None:
+            mask_x_hist &= xx <= mask_max
+            mask_y_hist &= yy <= mask_max
+        
+        xx_hist = xx[mask_x_hist]
+        yy_hist = yy[mask_y_hist]
+
+        delta_chi = None
+        if len(xx) > 0 and len(yy) > 0:
+            delta_chi = xx - yy
+        
+        # --- Try to plot each histogram independently ---
+        try:
+            if len(xx_hist) > 0:
+                ax_star.hist(xx_hist, bins=make_bins(0, mask_max, bins), alpha=0.6,
+                             edgecolor='black', label=labels[i])
+        except Exception as e:
+            print(f"No CHI_STAR values in range for dataset'{labels[i]}': {e}")
+
+        try:
+            if len(yy_hist) > 0:
+                ax_best.hist(yy_hist, bins=make_bins(0, mask_max, bins), alpha=0.6,
+                             edgecolor='black', label=labels[i])
+        except Exception as e:
+            print(f"No CHI_BEST values in range for dataset '{labels[i]}': {e}")
+
+        try:
+            if delta_chi is not None and len(delta_chi) > 0:
+                ax_delta.hist(delta_chi, bins=make_bins(mask_min, mask_max, bins), alpha=0.6,
+                              edgecolor='black', label=labels[i])
+        except Exception as e:
+            print(f"No ΔChi values in range for dataset '{labels[i]}': {e}")
+
+
+    # --- Axes formatting ---
+    for ax in [ax_star, ax_best, ax_delta]:
+        ax.set_xlabel("Chi² value")
+        ax.set_ylabel("Count")
+        if log:
+            ax.set_xscale("log")
+
+    ax_star.set_title(f"{xlabel} distribution", fontsize=13, weight='bold')
+    ax_best.set_title(f"{ylabel} distribution", fontsize=13, weight='bold')
+    ax_delta.set_title(f"ΔChi² = {xlabel} - {ylabel}", fontsize=13, weight='bold')
+    ax_delta.axvline(0, color='gray', linestyle='--')
+
+    # --- Scatter formatting ---
+    ax_scatter.set_title(f"{xlabel} vs {ylabel}", fontsize=13, weight='bold')
     ax_scatter.set_xlabel(xlabel)
     ax_scatter.set_ylabel(ylabel)
-    ax_scatter.legend(loc='upper left', fontsize=8, frameon=False)
+    ax_scatter.plot([0, 1e9], [0, 1e9], 'k--', lw=1)
+    if scatter_xlim[0] is not None and scatter_xlim[1] is not None:
+        ax_scatter.set_xlim(scatter_xlim)
+    if scatter_ylim[0] is not None and scatter_ylim[1] is not None:
+        ax_scatter.set_ylim(scatter_ylim)
     if log:
         ax_scatter.set_xscale("log")
         ax_scatter.set_yscale("log")
 
+    # --- Legends ---
+    for ax in [ax_star, ax_best, ax_delta, ax_scatter]:
+        ax.legend(fontsize=9, frameon=False)
     plt.tight_layout()
     plt.show()
 
@@ -560,6 +480,83 @@ def chi_stats(x=None, y=None, data=None, x_col='CHI_STAR', y_col='CHI_BEST',
 # chi_best = np.random.chisquare(df=3, size=3000)
 # chi_stats(x=chi_star, y=chi_best, log=False)
 # # chi_stats(x=chi_star, y=chi_best, mask_max=20, log=True)
+
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+
+def histograms(data_list, col='Z_BEST', labels=None, bins=100, 
+               xrange=(0,2), log=False, density=False, xlabel=None, 
+               ylabel="Count", title=None, figsize=(8, 5), alpha=0.6):
+    """
+    Plot multiple histograms on the same figure.
+    Supports lists, numpy arrays, or pandas DataFrames.
+
+    Parameters
+    ----------
+    data_list : list
+        List of arrays, Series, or DataFrames.
+    col : str, optional
+        Column name to extract if elements of `data_list` are DataFrames.
+    labels : list of str, optional
+        Labels for each series.
+    bins : int, optional
+        Number of histogram bins (default 100).
+    range : tuple, optional
+        (min, max) range for histogram.
+    log : bool, optional
+        Use log scale on y-axis.
+    density : bool, optional
+        Normalize histograms to unit area.
+    xlabel, ylabel, title : str, optional
+        Axis labels and title.
+    figsize : tuple, optional
+        Figure size.
+    alpha : float, optional
+        Transparency of histograms.
+    """
+
+    # --- Input normalization ---
+    if not isinstance(data_list, (list, tuple)):
+        data_list = [data_list]
+    n_series = len(data_list)
+
+    bins=make_bins(xrange[0], xrange[1], bins)
+
+    # --- Labels ---
+    if labels is None:
+        labels = [None for i in range(n_series)]
+    elif len(labels) != n_series:
+        raise ValueError("Length of 'labels' must match number of datasets.")
+
+    # --- Extract arrays ---
+    values = []
+    for data in data_list:
+        if isinstance(data, pd.DataFrame):
+            if col is None:
+                raise ValueError("If passing DataFrames, specify `col` to select a column.")
+            values.append(data[col].to_numpy())
+        elif isinstance(data, (pd.Series, np.ndarray, list)):
+            values.append(np.asarray(data))
+        else:
+            raise TypeError("Unsupported type in data_list; must be DataFrame, Series, ndarray, or list.")
+
+    # --- Plot ---
+    plt.figure(figsize=figsize)
+    for vals, label in zip(values, labels):
+        vals = vals[np.isfinite(vals)]  # ignore NaN/inf
+        plt.hist(vals, bins=bins, range=xrange, alpha=alpha,
+                 edgecolor='black', label=label, density=density)
+
+    # --- Style ---
+    plt.xlabel(xlabel or col or "Value", fontsize=12)
+    plt.ylabel(ylabel, fontsize=12)
+    if log:
+        plt.yscale("log")
+    plt.legend(frameon=False)
+    plt.tight_layout()
+    plt.show()
+
 
 
 def more_chi_stats(x=None, y=None, data=None, x_col='CHI_STAR', y_col='CHI_BEST',
