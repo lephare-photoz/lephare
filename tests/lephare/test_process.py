@@ -18,6 +18,8 @@ def test_process(test_data_dir: str):
     # Read the test input catalogue
     input_file = os.path.join(test_data_dir, "examples/COSMOS_first100specz.fits")
     input = Table.read(input_file)
+    test_string = "te s"  # Test with spaces
+    input["string_input"][0] = test_string
     # Make a reduced column set for the minimal test
     reduced_cols = []
     for c in input.colnames:
@@ -33,7 +35,7 @@ def test_process(test_data_dir: str):
     assert len(photozlist[0].pdfmap[11].xaxis) == 51
     pdfs = np.array([photozlist[i].pdfmap[11].vPDF for i in np.arange(len(photozlist))])
     assert np.isclose(np.sum(pdfs), 1001.2774052829275)
-
+    assert output["STRING_INPUT"][0] == test_string
     # Check AUTO_ADAPT
     config["AUTO_ADAPT"] = "YES"
     output, photozlist = lp.process(config, input[reduced_cols], write_outputs=True)
