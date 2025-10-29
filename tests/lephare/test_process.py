@@ -18,7 +18,7 @@ def test_process(test_data_dir: str):
     # Read the test input catalogue
     input_file = os.path.join(test_data_dir, "examples/COSMOS_first100specz.fits")
     input = Table.read(input_file)
-    test_string = "te s"  # Fails with spaces
+    test_string = "te s"  # Test with spaces
     input["string_input"][0] = test_string
     # Make a reduced column set for the minimal test
     reduced_cols = []
