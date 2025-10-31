@@ -134,3 +134,23 @@ def test_resample():
     for e in res2[1:]:
         assert e.ori == 1
         assert e.val == 0
+
+def test_resample2():
+    v=np.array([lp.oneElLambda(1,1,1), lp.oneElLambda(2,0,0), lp.oneElLambda(3,0,0), lp.oneElLambda(4,1,1)])
+    
+    res = lp.SED.resample(v, 1, 1, 5)
+    print([e.lamb for e in res])
+    print([e.val for e in res])
+    print([e.ori for e in res])
+    for e in res:
+        assert e.val == 1
+        assert e.ori == 1
+
+    res = lp.SED.resample(v, 0, 1, 5)
+    print([e.lamb for e in res])
+    print([e.val for e in res])
+    print([e.ori for e in res])
+    for e in res:
+        assert e.val == 1
+        assert e.ori == 1
+    
