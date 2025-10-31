@@ -98,6 +98,8 @@ class FiltExt(Runner):
                 name = os.path.basename(f.name)
                 out.write(f"{name:20} {aint[k]:<20} {albdav[k]:<20} {albd[k]:<20}\n")
 
+        return all_filters, aint, albdav, albd
+
 
 def calculate_extinction_values(filters, atmec, galec, verbose=False):
     """Calculate the extinction values for a set of filters
