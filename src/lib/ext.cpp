@@ -102,14 +102,18 @@ double compute_filter_extinction(const flt &oneFlt, const ext &oneExt) {
   // integrate the extinction curve through the filter
   for (size_t i = 0; i < new_lamb_flt.size() - 1; i++) {
     // Integral of the transmission by the filter
-    oneElLambda pos = new_lamb_flt[i];
-    oneElLambda next = new_lamb_flt[i + 1];
-    double delta = next.lamb - pos.lamb;
-    double mid_flt = (pos.val + next.val) / 2.;
-    double mid_ext = (new_lamb_ext[i].val + new_lamb_ext[i + 1].val) / 2.;
-    fint += mid_flt * delta;
-    // Integral of the transmission by the filter x extinction
-    aint += mid_flt * mid_ext * delta;
+    oneElLambda flt1 = new_lamb_flt[i];
+    oneElLambda flt2 = new_lamb_flt[i + 1];
+    oneElLambda ext1 = new_lamb_ext[i];
+    oneElLambda ext2 = new_lamb_ext[i + 1];
+    if (flt1.ori >= 0 && flt2.ori >= 0 && ext1.ori >= 0 && ext2.ori >= 0) {
+      double delta = flt2.lamb - flt1.lamb;
+      double mid_flt = (flt1.val + flt2.val) / 2.;
+      double mid_ext = (ext1.val + ext2.val) / 2.;
+      fint += mid_flt * delta;
+      // Integral of the transmission by the filter x extinction
+      aint += mid_flt * mid_ext * delta;
+    }
   }
 
   // clean
