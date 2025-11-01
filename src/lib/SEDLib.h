@@ -80,7 +80,7 @@ class SEDLib {
    * type, or else plain ASCII
    * @param nummod index of the SED; see SED
    * @param type type of the SED S|Q|G for star|qso|galaxy; see SED
-   !*/
+   */
   virtual void readSED(string sedFile, string sedFormat, int nummod,
                        string type);
 

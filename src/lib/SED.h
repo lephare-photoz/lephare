@@ -120,11 +120,11 @@ class SED {
 
   //! Convert string to object_type
   /*!
-    \param type String starting with either g, q, or s,
-    in either lower or upper case. If it is not the case,
-    throw invalid argument exception.
-
-    \return object_type corresponding to input, if valid.
+   * @param type String starting with either g, q, or s,
+   * in either lower or upper case. If it is not the case,
+   * throw invalid argument exception.
+   *
+   * @return object_type corresponding to input, if valid.
    */
   inline static object_type string_to_object(const string &type) {
     char t = toupper(type[0]);
@@ -162,9 +162,23 @@ class SED {
   void read(const string &sedFile);
   void warning_integrateSED(const vector<flt> &filters, bool verbose = false);
   vector<double> integrateSED(const flt &filter);
-  static void resample(vector<oneElLambda> &lamb_all,
-                       vector<oneElLambda> &lamb_new, const int origine,
-                       const double lmin, const double lmax);
+
+  /*!
+   * resample the vector
+   *
+   * @param lamb_all:  all elements concatenated (filter+SED)
+   * @param origin:  indicate which of the two concatenated vector is to be
+   returned interpolated
+   * @param lmin: min value of lambda to consider in lamb_all
+   * @param lmax: max value of lambda to consider in lamb_all
+   *
+   * @return : the vector corresponding to origin, with interpolation at the
+   * position of the other vector in lamb_all. If interpolation fails, the
+   * attribute `val` and `ori` of the oneElLambda element are set to -99
+   */
+  static vector<oneElLambda> resample(vector<oneElLambda> &lamb_all,
+                                      const int origin, const double lmin,
+                                      const double lmax);
 
   ///\brief Generate a calibration SED based on the argument calib
   ///
@@ -294,7 +308,7 @@ class SED {
    * @param other: the SED to compare to
    * equality of the following attributes are compared:
    * `nummod`, `ebv`, and `age`
-   !*/
+   */
   inline bool is_same_model(const SED &other) {
     return ((*this).nummod == other.nummod && (*this).ebv == other.ebv &&
             (*this).age == other.age);
@@ -433,7 +447,7 @@ class StarSED : public SED {
   /*! constructor
    * @param name: name given to the SED object
    * @param nummod: identity number given to the SED object
-   !*/
+   */
   StarSED(const string name, int nummod = 0) : SED(name, nummod, "STAR") { ; }
   /// destructor (does nothing)
   ~StarSED() { ; }
