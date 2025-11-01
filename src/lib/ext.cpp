@@ -104,7 +104,7 @@ double compute_filter_extinction(const flt &oneFlt, const ext &oneExt) {
     oneElLambda flt2 = new_lamb_flt[i + 1];
     oneElLambda ext1 = new_lamb_ext[i];
     oneElLambda ext2 = new_lamb_ext[i + 1];
-    if(flt1.ori>=0 && flt2.ori>=0 && ext1.ori>=0 && ext2.ori>=0 ) {
+    if (flt1.ori >= 0 && flt2.ori >= 0 && ext1.ori >= 0 && ext2.ori >= 0) {
       double delta = flt2.lamb - flt1.lamb;
       double mid_flt = (flt1.val + flt2.val) / 2.;
       double mid_ext = (ext1.val + ext2.val) / 2.;
