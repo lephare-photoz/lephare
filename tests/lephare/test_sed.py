@@ -153,6 +153,8 @@ def test_resample2():
     print([e.lamb for e in res])
     print([e.val for e in res])
     print([e.ori for e in res])
-    for e in res:
-        assert e.val == 1
-        assert e.ori == 1
+    for e in res[1:-1]:
+        assert e.val == 0
+        assert e.ori == 0
+    for e in (res[0], res[-1]):
+        assert e.ori == -99
