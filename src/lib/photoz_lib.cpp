@@ -202,7 +202,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   // SPEC_OUT Output individual spectra - NO default
   outsp = ((key_analysed["SPEC_OUT"]).split_string("NO", 1))[0];
   // CHI2_OUT Output the full chi2 library - NO default
-  outchi = ((key_analysed["CHI2_OUT"]).split_bool("NO", 1))[0];
+  outchi = (key_analysed["CHI2_OUT"]).split_bool("NO", 1)[0];
 
   /* FIR Libraries */
 
@@ -1614,6 +1614,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
     oneObj->rm_discrepant(fullLib, flux, valid, funz0, bp, thresholdChi2);
     // Generate the marginalized PDF (z+physical parameters) from the chi2
     // stored in each SED
+
     oneObj->generatePDF(fullLib, valid, fltColRF, fltREF, zfix);
     // Interpolation of Z_BEST and ZQ_BEST (zmin) via Chi2 curves, put z-spec if
     // ZFIX YES  (only gal for the moment)
@@ -1673,7 +1674,11 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
     }
     // compute physical quantities for the best fit GAL solution
     oneObj->compute_best_fit_physical_quantities(fullLib);
-  }
+
+    // write out chisquare values for all templates
+    if (outchi) oneObj->writeFullChi(fullLib);
+
+  }  // end loop over list of onesources
   return;
 }
 
@@ -1705,14 +1710,12 @@ void PhotoZ::write_outputs(vector<onesource *> sources, const time_t &ti1) {
   static bool first_obj = true;
   for (auto &oneObj : sources) {
     // write the object in output
-    oneObj->write_out(fullLib, fullLibIR, stout, outkeywords);
+    oneObj->write_out(stout, outkeywords);
+
     // Write an ascii file with the best fit template
     if (outsp.compare("NO") != 0)
       oneObj->writeSpec(fullLib, fullLibIR, lcdm, opaOut, allFilters, outsp);
-    // write the full chi2 if asked (could take a lot of space)
-    if (outchi) oneObj->writeFullChi(fullLib);
 
-    // write the PDF
     if ((outpdz.compare(nonestring) != 0) && first_obj)
       oneObj->write_pdz_header(pdftype, pdf_streams, ti1);
     if (outpdz.compare(nonestring) != 0)
