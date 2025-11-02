@@ -5,7 +5,6 @@ import numpy as np
 
 import lephare as lp
 
-from ._lephare import GalMag, compute_filter_extinction, ext
 from .runner import Runner
 
 __all__ = [
@@ -128,15 +127,15 @@ def calculate_extinction_values(filters, atmec, galec, verbose=False):
     albd : np.array
         Galactic extinction in each filter A(lbd)/E(B-V)
     """
-    all_filters = GalMag.read_flt(filters)
+    all_filters = lp.GalMag.read_flt(filters)
     if atmec == "NONE":
         aint = np.full(len(all_filters), 99.0).tolist()
     else:
         if not os.path.isabs(atmec):
             atmec = os.path.join(os.environ["LEPHAREDIR"], "ext", atmec)
-        atmospheric_ext = ext(atmec, 0)
+        atmospheric_ext = lp.ext(atmec, 0)
         atmospheric_ext.read(atmec)
-        aint = [compute_filter_extinction(f, atmospheric_ext) for f in all_filters]
+        aint = [lp.compute_filter_extinction(f, atmospheric_ext) for f in all_filters]
 
     if galec == "CARDELLI":
         # If cardelli (hardcoded) with Rv=3.1 by  default
@@ -146,7 +145,7 @@ def calculate_extinction_values(filters, atmec, galec, verbose=False):
     else:
         if not os.path.isabs(galec):
             galec = os.path.join(os.environ["LEPHAREDIR"], "ext", galec)
-        galactic_ext = ext(galec, 1)
+        galactic_ext = lp.ext(galec, 1)
         galactic_ext.read(galec)
 
         #  Rv=3.1 except for Calzetti law (4.05) and SMC Prevot (2.72)
@@ -159,7 +158,7 @@ def calculate_extinction_values(filters, atmec, galec, verbose=False):
             print(f"assuming Rv={rv} for this Extinction law {galec}")
         # galactic curves given in k(lbda) (=A(lbda)/E(B-V))
         #  -> A(lbda)/Av = A(lbda)/E(B-V) / Rv)
-        albd = np.array([compute_filter_extinction(f, galactic_ext) for f in all_filters])
+        albd = np.array([lp.compute_filter_extinction(f, galactic_ext) for f in all_filters])
         albdav = albd / rv
     return all_filters, aint, albdav, albd
 
