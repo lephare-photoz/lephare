@@ -56,15 +56,14 @@ class SED {
       chi2 = HIGH_CHI2,  ///< best fit chi2 associated with this SED
       dm;                ///< normalization of the SED
 
-  double
-      luv,  ///< monochromatic UV luminosity \f$\int_{0.21\,\mu m}^{0.25\,\mu m}
-            /// L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
-      lopt,  ///< optical luminosity \f$\int_{0.55\,\mu m}^{0.65\,\mu m}
-             /// L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
-      lnir,  ///< NIR luminosity \f$\int_{2.1\,\mu m}^{2.3\,\mu m}
-             /// L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
-      ltir;  ///< IR luminosity \f$\int_{8\,\mu m}^{1000\,\mu m}    L_\lambda\;
-             ///< d\lambda\f$ in Log unit of \f$L_\odot\f$
+  double luv,  ///< monochromatic UV luminosity \f$\int_{0.21\,\mu m}^{0.25\,\mu m}
+               /// L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
+      lopt,    ///< optical luminosity \f$\int_{0.55\,\mu m}^{0.65\,\mu m}
+               /// L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
+      lnir,    ///< NIR luminosity \f$\int_{2.1\,\mu m}^{2.3\,\mu m}
+               /// L_{\lambda}\;d\lambda\f$ (in Log unit of erg/s/Hz)
+      ltir;    ///< IR luminosity \f$\int_{8\,\mu m}^{1000\,\mu m}    L_\lambda\;
+               ///< d\lambda\f$ in Log unit of \f$L_\odot\f$
 
   double mass,  ///< mass in \f$M_\odot\f$
       age,      ///< age in year (yr)
@@ -92,8 +91,7 @@ class SED {
    * \param type One of g/G, q/Q or s/S for GAL, QSO, or Star type objects
    */
   SED(const string name, int nummod = 0, string type = "G");
-  SED(const string nameC, double tauC, double ageC, int nummodC, string typeC,
-      int idAgeC);
+  SED(const string nameC, double tauC, double ageC, int nummodC, string typeC, int idAgeC);
   SED(SED const &p) {
     idAge = p.idAge;
     lamb_flux = p.lamb_flux;
@@ -120,11 +118,11 @@ class SED {
 
   //! Convert string to object_type
   /*!
-    \param type String starting with either g, q, or s,
-    in either lower or upper case. If it is not the case,
-    throw invalid argument exception.
-
-    \return object_type corresponding to input, if valid.
+   * @param type: string starting with either g, q, or s,
+   * in either lower or upper case. If it is not the case,
+   * throw invalid argument exception.
+   *
+   * @return object_type corresponding to input, if valid.
    */
   inline static object_type string_to_object(const string &type) {
     char t = toupper(type[0]);
@@ -162,25 +160,39 @@ class SED {
   void read(const string &sedFile);
   void warning_integrateSED(const vector<flt> &filters, bool verbose = false);
   vector<double> integrateSED(const flt &filter);
-  static void resample(vector<oneElLambda> &lamb_all,
-                       vector<oneElLambda> &lamb_new, const int origine,
-                       const double lmin, const double lmax);
 
-  ///\brief Generate a calibration SED based on the argument calib
-  ///
-  ///@param lmin start of the lambda vector
-  ///@param lmax end of the lambda vector
-  ///@param Nsteps number of intervals between $lambda values (hence there are
-  /// Nsteps+1 values of \f$\lambda\f$)
-  ///@param calib: parameter FILTER_CALIB passed as argument to define the
-  /// calibration function \f$C(\lambda)\f$
-  /// - calib=0 : \f$C(\lambda)=\lambda^{-2}\f$
-  /// - calib=1 : \f$C(\lambda)=\lambda^{-1}\f$
-  /// - calib=2 : \f$C(\lambda)=\lambda^{-3}\f$
-  /// - calib=3 : \f$C(\lambda)=Blackbody(\lambda, T=10000K)\f$
-  /// - calib=4 : \f$C(\lambda)=Blackbody(\lambda, T=10000K)\f$
-  /// - calib=5 : \f$C(\lambda)=\lambda^{-3}\f$
-  void generateCalib(double lmin, double lmax, int Nsteps, int calib);
+  /*!
+   * resample the vector
+   *
+  * @param lamb_all:  all elements concatenated (filter+SED)
+  * @param origin:  indicate which of the two concatenated vector is to be
+  returned interpolated
+  * @param lmin: min value of lambda to consider in lamb_all
+  * @param lmax: max value of lambda to consider in lamb_all
+  *
+  * @return : the vector corresponding to origin, with interpolation at the
+  * position of the other vector in lamb_all. If interpolation fails, the
+  * attribute `val` and `ori` of the oneElLambda element are set to -99
+  */
+  static void resample(vector<oneElLambda> &lamb_all, vector<oneElLambda> &lamb_new,
+                       const int origine, const double lmin, const double lmax);
+
+  /*! \brief Generate a calibration SED based on the argument calib
+   *
+   * @param lmin start of the lambda vector
+   * @param lmax end of the lambda vector
+   * @param Nsteps number of intervals between $lambda values (hence there are
+   * Nsteps+1 values of \f$\lambda\f$)
+   * @param calib: parameter FILTER_CALIB passed as argument to define the
+   * calibration function \f$C(\lambda)\f$
+   * - calib=0 : \f$C(\lambda)=\lambda^{-2}\f$
+   * - calib=1 : \f$C(\lambda)=\lambda^{-1}\f$
+   * - calib=2 : \f$C(\lambda)=\lambda^{-3}\f$
+   * - calib=3 : \f$C(\lambda)=Blackbody(\lambda, T=10000K)\f$
+   * - calib=4 : \f$C(\lambda)=Blackbody(\lambda, T=10000K)\f$
+   */
+  - calib = 5: \f$C(\lambda) =\lambda ^
+  { -3 }\f$ void generateCalib(double lmin, double lmax, int Nsteps, int calib);
   /// return the size of the internal vector #lamb_flux
   int size() { return lamb_flux.size(); }
   /// rescale the lamb_flux.val as val *= scaleFac
@@ -197,38 +209,33 @@ class SED {
    * These functions are different depending on the type of SED
    */
   virtual void writeSED(ofstream &ofs, ofstream &ofsPhys, ofstream &ofsDoc);
-  inline void writeSED(const string &binFile, const string &physFile,
-                       const string &docFile) {
+  inline void writeSED(const string &binFile, const string &physFile, const string &docFile) {
     ofstream sdocOut, sphysOut, sbinOut;
     sdocOut.open(docFile.c_str());
     if (!sdocOut) {
-      throw invalid_argument("Can't open doc file compiling the SED " +
-                             docFile);
+      throw invalid_argument("Can't open doc file compiling the SED " + docFile);
     }
     sbinOut.open(binFile.c_str(), ios::binary | ios::out);
     if (!sbinOut) {
-      throw invalid_argument("Can't open binary file compiling the SED " +
-                             binFile);
+      throw invalid_argument("Can't open binary file compiling the SED " + binFile);
     }
     if (nlib == GAL) {
       sphysOut.open(physFile.c_str());
       if (!sphysOut) {
-        throw invalid_argument(
-            "Can't open physical para file associated to SED " + physFile);
+        throw invalid_argument("Can't open physical para file associated to SED " + physFile);
       }
     }
     writeSED(sbinOut, sphysOut, sdocOut);
   };
 
-  virtual void writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
-                        vector<flt> allFilters, string magtyp) {};
+  virtual void writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat, vector<flt> allFilters,
+                        string magtyp) {};
 
   inline void readSEDBin(const string &fname) {
     ifstream sbinIn;
     sbinIn.open(fname.c_str(), ios::binary);
     if (!sbinIn) {
-      throw invalid_argument("Can't open the binary file compiling the SED " +
-                             fname);
+      throw invalid_argument("Can't open the binary file compiling the SED " + fname);
     }
     readSEDBin(sbinIn);
   }
@@ -277,8 +284,7 @@ class SED {
    * \param opaAll Vector of opacities to compute extinction along the line of
    * sight
    */
-  void generate_spectra(double zin = 0.0, double dmin = 1.0,
-                        vector<opa> opaAll = {});
+  void generate_spectra(double zin = 0.0, double dmin = 1.0, vector<opa> opaAll = {});
 
   ///< clean content of base class
   virtual void clean() {
@@ -294,10 +300,9 @@ class SED {
    * @param other: the SED to compare to
    * equality of the following attributes are compared:
    * `nummod`, `ebv`, and `age`
-   !*/
+   */
   inline bool is_same_model(const SED &other) {
-    return ((*this).nummod == other.nummod && (*this).ebv == other.ebv &&
-            (*this).age == other.age);
+    return ((*this).nummod == other.nummod && (*this).ebv == other.ebv && (*this).age == other.age);
   }
 
   /*!  Return the pair of vectors [lambdas, vals] of wavelength and spectrum
@@ -307,8 +312,7 @@ class SED {
    * \param mag: If true, return magnitudes as vals instead of fluxes
    * \param offset: offset of the mag system to be used in case mag is true.
    */
-  pair<vector<double>, vector<double>> get_data_vector(double minl, double maxl,
-                                                       bool mag,
+  pair<vector<double>, vector<double>> get_data_vector(double minl, double maxl, bool mag,
                                                        double offset = 0.0);
 
   /*! Apply transformation of the sed based on the redshift (stored in variable
@@ -375,8 +379,8 @@ class GalSED : public SED {
 
   /// Standard constructor
   GalSED(const string nameC, int nummodC = 0);
-  GalSED(const string nameC, double tauC, double ageC, string formatC,
-         int nummodC, string typeC, int idAgeC);
+  GalSED(const string nameC, double tauC, double ageC, string formatC, int nummodC, string typeC,
+         int idAgeC);
   ~GalSED() { flEm.clear(); }
 
   void SEDproperties();
@@ -398,8 +402,8 @@ class GalSED : public SED {
   void writeSED(ofstream &ofs, ofstream &ofsPhys, ofstream &ofsDoc);
   void readSEDBin(ifstream &ins);
 
-  void writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
-                vector<flt> allFilters, string magtyp) const;
+  void writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat, vector<flt> allFilters,
+                string magtyp) const;
   void readMagBin(ifstream &ins);
 
   ///< clean content of class
@@ -417,8 +421,8 @@ class QSOSED : public SED {
   QSOSED(const string nameC, int nummodC = 0) : SED(nameC, nummodC, "QSO"){};
   ~QSOSED(){};
 
-  void writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
-                vector<flt> allFilters, string magtyp) const;
+  void writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat, vector<flt> allFilters,
+                string magtyp) const;
 
   void readMagBin(ifstream &ins);
 };
@@ -433,13 +437,13 @@ class StarSED : public SED {
   /*! constructor
    * @param name: name given to the SED object
    * @param nummod: identity number given to the SED object
-   !*/
+   */
   StarSED(const string name, int nummod = 0) : SED(name, nummod, "STAR") { ; }
   /// destructor (does nothing)
   ~StarSED() { ; }
 
-  void writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
-                vector<flt> allFilters, string magtyp) const;
+  void writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat, vector<flt> allFilters,
+                string magtyp) const;
   void readMagBin(ifstream &ins);
 };
 
