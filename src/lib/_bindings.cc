@@ -50,8 +50,9 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("interp", &oneElLambda::interp, py::arg("previousEl"),
            py::arg("nextEl"));
   mod.def("concatenate_and_sort", &concatenate_and_sort,
-          "concatenate and sorttwo vector of oneElLambda objects. Sorting is "
+          "concatenate and sort two vector of oneElLambda objects. Sorting is "
           "in increasing lambda.");
+  mod.def("interpLinearOpenMP_restrict", &interpLinearOpenMP_restrict);
 
   /******** CLASS COSMOLOGY*********/
   py::class_<cosmo>(mod, "cosmo")
@@ -92,6 +93,8 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("read", &ext::read, py::arg("extFile"), "read an extinction file")
       .def("add_element", &ext::add_element);
   mod.def("compute_filter_extinction", &compute_filter_extinction,
+          "Compute extinction in a filter band.");
+  mod.def("compute_filter_extinction2", &compute_filter_extinction2,
           "Compute extinction in a filter band.");
   mod.def("cardelli_ext", &cardelli_ext,
           "Compute galactic extinction in the filter based on Cardelli et "

@@ -77,7 +77,7 @@ void ext::add_element(double lam, double val, double ori) {
   return;
 }
 
-double compute_filter_extinction(const flt &oneFlt, const ext &oneExt) {
+double compute_filter_extinction2(const flt &oneFlt, const ext &oneExt) {
   // work with the original lamb_flux
   vector<oneElLambda> lamb_all = oneFlt.lamb_trans;
 
@@ -122,6 +122,36 @@ double compute_filter_extinction(const flt &oneFlt, const ext &oneExt) {
   return (aint /= fint);
 }
 
+double compute_filter_extinction(const flt &oneFlt, const ext &oneExt) {
+  auto fltp = to_pairs(oneFlt.lamb_trans);
+  auto extp = to_pairs(oneExt.lamb_ext);
+  auto [x, flty, exty] = common_interpolate_combined(
+      fltp.first, fltp.second, extp.first, extp.second, -1);
+
+  double fint = 0;
+  double aint = 0;
+
+  // integrate the extinction curve through the filter
+  // OMP overhead seems to be too much here to bother
+  // #pragma omp parallel for reduction(+:fint,aint)
+  //  for (int64_t i = 0; i < static_cast<int64_t>(x.size() - 1); i++) {
+  for (size_t i = 0; i < x.size() - 1; i++) {
+    // Integral of the transmission by the filter
+    double flt1 = flty[i];
+    double flt2 = flty[i + 1];
+    double ext1 = exty[i];
+    double ext2 = exty[i + 1];
+    double delta = x[i + 1] - x[i];
+    double mid_flt = (flt1 + flt2) / 2.;
+    double mid_ext = (ext1 + ext2) / 2.;
+    fint += mid_flt * delta;
+    // Integral of the transmission by the filter x extinction
+    aint += mid_flt * mid_ext * delta;
+  }
+
+  return (aint /= fint);
+}
+
 // Function of the basis class which read all the filters
 vector<flt> read_flt(ifstream &sfiltIn) {
   vector<flt> allFlt;
@@ -150,13 +180,12 @@ double cardelli_ext(flt &oneFlt) {
   double lmin = oneFlt.lmin();
   double lmax = oneFlt.lmax();
   ext oneExt("CARDELLI", 2);
-
   double lextg, extg;
 
   // computes the galactic extinction
   double dlbd = (lmax - lmin) / 400.;
   for (size_t i = 0; i < 402; i++) {
-    lextg = lmin + (i - 1) * dlbd;
+    lextg = lmin + int(i - 1) * dlbd;
     extg = cardelli_law(lextg);
     oneExt.add_element(lextg, extg, 2);
   }

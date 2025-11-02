@@ -363,6 +363,7 @@ vector<oneElLambda> SED::resample(vector<oneElLambda> &lamb_all,
   oneElLambda nextEl(-999, -999, -999);
 
   // Loop over the full vector with the two vectors concatenated
+  //  #pragma omp parallel for schedule(static)
   for (vector<oneElLambda>::iterator it = lamb_all.begin(); it < lamb_all.end();
        ++it) {
     // If well within the considered lambda range
