@@ -185,7 +185,7 @@ double cardelli_ext(flt &oneFlt) {
   // computes the galactic extinction
   double dlbd = (lmax - lmin) / 400.;
   for (size_t i = 0; i < 402; i++) {
-    lextg = lmin + double(i - 1) * dlbd;
+    lextg = lmin + int(i - 1) * dlbd;
     extg = cardelli_law(lextg);
     oneExt.add_element(lextg, extg, 2);
   }
