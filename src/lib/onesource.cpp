@@ -1121,8 +1121,7 @@ void onesource::mode() {
 /*
  write the output file
 */
-void onesource::write_out(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
-                          ofstream &stout, vector<string> outkeywords) {
+void onesource::write_out(ofstream &stout, const vector<string> &outkeywords) {
   // Loop over each keyword
   for (const string &outkey : outkeywords) {
     // If a match a found, write the value into the stream
@@ -2232,7 +2231,7 @@ void onesource::writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
 /*
  WRITE FULL CHI2 FILE
 */
-void onesource::writeFullChi(vector<SED *> &fulllib) {
+void onesource::writeFullChi(const vector<SED *> &fulllib) {
   double sca;
 
   // open the output file

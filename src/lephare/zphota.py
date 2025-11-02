@@ -83,6 +83,7 @@ config_keys = {
     Need 1 or N values.",
     "LIMITS_MAPP_CUT": "Used to compute z_max. Apparent mag selection used in each redshift bin.\
     Need 1 or N values.",
+    "CHI2_OUT": "Flag to output the chi2 value of each template (one file per source)",
 }
 
 nonestring = "NONE"
@@ -211,6 +212,8 @@ Need 1 or N values.
     LIMITS_MAPP_CUT:
             used to compute z_max. Apparent mag selection used in each redshift bin. \
 Need 1 or N values
+    CHI2_OUT
+            Flag to output the chi2 value of each template (one file per source)
     """
 
     def update_help(self):
