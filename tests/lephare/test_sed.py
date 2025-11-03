@@ -77,9 +77,21 @@ def test_sed_readwrite():
         np.testing.assert_array_equal(newsed.data()[1], star.data()[1])
 
 
+def test_emplace_back():
+    sed = SED("toto", 10, "GAL")
+    sed.emplace_back(100, 1)
+    assert sed.size() == 1
+    assert sed.lamb_flux[0].lamb == 100
+    assert sed.lamb_flux[0].val == 1
+    assert sed.lamb_flux[0].ori == 1
+
+
 def test_set_vector():
     sed = SED("toto", 10, "GAL")
     x = np.linspace(100, 500, 1000)
+    with pytest.raises(RuntimeError):
+        # not the same size
+        sed.set_vector(x, np.linspace(0, 1, 500))
     sed.set_vector(x, np.ones_like(x))
     assert len(x) == sed.size()
     for el in sed.lamb_flux:

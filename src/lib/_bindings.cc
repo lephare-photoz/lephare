@@ -188,6 +188,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("rescale", &SED::rescale)
       .def("compute_magnitudes", &SED::compute_magnitudes)
       .def("compute_fluxes", &SED::compute_fluxes)
+      .def("emplace_back", &SED::emplace_back)
       .def("set_vector", &SED::set_vector)
       .def("readSEDBin",
            static_cast<void (SED::*)(const string &)>(&SED::readSEDBin))
