@@ -220,6 +220,52 @@ void SED::warning_integrateSED(const vector<flt> &filters, bool verbose) {
   }
 }
 
+double SED::integrateSED3(const double lmin, const double lmax) {
+    
+  if (lamb_flux.front().lamb > lmin ||
+      lamb_flux.back().lamb < lmax) 
+      { return INVALID_VAL;}
+  
+  double res = 0.;
+  //#pragma omp parallel for reduction(+:res)
+  for (size_t i = 0; i < lamb_flux.size() - 1; i++) {
+      if(lamb_flux[i].lamb<lmin) continue;
+      if(lamb_flux[i].lamb>lmax) break;
+      double fmean = (lamb_flux[i].val + lamb_flux[i+1].val)/2;
+      double dlbd = (lamb_flux[i+1].lamb - lamb_flux[i].lamb);
+      res += dlbd * fmean;
+  }
+  return res;
+}
+
+vector<double> SED::integrateSED2(const flt &filter) {
+    
+  vector<double> results(6, 0.);
+    
+  if (lamb_flux.front().lamb > filter.lmin() ||
+      lamb_flux.back().lamb < filter.lmax()) 
+      { return vector<double>(6, INVALID_VAL);}
+  
+  auto [x, newsed, newflt] = restricted_resampling(lamb_flux, filter.lamb_trans,-1);
+
+  double r0, r1, r2, r3, r4, r5;
+#pragma omp parallel for reduction(+:r0,r1,r2,r3,r4,r5)
+  for (size_t i = 0; i < x.size() - 1; i++) {
+      double lmean = (x[i] + x[i+1])/2;
+      double tmean = (newflt[i] + newflt[i+1])/2;
+      double fmean = (newsed[i] + newsed[i+1])/2;
+      double dlbd = (x[i+1] - x[i]);
+      double conv = c / pow(lmean, 2.);
+      r0 += tmean * dlbd;
+      r1 += tmean * dlbd * conv;
+      r2 += tmean * dlbd * lmean;
+      r3 += tmean * dlbd * fmean;
+      r4 += tmean * dlbd * fmean * lmean;
+      r5 += tmean * dlbd / pow(lmean, 2);
+  }
+  return vector<double>{r0, r1, r2, r3, r4, r5};
+}
+
 /*
   Integrate within a filter, valid in the three cases GAL/QSO/STARS
 */

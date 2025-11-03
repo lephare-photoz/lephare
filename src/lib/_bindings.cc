@@ -52,7 +52,6 @@ PYBIND11_MODULE(_lephare, mod) {
   mod.def("concatenate_and_sort", &concatenate_and_sort,
           "concatenate and sort two vector of oneElLambda objects. Sorting is "
           "in increasing lambda.");
-  mod.def("interpLinearOpenMP_restrict", &interpLinearOpenMP_restrict);
 
   /******** CLASS COSMOLOGY*********/
   py::class_<cosmo>(mod, "cosmo")
@@ -186,6 +185,8 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("read", &SED::read)
       .def("size", &SED::size)
       .def("integrateSED", &SED::integrateSED)
+      .def("integrateSED2", &SED::integrateSED2)
+      .def("integrateSED3", &SED::integrateSED3)
       .def("resample", &SED::resample)
       .def("generateCalib", &SED::generateCalib)
       .def("rescale", &SED::rescale)

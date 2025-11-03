@@ -95,8 +95,11 @@ inline pair<vector<double>, vector<double>> to_pairs(
   return make_pair(lambdas, vals);
 }
 
-oneElVector interpLinearOpenMP_restrict(const oneElVector& in1,
-                                        const oneElVector& in2);
+inline std::tuple<std::vector<double>, std::vector<double>>
+to_tuple(const oneElVector& v) {
+    auto p = to_pairs(v);
+    return {p.first, p.second};
+}
 
 static inline double interp_linear_point(const std::vector<double>& x,
                                          const std::vector<double>& y,
@@ -117,5 +120,12 @@ common_interpolate_combined(const std::vector<double>& x1,
                             const std::vector<double>& y1,
                             const std::vector<double>& x2,
                             const std::vector<double>& y2, double dx);
+
+inline std::tuple<std::vector<double>, std::vector<double>, std::vector<double>>
+restricted_resampling(const oneElVector& v1, const oneElVector& v2, double dx){
+    auto [v1_l, v1_v] = to_tuple(v1);
+    auto [v2_l, v2_v] = to_tuple(v2);
+    return common_interpolate_combined(v1_l, v1_v, v2_l, v2_v, dx);
+}
 
 #endif

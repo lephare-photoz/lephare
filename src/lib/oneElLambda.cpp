@@ -41,49 +41,6 @@ void oneElLambda::interp(const oneElLambda& previousEl,
   return;
 }
 
-oneElVector interpLinearOpenMP_restrict(const oneElVector& in1,
-                                        const oneElVector& in2)
-// const std::vector<double>& x,
-//      const std::vector<double>& y,
-//      const std::vector<double>& z)
-{
-  // We want to interpolate in1 at the lambda values of in2
-
-  // First we need to define the start
-  //  if (x.size() != y.size() || x.size() < 2)
-  //      throw std::invalid_argument("x et y doivent avoir la même taille (>=
-  //      2).");
-  //  if (!std::is_sorted(x.begin(), x.end()))
-  //      throw std::invalid_argument("x doit être trié par ordre croissant.");
-
-  const size_t m = in2.size();
-  oneElVector result;
-
-#pragma omp parallel for schedule(static)
-  for (size_t j = 0; j < in2.size(); ++j) {
-    double zi = in2[j].lamb;
-
-    // restrict
-    if (zi <= in1.front().lamb) {
-      continue;
-    }
-    if (zi >= in1.back().lamb) {
-      continue;
-    }
-    //        if (zi <= x.front()) { result[j] = y.front(); continue; }
-    //        if (zi >= x.back())  { result[j] = y.back();  continue; }
-
-    auto it = std::lower_bound(in1.begin(), in1.end(), in2[j]);
-    size_t i = std::distance(in1.begin(), it) - 1;
-
-    double t = (zi - in1[i].lamb) / (in1[i + 1].lamb - in1[i].lamb);
-    double interpval = in1[i].val + t * (in1[i + 1].val - in1[i].val);
-    result.emplace_back(zi, interpval, 0);
-  }
-
-  return result;
-}
-
 // --- interpolation linéaire (x croissant, sans extrapolation) ---
 static inline double interp_linear_point(const std::vector<double>& x,
                                          const std::vector<double>& y,

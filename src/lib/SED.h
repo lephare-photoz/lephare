@@ -162,6 +162,8 @@ class SED {
   void read(const string &sedFile);
   void warning_integrateSED(const vector<flt> &filters, bool verbose = false);
   vector<double> integrateSED(const flt &filter);
+  vector<double> integrateSED2(const flt &filter);
+  double integrateSED3(const double lmin, const double lmax);
 
   /*!
    * resample the vector
@@ -359,6 +361,7 @@ class SED {
   /// Helper function to set the sed vector as lambda=x and val = y
   inline void set_vector(const vector<double> &x, const vector<double> &y) {
     if (x.size() != y.size()) throw runtime_error("vector sizes are different");
+    lamb_flux.clear();
     for (size_t k = 0; k < x.size(); k++) {
       emplace_back(x[k], y[k]);
     }
