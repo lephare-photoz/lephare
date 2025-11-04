@@ -16,8 +16,10 @@ __all__ = [
     "all_types_to_keymap",
 ]
 
+_DEFAULT = object()
 
-def prepare(config, star_config=None, gal_config=None, qso_config=None):
+
+def prepare(config, star_config=_DEFAULT, gal_config=_DEFAULT, qso_config=_DEFAULT):
     """Run the prepare stages of LePHARE
 
     In order to run "zphota" we must create the filter files, run sedtolib to
@@ -31,28 +33,21 @@ def prepare(config, star_config=None, gal_config=None, qso_config=None):
     ==========
     config : dict of lephare.keyword
         The config base to run all tasks
-    star_config : dict of lephare.keyword or None
-        Config values to override for stars
-    gal_config : dict of lephare.keyword or None
-        Config values to override for galaxies
-    qso_config : dict of lephare.keyword or None
-        Config values to override for QSO.
+    star_config : dict of lephare.keyword or None or bool
+        Config values to override for stars. If False do not run.
+    gal_config : dict of lephare.keyword or None or bool
+        Config values to override for galaxies. If False do not run.
+    qso_config : dict of lephare.keyword or None or bool
+        Config values to override for QSO. If False do not run.
     """
     # ensure that all values in the keymap are keyword objects
     config = all_types_to_keymap(config)
-
-    if star_config is not None:
-        star_config = all_types_to_keymap(star_config)
-    if gal_config is not None:
-        gal_config = all_types_to_keymap(gal_config)
-    if qso_config is not None:
-        qso_config = all_types_to_keymap(qso_config)
+    object_types = dict(STAR=star_config, GAL=gal_config, QSO=qso_config)
 
     # check that the config is string to keyword map
     for k in config:
         assert isinstance(config[k], lp.keyword)
 
-    object_types = {"STAR": star_config, "GAL": gal_config, "QSO": qso_config}
     # Run the filter command
     # load filters from config
     filter_lib = lp.FilterSvc.from_keymap(config)
@@ -64,7 +59,16 @@ def prepare(config, star_config=None, gal_config=None, qso_config=None):
     write_yaml_config(config, f"{filter_output}_config.yaml")
 
     for object_type in object_types:
-        updated_config = overwrite_config(config, object_types[object_type])
+        # Skip object types that are not to be processed
+        if object_types[object_type] is None:
+            continue
+        elif object_types[object_type] is _DEFAULT:
+            updated_config = config
+        else:
+            # Overwrite config for this object type
+            object_types[object_type] = all_types_to_keymap(object_types[object_type])
+            updated_config = overwrite_config(config, object_types[object_type])
+
         # Write the updated config
         sed_out_name = f"{updated_config[f'{object_type}_LIB'].value}_{object_type.lower()}_config.yaml"
         sed_output = os.path.join(os.environ["LEPHAREWORK"], "lib_bin", sed_out_name)
@@ -80,7 +84,6 @@ def prepare(config, star_config=None, gal_config=None, qso_config=None):
         sedlib.run(typ=object_type, **sedtolib_kwargs)
         write_yaml_config(updated_config, sed_output)
         # Run mag_gal
-        print(updated_config["VERBOSE"])
         maglib = lp.MagGal(config_keymap=updated_config)
         maglib.run(typ=object_type, verbose=False)
         write_yaml_config(updated_config, mag_output)
