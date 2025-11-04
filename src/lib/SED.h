@@ -190,9 +190,9 @@ class SED {
    * - calib=2 : \f$C(\lambda)=\lambda^{-3}\f$
    * - calib=3 : \f$C(\lambda)=Blackbody(\lambda, T=10000K)\f$
    * - calib=4 : \f$C(\lambda)=Blackbody(\lambda, T=10000K)\f$
+   * - calib = 5: \f$C(\lambda) =\lambda ^{ -3 }\f$
    */
-  - calib = 5: \f$C(\lambda) =\lambda ^
-  { -3 }\f$ void generateCalib(double lmin, double lmax, int Nsteps, int calib);
+  void generateCalib(double lmin, double lmax, int Nsteps, int calib);
   /// return the size of the internal vector #lamb_flux
   int size() { return lamb_flux.size(); }
   /// rescale the lamb_flux.val as val *= scaleFac
