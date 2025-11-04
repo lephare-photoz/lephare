@@ -55,7 +55,7 @@ def process(
     n_filters = len(config["FILTER_LIST"].value.split(","))
     print(f"Processing {ng} objects with {n_filters} bands")
     photz = lp.PhotoZ(config)
-    if config["AUTO_ADAPT"].value.upper() == "YES":
+    if config["AUTO_ADAPT"].split_bool("", 1):
         print("AUTO_ADAPT is set to YES. Computing offsets.")
         # Loop over all ng galaxies!
         srclist = []
