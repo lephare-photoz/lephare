@@ -346,6 +346,52 @@ vector<double> SED::integrateSED(const flt &filter) {
   return mag;
 }
 
+double SED::integrate(const double lmin, const double lmax) {
+  // restrict to cases where the SED is defined over the
+  // whole range
+  if (lamb_flux.front().lamb > lmin || lamb_flux.back().lamb < lmax) {
+    return INVALID_VAL;
+  }
+
+  auto up =
+      lower_bound(lamb_flux.begin(), lamb_flux.end(), oneElLambda(lmin, 1., 1));
+  size_t j = std::distance(lamb_flux.begin(), up) - 1;
+
+  // integrate from lmin to lamb_flux[j+1]
+  double x1 = lamb_flux[j].lamb;
+  double x2 = lamb_flux[j + 1].lamb;
+  double y1 = lamb_flux[j].val;
+  double y2 = lamb_flux[j + 1].val;
+
+  double slope = (y2 - y1) / (x2 - x1);
+  double interp = y1 + slope * (lmin - x1);
+  double res = (y2 + interp) * 0.5 * (x2 - lmin);
+  size_t lastidx = j + 1;
+
+  // #pragma omp parallel for reduction(+:res)
+  for (size_t i = j + 1; i < lamb_flux.size() - 1; i++) {
+    // if(lamb_flux[i].lamb<lmin) continue;
+    if (lamb_flux[i + 1].lamb >= lmax) {
+      lastidx = i;
+      break;
+    }
+    double fmean = (lamb_flux[i].val + lamb_flux[i + 1].val) / 2;
+    double dlbd = (lamb_flux[i + 1].lamb - lamb_flux[i].lamb);
+    res += dlbd * fmean;
+  }
+  // integrate from lamb_flux[lastidx] to lmax
+  x1 = lamb_flux[lastidx].lamb;
+  x2 = lamb_flux[lastidx + 1].lamb;
+  y1 = lamb_flux[lastidx].val;
+  y2 = lamb_flux[lastidx + 1].val;
+
+  slope = (y2 - y1) / (x2 - x1);
+  interp = y1 + slope * (lmax - x1);
+  res += (y1 + interp) * 0.5 * (lmax - x1);
+
+  return res;
+}
+
 // Integral of lamb_flux with the trapezoidal method
 double SED::trapzd() {
   double s = 0.0;

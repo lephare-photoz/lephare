@@ -182,6 +182,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("read", &SED::read)
       .def("size", &SED::size)
       .def("integrateSED", &SED::integrateSED)
+      .def("integrate", &SED::integrate)
       .def("resample", &SED::resample)
       .def("generateCalib", &SED::generateCalib)
       .def("rescale", &SED::rescale)
@@ -272,6 +273,7 @@ PYBIND11_MODULE(_lephare, mod) {
 
   /******** FUNCTIONS IN GLOBALS.H *********/
   mod.attr("HIGH_CHI2") = HIGH_CHI2;
+  mod.attr("INVALID_VAL") = INVALID_VAL;
   mod.def("get_lephare_env", &get_lephare_env);
   mod.def("check_first_char", &check_first_char);
   mod.def("blackbody", &blackbody);
