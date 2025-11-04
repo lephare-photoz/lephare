@@ -44,10 +44,6 @@ def prepare(config, star_config=_DEFAULT, gal_config=_DEFAULT, qso_config=_DEFAU
     config = all_types_to_keymap(config)
     object_types = dict(STAR=star_config, GAL=gal_config, QSO=qso_config)
 
-    # check that the config is string to keyword map
-    for k in config:
-        assert isinstance(config[k], lp.keyword)
-
     # Run the filter command
     # load filters from config
     filter_lib = lp.FilterSvc.from_keymap(config)
