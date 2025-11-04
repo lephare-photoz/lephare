@@ -33,12 +33,12 @@ def prepare(config, star_config=_DEFAULT, gal_config=_DEFAULT, qso_config=_DEFAU
     ==========
     config : dict of lephare.keyword
         The config base to run all tasks
-    star_config : dict of lephare.keyword or None or bool
-        Config values to override for stars. If False do not run.
-    gal_config : dict of lephare.keyword or None or bool
-        Config values to override for galaxies. If False do not run.
-    qso_config : dict of lephare.keyword or None or bool
-        Config values to override for QSO. If False do not run.
+    star_config : dict of lephare.keyword or None
+        Config values to override for stars. If None do not run.
+    gal_config : dict of lephare.keyword or None
+        Config values to override for galaxies. If None do not run.
+    qso_config : dict of lephare.keyword or None
+        Config values to override for QSO. If None do not run.
     """
     # ensure that all values in the keymap are keyword objects
     config = all_types_to_keymap(config)
