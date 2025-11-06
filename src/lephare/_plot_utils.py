@@ -107,7 +107,7 @@ class PlotUtils:
       performance and SED fitting reliability.
     """
 
-    def __init__(self, t, sel_filt=0, pos_filt=None, range_z=None, range_mag=None):
+    def __init__(self, t, sel_filt=0, pos_filt=None, range_z=None, range_mag=None, pdf_col="PDF_BAY_ZG()"):
         if pos_filt is None:
             pos_filt = [0, 0, 0, 0, 0, 0]
         if range_z is None:
@@ -188,11 +188,8 @@ class PlotUtils:
         self.Lnuv = t["LUM_NUV_BEST"]
         self.Lr = t["LUM_R_BEST"]
         self.Lk = t["LUM_K_BEST"]
-        try:
-            self.pdfs = np.array(t["PDF_BAY_ZG()"])
-        except KeyError:
-            print("Using deprecated BAY_ZG column for pdfs")
-            self.pdfs = np.array(t["BAY_ZG"])
+        self.pdfs = np.array(t[pdf_col])
+
         # Define the panels with the binning in redshift an magnitude
         if len(range_z) == 1:
             self.range_z = np.quantile(self.zs[(self.zs > -1) & (self.zs < 9)], [0, 0.25, 0.5, 0.75, 1])
