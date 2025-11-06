@@ -7,6 +7,9 @@ from matplotlib import gridspec
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.interpolate import interp1d
 
+# Compatibility shim
+trapezoid = np.trapezoid if hasattr(np, "trapezoid") else np.trapz
+
 __all__ = ["PlotUtils"]
 
 
@@ -1851,7 +1854,7 @@ def integrate_pdfs_to_ztrue(pdfs, zgrid, ztrue):
         if np.any(mask):
             zvals = zgrid[mask]
             pdfvals = f(zvals)
-            integrated[i] = np.trapezoid(pdfvals, zvals)
+            integrated[i] = trapezoid(pdfvals, zvals)
         else:
             integrated[i] = 0.0  # if ztrue[i] < zgrid[0]
 
