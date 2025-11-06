@@ -4,6 +4,8 @@ from math import ceil
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import gridspec
+from scipy.interpolate import interp1d
 
 __all__ = ["PlotUtils"]
 
@@ -183,6 +185,7 @@ class PlotUtils:
         self.Lnuv = t["LUM_NUV_BEST"]
         self.Lr = t["LUM_R_BEST"]
         self.Lk = t["LUM_K_BEST"]
+        self.pdfs = np.array(t["BAY_ZG"])
 
         # Define the panels with the binning in redshift an magnitude
         if len(range_z) == 1:
@@ -1610,3 +1613,180 @@ class PlotUtils:
                 )
 
         return
+
+    def pit_qq(
+        self,
+        pdfs=None,
+        zgrid=None,
+        ztrue=None,
+        bins=None,
+        title=None,
+        show_pit=True,
+        show_qq=True,
+        savefig=False,
+    ) -> str:
+        """
+        Generate a PIT and QQ quantile-quantile plot for photometric redshift PDFs.
+
+        This function creates a visualization to assess the calibration of
+        predicted PDFs against true redshifts. It can display a Probability
+        Integral Transform (PIT) histogram and/or a QQ plot, optionally saving
+        the figure.
+
+        Parameters
+        ----------
+        pdfs : np.ndarray, shape (m, n), optional
+            Array of PDFs for m objects over n z-grid points. If None, use the
+            PDFs from the class Metrics object.
+        zgrid : np.ndarray, shape (n,), optional
+            The z-axis corresponding to the PDF bins. Required if `pdfs` is provided.
+        ztrue : np.ndarray, shape (m,), optional
+            True redshift values for the m objects. Required if `pdfs` is provided.
+        bins : int, optional
+            Number of bins for the PIT histogram. If None, use the default
+            number of quantiles defined in the sample (`sample.n_quant`).
+        title : str, optional
+            Title for the plot. If None, a formatted sample name will be used.
+        show_pit : bool, default=True
+            Whether to include the PIT histogram in the figure.
+        show_qq : bool, default=True
+            Whether to include the QQ plot in the figure.
+        savefig : bool, default=False
+            Whether to save the plot to a PNG file. If True, the filename will
+            be automatically generated.
+
+        Returns
+        -------
+        str
+            Path to the saved figure if `savefig=True`; otherwise an empty string.
+
+        Notes
+        -----
+        - PIT (Probability Integral Transform) values should be uniformly
+        distributed if the PDFs are well-calibrated.
+        - QQ plot compares the quantiles of the PIT distribution against a
+        uniform distribution to visually assess calibration.
+        """
+
+        if pdfs is None:
+            pdfs = self.pdfs
+        if zgrid is None:
+            zgrid = np.linspace(0, 6, pdfs.shape[1])
+        if ztrue is None:
+            ztrue = self.zs
+        if bins is None:
+            bins = 100
+        if title is None:
+            title = ""
+
+        plt.figure(figsize=[4, 5])
+        gs = gridspec.GridSpec(2, 1, height_ratios=[3, 1])
+        ax0 = plt.subplot(gs[0])
+        # sample = Sample(pdfs, zgrid, ztrue)
+        pit_vals = integrate_pdfs_to_ztrue(pdfs, zgrid, ztrue)
+        pit_out_rate = np.mean((pit_vals < 0.005) | (pit_vals > 0.995))
+        qq = [np.linspace(0, 1, len(ztrue)), pit_vals[np.argsort(pit_vals)]]
+
+        if show_qq:
+            ax0.plot(
+                qq[0], qq[1], c="r", linestyle="-", linewidth=3, label=f"PIT$_{{out}}$:{pit_out_rate:.2f}"
+            )
+            ax0.plot([0, 1], [0, 1], color="k", linestyle="--", linewidth=2)
+            ax0.set_ylabel("Q$_{data}$", fontsize=18)
+            plt.ylim(-0.001, 1.001)
+        plt.xlim(-0.001, 1.001)
+        plt.title(title)
+        if show_pit:
+            # fzdata = Ensemble(interp, data=dict(xvals=zgrid, yvals=pdfs))
+            # pitobj = PIT(fzdata, ztrue)
+            # pit_vals = np.array(pitobj.pit_samps)
+            # pit_out_rate = pitobj.evaluate_PIT_outlier_rate()
+
+            try:
+                y_uni = float(len(pit_vals)) / float(bins)
+            except TypeError:  # when bins is an array
+                y_uni = float(len(pit_vals)) / float(len(bins))
+            if not show_qq:
+                ax0.hist(pit_vals, bins=bins, alpha=0.7, label="LePHARE")
+                ax0.set_ylabel("Number")
+                ax0.hlines(y_uni, xmin=0, xmax=1, color="k")
+                plt.ylim(
+                    0,
+                )  # -0.001, 1.001)
+            else:
+                ax1 = ax0.twinx()
+                hist = ax1.hist(pit_vals, bins=bins, alpha=0.7)
+                ax1.set_ylim([0, 1.1 * np.max(hist[0][1:-1])])
+                ax1.set_ylabel("Number")
+                ax1.hlines(y_uni, xmin=0, xmax=1, color="k")
+        leg = ax0.legend(handlelength=0, handletextpad=0, fancybox=True, loc="upper left")
+        for item in leg.legend_handles:
+            item.set_visible(False)
+        if show_qq:
+            ax2 = plt.subplot(gs[1])
+            ax2.plot(
+                qq[0],
+                (qq[1] - qq[0]),
+                c="r",
+                linestyle="-",
+                linewidth=3,
+            )
+            plt.ylabel(r"$\Delta$Q", fontsize=18)
+            ax2.plot([0, 1], [0, 0], color="k", linestyle="--", linewidth=2)
+            plt.xlim(-0.001, 1.001)
+            plt.ylim(
+                np.min([-0.12, np.min(qq[1] - qq[0]) * 1.05]),
+                np.max([0.12, np.max(qq[1] - qq[0]) * 1.05]),
+            )
+        if show_pit:
+            if show_qq:
+                plt.xlabel("Q$_{theory}$ / PIT Value", fontsize=18)
+            else:
+                plt.xlabel("PIT Value", fontsize=18)
+        else:
+            if show_qq:
+                plt.xlabel("Q$_{theory}$", fontsize=18)
+        if savefig:
+            fig_filename = str("plot_pit_qq_" + "lephare.png")
+            plt.savefig(fig_filename)
+        else:
+            fig_filename = None
+
+        return fig_filename
+
+
+def integrate_pdfs_to_ztrue(pdfs, zgrid, ztrue):
+    """
+    Integrate each PDF up to its corresponding true z value.
+
+    Parameters
+    ----------
+    pdfs : np.ndarray, shape (m, n)
+        PDFs for m objects over n bins.
+    zgrid : np.ndarray, shape (n,)
+        Grid for the PDF bins.
+    ztrue : np.ndarray, shape (m,)
+        Value up to which to integrate each PDF.
+
+    Returns
+    -------
+    integrated : np.ndarray, shape (m,)
+        Integrated value of each PDF up to the corresponding ztrue.
+    """
+    m, n = pdfs.shape
+    integrated = np.zeros(m)
+
+    for i in range(m):
+        # Interpolate PDF for this object
+        f = interp1d(zgrid, pdfs[i], kind="linear", bounds_error=False, fill_value=0.0)
+
+        # Determine the integration points: all zgrid points <= ztrue[i]
+        mask = zgrid <= ztrue[i]
+        if np.any(mask):
+            zvals = zgrid[mask]
+            pdfvals = f(zvals)
+            integrated[i] = np.trapezoid(pdfvals, zvals)
+        else:
+            integrated[i] = 0.0  # if ztrue[i] < zgrid[0]
+
+    return integrated

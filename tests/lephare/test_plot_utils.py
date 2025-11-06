@@ -6,10 +6,11 @@ from astropy.table import Table
 
 
 def test_all_plots():
-    """ "Very simple test that runs all plots on dummy data to check they run without error."""
+    """Very simple test that runs all plots on dummy data to check they run without error."""
     n_rows = 100
     n_filters = 6  # u, g, r, z, J, K
     low, high = 0, 30
+    n_z = 100
 
     # Create dictionary for table columns with fake data
     data = {
@@ -66,6 +67,7 @@ def test_all_plots():
         "LUM_NUV_BEST": np.random.uniform(low, high, n_rows),
         "LUM_R_BEST": np.random.uniform(low, high, n_rows),
         "LUM_K_BEST": np.random.uniform(low, high, n_rows),
+        "BAY_ZG": np.random.uniform(low, high, (n_rows, n_z)),
     }
 
     # Create Astropy Table
