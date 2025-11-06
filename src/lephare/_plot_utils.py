@@ -619,12 +619,15 @@ class PlotUtils:
 
     def chi2dist(self, nstep=20):
         """
-        Plot the χ² distribution as a function of observed magnitude.
+        Plot the reduced χ² distribution as a function of observed magnitude.
 
         This diagnostic shows the distribution of the minimum χ² values
         (`CHI_BEST`) for different magnitude bins, helping to assess the quality
         of SED fits across brightness ranges. Poorer fits at faint magnitudes
         may indicate increased photometric noise or template limitations.
+
+        We estimate the reduced χ² by dividing the minimum χ² by the number of
+        filters used minus one.
 
         Parameters
         ----------
