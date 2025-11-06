@@ -48,16 +48,21 @@ class PlotUtils:
         utils.dist_ebv()
         utils.secondpeak()
         utils.bzk()
-        utils.absmag_z()
-        utils.rf_color()
-        utils.william()
         utils.cumulative68()
         utils.check_error()
         utils.errormag()
         utils.errorz()
         utils.pit_qq()
+        utils.absmag_z()
+        utils.rf_color()
+        utils.william()
         utils.dist_mass()
         utils.dist_sfr()
+        utils.mass_med_best()
+        utils.sfr_med_best()
+        utils.mass_z()
+        utils.sfr_z()
+
 
         utils.save_all_plots_pdf()
 
@@ -1224,7 +1229,7 @@ class PlotUtils:
         --------
         >>> utils = lp.PlotUtils(t, sel_filt=3)
         >>> utils.absmag_z()
-        # Produces plots of absolute magnitude versus redshift per filter.
+        # Produces plots of absolute magnitude versus redshift.
         """
         plt.clf()
         f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
@@ -2010,6 +2015,393 @@ class PlotUtils:
                 # print the legend
                 if rm == 1:
                     ax.legend(prop={"size": 8})
+
+        return
+
+    def dist_ssfr(self, nstep=10):
+        """
+        Plot the distribution of specific SFR
+
+        This diagnostic shows the range and frequency of sSFR values
+        derived by LePHARE for the sample.
+
+        Parameters
+        ----------
+        nstep : int, optional
+            Number of bins to use in the histogram of mass values. Default is 10.
+
+        Notes
+        -----
+        - Uses the `SSFR_BEST` and 'SSFR_MED' column from the LePHARE output table.
+        - Only sources meeting the redshift and magnitude selection criteria are included.
+
+        See Also
+        --------
+        dist_model : Show distribution of best-fit SED model identifiers.
+        dist_filt  : Show number of filters used in each fit.
+        dist_mass  : Mass distribution
+
+        Examples
+        --------
+        >>> utils = lp.PlotUtils(t, sel_filt=3)
+        >>> utils.dist_ssfr(nstep=15)
+        # Produces a histogram of SSFR_BEST and SSFR_MED values.
+        """
+
+        ## Create a figure with an array with nbRowZ*nbColZ subpanels
+        plt.clf()
+        f, axarr = plt.subplots(self.nbRowZ, self.nbColZ, sharex=True, sharey=True, figsize=(12, 8))
+        # No space between the figures
+        plt.subplots_adjust(hspace=0, wspace=0)
+
+        # label of the figure
+        f.text(0.5, 0.04, "log10(sSFR)", ha="center", fontsize=15)
+        f.text(0.04, 0.5, "N", va="center", rotation="vertical", fontsize=15)
+
+        # Loop over the redshift bins
+        for rm in range(len(self.range_z)):
+            if rm > 0:
+                # Define the subplots and pass the panel
+                zmin = self.range_z[rm - 1]
+                zmax = self.range_z[rm]
+                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+
+                # set the axis
+                ax.axis([-14, -7, 0, 1.3])
+
+                # new condition within the redshift range
+                conda = (
+                    self.cond
+                    & self.condgal
+                    & (self.zp > zmin)
+                    & (self.zp < zmax)
+                    & (self.ssfrm > -20)
+                    & (self.ssfrm < -6)
+                )
+
+                # check if some objects exist
+                if len(self.ssfrm[conda]) > 1:
+                    # Histogram of the SFR
+                    ax.hist(
+                        self.ssfrm[conda],
+                        bins=nstep,
+                        histtype="stepfilled",
+                        density=1,
+                        color="b",
+                        label="median of the PDF",
+                    )
+
+                # new condition within the redshift range
+                conda = (
+                    self.cond
+                    & self.condgal
+                    & (self.zp > zmin)
+                    & (self.zp < zmax)
+                    & (self.ssfrb > -20)
+                    & (self.ssfrb < -6)
+                )
+
+                # check if some objects exist
+                if len(self.ssfrb[conda]) > 1:
+                    # Histogram of the SFR
+                    ax.hist(
+                        self.ssfrb[conda],
+                        bins=nstep,
+                        histtype="stepfilled",
+                        density=1,
+                        color="r",
+                        alpha=0.5,
+                        label=r"$minimum\; \chi^2$",
+                    )
+
+                    # labels
+                    ax.annotate(
+                        "$" + str(round(zmin, 2)) + " < z < " + str(round(zmax, 2)) + "$",
+                        xy=(7, 1),
+                        color="black",
+                        fontsize=15,
+                    )
+
+                # print the legend
+                if rm == 1:
+                    ax.legend(prop={"size": 8})
+
+        return
+
+    def mass_med_best(self):
+        """
+        Plot stellar mass median of the PDF versus minimum χ²
+
+        This diagnostic compares the two mass estimates produced by
+        LePHARE: the median of the posterior probability distribution (`MASS_MED`)
+        and the best-fit value from the minimum χ² solution (`MASS_BEST`).
+        The comparison helps identify systematic biases between the two estimators
+        and assess the stability of mass determinations.
+
+        The figure is divided into subpanels based on magnitude bins defined in
+        `range_mag`. Each subpanel shows `MASS_MED` versus `MASS_BEST` with a 1:1
+        reference line and scatter indicating consistency between the two measures.
+
+        Notes
+        -----
+        - Only sources within the defined redshift and magnitude ranges are included.
+        - The plot can reveal populations where the PDF and best-fit solutions diverge,
+          such as multi-peaked PDFs or poor fits.
+        - Strong deviations from the 1:1 line indicate inconsistency between the
+          χ²-based and PDF-based estimates.
+
+        Examples
+        --------
+        >>> utils = lp.PlotUtils(t, sel_filt=3)
+        >>> utils.mass_med_best()
+        # Produces a MASS_MED vs MASS_BEST comparison plot by magnitude bin.
+        """
+        plt.clf()
+        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        # No space between the figures
+        plt.subplots_adjust(hspace=0, wspace=0)
+
+        # label of the figure
+        f.text(0.5, 0.04, r"$mass \; minimum\; \chi^2$", ha="center", fontsize=15)
+        f.text(0.04, 0.5, r"$mass \; median\; PDF(z)$", va="center", rotation="vertical", fontsize=15)
+
+        # Loop over the magnitude bins
+        for rm in range(len(self.range_mag)):
+            if rm > 0:
+                # Define the subplots and pass the panel
+                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+
+                # mag limits
+                magmin = self.range_mag[rm - 1]
+                magmax = self.range_mag[rm]
+
+                # set the axis
+                ax.axis([6, 11.9, 6, 11.9])
+
+                # new condition with the magnitude range
+                conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
+
+                # Plot mass med versus best
+                ax.scatter(self.massb[conda], self.massm[conda], s=1, color="b", alpha=0.5, marker="s")
+
+                # Trace the limits 0.15(1+z)
+                x_zs = np.array([6, 15])
+                ax.plot(x_zs, x_zs, "r-")
+
+                # labels
+                ax.annotate(
+                    "$" + str(round(magmin, 2)) + " < mag < " + str(round(magmax, 2)) + "$",
+                    xy=(7, 11),
+                    color="black",
+                    fontsize=15,
+                )
+
+        return
+
+    def sfr_med_best(self):
+        """
+        Plot SFR median of the PDF versus minimum χ²
+
+        This diagnostic compares the two mass estimates produced by
+        LePHARE: the median of the posterior probability distribution (`SFR_MED`)
+        and the best-fit value from the minimum χ² solution (`SFR_BEST`).
+        The comparison helps identify systematic biases between the two estimators
+        and assess the stability of mass determinations.
+
+        The figure is divided into subpanels based on magnitude bins defined in
+        `range_mag`. Each subpanel shows `SFR_MED` versus `SFR_BEST` with a 1:1
+        reference line and scatter indicating consistency between the two measures.
+
+        Notes
+        -----
+        - Only sources within the defined redshift and magnitude ranges are included.
+        - The plot can reveal populations where the PDF and best-fit solutions diverge,
+          such as multi-peaked PDFs or poor fits.
+        - Strong deviations from the 1:1 line indicate inconsistency between the
+          χ²-based and PDF-based estimates.
+
+        Examples
+        --------
+        >>> utils = lp.PlotUtils(t, sel_filt=3)
+        >>> utils.sfr_med_best()
+        # Produces a SFR_MED vs SFR_BEST comparison plot by magnitude bin.
+        """
+        plt.clf()
+        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        # No space between the figures
+        plt.subplots_adjust(hspace=0, wspace=0)
+
+        # label of the figure
+        f.text(0.5, 0.04, r"$SFR \; minimum\; \chi^2$", ha="center", fontsize=15)
+        f.text(0.04, 0.5, r"$SFR \; median\; PDF(z)$", va="center", rotation="vertical", fontsize=15)
+
+        # Loop over the magnitude bins
+        for rm in range(len(self.range_mag)):
+            if rm > 0:
+                # Define the subplots and pass the panel
+                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+
+                # mag limits
+                magmin = self.range_mag[rm - 1]
+                magmax = self.range_mag[rm]
+
+                # set the axis
+                ax.axis([-2, 3.9, -2, 3.9])
+
+                # new condition with the magnitude range
+                conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
+
+                # Plot SFR med versus best
+                ax.scatter(self.sfrb[conda], self.sfrm[conda], s=1, color="b", alpha=0.5, marker="s")
+
+                # Trace the limits 0.15(1+z)
+                x_zs = np.array([-6, 15])
+                ax.plot(x_zs, x_zs, "r-")
+
+                # labels
+                ax.annotate(
+                    "$" + str(round(magmin, 2)) + " < mag < " + str(round(magmax, 2)) + "$",
+                    xy=(-1, 3),
+                    color="black",
+                    fontsize=15,
+                )
+
+        return
+
+    def mass_z(self):
+        """
+        Plot stellar mass versus redshift for the sample.
+
+        This diagnostic shows the relation between stellar masses
+        and redshift, providing insight into mass evolution, selection effects, and completeness
+        limits of the survey.
+
+        Notes
+        -----
+        - Uses the stellar mass
+        - Only objects within the redshift and magnitude selection ranges are included.
+        - The figure can be divided into subpanels based on magnitude or redshift bins.
+        - Helps identify trends such as brightening or dimming with redshift
+          and the distribution of galaxies in the mass-redshift plane.
+
+        Examples
+        --------
+        >>> utils = lp.PlotUtils(t, sel_filt=3)
+        >>> utils.mass_z()
+        # Produces plots of mass versus redshift
+        """
+        plt.clf()
+        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        plt.subplots_adjust(hspace=0, wspace=0)
+
+        f.text(0.5, 0.04, "$redshift$", ha="center", fontsize=15)
+        f.text(0.04, 0.5, "$log10(mass)$", va="center", rotation="vertical", fontsize=15)
+
+        for rm in range(len(self.range_mag)):
+            if rm > 0:
+                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+                magmin = self.range_mag[rm - 1]
+                magmax = self.range_mag[rm]
+
+                ax.axis([self.z_min, self.z_max, 7, 11.9])
+
+                conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
+                ax.scatter(self.zp[conda], self.massb[conda], s=1, color="b", alpha=0.2, marker="s")
+
+                ax.annotate(
+                    f"${magmin:.2f} < mag < {magmax:.2f}$", xy=(0.2, 11.5), color="black", fontsize=15
+                )
+
+        return
+
+    def sfr_z(self):
+        """
+        Plot SFR versus redshift for the sample.
+
+        This diagnostic shows the relation between SFR
+        and redshift, providing insight into mass evolution, selection effects, and completeness
+        limits of the survey.
+
+        Notes
+        -----
+        - Uses the SFR
+        - Only objects within the redshift and magnitude selection ranges are included.
+        - The figure can be divided into subpanels based on magnitude or redshift bins.
+        - Helps identify trends such as brightening or dimming with redshift
+          and the distribution of galaxies in the mass-redshift plane.
+
+        Examples
+        --------
+        >>> utils = lp.PlotUtils(t, sel_filt=3)
+        >>> utils.sfr_z()
+        # Produces plots of mass versus redshift
+        """
+        plt.clf()
+        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        plt.subplots_adjust(hspace=0, wspace=0)
+
+        f.text(0.5, 0.04, "$redshift$", ha="center", fontsize=15)
+        f.text(0.04, 0.5, "$log10(SFR)$", va="center", rotation="vertical", fontsize=15)
+
+        for rm in range(len(self.range_mag)):
+            if rm > 0:
+                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+                magmin = self.range_mag[rm - 1]
+                magmax = self.range_mag[rm]
+
+                ax.axis([self.z_min, self.z_max, -3, 3.9])
+
+                conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
+                ax.scatter(self.zp[conda], self.sfrb[conda], s=1, color="b", alpha=0.2, marker="s")
+
+                ax.annotate(f"${magmin:.2f} < mag < {magmax:.2f}$", xy=(0.2, 3.0), color="black", fontsize=15)
+
+        return
+
+    def mass_sfr(self):
+        """
+        Plot stellar mass versus SFR for the sample.
+
+        This diagnostic shows the main sequence
+
+        Notes
+        -----
+        - Uses the stellar mass and SFR
+        - Only objects within the redshift and magnitude selection ranges are included.
+        - The figure can be divided into subpanels based on magnitude or redshift bins.
+
+        Examples
+        --------
+        >>> utils = lp.PlotUtils(t, sel_filt=3)
+        >>> utils.mass_sfr()
+        # Produces plots of mass versus SFR
+        """
+        plt.clf()
+        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        plt.subplots_adjust(hspace=0, wspace=0)
+
+        f.text(0.5, 0.04, "$log10(mass)$", ha="center", fontsize=15)
+        f.text(0.04, 0.5, "$log10(SFR)$", va="center", rotation="vertical", fontsize=15)
+
+        for rm in range(len(self.range_z)):
+            if rm > 0:
+                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+                zmin = self.range_z[rm - 1]
+                zmax = self.range_z[rm]
+
+                ax.axis([7, 12, -3, 4])
+
+                # new condition with the redshift range and star-forming
+                conda = (
+                    self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.ssfrb > -11) & (self.ssfrb < 90)
+                )
+                ax.scatter(self.massb[conda], self.sfrb[conda], s=1, color="b", alpha=0.2, marker="s")
+
+                # new condition with the redshift range and quiescent
+                conda = self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.ssfrb < -11)
+                ax.scatter(self.massb[conda], self.sfrb[conda], s=1, color="r", alpha=0.2, marker="s")
+
+                ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(8, 3), color="black", fontsize=15)
 
         return
 
