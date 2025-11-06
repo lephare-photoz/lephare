@@ -185,7 +185,7 @@ class PlotUtils:
         self.Lnuv = t["LUM_NUV_BEST"]
         self.Lr = t["LUM_R_BEST"]
         self.Lk = t["LUM_K_BEST"]
-        self.pdfs = np.array(t["BAY_ZG"])
+        self.pdfs = np.array(t["PDF_BAY_ZG()"])
 
         # Define the panels with the binning in redshift an magnitude
         if len(range_z) == 1:
