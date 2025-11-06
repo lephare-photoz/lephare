@@ -2539,15 +2539,15 @@ class PlotUtils:
 
                 # new condition with the magnitude range and star-forming
                 conda = (
-                    self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.ssfrm > -11) & (self.ssfrm > -90)
+                    self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.ssfrm > -11) & (self.ssfrm < 0)
                 )
-                if len(self.zp[conda]) > 0:
-                    ax.scatter(self.zp[conda], self.mabsk[conda], s=1, color="b", alpha=0.2, marker="s")
+                if len(self.massb[conda]) > 0:
+                    ax.scatter(self.massb[conda], self.mabsk[conda], s=1, color="b", alpha=0.2, marker="s")
 
                 # new condition with the magnitude range and quiescent
                 conda = self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.ssfrm < -11)
-                if len(self.zp[conda]) > 0:
-                    ax.scatter(self.zp[conda], self.mabsk[conda], s=1, color="r", alpha=0.2, marker="s")
+                if len(self.massb[conda]) > 0:
+                    ax.scatter(self.massb[conda], self.mabsk[conda], s=1, color="r", alpha=0.2, marker="s")
 
                 ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(8, -22), color="black", fontsize=15)
 
