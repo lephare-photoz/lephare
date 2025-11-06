@@ -185,8 +185,11 @@ class PlotUtils:
         self.Lnuv = t["LUM_NUV_BEST"]
         self.Lr = t["LUM_R_BEST"]
         self.Lk = t["LUM_K_BEST"]
-        self.pdfs = np.array(t["PDF_BAY_ZG()"])
-
+        try:
+            self.pdfs = np.array(t["PDF_BAY_ZG()"])
+        except KeyError:
+            print("Using depraecated BAY_ZG column for pdfs")
+            self.pdfs = np.array(t["BAY_ZG"])
         # Define the panels with the binning in redshift an magnitude
         if len(range_z) == 1:
             self.range_z = np.quantile(self.zs[(self.zs > -1) & (self.zs < 9)], [0, 0.25, 0.5, 0.75, 1])
@@ -1808,6 +1811,10 @@ class PlotUtils:
                     continue
 
                 for fig in figs:
+                    if not fig.axes or all(not ax.has_data() and len(ax.images) == 0 for ax in fig.axes):
+                        print(f"Skipping empty figure from {name}")
+                        plt.close(fig)
+                        continue
                     pdf.savefig(fig, bbox_inches="tight")
                 plt.close("all")
 
