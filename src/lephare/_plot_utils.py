@@ -188,7 +188,7 @@ class PlotUtils:
         try:
             self.pdfs = np.array(t["PDF_BAY_ZG()"])
         except KeyError:
-            print("Using depraecated BAY_ZG column for pdfs")
+            print("Using deprecated BAY_ZG column for pdfs")
             self.pdfs = np.array(t["BAY_ZG"])
         # Define the panels with the binning in redshift an magnitude
         if len(range_z) == 1:
