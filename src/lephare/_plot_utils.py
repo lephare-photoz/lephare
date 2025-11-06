@@ -1,5 +1,5 @@
 from inspect import getmembers, ismethod
-from math import ceil
+from math import ceil, log10
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -58,11 +58,16 @@ class PlotUtils:
         utils.william()
         utils.dist_mass()
         utils.dist_sfr()
+        utils.dist_ssfr()
         utils.mass_med_best()
         utils.sfr_med_best()
+        utils.mass_sfr()
         utils.mass_z()
         utils.sfr_z()
-
+        utils.lnuv_sfr()
+        utils.absmagu_sfr()
+        utils.absmagk_mass()
+        utils.masstolight_z()
 
         utils.save_all_plots_pdf()
 
@@ -197,9 +202,9 @@ class PlotUtils:
         self.ssfrl = t["SSFR_INF"]
         self.ssfrm = t["SSFR_MED"]
         self.ssfrs = t["SSFR_SUP"]
-        self.Lnuv = t["LUM_NUV_BEST"]
-        self.Lr = t["LUM_R_BEST"]
-        self.Lk = t["LUM_K_BEST"]
+        self.lnuv = t["LUM_NUV_BEST"]
+        self.lr = t["LUM_R_BEST"]
+        self.lk = t["LUM_K_BEST"]
         self.pdfs = np.array(t[pdf_col])
 
         # Define the panels with the binning in redshift an magnitude
@@ -2402,6 +2407,194 @@ class PlotUtils:
                 ax.scatter(self.massb[conda], self.sfrb[conda], s=1, color="r", alpha=0.2, marker="s")
 
                 ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(8, 3), color="black", fontsize=15)
+
+        return
+
+    def lnuv_sfr(self):
+        """
+        Plot dust-corrected L(NUV) versus SFR for the sample.
+
+
+        Notes
+        -----
+        - Uses the Lnuv and SFR
+        - Only objects within the redshift and magnitude selection ranges are included.
+        - The figure can be divided into subpanels based on magnitude or redshift bins.
+
+        Examples
+        --------
+        >>> utils = lp.PlotUtils(t, sel_filt=3)
+        >>> utils.lnuv_sfr()
+        # Produces plots of L(NUV) versus SFR
+        """
+        plt.clf()
+        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        plt.subplots_adjust(hspace=0, wspace=0)
+
+        f.text(0.5, 0.04, "$log10(SFR)$", ha="center", fontsize=15)
+        f.text(0.04, 0.5, "$L(NUV)$", va="center", rotation="vertical", fontsize=15)
+
+        for rm in range(len(self.range_z)):
+            if rm > 0:
+                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+                zmin = self.range_z[rm - 1]
+                zmax = self.range_z[rm]
+
+                ax.axis([-4, 3, 6, 11.9])
+
+                # new condition with the redshift range and star-forming
+                conda = self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.sfrb > -90)
+                ax.scatter(self.sfrb[conda], self.lnuv[conda], s=1, color="b", alpha=0.2, marker="s")
+
+                ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(-3, 10), color="black", fontsize=15)
+
+        return
+
+    def masstolight_z(self):
+        """
+        Plot mass-to-light ratio versus redshift for the sample.
+
+        This diagnostic shows the relation between mass-to-light ratio
+        and redshift, providing insight into SED fitting
+
+        Notes
+        -----
+        - Uses the L(K) and massb
+        - Only objects within the redshift and magnitude selection ranges are included.
+        - The figure can be divided into subpanels based on magnitude or redshift bins.
+
+        Examples
+        --------
+        >>> utils = lp.PlotUtils(t, sel_filt=3)
+        >>> utils.masstolight_z()
+        # Produces plots of mass-to-light versus redshift
+        """
+        plt.clf()
+        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        plt.subplots_adjust(hspace=0, wspace=0)
+
+        f.text(0.5, 0.04, "$redshift$", ha="center", fontsize=15)
+        f.text(0.04, 0.5, r"$log10(M/L \, ratio)$", va="center", rotation="vertical", fontsize=15)
+
+        # Define the mass-to-light ratio
+        mlratio = (
+            self.massm
+            - self.lk
+            + (0.4 * (51.605 - 5.14))
+            + log10(3.0e18 * 2000.0 / pow(22000.0, 2.0))
+            - log10(3.826e33)
+        )
+
+        for rm in range(len(self.range_mag)):
+            if rm > 0:
+                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+                magmin = self.range_mag[rm - 1]
+                magmax = self.range_mag[rm]
+
+                ax.axis([self.z_min, self.z_max, -1.4, 0.2])
+
+                conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
+                ax.scatter(self.zp[conda], mlratio[conda], s=1, color="b", alpha=0.2, marker="s")
+
+                ax.annotate(f"${magmin:.2f} < mag < {magmax:.2f}$", xy=(0.2, 0), color="black", fontsize=15)
+
+                # Trace the limits
+                x = np.array([0, 6])
+                ax.plot(x, -0.27 * x - 0.05 - 0.24, "r-")
+                ax.plot(x, -0.18 * x - 0.05 - 0.24, "r-")
+
+        return
+
+    def absmagk_mass(self):
+        """
+        Plot M(Ks) versus mass for the sample.
+
+
+        Notes
+        -----
+        - Uses the M(Ks) and mass
+        - Only objects within the redshift and magnitude selection ranges are included.
+        - The figure can be divided into subpanels based on magnitude or redshift bins.
+
+        Examples
+        --------
+        >>> utils = lp.PlotUtils(t, sel_filt=3)
+        >>> utils.absmagk_mass()
+        # Produces plots of M(K) versus mass
+        """
+        plt.clf()
+        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        plt.subplots_adjust(hspace=0, wspace=0)
+
+        f.text(0.5, 0.04, "$log10(mass)$", ha="center", fontsize=15)
+        f.text(0.04, 0.5, "$M(K)$", va="center", rotation="vertical", fontsize=15)
+
+        for rm in range(len(self.range_z)):
+            if rm > 0:
+                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+                zmin = self.range_z[rm - 1]
+                zmax = self.range_z[rm]
+
+                ax.axis([6, 11.9, -24.9, -13])
+
+                # new condition with the magnitude range and star-forming
+                conda = (
+                    self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.ssfrm > -11) & (self.ssfrm > -90)
+                )
+                if len(self.zp[conda]) > 0:
+                    ax.scatter(self.zp[conda], self.mabsk[conda], s=1, color="b", alpha=0.2, marker="s")
+
+                # new condition with the magnitude range and quiescent
+                conda = self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.ssfrm < -11)
+                if len(self.zp[conda]) > 0:
+                    ax.scatter(self.zp[conda], self.mabsk[conda], s=1, color="r", alpha=0.2, marker="s")
+
+                ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(8, -22), color="black", fontsize=15)
+
+        return
+
+    def absmagu_sfr(self):
+        """
+        Plot M(U) versus SFR for the sample.
+
+
+        Notes
+        -----
+        - Uses the M(U) and SFR
+        - Only objects within the redshift and magnitude selection ranges are included.
+        - The figure can be divided into subpanels based on magnitude or redshift bins.
+
+        Examples
+        --------
+        >>> utils = lp.PlotUtils(t, sel_filt=3)
+        >>> utils.absmagu_sfr()
+        # Produces plots of M(U) versus SFR
+        """
+        plt.clf()
+        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        plt.subplots_adjust(hspace=0, wspace=0)
+
+        f.text(0.5, 0.04, "$log10(SFR)$", ha="center", fontsize=15)
+        f.text(0.04, 0.5, "$M(U)$", va="center", rotation="vertical", fontsize=15)
+
+        for rm in range(len(self.range_z)):
+            if rm > 0:
+                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+                zmin = self.range_z[rm - 1]
+                zmax = self.range_z[rm]
+
+                ax.axis([-4, 4, -24.9, -13])
+
+                # new condition with the redshift range and star-forming
+                conda = self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.sfrb > -90)
+                condb = conda & (self.ebv <= 0.1)
+                ax.scatter(self.sfrb[condb], self.mabsu[condb], s=1, color="b", alpha=0.2, marker="s")
+                condb = conda & (self.ebv > 0.1) & (self.ebv < 0.3)
+                ax.scatter(self.sfrb[condb], self.mabsu[condb], s=1, color="g", alpha=0.2, marker="s")
+                condb = conda & (self.ebv >= 0.3)
+                ax.scatter(self.sfrb[condb], self.mabsu[condb], s=1, color="r", alpha=0.2, marker="s")
+
+                ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(-3, -22), color="black", fontsize=15)
 
         return
 
