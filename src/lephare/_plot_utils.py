@@ -55,6 +55,9 @@ class PlotUtils:
         utils.check_error()
         utils.errormag()
         utils.errorz()
+        utils.pit_qq()
+
+        utils.save_all_plots_pdf()
 
     Parameters
     ----------
@@ -241,6 +244,61 @@ class PlotUtils:
         self.condspec = (self.zs > 0) & (self.zs < 9)
 
         return
+
+    def save_all_plots_pdf(self, filename="all_plots.pdf", **kwargs):
+        """
+        Generate all plotting methods in the class and save them in a single PDF.
+
+        Parameters
+        ----------
+        filename : str, optional
+            The output PDF filename (default "all_plots.pdf").
+        **kwargs : dict, optional
+            Keyword arguments to pass to the plotting methods. Common keys include:
+            - bins : int
+                Number of bins for histograms.
+            - show_pit : bool
+                Whether to include PIT histogram in applicable plots.
+            - show_qq : bool
+                Whether to include QQ plots in applicable methods.
+            - savefig : bool
+                Whether to save individual plots.
+            Any method that does not accept a particular key will ignore it.
+        """
+        # Get all callable public methods
+        plot_methods = [
+            (name, m)
+            for name, m in getmembers(self, predicate=ismethod)
+            if callable(m) and not name.startswith("_") and name != "save_all_plots_pdf"
+        ]
+
+        with PdfPages(filename) as pdf:
+            for name, method in plot_methods:
+                print(f"Running plot method: {name}()")
+
+                plt.close("all")  # clear previous figures
+
+                try:
+                    # Try calling with kwargs
+                    method(**kwargs)
+                except TypeError:
+                    # Fallback if method doesn’t accept kwargs
+                    method()
+
+                figs = [plt.figure(i) for i in plt.get_fignums()]
+                if not figs:
+                    print(f"No figure created by {name}(), skipping.")
+                    continue
+
+                for fig in figs:
+                    if not fig.axes or all(not ax.has_data() and len(ax.images) == 0 for ax in fig.axes):
+                        print(f"Skipping empty figure from {name}")
+                        plt.close(fig)
+                        continue
+                    pdf.savefig(fig, bbox_inches="tight")
+                plt.close("all")
+
+        print(f"All plots saved to {filename}")
 
     def zml_zs(self):
         """
@@ -1766,61 +1824,6 @@ class PlotUtils:
         else:
             fig_filename = None
         return fig_filename
-
-    def save_all_plots_pdf(self, filename="all_plots.pdf", **kwargs):
-        """
-        Generate all plotting methods in the class and save them in a single PDF.
-
-        Parameters
-        ----------
-        filename : str, optional
-            The output PDF filename (default "all_plots.pdf").
-        **kwargs : dict, optional
-            Keyword arguments to pass to the plotting methods. Common keys include:
-            - bins : int
-                Number of bins for histograms.
-            - show_pit : bool
-                Whether to include PIT histogram in applicable plots.
-            - show_qq : bool
-                Whether to include QQ plots in applicable methods.
-            - savefig : bool
-                Whether to save individual plots.
-            Any method that does not accept a particular key will ignore it.
-        """
-        # Get all callable public methods
-        plot_methods = [
-            (name, m)
-            for name, m in getmembers(self, predicate=ismethod)
-            if callable(m) and not name.startswith("_") and name != "save_all_plots_pdf"
-        ]
-
-        with PdfPages(filename) as pdf:
-            for name, method in plot_methods:
-                print(f"Running plot method: {name}()")
-
-                plt.close("all")  # clear previous figures
-
-                try:
-                    # Try calling with kwargs
-                    method(**kwargs)
-                except TypeError:
-                    # Fallback if method doesn’t accept kwargs
-                    method()
-
-                figs = [plt.figure(i) for i in plt.get_fignums()]
-                if not figs:
-                    print(f"No figure created by {name}(), skipping.")
-                    continue
-
-                for fig in figs:
-                    if not fig.axes or all(not ax.has_data() and len(ax.images) == 0 for ax in fig.axes):
-                        print(f"Skipping empty figure from {name}")
-                        plt.close(fig)
-                        continue
-                    pdf.savefig(fig, bbox_inches="tight")
-                plt.close("all")
-
-        print(f"All plots saved to {filename}")
 
 
 def integrate_pdfs_to_ztrue(pdfs, zgrid, ztrue):
