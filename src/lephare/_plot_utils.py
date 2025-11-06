@@ -1,10 +1,10 @@
-# from math import *
-
+from inspect import getmembers, ismethod
 from math import ceil
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import gridspec
+from matplotlib.backends.backend_pdf import PdfPages
 from scipy.interpolate import interp1d
 
 __all__ = ["PlotUtils"]
@@ -185,8 +185,11 @@ class PlotUtils:
         self.Lnuv = t["LUM_NUV_BEST"]
         self.Lr = t["LUM_R_BEST"]
         self.Lk = t["LUM_K_BEST"]
-        self.pdfs = np.array(t["PDF_BAY_ZG()"])
-
+        try:
+            self.pdfs = np.array(t["PDF_BAY_ZG()"])
+        except KeyError:
+            print("Using deprecated BAY_ZG column for pdfs")
+            self.pdfs = np.array(t["BAY_ZG"])
         # Define the panels with the binning in redshift an magnitude
         if len(range_z) == 1:
             self.range_z = np.quantile(self.zs[(self.zs > -1) & (self.zs < 9)], [0, 0.25, 0.5, 0.75, 1])
@@ -291,7 +294,9 @@ class PlotUtils:
 
             ax.axis([self.z_min, self.z_max, self.z_min, self.z_max])
             conda = self.cond & self.condspec & (self.mag > magmin) & (self.mag < magmax)
-            ax.scatter(self.zs[conda], self.zml[conda], s=1, color="b", alpha=0.5, marker="s")
+            ax.scatter(
+                self.zs[conda], self.zml[conda], s=1, color="b", alpha=0.5, marker="s", rasterized=True
+            )
 
             # Check that we have some sources before performing statistics
             ngal = len(self.zml[conda])
@@ -384,7 +389,7 @@ class PlotUtils:
 
             ax.axis([self.z_min, self.z_max, self.z_min, self.z_max])
             conda = self.cond & self.condspec & (self.mag > magmin) & (self.mag < magmax)
-            ax.scatter(self.zs[conda], self.zp[conda], s=1, color="b", alpha=0.5, marker="s")
+            ax.scatter(self.zs[conda], self.zp[conda], s=1, color="b", alpha=0.5, marker="s", rasterized=True)
 
             # Check that we have some sources before performing statistics
             ngal = len(self.zp[conda])
@@ -1122,7 +1127,7 @@ class PlotUtils:
             if (self.bFilt >= 0) and (self.zFilt >= 0) and (self.kFilt >= 0):
                 colx = self.magb - self.magz
                 coly = self.magz - self.magk
-                ax.scatter(colx[conda], coly[conda], s=1, color="b", alpha=0.2, marker="s")
+                ax.scatter(colx[conda], coly[conda], s=1, color="b", alpha=0.2, marker="s", rasterized=True)
 
             ax.plot([-1, 6], [-0.5, 6])
 
@@ -1230,7 +1235,9 @@ class PlotUtils:
                     magx = self.mabsr
                     coly = self.mabsu - self.mabsr
 
-                    ax.scatter(magx[conda], coly[conda], s=1, color="b", alpha=0.2, marker="s")
+                    ax.scatter(
+                        magx[conda], coly[conda], s=1, color="b", alpha=0.2, marker="s", rasterized=True
+                    )
 
                     ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(-20, 1), color="black", fontsize=15)
 
@@ -1284,7 +1291,9 @@ class PlotUtils:
                     colx = self.mabsr - self.mabsj
                     coly = self.mabsu - self.mabsr
 
-                    ax.scatter(colx[conda], coly[conda], s=1, color="b", alpha=0.2, marker="s")
+                    ax.scatter(
+                        colx[conda], coly[conda], s=1, color="b", alpha=0.2, marker="s", rasterized=True
+                    )
 
                     ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(0.1, 2), color="black", fontsize=15)
 
@@ -1436,8 +1445,8 @@ class PlotUtils:
         conda = self.cond & self.condgal
 
         # Error versus mag
-        plt.scatter(self.mag[conda], diffu[conda], s=1, color="b", alpha=0.5, marker="s")
-        plt.scatter(self.mag[conda], diffl[conda], s=1, color="r", alpha=0.5, marker="s")
+        plt.scatter(self.mag[conda], diffu[conda], s=1, color="b", alpha=0.5, marker="s", rasterized=True)
+        plt.scatter(self.mag[conda], diffl[conda], s=1, color="r", alpha=0.5, marker="s", rasterized=True)
 
         # 68%
         plt.plot([15, 27], [0, 0], color="r")  # Adapte les limites x à ton graphique
@@ -1754,8 +1763,62 @@ class PlotUtils:
             plt.savefig(fig_filename)
         else:
             fig_filename = None
-
         return fig_filename
+
+    def save_all_plots_pdf(self, filename="all_plots.pdf", **kwargs):
+        """
+        Generate all plotting methods in the class and save them in a single PDF.
+
+        Parameters
+        ----------
+        filename : str, optional
+            The output PDF filename (default "all_plots.pdf").
+        **kwargs : dict, optional
+            Keyword arguments to pass to the plotting methods. Common keys include:
+            - bins : int
+                Number of bins for histograms.
+            - show_pit : bool
+                Whether to include PIT histogram in applicable plots.
+            - show_qq : bool
+                Whether to include QQ plots in applicable methods.
+            - savefig : bool
+                Whether to save individual plots.
+            Any method that does not accept a particular key will ignore it.
+        """
+        # Get all callable public methods
+        plot_methods = [
+            (name, m)
+            for name, m in getmembers(self, predicate=ismethod)
+            if callable(m) and not name.startswith("_") and name != "save_all_plots_pdf"
+        ]
+
+        with PdfPages(filename) as pdf:
+            for name, method in plot_methods:
+                print(f"Running plot method: {name}()")
+
+                plt.close("all")  # clear previous figures
+
+                try:
+                    # Try calling with kwargs
+                    method(**kwargs)
+                except TypeError:
+                    # Fallback if method doesn’t accept kwargs
+                    method()
+
+                figs = [plt.figure(i) for i in plt.get_fignums()]
+                if not figs:
+                    print(f"No figure created by {name}(), skipping.")
+                    continue
+
+                for fig in figs:
+                    if not fig.axes or all(not ax.has_data() and len(ax.images) == 0 for ax in fig.axes):
+                        print(f"Skipping empty figure from {name}")
+                        plt.close(fig)
+                        continue
+                    pdf.savefig(fig, bbox_inches="tight")
+                plt.close("all")
+
+        print(f"All plots saved to {filename}")
 
 
 def integrate_pdfs_to_ztrue(pdfs, zgrid, ztrue):
