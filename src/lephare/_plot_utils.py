@@ -107,13 +107,15 @@ class PlotUtils:
       performance and SED fitting reliability.
     """
 
-    def __init__(self, t, sel_filt=0, pos_filt=None, range_z=None, range_mag=None, pdf_col="PDF_BAY_ZG()"):
+    def __init__(self, t, sel_filt=0, pos_filt=None, range_z=None, range_mag=None, pdf_col=None):
         if pos_filt is None:
             pos_filt = [0, 0, 0, 0, 0, 0]
         if range_z is None:
             range_z = [-1]
         if range_mag is None:
             range_mag = [-1]
+        if pdf_col is None:
+            pdf_col = "PDF_BAY_ZG()"
         # Number of the filter start at 0
         self.sel_filt = sel_filt  # filter for the selection in mag
         self.uFilt = pos_filt[0]
