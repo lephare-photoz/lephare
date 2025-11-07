@@ -1,4 +1,3 @@
-from inspect import getmembers, ismethod
 from math import ceil, log10
 
 import matplotlib.pyplot as plt
@@ -274,14 +273,14 @@ class PlotUtils:
 
         return
 
-    def save_all_plots_pdf(self, filename="all_plots.pdf", **kwargs):
+    def save_photoz_plots_pdf(self, filename="all_plots.pdf", **kwargs):
         """
-        Generate all plotting methods in the class and save them in a single PDF.
+        Generate all photoz plotting methods in the class and save them in a single PDF.
 
         Parameters
         ----------
         filename : str, optional
-            The output PDF filename (default "all_plots.pdf").
+            The output PDF filename (default "all_photoz_plots.pdf").
         **kwargs : dict, optional
             Keyword arguments to pass to the plotting methods. Common keys include:
             - bins : int
@@ -296,9 +295,93 @@ class PlotUtils:
         """
         # Get all callable public methods
         plot_methods = [
-            (name, m)
-            for name, m in getmembers(self, predicate=ismethod)
-            if callable(m) and not name.startswith("_") and name != "save_all_plots_pdf"
+            self.zml_zs(),
+            self.zp_zs(),
+            self.zml_zp(),
+            self.dist_z(),
+            self.dist_chi2(),
+            self.dist_filt(),
+            self.dist_model(),
+            self.dist_ebv(),
+            self.secondpeak(),
+            self.bzk(),
+            self.cumulative68(),
+            self.check_error(),
+            self.errormag(),
+            self.errorz(),
+            self.pit_qq(),
+        ]
+
+        with PdfPages(filename) as pdf:
+            for name, method in plot_methods:
+                print(f"Running plot method: {name}()")
+
+                plt.close("all")  # clear previous figures
+
+                try:
+                    # Try calling with kwargs
+                    method(**kwargs)
+                except TypeError:
+                    # Fallback if method doesn’t accept kwargs
+                    method()
+
+                figs = [plt.figure(i) for i in plt.get_fignums()]
+                if not figs:
+                    print(f"No figure created by {name}(), skipping.")
+                    continue
+
+                for fig in figs:
+                    if not fig.axes or all(not ax.has_data() and len(ax.images) == 0 for ax in fig.axes):
+                        print(f"Skipping empty figure from {name}")
+                        plt.close(fig)
+                        continue
+                    pdf.savefig(fig, bbox_inches="tight")
+                plt.close("all")
+
+        print(f"All plots saved to {filename}")
+
+    def save_phys_plots_pdf(self, filename="all_phys_plots.pdf", **kwargs):
+        """
+        Generate all physical parameter plots in the class and save them in a single PDF.
+
+        Parameters
+        ----------
+        filename : str, optional
+            The output PDF filename (default "all_phys_plots.pdf").
+        **kwargs : dict, optional
+            Keyword arguments to pass to the plotting methods. Common keys include:
+            - bins : int
+                Number of bins for histograms.
+            - show_pit : bool
+                Whether to include PIT histogram in applicable plots.
+            - show_qq : bool
+                Whether to include QQ plots in applicable methods.
+            - savefig : bool
+                Whether to save individual plots.
+            Any method that does not accept a particular key will ignore it.
+        """
+        # Get all callable public methods
+        plot_methods = [
+            self.dist_z(),
+            self.dist_chi2(),
+            self.dist_filt(),
+            self.dist_model(),
+            self.dist_ebv(),
+            self.absmag_z(),
+            self.rf_color(),
+            self.william(),
+            self.dist_mass(),
+            self.dist_sfr(),
+            self.dist_ssfr(),
+            self.mass_med_best(),
+            self.sfr_med_best(),
+            self.mass_sfr(),
+            self.mass_z(),
+            self.sfr_z(),
+            self.lnuv_sfr(),
+            self.absmagu_sfr(),
+            self.absmagk_mass(),
+            self.masstolight_z(),
         ]
 
         with PdfPages(filename) as pdf:
