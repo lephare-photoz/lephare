@@ -342,7 +342,7 @@ class PlotUtils:
                     if not fig.axes:
                         plt.close(fig)
                         continue
-                    pdf.savefig(fig, bbox_inches="tight")
+                    pdf.savefig(fig, bbox_inches="tight", dpi=300)
                 plt.close("all")
 
         print(f"All plots saved to {filename}")
@@ -436,7 +436,7 @@ class PlotUtils:
         # Message text
         message = f"LePHARE Diagnostics\n" f"LePHARE version: {lp.__version__}\n" f"Date: {today}"
 
-        fig, ax = plt.subplots(figsize=(8.5, 11))  # standard A4-ish size
+        fig, ax = plt.subplots(figsize=(8.5, 11), dpi=300)  # standard A4-ish size
 
         # Try to download and display the logo
         logo_url = "https://raw.githubusercontent.com/lephare-photoz/lephare-logo/main/Logo/On%20White%20Background/Colour/Digital/LePhareLogo_RGB.png"
