@@ -1,6 +1,9 @@
+import io
+import urllib.request
 from datetime import datetime
 from math import ceil, log10
 
+import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import gridspec
@@ -434,6 +437,31 @@ class PlotUtils:
         message = f"LePHARE Diagnostics\n" f"LePHARE version: {lp.__version__}\n" f"Date: {today}"
 
         fig, ax = plt.subplots(figsize=(8.5, 11))  # standard A4-ish size
+
+        # Try to download and display the logo
+        logo_url = "https://raw.githubusercontent.com/lephare-photoz/lephare-logo/main/Logo/On%20White%20Background/Colour/Digital/LePhareLogo_RGB.png"
+        try:
+            with urllib.request.urlopen(logo_url) as url:
+                image_data = io.BytesIO(url.read())
+            logo = mpimg.imread(image_data)
+            # Original dimensions
+            orig_width, orig_height = 3463, 3000
+            aspect = orig_height / orig_width  # height / width
+
+            # Desired width fraction of figure
+            width_frac = 0.3  # logo spans 50% of figure width
+            x_center = 0.5
+            y_top = 0.95  # top margin
+
+            # Compute extent while preserving aspect ratio
+            x_half = width_frac / 2
+            y_height = width_frac * aspect
+            ax.imshow(
+                logo, extent=[x_center - x_half, x_center + x_half, y_top - y_height, y_top], aspect="auto"
+            )
+        except Exception as e:
+            print(f"Could not load LePHARE logo: {e}")
+
         ax.axis("off")  # Remove all axes, ticks, and labels
         ax.set_frame_on(False)  # Remove the border/frame
         ax.text(0.5, 0.5, message, ha="center", va="center", fontsize=14, transform=ax.transAxes)
