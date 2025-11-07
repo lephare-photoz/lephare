@@ -41,8 +41,8 @@ class PlotUtils:
         utils.zml_zs()
         utils.zp_zs()
         utils.zml_zp()
-        utils.distz()
-        utils.chi2dist()
+        utils.dist_z()
+        utils.dist_chi2()
         utils.dist_filt()
         utils.dist_model()
         utils.dist_ebv()
@@ -355,7 +355,7 @@ class PlotUtils:
         --------
         zml_zp : Compare median and best-fit photometric redshifts.
         zp_zs : Compare best-fit photometric redshifts versus spectroscopic redshifts.
-        distz : Show distribution of redshift differences.
+        dist_z : Show distribution of redshift differences.
 
         Examples
         --------
@@ -450,7 +450,7 @@ class PlotUtils:
         --------
         zml_zs : Compare median photometric redshifts versus spectroscopic redshifts.
         zml_zp : Compare median and best-fit photometric redshifts.
-        distz : Show distribution of redshift differences.
+        dist_z : Show distribution of redshift differences.
 
         Examples
         --------
@@ -543,7 +543,7 @@ class PlotUtils:
         --------
         zml_zs : Compare median photometric redshifts versus spectroscopic redshifts.
         zp_zs : Compare best-fit photometric redshifts versus spectroscopic redshifts.
-        distz : Show distribution of redshift distribution.
+        dist_z : Show distribution of redshift distribution.
 
         Examples
         --------
@@ -595,7 +595,7 @@ class PlotUtils:
 
         return
 
-    def distz(self, nstep=20):
+    def dist_z(self, nstep=20):
         """
         Plot the redshift distribution of the spectroscopic and photometric samples.
 
@@ -625,7 +625,7 @@ class PlotUtils:
         Examples
         --------
         >>> utils = lp.PlotUtils(t, sel_filt=3)
-        >>> utils.distz(nstep=30)
+        >>> utils.dist_z(nstep=30)
         # Produces histograms of ZSPEC, Z_BEST, and Z_MED distributions.
         """
 
@@ -711,7 +711,7 @@ class PlotUtils:
 
         return
 
-    def chi2dist(self, nstep=20):
+    def dist_chi2(self, nstep=20):
         """
         Plot the reduced χ² distribution as a function of observed magnitude.
 
@@ -737,7 +737,7 @@ class PlotUtils:
 
         See Also
         --------
-        distz : Show redshift distributions.
+        dist_z : Show redshift distributions.
         dist_model : Show distribution of best-fit SED model identifiers.
         dist_ebv : Show distribution of dust extinction values.
         check_error : Verify internal photometric error estimates.
@@ -745,7 +745,7 @@ class PlotUtils:
         Examples
         --------
         >>> utils = lp.PlotUtils(t, sel_filt=3)
-        >>> utils.chi2dist(nstep=30)
+        >>> utils.dist_chi2(nstep=30)
         # Produces χ² histograms by magnitude bin.
         """
         ## Create a figure with an array with nbRowM*nbColM subpanels
@@ -820,17 +820,17 @@ class PlotUtils:
                         label=r"$\chi^2_{star} \; if \;  \chi^2_{gal}>\chi^2_{stars}$",
                     )
 
-                    # print the legend
-                    if leg == 1:
-                        ax.legend(prop={"size": 8})
+                # print the legend
+                if leg == 1:
+                    ax.legend(prop={"size": 8})
 
-                    # labels
-                    ax.annotate(
-                        "$" + str(round(magmin, 2)) + " < mag < " + str(round(magmax, 2)) + "$",
-                        xy=(-1.8, 1.2),
-                        color="black",
-                        fontsize=15,
-                    )
+                # labels
+                ax.annotate(
+                    "$" + str(round(magmin, 2)) + " < mag < " + str(round(magmax, 2)) + "$",
+                    xy=(-1.8, 1.2),
+                    color="black",
+                    fontsize=15,
+                )
 
         return
 
@@ -857,7 +857,7 @@ class PlotUtils:
 
         See Also
         --------
-        chi2dist : Show χ² distribution by magnitude bin.
+        dist_chi2 : Show χ² distribution by magnitude bin.
         dist_model : Show distribution of best-fit model identifiers.
         dist_ebv : Show distribution of dust extinction values.
 
@@ -932,7 +932,7 @@ class PlotUtils:
         See Also
         --------
         dist_ebv : Show distribution of best-fit dust extinction values.
-        chi2dist : Show χ² distribution by magnitude bin.
+        dist_chi2 : Show χ² distribution by magnitude bin.
         dist_filt : Show number of filters used in each fit.
 
         Examples
@@ -974,7 +974,7 @@ class PlotUtils:
                     # labels
                     ax.annotate(
                         "$" + str(round(zmin, 2)) + " < z < " + str(round(zmax, 2)) + "$",
-                        xy=(1, 0.15),
+                        xy=(10, 0.25),
                         color="black",
                         fontsize=15,
                     )
@@ -1005,7 +1005,7 @@ class PlotUtils:
         See Also
         --------
         dist_model : Show distribution of best-fit SED model identifiers.
-        chi2dist : Show χ² distribution by magnitude bin.
+        dist_chi2 : Show χ² distribution by magnitude bin.
         dist_filt : Show number of filters used in each fit.
 
         Examples
@@ -1083,7 +1083,7 @@ class PlotUtils:
         zml_zs : Compare median photometric redshift versus spectroscopic redshift.
         zp_zs : Compare best-fit photometric redshift versus spectroscopic redshift.
         zml_zp : Compare median and best-fit photometric redshifts.
-        distz : Show overall redshift distributions.
+        dist_z : Show overall redshift distributions.
 
         Examples
         --------
@@ -1245,7 +1245,7 @@ class PlotUtils:
         --------
         rf_color : Rest-frame color versus redshift.
         bzk : BzK color-color diagram for star/galaxy classification.
-        distz : Redshift distributions.
+        dist_z : Redshift distributions.
 
         Examples
         --------
@@ -1933,7 +1933,7 @@ class PlotUtils:
                     # labels
                     ax.annotate(
                         "$" + str(round(zmin, 2)) + " < z < " + str(round(zmax, 2)) + "$",
-                        xy=(7, 1),
+                        xy=(-1.5, 1),
                         color="black",
                         fontsize=15,
                     )
@@ -2026,13 +2026,13 @@ class PlotUtils:
                         label=r"$minimum\; \chi^2$",
                     )
 
-                    # labels
-                    ax.annotate(
-                        "$" + str(round(zmin, 2)) + " < z < " + str(round(zmax, 2)) + "$",
-                        xy=(7, 1),
-                        color="black",
-                        fontsize=15,
-                    )
+                # labels
+                ax.annotate(
+                    "$" + str(round(zmin, 2)) + " < z < " + str(round(zmax, 2)) + "$",
+                    xy=(7, 1),
+                    color="black",
+                    fontsize=15,
+                )
 
                 # print the legend
                 if rm == 1:
@@ -2136,13 +2136,13 @@ class PlotUtils:
                         label=r"$minimum\; \chi^2$",
                     )
 
-                    # labels
-                    ax.annotate(
-                        "$" + str(round(zmin, 2)) + " < z < " + str(round(zmax, 2)) + "$",
-                        xy=(7, 1),
-                        color="black",
-                        fontsize=15,
-                    )
+                # labels
+                ax.annotate(
+                    "$" + str(round(zmin, 2)) + " < z < " + str(round(zmax, 2)) + "$",
+                    xy=(-13.5, 1),
+                    color="black",
+                    fontsize=15,
+                )
 
                 # print the legend
                 if rm == 1:
@@ -2566,7 +2566,7 @@ class PlotUtils:
                 if len(self.massb[conda]) > 0:
                     ax.scatter(self.massb[conda], self.mabsk[conda], s=1, color="r", alpha=0.2, marker="s")
 
-                ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(8, -22), color="black", fontsize=15)
+                ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(6.5, -23), color="black", fontsize=15)
 
         return
 
@@ -2611,7 +2611,7 @@ class PlotUtils:
                 condb = conda & (self.ebv >= 0.3)
                 ax.scatter(self.sfrb[condb], self.mabsu[condb], s=1, color="r", alpha=0.2, marker="s")
 
-                ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(-3, -22), color="black", fontsize=15)
+                ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(-3, -23), color="black", fontsize=15)
 
         return
 
