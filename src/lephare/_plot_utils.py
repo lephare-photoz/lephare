@@ -131,6 +131,22 @@ class PlotUtils:
             range_mag = [-1]
         if pdf_col is None:
             pdf_col = "PDF_BAY_ZG()"
+
+        # Get the number of columns in MAG_OBS
+        mag_obs = t["MAG_OBS()"]
+        n_cols = mag_obs.shape[1]  # Number of columns
+
+        # Check if sel_filt is within valid range
+        if sel_filt >= n_cols or sel_filt < 0:
+            print("Warning: sel_filt out of bounds. Setting to 0.")
+            self.sel_filt = 0  # Valeur par défaut
+
+        # Check if each element in pos_filt is within valid range
+        for i, filt in enumerate(pos_filt):
+            if filt >= n_cols or filt < 0:
+                print(f"Warning: pos_filt[{i}] out of bounds. Setting to 0.")
+                pos_filt[i] = 0  # Valeur par défaut
+
         # Number of the filter start at 0
         self.sel_filt = sel_filt  # filter for the selection in mag
         self.uFilt = pos_filt[0]
@@ -139,6 +155,7 @@ class PlotUtils:
         self.zFilt = pos_filt[3]
         self.jFilt = pos_filt[4]
         self.kFilt = pos_filt[5]
+        # Check the position of the filter is compatible with the maximum number of filter
 
         # Read the input file
         self.Id = t["IDENT"]
