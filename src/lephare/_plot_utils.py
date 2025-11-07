@@ -1,10 +1,16 @@
+import io
+import urllib.request
+from datetime import datetime
 from math import ceil, log10
 
+import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import gridspec
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.interpolate import interp1d
+
+import lephare as lp
 
 # Compatibility shim
 trapezoid = np.trapezoid if hasattr(np, "trapezoid") else np.trapz
@@ -295,25 +301,27 @@ class PlotUtils:
         """
         # Get all callable public methods
         plot_methods = [
-            ("zml_zs", self.zml_zs),
-            ("zp_zs", self.zp_zs),
-            ("zml_zp", self.zml_zp),
-            ("dist_z", self.dist_z),
-            ("dist_chi2", self.dist_chi2),
-            ("dist_filt", self.dist_filt),
-            ("dist_model", self.dist_model),
-            ("dist_ebv", self.dist_ebv),
-            ("secondpeak", self.secondpeak),
-            ("bzk", self.bzk),
-            ("cumulative68", self.cumulative68),
-            ("check_error", self.check_error),
-            ("errormag", self.errormag),
-            ("errorz", self.errorz),
-            ("pit_qq", self.pit_qq),
+            self.title_page,
+            self.zml_zs,
+            self.zp_zs,
+            self.zml_zp,
+            self.dist_z,
+            self.dist_chi2,
+            self.dist_filt,
+            self.dist_model,
+            self.dist_ebv,
+            self.secondpeak,
+            self.bzk,
+            self.cumulative68,
+            self.check_error,
+            self.errormag,
+            self.errorz,
+            self.pit_qq,
         ]
 
         with PdfPages(filename) as pdf:
-            for name, method in plot_methods:
+            for method in plot_methods:
+                name = method.__name__
                 print(f"Running plot method: {name}()")
 
                 plt.close("all")  # clear previous figures
@@ -331,8 +339,7 @@ class PlotUtils:
                     continue
 
                 for fig in figs:
-                    if not fig.axes or all(not ax.has_data() and len(ax.images) == 0 for ax in fig.axes):
-                        print(f"Skipping empty figure from {name}")
+                    if not fig.axes:
                         plt.close(fig)
                         continue
                     pdf.savefig(fig, bbox_inches="tight")
@@ -362,30 +369,32 @@ class PlotUtils:
         """
         # Get all callable public methods
         plot_methods = [
-            ("dist_z", self.dist_z),
-            ("dist_chi2", self.dist_chi2),
-            ("dist_filt", self.dist_filt),
-            ("dist_model", self.dist_model),
-            ("dist_ebv", self.dist_ebv),
-            ("absmag_z", self.absmag_z),
-            ("rf_color", self.rf_color),
-            ("william", self.william),
-            ("dist_mass", self.dist_mass),
-            ("dist_sfr", self.dist_sfr),
-            ("dist_ssfr", self.dist_ssfr),
-            ("mass_med_best", self.mass_med_best),
-            ("sfr_med_best", self.sfr_med_best),
-            ("mass_sfr", self.mass_sfr),
-            ("mass_z", self.mass_z),
-            ("sfr_z", self.sfr_z),
-            ("lnuv_sfr", self.lnuv_sfr),
-            ("absmagu_sfr", self.absmagu_sfr),
-            ("absmagk_mass", self.absmagk_mass),
-            ("masstolight_z", self.masstolight_z),
+            self.title_page,
+            self.dist_z,
+            self.dist_chi2,
+            self.dist_filt,
+            self.dist_model,
+            self.dist_ebv,
+            self.absmag_z,
+            self.rf_color,
+            self.william,
+            self.dist_mass,
+            self.dist_sfr,
+            self.dist_ssfr,
+            self.mass_med_best,
+            self.sfr_med_best,
+            self.mass_sfr,
+            self.mass_z,
+            self.sfr_z,
+            self.lnuv_sfr,
+            self.absmagu_sfr,
+            self.absmagk_mass,
+            self.masstolight_z,
         ]
 
         with PdfPages(filename) as pdf:
-            for name, method in plot_methods:
+            for method in plot_methods:
+                name = method.__name__
                 print(f"Running plot method: {name}()")
 
                 plt.close("all")  # clear previous figures
@@ -403,14 +412,63 @@ class PlotUtils:
                     continue
 
                 for fig in figs:
-                    if not fig.axes or all(not ax.has_data() and len(ax.images) == 0 for ax in fig.axes):
-                        print(f"Skipping empty figure from {name}")
+                    if not fig.axes:
                         plt.close(fig)
                         continue
                     pdf.savefig(fig, bbox_inches="tight")
                 plt.close("all")
 
         print(f"All plots saved to {filename}")
+
+    def title_page(self):
+        """Create a title page for diagnostic plots.
+
+        This method generates a simple title page summarizing the LePHARE
+        diagnostic plots. It includes the LePHARE version and the current date.
+        The information is displayed centered on the page.
+
+        The axes are retained (not hidden) so that further annotations or
+        plot elements can be added later if needed.
+        """
+
+        today = datetime.now().strftime("%Y-%m-%d")
+
+        # Message text
+        message = f"LePHARE Diagnostics\n" f"LePHARE version: {lp.__version__}\n" f"Date: {today}"
+
+        fig, ax = plt.subplots(figsize=(8.5, 11))  # standard A4-ish size
+
+        # Try to download and display the logo
+        logo_url = "https://raw.githubusercontent.com/lephare-photoz/lephare-logo/main/Logo/On%20White%20Background/Colour/Digital/LePhareLogo_RGB.png"
+        try:
+            with urllib.request.urlopen(logo_url) as url:
+                image_data = io.BytesIO(url.read())
+            logo = mpimg.imread(image_data)
+            # Original dimensions
+            orig_width, orig_height = 3463, 3000
+            aspect = orig_height / orig_width  # height / width
+
+            # Desired width fraction of figure
+            width_frac = 0.3  # logo spans 50% of figure width
+            x_center = 0.5
+            y_top = 0.95  # top margin
+
+            # Compute extent while preserving aspect ratio
+            x_half = width_frac / 2
+            y_height = width_frac * aspect
+            ax.imshow(
+                logo, extent=[x_center - x_half, x_center + x_half, y_top - y_height, y_top], aspect="auto"
+            )
+        except Exception as e:
+            print(f"Could not load LePHARE logo: {e}")
+
+        ax.axis("off")  # Remove all axes, ticks, and labels
+        ax.set_frame_on(False)  # Remove the border/frame
+        ax.text(0.5, 0.5, message, ha="center", va="center", fontsize=14, transform=ax.transAxes)
+
+        # Optionally, adjust limits for aesthetics
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
 
     def zml_zs(self):
         """
