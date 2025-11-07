@@ -224,11 +224,11 @@ class PlotUtils:
         self.pdfs = np.array(t[pdf_col])
 
         # Define the panels with the binning in redshift an magnitude
-        if len(range_z) == 1:
-            self.range_z = np.quantile(self.zs[(self.zs > -1) & (self.zs < 9)], [0, 0.25, 0.5, 0.75, 1])
+        if len(range_z) <= 1:
+            self.range_z = np.quantile(self.zp[(self.zp > -1) & (self.zp < 9)], [0, 0.25, 0.5, 0.75, 1])
         else:
             self.range_z = range_z
-        if len(range_mag) == 1:
+        if len(range_mag) <= 1:
             self.range_mag = np.quantile(self.mag[(self.mag > 10) & (self.mag < 40)], [0, 0.25, 0.5, 0.75, 1])
         else:
             self.range_mag = range_mag
@@ -238,7 +238,7 @@ class PlotUtils:
 
         # Define the number panels
         # case with several bin of mag
-        if len(self.range_mag) > 1:
+        if len(self.range_mag) > 2:
             # Number of row with 2 columns
             self.nbRowM = int(ceil(float(len(self.range_mag) - 1) / 2.0))
             self.nbColM = 2
@@ -246,7 +246,7 @@ class PlotUtils:
             self.nbColM = 1
             self.nbRowM = 1
         # case with several bin of z
-        if len(self.range_z) > 1:
+        if len(self.range_z) > 2:
             # Number of row with 2 columns
             self.nbRowZ = int(ceil(float(len(self.range_z) - 1) / 2.0))
             self.nbColZ = 2
@@ -447,7 +447,9 @@ class PlotUtils:
         # Produces a Z_MED vs ZSPEC scatter plot by magnitude bin.
         """
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         # No space between the figures
         plt.subplots_adjust(hspace=0, wspace=0)
 
@@ -456,13 +458,13 @@ class PlotUtils:
         f.text(0.04, 0.5, r"$z_{phot}\; median\; PDF(z)$", va="center", rotation="vertical", fontsize=15)
 
         # Loop over the magnitude bins
-        for rm in range(len(self.range_mag)):
+        for rm in range(len(self.range_mag) - 1):
             # Define the subplots and pass the panel
-            ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
 
             # mag limits
-            magmin = self.range_mag[rm - 1]
-            magmax = self.range_mag[rm]
+            magmin = self.range_mag[rm]
+            magmax = self.range_mag[rm + 1]
 
             ax.axis([self.z_min, self.z_max, self.z_min, self.z_max])
             conda = self.cond & self.condspec & (self.mag > magmin) & (self.mag < magmax)
@@ -542,7 +544,9 @@ class PlotUtils:
         # Produces a Z_BEST vs ZSPEC scatter plot by magnitude bin.
         """
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         # No space between the figures
         plt.subplots_adjust(hspace=0, wspace=0)
 
@@ -551,13 +555,13 @@ class PlotUtils:
         f.text(0.04, 0.5, r"$z_{phot}\; median\; PDF(z)$", va="center", rotation="vertical", fontsize=15)
 
         # Loop over the magnitude bins
-        for rm in range(len(self.range_mag)):
+        for rm in range(len(self.range_mag) - 1):
             # Define the subplots and pass the panel
-            ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
 
             # mag limits
-            magmin = self.range_mag[rm - 1]
-            magmax = self.range_mag[rm]
+            magmin = self.range_mag[rm]
+            magmax = self.range_mag[rm + 1]
 
             ax.axis([self.z_min, self.z_max, self.z_min, self.z_max])
             conda = self.cond & self.condspec & (self.mag > magmin) & (self.mag < magmax)
@@ -635,7 +639,9 @@ class PlotUtils:
         # Produces a Z_MED vs Z_BEST comparison plot by magnitude bin.
         """
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         # No space between the figures
         plt.subplots_adjust(hspace=0, wspace=0)
 
@@ -644,37 +650,36 @@ class PlotUtils:
         f.text(0.04, 0.5, r"$z_{phot}\; median\; PDF(z)$", va="center", rotation="vertical", fontsize=15)
 
         # Loop over the magnitude bins
-        for rm in range(len(self.range_mag)):
-            if rm > 0:
-                # Define the subplots and pass the panel
-                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+        for rm in range(len(self.range_mag) - 1):
+            # Define the subplots and pass the panel
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
 
-                # mag limits
-                magmin = self.range_mag[rm - 1]
-                magmax = self.range_mag[rm]
+            # mag limits
+            magmin = self.range_mag[rm]
+            magmax = self.range_mag[rm + 1]
 
-                # set the axis
-                ax.axis([self.z_min, self.z_max, self.z_min, self.z_max])
+            # set the axis
+            ax.axis([self.z_min, self.z_max, self.z_min, self.z_max])
 
-                # new condition with the magnitude range
-                conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
+            # new condition with the magnitude range
+            conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
 
-                # Plot photo-z versus spec-z
-                ax.scatter(self.zp[conda], self.zml[conda], s=1, color="b", alpha=0.5, marker="s")
+            # Plot photo-z versus spec-z
+            ax.scatter(self.zp[conda], self.zml[conda], s=1, color="b", alpha=0.5, marker="s")
 
-                # Trace the limits 0.15(1+z)
-                x_zs = np.array([0, 6])
-                ax.plot(x_zs, x_zs * 1.15 + 0.15, "c--")
-                ax.plot(x_zs, x_zs, "r-")
-                ax.plot(x_zs, x_zs * 0.85 - 0.15, "c--")
+            # Trace the limits 0.15(1+z)
+            x_zs = np.array([0, 6])
+            ax.plot(x_zs, x_zs * 1.15 + 0.15, "c--")
+            ax.plot(x_zs, x_zs, "r-")
+            ax.plot(x_zs, x_zs * 0.85 - 0.15, "c--")
 
-                # labels
-                ax.annotate(
-                    "$" + str(round(magmin, 2)) + " < mag < " + str(round(magmax, 2)) + "$",
-                    xy=(0.1 * self.z_max, 0.8 * self.z_max),
-                    color="black",
-                    fontsize=15,
-                )
+            # labels
+            ax.annotate(
+                "$" + str(round(magmin, 2)) + " < mag < " + str(round(magmax, 2)) + "$",
+                xy=(0.1 * self.z_max, 0.8 * self.z_max),
+                color="black",
+                fontsize=15,
+            )
 
         return
 
@@ -714,7 +719,9 @@ class PlotUtils:
 
         ## Create a figure with an array with nbRowM*nbColM subpanels
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         # No space between the figures
         plt.subplots_adjust(hspace=0, wspace=0)
 
@@ -723,74 +730,73 @@ class PlotUtils:
         f.text(0.04, 0.5, "$N_{normalized}$", va="center", rotation="vertical", fontsize=15)
 
         # Loop over the magnitude bins
-        for rm in range(len(self.range_mag)):
+        for rm in range(len(self.range_mag) - 1):
             # No legend
             leg = 0
 
-            if rm > 0:
-                if rm == 1:
-                    leg = 1  # legend in the first panel
+            if rm == 1:
+                leg = 1  # legend in the first panel
 
-                # Define the subplots and pass the panel
-                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+            # Define the subplots and pass the panel
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
 
-                # mag limits
-                magmin = self.range_mag[rm - 1]
-                magmax = self.range_mag[rm]
+            # mag limits
+            magmin = self.range_mag[rm]
+            magmax = self.range_mag[rm + 1]
 
-                # set the axis
-                ax.axis([0, self.z_max, 0, 2.9])
+            # set the axis
+            ax.axis([0, self.z_max, 0, 2.9])
 
-                # new condition with the magnitude range
-                conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax) & (self.zml > 0)
-                # Check that some object are present
-                if len(self.zp[conda]) > 0:
-                    # Histogram with the photometric redshifts median PDF
-                    ax.hist(
-                        self.zml[conda],
-                        bins=nstep,
-                        histtype="stepfilled",
-                        density=1,
-                        color="b",
-                        label=r"$z_{phot}\; median\; PDF(z)$",
-                    )
+            # new condition with the magnitude range
+            conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax) & (self.zml > 0)
+            # Check that some object are present
+            if len(self.zp[conda]) > 0:
+                # Histogram with the photometric redshifts median PDF
+                ax.hist(
+                    self.zml[conda],
+                    bins=nstep,
+                    histtype="stepfilled",
+                    density=1,
+                    color="b",
+                    label=r"$z_{phot}\; median\; PDF(z)$",
+                )
 
-                    # Histogram with the photometric redshifts minimum chi2
-                    ax.hist(
-                        self.zp[conda],
-                        bins=nstep,
-                        histtype="stepfilled",
-                        density=1,
-                        color="r",
-                        alpha=0.5,
-                        label=r"$z_{phot}\; minimum\; \chi^2$",
-                    )
+                # Histogram with the photometric redshifts minimum chi2
+                ax.hist(
+                    self.zp[conda],
+                    bins=nstep,
+                    histtype="stepfilled",
+                    density=1,
+                    color="r",
+                    alpha=0.5,
+                    label=r"$z_{phot}\; minimum\; \chi^2$",
+                )
 
-                # new condition with the magnitude range and spectro-z
-                conda = self.cond & self.condspec & (self.mag > magmin) & (self.mag < magmax)
-                # Check that some object are present
-                if len(self.zp[conda]) > 0:
-                    # Histogram with the photometric redshifts zbest
-                    ax.hist(
-                        self.zs[conda],
-                        bins=nstep,
-                        histtype="stepfilled",
-                        density=1,
-                        color="g",
-                        alpha=0.2,
-                        label="$z_{spectro}$",
-                    )
-                    # labels
-                    ax.annotate(
-                        "$" + str(round(magmin, 2)) + " < mag < " + str(round(magmax, 2)) + "$",
-                        xy=(0.5 * self.z_max, 1.5),
-                        color="black",
-                        fontsize=14,
-                    )
+            # new condition with the magnitude range and spectro-z
+            conda = self.cond & self.condspec & (self.mag > magmin) & (self.mag < magmax)
+            # Check that some object are present
+            if len(self.zp[conda]) > 0:
+                # Histogram with the photometric redshifts zbest
+                ax.hist(
+                    self.zs[conda],
+                    bins=nstep,
+                    histtype="stepfilled",
+                    density=1,
+                    color="g",
+                    alpha=0.2,
+                    label="$z_{spectro}$",
+                )
+                # labels
+                ax.annotate(
+                    "$" + str(round(magmin, 2)) + " < mag < " + str(round(magmax, 2)) + "$",
+                    xy=(0.5 * self.z_max, 1.5),
+                    color="black",
+                    fontsize=14,
+                )
 
-                # print the legend
-                if leg == 1:
-                    ax.legend(prop={"size": 8})
+            # print the legend
+            if leg == 1:
+                ax.legend(prop={"size": 8})
 
         return
 
@@ -833,7 +839,9 @@ class PlotUtils:
         """
         ## Create a figure with an array with nbRowM*nbColM subpanels
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         # No space between the figures
         plt.subplots_adjust(hspace=0, wspace=0)
 
@@ -842,78 +850,77 @@ class PlotUtils:
         f.text(0.04, 0.5, "$N_{normalized}$", va="center", rotation="vertical", fontsize=15)
 
         # Loop over the magnitude bins
-        for rm in range(len(self.range_mag)):
+        for rm in range(len(self.range_mag) - 1):
             # No legend
             leg = 0
 
-            if rm > 0:
-                if rm == 2:
-                    leg = 1  # legend in the first panel
+            if rm == 2:
+                leg = 1  # legend in the first panel
 
-                # Define the subplots and pass the panel
-                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+            # Define the subplots and pass the panel
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
 
-                # mag limits
-                magmin = self.range_mag[rm - 1]
-                magmax = self.range_mag[rm]
+            # mag limits
+            magmin = self.range_mag[rm]
+            magmax = self.range_mag[rm + 1]
 
-                # set the axis
-                ax.axis([-2, 2.9, 0, 1.49])
+            # set the axis
+            ax.axis([-2, 2.9, 0, 1.49])
 
-                # new condition with the magnitude range for galaxies, chi gal< chi star
-                conda = (
-                    self.cond
-                    & self.condgal
-                    & (self.mag > magmin)
-                    & (self.mag < magmax)
-                    & (self.nbFilt > 2)
-                    & (self.chi > 0)
+            # new condition with the magnitude range for galaxies, chi gal< chi star
+            conda = (
+                self.cond
+                & self.condgal
+                & (self.mag > magmin)
+                & (self.mag < magmax)
+                & (self.nbFilt > 2)
+                & (self.chi > 0)
+            )
+            if len(self.zp[conda]) > 1:
+                chireduit = self.chi[conda] / (self.nbFilt[conda] - 1)
+                # Histogram of log (reduced chi2 gal)
+                ax.hist(
+                    np.log10(chireduit),
+                    bins=nstep,
+                    histtype="stepfilled",
+                    density=1,
+                    color="b",
+                    label=r"$\chi^2_{gal} \; if \; \chi^2_{gal}<\chi^2_{stars}$",
                 )
-                if len(self.zp[conda]) > 1:
-                    chireduit = self.chi[conda] / (self.nbFilt[conda] - 1)
-                    # Histogram of log (reduced chi2 gal)
-                    ax.hist(
-                        np.log10(chireduit),
-                        bins=nstep,
-                        histtype="stepfilled",
-                        density=1,
-                        color="b",
-                        label=r"$\chi^2_{gal} \; if \; \chi^2_{gal}<\chi^2_{stars}$",
-                    )
 
-                # new condition with the magnitude range for stars, chi star < chi gal
-                conda = (
-                    self.cond
-                    & self.condstar
-                    & (self.mag > magmin)
-                    & (self.mag < magmax)
-                    & (self.nbFilt > 2)
-                    & (self.chi > 0)
+            # new condition with the magnitude range for stars, chi star < chi gal
+            conda = (
+                self.cond
+                & self.condstar
+                & (self.mag > magmin)
+                & (self.mag < magmax)
+                & (self.nbFilt > 2)
+                & (self.chi > 0)
+            )
+            if len(self.zp[conda]) > 1:
+                chireduit = self.chis[conda] / (self.nbFilt[conda] - 1)
+                # Histogram of log (reduced chi2 gal)
+                ax.hist(
+                    np.log10(chireduit),
+                    bins=nstep,
+                    histtype="stepfilled",
+                    density=1,
+                    color="r",
+                    alpha=0.5,
+                    label=r"$\chi^2_{star} \; if \;  \chi^2_{gal}>\chi^2_{stars}$",
                 )
-                if len(self.zp[conda]) > 1:
-                    chireduit = self.chis[conda] / (self.nbFilt[conda] - 1)
-                    # Histogram of log (reduced chi2 gal)
-                    ax.hist(
-                        np.log10(chireduit),
-                        bins=nstep,
-                        histtype="stepfilled",
-                        density=1,
-                        color="r",
-                        alpha=0.5,
-                        label=r"$\chi^2_{star} \; if \;  \chi^2_{gal}>\chi^2_{stars}$",
-                    )
 
-                # print the legend
-                if leg == 1:
-                    ax.legend(prop={"size": 8})
+            # print the legend
+            if leg == 1:
+                ax.legend(prop={"size": 8})
 
-                # labels
-                ax.annotate(
-                    "$" + str(round(magmin, 2)) + " < mag < " + str(round(magmax, 2)) + "$",
-                    xy=(-1.8, 1.2),
-                    color="black",
-                    fontsize=15,
-                )
+            # labels
+            ax.annotate(
+                "$" + str(round(magmin, 2)) + " < mag < " + str(round(magmax, 2)) + "$",
+                xy=(-1.8, 1.2),
+                color="black",
+                fontsize=15,
+            )
 
         return
 
@@ -953,7 +960,9 @@ class PlotUtils:
 
         ## Create a figure with an array with nbRowM*nbColM subpanels
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowZ, self.nbColZ, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowZ, self.nbColZ, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         # No space between the figures
         plt.subplots_adjust(hspace=0, wspace=0)
 
@@ -962,31 +971,30 @@ class PlotUtils:
         f.text(0.04, 0.5, "N", va="center", rotation="vertical", fontsize=15)
 
         # Loop over the redshift bins
-        for rm in range(len(self.range_z)):
-            if rm > 0:
-                # Define the subplots and pass the panel
-                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+        for rm in range(len(self.range_z) - 1):
+            # Define the subplots and pass the panel
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
 
-                # mag limits
-                zmin = self.range_z[rm - 1]
-                zmax = self.range_z[rm]
+            # mag limits
+            zmin = self.range_z[rm]
+            zmax = self.range_z[rm + 1]
 
-                # set the axis
-                ax.axis([0, 50, 0, 3])
+            # set the axis
+            ax.axis([0, 50, 0, 3])
 
-                # new condition with the magnitude range
-                conda = self.cond & (self.zp > zmin) & (self.zp < zmax)
+            # new condition with the magnitude range
+            conda = self.cond & (self.zp > zmin) & (self.zp < zmax)
 
-                # Histogram with the number of filters
-                ax.hist(self.nbFilt[conda], bins=nstep, histtype="stepfilled", density=1, color="r")
+            # Histogram with the number of filters
+            ax.hist(self.nbFilt[conda], bins=nstep, histtype="stepfilled", density=1, color="r")
 
-                # labels
-                ax.annotate(
-                    "$" + str(round(zmin, 2)) + " < z < " + str(round(zmax, 2)) + "$",
-                    xy=(0.1, 1),
-                    color="black",
-                    fontsize=15,
-                )
+            # labels
+            ax.annotate(
+                "$" + str(round(zmin, 2)) + " < z < " + str(round(zmax, 2)) + "$",
+                xy=(0.1, 1),
+                color="black",
+                fontsize=15,
+            )
 
         return
 
@@ -1027,7 +1035,9 @@ class PlotUtils:
 
         ## Create a figure with an array with nbRowM*nbColM subpanels
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowZ, self.nbColZ, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowZ, self.nbColZ, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         # No space between the figures
         plt.subplots_adjust(hspace=0, wspace=0)
 
@@ -1036,31 +1046,30 @@ class PlotUtils:
         f.text(0.04, 0.5, "N", va="center", rotation="vertical", fontsize=15)
 
         # Loop over the redshift bins
-        for rm in range(len(self.range_z)):
-            if rm > 0:
-                # Define the subplots and pass the panel
-                zmin = self.range_z[rm - 1]
-                zmax = self.range_z[rm]
-                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+        for rm in range(len(self.range_z) - 1):
+            # Define the subplots and pass the panel
+            zmin = self.range_z[rm]
+            zmax = self.range_z[rm + 1]
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
 
-                # set the axis
-                ax.axis([0, 70, 0, 0.3])
+            # set the axis
+            ax.axis([0, 70, 0, 0.3])
 
-                # new condition with the magnitude range
-                conda = self.cond & self.condgal & (self.zp > zmin) & (self.zp < zmax)
+            # new condition with the magnitude range
+            conda = self.cond & self.condgal & (self.zp > zmin) & (self.zp < zmax)
 
-                # check if some objects exist
-                if len(self.mod[conda]) > 1:
-                    # Histogram of the models
-                    ax.hist(self.mod[conda], bins=nstep, histtype="stepfilled", density=1, color="b")
+            # check if some objects exist
+            if len(self.mod[conda]) > 1:
+                # Histogram of the models
+                ax.hist(self.mod[conda], bins=nstep, histtype="stepfilled", density=1, color="b")
 
-                    # labels
-                    ax.annotate(
-                        "$" + str(round(zmin, 2)) + " < z < " + str(round(zmax, 2)) + "$",
-                        xy=(10, 0.25),
-                        color="black",
-                        fontsize=15,
-                    )
+                # labels
+                ax.annotate(
+                    "$" + str(round(zmin, 2)) + " < z < " + str(round(zmax, 2)) + "$",
+                    xy=(10, 0.25),
+                    color="black",
+                    fontsize=15,
+                )
 
         return
 
@@ -1100,7 +1109,9 @@ class PlotUtils:
 
         ## Create a figure with an array with nbRowZ*nbColZ subpanels
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowZ, self.nbColZ, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowZ, self.nbColZ, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         # No space between the figures
         plt.subplots_adjust(hspace=0, wspace=0)
 
@@ -1109,31 +1120,30 @@ class PlotUtils:
         f.text(0.04, 0.5, "N", va="center", rotation="vertical", fontsize=15)
 
         # Loop over the redshift bins
-        for rm in range(len(self.range_z)):
-            if rm > 0:
-                # Define the subplots and pass the panel
-                zmin = self.range_z[rm - 1]
-                zmax = self.range_z[rm]
-                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+        for rm in range(len(self.range_z) - 1):
+            # Define the subplots and pass the panel
+            zmin = self.range_z[rm]
+            zmax = self.range_z[rm + 1]
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
 
-                # set the axis
-                ax.axis([0, 0.6, 0, 20])
+            # set the axis
+            ax.axis([0, 0.6, 0, 20])
 
-                # new condition with the magnitude range
-                conda = self.cond & self.condgal & (self.zp > zmin) & (self.zp < zmax)
+            # new condition with the magnitude range
+            conda = self.cond & self.condgal & (self.zp > zmin) & (self.zp < zmax)
 
-                # check if some objects exist
-                if len(self.ebv[conda]) > 1:
-                    # Histogram with the E(B-V)
-                    ax.hist(self.ebv[conda], bins=nstep, histtype="stepfilled", density=1, color="b")
+            # check if some objects exist
+            if len(self.ebv[conda]) > 1:
+                # Histogram with the E(B-V)
+                ax.hist(self.ebv[conda], bins=nstep, histtype="stepfilled", density=1, color="b")
 
-                    # labels
-                    ax.annotate(
-                        "$" + str(round(zmin, 2)) + " < z < " + str(round(zmax, 2)) + "$",
-                        xy=(0.02, 15),
-                        color="black",
-                        fontsize=15,
-                    )
+                # labels
+                ax.annotate(
+                    "$" + str(round(zmin, 2)) + " < z < " + str(round(zmax, 2)) + "$",
+                    xy=(0.02, 15),
+                    color="black",
+                    fontsize=15,
+                )
 
         return
 
@@ -1177,7 +1187,9 @@ class PlotUtils:
 
         ## Create a figure with an array with nbRowM*nbColM subpanels
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         # No space between the figures
         plt.subplots_adjust(hspace=0, wspace=0)
 
@@ -1186,61 +1198,60 @@ class PlotUtils:
         f.text(0.04, 0.5, "$N_{normalized}$", va="center", rotation="vertical", fontsize=15)
 
         # Loop over the magnitude bins
-        for rm in range(len(self.range_mag)):
+        for rm in range(len(self.range_mag) - 1):
             # No legend
             leg = 0
 
-            if rm > 0:
-                if rm == 4:
-                    leg = 1  # legend in the first panel
+            if rm == 4:
+                leg = 1  # legend in the first panel
 
-                # Define the subplots and pass the panel
-                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+            # Define the subplots and pass the panel
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
 
-                # mag limits
-                magmin = self.range_mag[rm - 1]
-                magmax = self.range_mag[rm]
+            # mag limits
+            magmin = self.range_mag[rm]
+            magmax = self.range_mag[rm + 1]
 
-                # set the axis
-                ax.axis([0, self.z_max, 0, 5])
+            # set the axis
+            ax.axis([0, self.z_max, 0, 5])
 
-                # new condition with the magnitude range
-                conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax) & (self.zp2 > 0)
+            # new condition with the magnitude range
+            conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax) & (self.zp2 > 0)
 
-                # If some sources
-                if len(self.zp2[conda]) > 1:
-                    # Histogram with the photometric redshifts median PDF
-                    ax.hist(
-                        self.zp2[conda],
-                        bins=nstep,
-                        histtype="stepfilled",
-                        density=1,
-                        color="b",
-                        label=r"$z_{phot}\; second\; peak$",
-                    )
+            # If some sources
+            if len(self.zp2[conda]) > 1:
+                # Histogram with the photometric redshifts median PDF
+                ax.hist(
+                    self.zp2[conda],
+                    bins=nstep,
+                    histtype="stepfilled",
+                    density=1,
+                    color="b",
+                    label=r"$z_{phot}\; second\; peak$",
+                )
 
-                    # Histogram with the photometric redshifts minimum chi2
-                    ax.hist(
-                        self.zp[conda],
-                        bins=nstep,
-                        histtype="stepfilled",
-                        density=1,
-                        color="r",
-                        alpha=0.5,
-                        label=r"$z_{phot}\; minimum \; \chi^2$",
-                    )
+                # Histogram with the photometric redshifts minimum chi2
+                ax.hist(
+                    self.zp[conda],
+                    bins=nstep,
+                    histtype="stepfilled",
+                    density=1,
+                    color="r",
+                    alpha=0.5,
+                    label=r"$z_{phot}\; minimum \; \chi^2$",
+                )
 
-                    # labels
-                    ax.annotate(
-                        "$" + str(round(magmin, 2)) + " < mag < " + str(round(magmax, 2)) + "$",
-                        xy=(0.2, 3.5),
-                        color="black",
-                        fontsize=13,
-                    )
+                # labels
+                ax.annotate(
+                    "$" + str(round(magmin, 2)) + " < mag < " + str(round(magmax, 2)) + "$",
+                    xy=(0.2, 3.5),
+                    color="black",
+                    fontsize=13,
+                )
 
-                # print the legend
-                if leg == 1:
-                    ax.legend(prop={"size": 8})
+            # print the legend
+            if leg == 1:
+                ax.legend(prop={"size": 8})
 
         return
 
@@ -1275,7 +1286,7 @@ class PlotUtils:
         # Produces BzK color-color diagrams per redshift bin.
         """
         plt.clf()
-        f, axarr = plt.subplots(2, 2, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(2, 2, sharex=True, sharey=True, figsize=(12, 8), squeeze=False)
         plt.subplots_adjust(hspace=0, wspace=0)
 
         f.text(0.5, 0.04, "$B-z$", ha="center", fontsize=15)
@@ -1337,24 +1348,25 @@ class PlotUtils:
         # Produces plots of absolute magnitude versus redshift.
         """
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         plt.subplots_adjust(hspace=0, wspace=0)
 
         f.text(0.5, 0.04, "$Redshift$", ha="center", fontsize=15)
         f.text(0.04, 0.5, "$M_B$", va="center", rotation="vertical", fontsize=15)
 
-        for rm in range(len(self.range_mag)):
-            if rm > 0:
-                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
-                magmin = self.range_mag[rm - 1]
-                magmax = self.range_mag[rm]
+        for rm in range(len(self.range_mag) - 1):
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
+            magmin = self.range_mag[rm]
+            magmax = self.range_mag[rm + 1]
 
-                ax.axis([self.z_min, self.z_max, -16, -25.9])
+            ax.axis([self.z_min, self.z_max, -16, -25.9])
 
-                conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
-                ax.scatter(self.zp[conda], self.mabsb[conda], s=1, color="b", alpha=0.2, marker="s")
+            conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
+            ax.scatter(self.zp[conda], self.mabsb[conda], s=1, color="b", alpha=0.2, marker="s")
 
-                ax.annotate(f"${magmin:.2f} < mag < {magmax:.2f}$", xy=(0.1, -25), color="black", fontsize=15)
+            ax.annotate(f"${magmin:.2f} < mag < {magmax:.2f}$", xy=(0.1, -25), color="black", fontsize=15)
 
         return
 
@@ -1387,30 +1399,29 @@ class PlotUtils:
         # Produces rest-frame color versus absolute magnitude plots.
         """
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         plt.subplots_adjust(hspace=0, wspace=0)
 
         f.text(0.5, 0.04, "$M_R$", ha="center", fontsize=15)
         f.text(0.04, 0.5, "$M_U-M_R$", va="center", rotation="vertical", fontsize=15)
 
-        for rm in range(len(self.range_z)):
-            if rm > 0:
-                zmin = self.range_z[rm - 1]
-                zmax = self.range_z[rm]
-                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
-                ax.axis([-24.9, -16, -0.7, 2.4])
+        for rm in range(len(self.range_z) - 1):
+            zmin = self.range_z[rm]
+            zmax = self.range_z[rm + 1]
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
+            ax.axis([-24.9, -16, -0.7, 2.4])
 
-                conda = self.cond & self.condgal & (self.zp > zmin) & (self.zp < zmax)
+            conda = self.cond & self.condgal & (self.zp > zmin) & (self.zp < zmax)
 
-                if self.uFilt >= 0 and self.rFilt >= 0:
-                    magx = self.mabsr
-                    coly = self.mabsu - self.mabsr
+            if self.uFilt >= 0 and self.rFilt >= 0:
+                magx = self.mabsr
+                coly = self.mabsu - self.mabsr
 
-                    ax.scatter(
-                        magx[conda], coly[conda], s=1, color="b", alpha=0.2, marker="s", rasterized=True
-                    )
+                ax.scatter(magx[conda], coly[conda], s=1, color="b", alpha=0.2, marker="s", rasterized=True)
 
-                    ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(-20, 1), color="black", fontsize=15)
+                ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(-20, 1), color="black", fontsize=15)
 
         return
 
@@ -1443,30 +1454,29 @@ class PlotUtils:
         # Produces a William style rest-frame color-color plot.
         """
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         plt.subplots_adjust(hspace=0, wspace=0)
 
         f.text(0.5, 0.04, "$M_R-M_J$", ha="center", fontsize=15)
         f.text(0.04, 0.5, "$M_U-M_R$", va="center", rotation="vertical", fontsize=15)
 
-        for rm in range(len(self.range_z)):
-            if rm > 0:
-                zmin = self.range_z[rm - 1]
-                zmax = self.range_z[rm]
-                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
-                ax.axis([-2.1, 1.9, 0, 2.5])
+        for rm in range(len(self.range_z) - 1):
+            zmin = self.range_z[rm]
+            zmax = self.range_z[rm + 1]
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
+            ax.axis([-2.1, 1.9, 0, 2.5])
 
-                conda = self.cond & self.condgal & (self.zp > zmin) & (self.zp < zmax)
+            conda = self.cond & self.condgal & (self.zp > zmin) & (self.zp < zmax)
 
-                if self.uFilt >= 0 and self.rFilt >= 0 and self.jFilt >= 0:
-                    colx = self.mabsr - self.mabsj
-                    coly = self.mabsu - self.mabsr
+            if self.uFilt >= 0 and self.rFilt >= 0 and self.jFilt >= 0:
+                colx = self.mabsr - self.mabsj
+                coly = self.mabsu - self.mabsr
 
-                    ax.scatter(
-                        colx[conda], coly[conda], s=1, color="b", alpha=0.2, marker="s", rasterized=True
-                    )
+                ax.scatter(colx[conda], coly[conda], s=1, color="b", alpha=0.2, marker="s", rasterized=True)
 
-                    ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(0.1, 2), color="black", fontsize=15)
+                ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(0.1, 2), color="black", fontsize=15)
 
         return
 
@@ -1506,71 +1516,68 @@ class PlotUtils:
         """
 
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         plt.subplots_adjust(hspace=0, wspace=0)
 
         f.text(0.5, 0.04, "$abs((z_{spec}-z_{phot})/z_{phot} uncertainties)$", ha="center", fontsize=15)
         f.text(0.04, 0.5, "$cumulative(N)$", va="center", rotation="vertical", fontsize=15)
 
-        for rm in range(len(self.range_mag)):
-            if rm > 0:
-                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
-                magmin = self.range_mag[rm - 1]
-                magmax = self.range_mag[rm]
-                ax.axis([0, 9.9, 0, 0.99])
+        for rm in range(len(self.range_mag) - 1):
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
+            magmin = self.range_mag[rm]
+            magmax = self.range_mag[rm + 1]
+            ax.axis([0, 9.9, 0, 0.99])
 
-                diffzml = abs(self.zml - self.zs) / np.maximum(
-                    abs(self.zmlu68 - self.zml), abs(self.zmll68 - self.zml)
+            diffzml = abs(self.zml - self.zs) / np.maximum(
+                abs(self.zmlu68 - self.zml), abs(self.zmll68 - self.zml)
+            )
+            diffzp = abs(self.zp - self.zs) / np.maximum(abs(self.zu68 - self.zp), abs(self.zl68 - self.zp))
+
+            condazml = (
+                self.cond
+                & self.condspec
+                & (self.mag > magmin)
+                & (self.mag < magmax)
+                & (diffzml < 10)
+                & (self.zml > 0)
+            )
+            condazp = (
+                self.cond
+                & self.condspec
+                & (self.mag > magmin)
+                & (self.mag < magmax)
+                & (diffzp < 10)
+                & (self.zp > 0)
+            )
+
+            if len(self.zml[condazml]) > 1 and len(self.zp[condazp]) > 1:
+                ax.hist(
+                    diffzp[condazp],
+                    bins=nstep,
+                    histtype="step",
+                    density=1,
+                    color="b",
+                    cumulative=True,
+                    label=r"$z_{phot}\; minimum \; \chi^2$",
                 )
-                diffzp = abs(self.zp - self.zs) / np.maximum(
-                    abs(self.zu68 - self.zp), abs(self.zl68 - self.zp)
+                ax.hist(
+                    diffzml[condazml],
+                    bins=nstep,
+                    histtype="step",
+                    density=1,
+                    color="r",
+                    cumulative=True,
+                    label=r"$z_{phot}\; median \; PDF$",
                 )
 
-                condazml = (
-                    self.cond
-                    & self.condspec
-                    & (self.mag > magmin)
-                    & (self.mag < magmax)
-                    & (diffzml < 10)
-                    & (self.zml > 0)
-                )
-                condazp = (
-                    self.cond
-                    & self.condspec
-                    & (self.mag > magmin)
-                    & (self.mag < magmax)
-                    & (diffzp < 10)
-                    & (self.zp > 0)
-                )
+                ax.axvline(x=1, color="r", linestyle="--")
+                ax.axhline(y=0.68, color="r", linestyle="--")
 
-                if len(self.zml[condazml]) > 1 and len(self.zp[condazp]) > 1:
-                    ax.hist(
-                        diffzp[condazp],
-                        bins=nstep,
-                        histtype="step",
-                        density=1,
-                        color="b",
-                        cumulative=True,
-                        label=r"$z_{phot}\; minimum \; \chi^2$",
-                    )
-                    ax.hist(
-                        diffzml[condazml],
-                        bins=nstep,
-                        histtype="step",
-                        density=1,
-                        color="r",
-                        cumulative=True,
-                        label=r"$z_{phot}\; median \; PDF$",
-                    )
+                ax.legend(prop={"size": 8})
 
-                    ax.axvline(x=1, color="r", linestyle="--")
-                    ax.axhline(y=0.68, color="r", linestyle="--")
-
-                    ax.legend(prop={"size": 8})
-
-                ax.annotate(
-                    f"${magmin:.2f} < mag < {magmax:.2f}$", xy=(0.1, 0.80), color="black", fontsize=15
-                )
+            ax.annotate(f"${magmin:.2f} < mag < {magmax:.2f}$", xy=(0.1, 0.80), color="black", fontsize=15)
 
         return
 
@@ -1651,56 +1658,57 @@ class PlotUtils:
         # Produces a plot of photometric redshift errors versus magnitude.
         """
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         plt.subplots_adjust(hspace=0, wspace=0)
 
         f.text(0.5, 0.04, "$mag$", ha="center", fontsize=15)
         f.text(0.04, 0.5, r"$z_{phot} \; uncertainties$", va="center", rotation="vertical", fontsize=15)
 
-        for rm in range(len(self.range_z)):
-            if rm > 0:
-                zmin = self.range_z[rm - 1]
-                zmax = self.range_z[rm]
-                ax = axarr[(rm // 2) % self.nbRowM, rm % 2]
+        for rm in range(len(self.range_z) - 1):
+            zmin = self.range_z[rm]
+            zmax = self.range_z[rm + 1]
+            ax = axarr[(rm // 2) % self.nbRowM, rm % 2]
 
-                mstep = 0.2
-                mstart = 16
-                mnbstep = 100
+            mstep = 0.2
+            mstart = 16
+            mnbstep = 100
 
-                medpvec = []
-                mednvec = []
-                magvec = []
+            medpvec = []
+            mednvec = []
+            magvec = []
 
-                ax.axis([15, 27, -0.99, 1])
+            ax.axis([15, 27, -0.99, 1])
 
-                for im in range(mnbstep):
-                    diffp = self.zmlu68 - self.zml
-                    diffn = self.zmll68 - self.zml
+            for im in range(mnbstep):
+                diffp = self.zmlu68 - self.zml
+                diffn = self.zmll68 - self.zml
 
-                    mlimi = mstart + mstep * im
-                    mlims = mstart + mstep * (im + 1)
+                mlimi = mstart + mstep * im
+                mlims = mstart + mstep * (im + 1)
 
-                    conda = (
-                        self.cond
-                        & self.condgal
-                        & (self.mag > mlimi)
-                        & (self.mag <= mlims)
-                        & (self.zml > zmin)
-                        & (self.zml < zmax)
-                    )
+                conda = (
+                    self.cond
+                    & self.condgal
+                    & (self.mag > mlimi)
+                    & (self.mag <= mlims)
+                    & (self.zml > zmin)
+                    & (self.zml < zmax)
+                )
 
-                    if len(self.zml[conda]) > 3:
-                        medp = np.median(diffp[conda])
-                        medn = np.median(diffn[conda])
+                if len(self.zml[conda]) > 3:
+                    medp = np.median(diffp[conda])
+                    medn = np.median(diffn[conda])
 
-                        medpvec.append(medp)
-                        mednvec.append(medn)
-                        magvec.append(mstart + mstep * (im + 0.5))
+                    medpvec.append(medp)
+                    mednvec.append(medn)
+                    magvec.append(mstart + mstep * (im + 0.5))
 
-                ax.plot(magvec, medpvec, color="b", linestyle="-")
-                ax.plot(magvec, mednvec, color="r", linestyle="-")
+            ax.plot(magvec, medpvec, color="b", linestyle="-")
+            ax.plot(magvec, mednvec, color="r", linestyle="-")
 
-                ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(mstart, 0.60), color="black", fontsize=15)
+            ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(mstart, 0.60), color="black", fontsize=15)
 
         return
 
@@ -1734,61 +1742,62 @@ class PlotUtils:
         # Produces a plot of photometric redshift errors versus redshift.
         """
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         plt.subplots_adjust(hspace=0, wspace=0)
 
         f.text(0.5, 0.04, "$z_{phot}$", ha="center", fontsize=15)
         f.text(0.04, 0.5, r"$z_{phot} \; uncertainties$", va="center", rotation="vertical", fontsize=15)
 
-        for rm in range(len(self.range_mag)):
-            if rm > 0:
-                ax = axarr[(rm // 2) % self.nbRowM, rm % 2]
-                magmin = self.range_mag[rm - 1]
-                magmax = self.range_mag[rm]
+        for rm in range(len(self.range_mag) - 1):
+            ax = axarr[(rm // 2) % self.nbRowM, rm % 2]
+            magmin = self.range_mag[rm]
+            magmax = self.range_mag[rm + 1]
 
-                zstep = 0.1
-                zstart = 0
-                znbstep = 60
+            zstep = 0.1
+            zstart = 0
+            znbstep = 60
 
-                medpvec = []
-                mednvec = []
-                zvec = []
+            medpvec = []
+            mednvec = []
+            zvec = []
 
-                ax.axis([0, 5.9, -0.99, 1])
+            ax.axis([0, 5.9, -0.99, 1])
 
-                for iz in range(znbstep):
-                    diffp = self.zmlu68 - self.zml
-                    diffn = self.zmll68 - self.zml
+            for iz in range(znbstep):
+                diffp = self.zmlu68 - self.zml
+                diffn = self.zmll68 - self.zml
 
-                    zlimi = zstart + zstep * iz
-                    zlims = zstart + zstep * (iz + 1)
+                zlimi = zstart + zstep * iz
+                zlims = zstart + zstep * (iz + 1)
 
-                    conda = (
-                        self.cond
-                        & self.condgal
-                        & (self.zml > zlimi)
-                        & (self.zml <= zlims)
-                        & (self.mag > magmin)
-                        & (self.mag < magmax)
-                    )
-
-                    if len(self.zml[conda]) > 3:
-                        medp = np.median(diffp[conda])
-                        medn = np.median(diffn[conda])
-
-                        medpvec.append(medp)
-                        mednvec.append(medn)
-                        zvec.append(zstart + zstep * (iz + 0.5))
-
-                ax.plot(zvec, medpvec, color="b", linestyle="-")
-                ax.plot(zvec, mednvec, color="r", linestyle="-")
-
-                ax.annotate(
-                    f"${magmin:.2f} < mag < {magmax:.2f}$",
-                    xy=(zstart + 0.2, 0.60),
-                    color="black",
-                    fontsize=15,
+                conda = (
+                    self.cond
+                    & self.condgal
+                    & (self.zml > zlimi)
+                    & (self.zml <= zlims)
+                    & (self.mag > magmin)
+                    & (self.mag < magmax)
                 )
+
+                if len(self.zml[conda]) > 3:
+                    medp = np.median(diffp[conda])
+                    medn = np.median(diffn[conda])
+
+                    medpvec.append(medp)
+                    mednvec.append(medn)
+                    zvec.append(zstart + zstep * (iz + 0.5))
+
+            ax.plot(zvec, medpvec, color="b", linestyle="-")
+            ax.plot(zvec, mednvec, color="r", linestyle="-")
+
+            ax.annotate(
+                f"${magmin:.2f} < mag < {magmax:.2f}$",
+                xy=(zstart + 0.2, 0.60),
+                color="black",
+                fontsize=15,
+            )
 
         return
 
@@ -1963,7 +1972,9 @@ class PlotUtils:
 
         ## Create a figure with an array with nbRowZ*nbColZ subpanels
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowZ, self.nbColZ, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowZ, self.nbColZ, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         # No space between the figures
         plt.subplots_adjust(hspace=0, wspace=0)
 
@@ -1972,58 +1983,57 @@ class PlotUtils:
         f.text(0.04, 0.5, "N", va="center", rotation="vertical", fontsize=15)
 
         # Loop over the redshift bins
-        for rm in range(len(self.range_z)):
-            if rm > 0:
-                # Define the subplots and pass the panel
-                zmin = self.range_z[rm - 1]
-                zmax = self.range_z[rm]
-                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+        for rm in range(len(self.range_z) - 1):
+            # Define the subplots and pass the panel
+            zmin = self.range_z[rm]
+            zmax = self.range_z[rm + 1]
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
 
-                # set the axis
-                ax.axis([6, 11.9, 0, 1.3])
+            # set the axis
+            ax.axis([6, 11.9, 0, 1.3])
 
-                # new condition within the redshift range
-                conda = self.cond & self.condgal & (self.zp > zmin) & (self.zp < zmax) & (self.massm > 0)
+            # new condition within the redshift range
+            conda = self.cond & self.condgal & (self.zp > zmin) & (self.zp < zmax) & (self.massm > 0)
 
-                # check if some objects exist
-                if len(self.massm[conda]) > 1:
-                    # Histogram of the mass
-                    ax.hist(
-                        self.massm[conda],
-                        bins=nstep,
-                        histtype="stepfilled",
-                        density=1,
-                        color="b",
-                        label="median of the PDF",
-                    )
+            # check if some objects exist
+            if len(self.massm[conda]) > 1:
+                # Histogram of the mass
+                ax.hist(
+                    self.massm[conda],
+                    bins=nstep,
+                    histtype="stepfilled",
+                    density=1,
+                    color="b",
+                    label="median of the PDF",
+                )
 
-                # new condition within the redshift range
-                conda = self.cond & self.condgal & (self.zp > zmin) & (self.zp < zmax) & (self.massb > 0)
+            # new condition within the redshift range
+            conda = self.cond & self.condgal & (self.zp > zmin) & (self.zp < zmax) & (self.massb > 0)
 
-                # check if some objects exist
-                if len(self.massb[conda]) > 1:
-                    # Histogram of the mass
-                    ax.hist(
-                        self.massb[conda],
-                        bins=nstep,
-                        histtype="stepfilled",
-                        density=1,
-                        color="r",
-                        alpha=0.5,
-                        label=r"$minimum\; \chi^2$",
-                    )
+            # check if some objects exist
+            if len(self.massb[conda]) > 1:
+                # Histogram of the mass
+                ax.hist(
+                    self.massb[conda],
+                    bins=nstep,
+                    histtype="stepfilled",
+                    density=1,
+                    color="r",
+                    alpha=0.5,
+                    label=r"$minimum\; \chi^2$",
+                )
 
-                    # labels
-                    ax.annotate(
-                        "$" + str(round(zmin, 2)) + " < z < " + str(round(zmax, 2)) + "$",
-                        xy=(-1.5, 1),
-                        color="black",
-                        fontsize=15,
-                    )
+                # labels
+                ax.annotate(
+                    "$" + str(round(zmin, 2)) + " < z < " + str(round(zmax, 2)) + "$",
+                    xy=(-1.5, 1),
+                    color="black",
+                    fontsize=15,
+                )
 
-                # print the legend
-                if rm == 1:
-                    ax.legend(prop={"size": 8})
+            # print the legend
+            if rm == 1:
+                ax.legend(prop={"size": 8})
 
         return
 
@@ -2059,7 +2069,9 @@ class PlotUtils:
 
         ## Create a figure with an array with nbRowZ*nbColZ subpanels
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowZ, self.nbColZ, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowZ, self.nbColZ, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         # No space between the figures
         plt.subplots_adjust(hspace=0, wspace=0)
 
@@ -2068,58 +2080,57 @@ class PlotUtils:
         f.text(0.04, 0.5, "N", va="center", rotation="vertical", fontsize=15)
 
         # Loop over the redshift bins
-        for rm in range(len(self.range_z)):
-            if rm > 0:
-                # Define the subplots and pass the panel
-                zmin = self.range_z[rm - 1]
-                zmax = self.range_z[rm]
-                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+        for rm in range(len(self.range_z) - 1):
+            # Define the subplots and pass the panel
+            zmin = self.range_z[rm]
+            zmax = self.range_z[rm + 1]
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
 
-                # set the axis
-                ax.axis([-2, 3, 0, 1.3])
+            # set the axis
+            ax.axis([-2, 3, 0, 1.3])
 
-                # new condition within the redshift range
-                conda = self.cond & self.condgal & (self.zp > zmin) & (self.zp < zmax) & (self.sfrm > 0)
+            # new condition within the redshift range
+            conda = self.cond & self.condgal & (self.zp > zmin) & (self.zp < zmax) & (self.sfrm > 0)
 
-                # check if some objects exist
-                if len(self.sfrm[conda]) > 1:
-                    # Histogram of the SFR
-                    ax.hist(
-                        self.sfrm[conda],
-                        bins=nstep,
-                        histtype="stepfilled",
-                        density=1,
-                        color="b",
-                        label="median of the PDF",
-                    )
-
-                # new condition within the redshift range
-                conda = self.cond & self.condgal & (self.zp > zmin) & (self.zp < zmax) & (self.sfrb > 0)
-
-                # check if some objects exist
-                if len(self.sfrb[conda]) > 1:
-                    # Histogram of the SFR
-                    ax.hist(
-                        self.sfrb[conda],
-                        bins=nstep,
-                        histtype="stepfilled",
-                        density=1,
-                        color="r",
-                        alpha=0.5,
-                        label=r"$minimum\; \chi^2$",
-                    )
-
-                # labels
-                ax.annotate(
-                    "$" + str(round(zmin, 2)) + " < z < " + str(round(zmax, 2)) + "$",
-                    xy=(7, 1),
-                    color="black",
-                    fontsize=15,
+            # check if some objects exist
+            if len(self.sfrm[conda]) > 1:
+                # Histogram of the SFR
+                ax.hist(
+                    self.sfrm[conda],
+                    bins=nstep,
+                    histtype="stepfilled",
+                    density=1,
+                    color="b",
+                    label="median of the PDF",
                 )
 
-                # print the legend
-                if rm == 1:
-                    ax.legend(prop={"size": 8})
+            # new condition within the redshift range
+            conda = self.cond & self.condgal & (self.zp > zmin) & (self.zp < zmax) & (self.sfrb > 0)
+
+            # check if some objects exist
+            if len(self.sfrb[conda]) > 1:
+                # Histogram of the SFR
+                ax.hist(
+                    self.sfrb[conda],
+                    bins=nstep,
+                    histtype="stepfilled",
+                    density=1,
+                    color="r",
+                    alpha=0.5,
+                    label=r"$minimum\; \chi^2$",
+                )
+
+            # labels
+            ax.annotate(
+                "$" + str(round(zmin, 2)) + " < z < " + str(round(zmax, 2)) + "$",
+                xy=(7, 1),
+                color="black",
+                fontsize=15,
+            )
+
+            # print the legend
+            if rm == 1:
+                ax.legend(prop={"size": 8})
 
         return
 
@@ -2155,7 +2166,9 @@ class PlotUtils:
 
         ## Create a figure with an array with nbRowZ*nbColZ subpanels
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowZ, self.nbColZ, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowZ, self.nbColZ, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         # No space between the figures
         plt.subplots_adjust(hspace=0, wspace=0)
 
@@ -2164,72 +2177,71 @@ class PlotUtils:
         f.text(0.04, 0.5, "N", va="center", rotation="vertical", fontsize=15)
 
         # Loop over the redshift bins
-        for rm in range(len(self.range_z)):
-            if rm > 0:
-                # Define the subplots and pass the panel
-                zmin = self.range_z[rm - 1]
-                zmax = self.range_z[rm]
-                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+        for rm in range(len(self.range_z) - 1):
+            # Define the subplots and pass the panel
+            zmin = self.range_z[rm]
+            zmax = self.range_z[rm + 1]
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
 
-                # set the axis
-                ax.axis([-14, -7, 0, 1.3])
+            # set the axis
+            ax.axis([-14, -7, 0, 1.3])
 
-                # new condition within the redshift range
-                conda = (
-                    self.cond
-                    & self.condgal
-                    & (self.zp > zmin)
-                    & (self.zp < zmax)
-                    & (self.ssfrm > -20)
-                    & (self.ssfrm < -6)
+            # new condition within the redshift range
+            conda = (
+                self.cond
+                & self.condgal
+                & (self.zp > zmin)
+                & (self.zp < zmax)
+                & (self.ssfrm > -20)
+                & (self.ssfrm < -6)
+            )
+
+            # check if some objects exist
+            if len(self.ssfrm[conda]) > 1:
+                # Histogram of the SFR
+                ax.hist(
+                    self.ssfrm[conda],
+                    bins=nstep,
+                    histtype="stepfilled",
+                    density=1,
+                    color="b",
+                    label="median of the PDF",
                 )
 
-                # check if some objects exist
-                if len(self.ssfrm[conda]) > 1:
-                    # Histogram of the SFR
-                    ax.hist(
-                        self.ssfrm[conda],
-                        bins=nstep,
-                        histtype="stepfilled",
-                        density=1,
-                        color="b",
-                        label="median of the PDF",
-                    )
+            # new condition within the redshift range
+            conda = (
+                self.cond
+                & self.condgal
+                & (self.zp > zmin)
+                & (self.zp < zmax)
+                & (self.ssfrb > -20)
+                & (self.ssfrb < -6)
+            )
 
-                # new condition within the redshift range
-                conda = (
-                    self.cond
-                    & self.condgal
-                    & (self.zp > zmin)
-                    & (self.zp < zmax)
-                    & (self.ssfrb > -20)
-                    & (self.ssfrb < -6)
+            # check if some objects exist
+            if len(self.ssfrb[conda]) > 1:
+                # Histogram of the SFR
+                ax.hist(
+                    self.ssfrb[conda],
+                    bins=nstep,
+                    histtype="stepfilled",
+                    density=1,
+                    color="r",
+                    alpha=0.5,
+                    label=r"$minimum\; \chi^2$",
                 )
 
-                # check if some objects exist
-                if len(self.ssfrb[conda]) > 1:
-                    # Histogram of the SFR
-                    ax.hist(
-                        self.ssfrb[conda],
-                        bins=nstep,
-                        histtype="stepfilled",
-                        density=1,
-                        color="r",
-                        alpha=0.5,
-                        label=r"$minimum\; \chi^2$",
-                    )
+            # labels
+            ax.annotate(
+                "$" + str(round(zmin, 2)) + " < z < " + str(round(zmax, 2)) + "$",
+                xy=(-13.5, 1),
+                color="black",
+                fontsize=15,
+            )
 
-                # labels
-                ax.annotate(
-                    "$" + str(round(zmin, 2)) + " < z < " + str(round(zmax, 2)) + "$",
-                    xy=(-13.5, 1),
-                    color="black",
-                    fontsize=15,
-                )
-
-                # print the legend
-                if rm == 1:
-                    ax.legend(prop={"size": 8})
+            # print the legend
+            if rm == 1:
+                ax.legend(prop={"size": 8})
 
         return
 
@@ -2262,7 +2274,9 @@ class PlotUtils:
         # Produces a MASS_MED vs MASS_BEST comparison plot by magnitude bin.
         """
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         # No space between the figures
         plt.subplots_adjust(hspace=0, wspace=0)
 
@@ -2271,35 +2285,34 @@ class PlotUtils:
         f.text(0.04, 0.5, r"$mass \; median\; PDF(z)$", va="center", rotation="vertical", fontsize=15)
 
         # Loop over the magnitude bins
-        for rm in range(len(self.range_mag)):
-            if rm > 0:
-                # Define the subplots and pass the panel
-                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+        for rm in range(len(self.range_mag) - 1):
+            # Define the subplots and pass the panel
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
 
-                # mag limits
-                magmin = self.range_mag[rm - 1]
-                magmax = self.range_mag[rm]
+            # mag limits
+            magmin = self.range_mag[rm]
+            magmax = self.range_mag[rm + 1]
 
-                # set the axis
-                ax.axis([6, 11.9, 6, 11.9])
+            # set the axis
+            ax.axis([6, 11.9, 6, 11.9])
 
-                # new condition with the magnitude range
-                conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
+            # new condition with the magnitude range
+            conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
 
-                # Plot mass med versus best
-                ax.scatter(self.massb[conda], self.massm[conda], s=1, color="b", alpha=0.5, marker="s")
+            # Plot mass med versus best
+            ax.scatter(self.massb[conda], self.massm[conda], s=1, color="b", alpha=0.5, marker="s")
 
-                # Trace the limits 0.15(1+z)
-                x_zs = np.array([6, 15])
-                ax.plot(x_zs, x_zs, "r-")
+            # Trace the limits 0.15(1+z)
+            x_zs = np.array([6, 15])
+            ax.plot(x_zs, x_zs, "r-")
 
-                # labels
-                ax.annotate(
-                    "$" + str(round(magmin, 2)) + " < mag < " + str(round(magmax, 2)) + "$",
-                    xy=(7, 11),
-                    color="black",
-                    fontsize=15,
-                )
+            # labels
+            ax.annotate(
+                "$" + str(round(magmin, 2)) + " < mag < " + str(round(magmax, 2)) + "$",
+                xy=(7, 11),
+                color="black",
+                fontsize=15,
+            )
 
         return
 
@@ -2332,7 +2345,9 @@ class PlotUtils:
         # Produces a SFR_MED vs SFR_BEST comparison plot by magnitude bin.
         """
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         # No space between the figures
         plt.subplots_adjust(hspace=0, wspace=0)
 
@@ -2341,35 +2356,34 @@ class PlotUtils:
         f.text(0.04, 0.5, r"$SFR \; median\; PDF(z)$", va="center", rotation="vertical", fontsize=15)
 
         # Loop over the magnitude bins
-        for rm in range(len(self.range_mag)):
-            if rm > 0:
-                # Define the subplots and pass the panel
-                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
+        for rm in range(len(self.range_mag) - 1):
+            # Define the subplots and pass the panel
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
 
-                # mag limits
-                magmin = self.range_mag[rm - 1]
-                magmax = self.range_mag[rm]
+            # mag limits
+            magmin = self.range_mag[rm]
+            magmax = self.range_mag[rm + 1]
 
-                # set the axis
-                ax.axis([-2, 3.9, -2, 3.9])
+            # set the axis
+            ax.axis([-2, 3.9, -2, 3.9])
 
-                # new condition with the magnitude range
-                conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
+            # new condition with the magnitude range
+            conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
 
-                # Plot SFR med versus best
-                ax.scatter(self.sfrb[conda], self.sfrm[conda], s=1, color="b", alpha=0.5, marker="s")
+            # Plot SFR med versus best
+            ax.scatter(self.sfrb[conda], self.sfrm[conda], s=1, color="b", alpha=0.5, marker="s")
 
-                # Trace the limits 0.15(1+z)
-                x_zs = np.array([-6, 15])
-                ax.plot(x_zs, x_zs, "r-")
+            # Trace the limits 0.15(1+z)
+            x_zs = np.array([-6, 15])
+            ax.plot(x_zs, x_zs, "r-")
 
-                # labels
-                ax.annotate(
-                    "$" + str(round(magmin, 2)) + " < mag < " + str(round(magmax, 2)) + "$",
-                    xy=(-1, 3),
-                    color="black",
-                    fontsize=15,
-                )
+            # labels
+            ax.annotate(
+                "$" + str(round(magmin, 2)) + " < mag < " + str(round(magmax, 2)) + "$",
+                xy=(-1, 3),
+                color="black",
+                fontsize=15,
+            )
 
         return
 
@@ -2396,26 +2410,25 @@ class PlotUtils:
         # Produces plots of mass versus redshift
         """
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         plt.subplots_adjust(hspace=0, wspace=0)
 
         f.text(0.5, 0.04, "$redshift$", ha="center", fontsize=15)
         f.text(0.04, 0.5, "$log10(mass)$", va="center", rotation="vertical", fontsize=15)
 
-        for rm in range(len(self.range_mag)):
-            if rm > 0:
-                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
-                magmin = self.range_mag[rm - 1]
-                magmax = self.range_mag[rm]
+        for rm in range(len(self.range_mag) - 1):
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
+            magmin = self.range_mag[rm]
+            magmax = self.range_mag[rm + 1]
 
-                ax.axis([self.z_min, self.z_max, 7, 11.9])
+            ax.axis([self.z_min, self.z_max, 7, 11.9])
 
-                conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
-                ax.scatter(self.zp[conda], self.massb[conda], s=1, color="b", alpha=0.2, marker="s")
+            conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
+            ax.scatter(self.zp[conda], self.massb[conda], s=1, color="b", alpha=0.2, marker="s")
 
-                ax.annotate(
-                    f"${magmin:.2f} < mag < {magmax:.2f}$", xy=(0.2, 11.5), color="black", fontsize=15
-                )
+            ax.annotate(f"${magmin:.2f} < mag < {magmax:.2f}$", xy=(0.2, 11.5), color="black", fontsize=15)
 
         return
 
@@ -2442,24 +2455,25 @@ class PlotUtils:
         # Produces plots of mass versus redshift
         """
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         plt.subplots_adjust(hspace=0, wspace=0)
 
         f.text(0.5, 0.04, "$redshift$", ha="center", fontsize=15)
         f.text(0.04, 0.5, "$log10(SFR)$", va="center", rotation="vertical", fontsize=15)
 
-        for rm in range(len(self.range_mag)):
-            if rm > 0:
-                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
-                magmin = self.range_mag[rm - 1]
-                magmax = self.range_mag[rm]
+        for rm in range(len(self.range_mag) - 1):
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
+            magmin = self.range_mag[rm]
+            magmax = self.range_mag[rm + 1]
 
-                ax.axis([self.z_min, self.z_max, -3, 3.9])
+            ax.axis([self.z_min, self.z_max, -3, 3.9])
 
-                conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
-                ax.scatter(self.zp[conda], self.sfrb[conda], s=1, color="b", alpha=0.2, marker="s")
+            conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
+            ax.scatter(self.zp[conda], self.sfrb[conda], s=1, color="b", alpha=0.2, marker="s")
 
-                ax.annotate(f"${magmin:.2f} < mag < {magmax:.2f}$", xy=(0.2, 3.0), color="black", fontsize=15)
+            ax.annotate(f"${magmin:.2f} < mag < {magmax:.2f}$", xy=(0.2, 3.0), color="black", fontsize=15)
 
         return
 
@@ -2482,31 +2496,30 @@ class PlotUtils:
         # Produces plots of mass versus SFR
         """
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         plt.subplots_adjust(hspace=0, wspace=0)
 
         f.text(0.5, 0.04, "$log10(mass)$", ha="center", fontsize=15)
         f.text(0.04, 0.5, "$log10(SFR)$", va="center", rotation="vertical", fontsize=15)
 
-        for rm in range(len(self.range_z)):
-            if rm > 0:
-                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
-                zmin = self.range_z[rm - 1]
-                zmax = self.range_z[rm]
+        for rm in range(len(self.range_z) - 1):
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
+            zmin = self.range_z[rm]
+            zmax = self.range_z[rm + 1]
 
-                ax.axis([7, 12, -3, 4])
+            ax.axis([7, 12, -3, 4])
 
-                # new condition with the redshift range and star-forming
-                conda = (
-                    self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.ssfrb > -11) & (self.ssfrb < 90)
-                )
-                ax.scatter(self.massb[conda], self.sfrb[conda], s=1, color="b", alpha=0.2, marker="s")
+            # new condition with the redshift range and star-forming
+            conda = self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.ssfrb > -11) & (self.ssfrb < 90)
+            ax.scatter(self.massb[conda], self.sfrb[conda], s=1, color="b", alpha=0.2, marker="s")
 
-                # new condition with the redshift range and quiescent
-                conda = self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.ssfrb < -11)
-                ax.scatter(self.massb[conda], self.sfrb[conda], s=1, color="r", alpha=0.2, marker="s")
+            # new condition with the redshift range and quiescent
+            conda = self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.ssfrb < -11)
+            ax.scatter(self.massb[conda], self.sfrb[conda], s=1, color="r", alpha=0.2, marker="s")
 
-                ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(8, 3), color="black", fontsize=15)
+            ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(8, 3), color="black", fontsize=15)
 
         return
 
@@ -2528,25 +2541,26 @@ class PlotUtils:
         # Produces plots of L(NUV) versus SFR
         """
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         plt.subplots_adjust(hspace=0, wspace=0)
 
         f.text(0.5, 0.04, "$log10(SFR)$", ha="center", fontsize=15)
         f.text(0.04, 0.5, "$L(NUV)$", va="center", rotation="vertical", fontsize=15)
 
-        for rm in range(len(self.range_z)):
-            if rm > 0:
-                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
-                zmin = self.range_z[rm - 1]
-                zmax = self.range_z[rm]
+        for rm in range(len(self.range_z) - 1):
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
+            zmin = self.range_z[rm]
+            zmax = self.range_z[rm + 1]
 
-                ax.axis([-4, 3, 6, 11.9])
+            ax.axis([-4, 3, 6, 11.9])
 
-                # new condition with the redshift range and star-forming
-                conda = self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.sfrb > -90)
-                ax.scatter(self.sfrb[conda], self.lnuv[conda], s=1, color="b", alpha=0.2, marker="s")
+            # new condition with the redshift range and star-forming
+            conda = self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.sfrb > -90)
+            ax.scatter(self.sfrb[conda], self.lnuv[conda], s=1, color="b", alpha=0.2, marker="s")
 
-                ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(-3, 10), color="black", fontsize=15)
+            ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(-3, 10), color="black", fontsize=15)
 
         return
 
@@ -2570,7 +2584,9 @@ class PlotUtils:
         # Produces plots of mass-to-light versus redshift
         """
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         plt.subplots_adjust(hspace=0, wspace=0)
 
         f.text(0.5, 0.04, "$redshift$", ha="center", fontsize=15)
@@ -2585,23 +2601,22 @@ class PlotUtils:
             - log10(3.826e33)
         )
 
-        for rm in range(len(self.range_mag)):
-            if rm > 0:
-                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
-                magmin = self.range_mag[rm - 1]
-                magmax = self.range_mag[rm]
+        for rm in range(len(self.range_mag) - 1):
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
+            magmin = self.range_mag[rm]
+            magmax = self.range_mag[rm + 1]
 
-                ax.axis([self.z_min, self.z_max, -1.4, 0.2])
+            ax.axis([self.z_min, self.z_max, -1.4, 0.2])
 
-                conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
-                ax.scatter(self.zp[conda], mlratio[conda], s=1, color="b", alpha=0.2, marker="s")
+            conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
+            ax.scatter(self.zp[conda], mlratio[conda], s=1, color="b", alpha=0.2, marker="s")
 
-                ax.annotate(f"${magmin:.2f} < mag < {magmax:.2f}$", xy=(0.2, 0), color="black", fontsize=15)
+            ax.annotate(f"${magmin:.2f} < mag < {magmax:.2f}$", xy=(0.2, 0), color="black", fontsize=15)
 
-                # Trace the limits
-                x = np.array([0, 6])
-                ax.plot(x, -0.27 * x - 0.05 - 0.24, "r-")
-                ax.plot(x, -0.18 * x - 0.05 - 0.24, "r-")
+            # Trace the limits
+            x = np.array([0, 6])
+            ax.plot(x, -0.27 * x - 0.05 - 0.24, "r-")
+            ax.plot(x, -0.18 * x - 0.05 - 0.24, "r-")
 
         return
 
@@ -2623,33 +2638,32 @@ class PlotUtils:
         # Produces plots of M(K) versus mass
         """
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         plt.subplots_adjust(hspace=0, wspace=0)
 
         f.text(0.5, 0.04, "$log10(mass)$", ha="center", fontsize=15)
         f.text(0.04, 0.5, "$M(K)$", va="center", rotation="vertical", fontsize=15)
 
-        for rm in range(len(self.range_z)):
-            if rm > 0:
-                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
-                zmin = self.range_z[rm - 1]
-                zmax = self.range_z[rm]
+        for rm in range(len(self.range_z) - 1):
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
+            zmin = self.range_z[rm]
+            zmax = self.range_z[rm + 1]
 
-                ax.axis([6, 11.9, -24.9, -13])
+            ax.axis([6, 11.9, -24.9, -13])
 
-                # new condition with the magnitude range and star-forming
-                conda = (
-                    self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.ssfrm > -11) & (self.ssfrm < 0)
-                )
-                if len(self.massb[conda]) > 0:
-                    ax.scatter(self.massb[conda], self.mabsk[conda], s=1, color="b", alpha=0.2, marker="s")
+            # new condition with the magnitude range and star-forming
+            conda = self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.ssfrm > -11) & (self.ssfrm < 0)
+            if len(self.massb[conda]) > 0:
+                ax.scatter(self.massb[conda], self.mabsk[conda], s=1, color="b", alpha=0.2, marker="s")
 
-                # new condition with the magnitude range and quiescent
-                conda = self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.ssfrm < -11)
-                if len(self.massb[conda]) > 0:
-                    ax.scatter(self.massb[conda], self.mabsk[conda], s=1, color="r", alpha=0.2, marker="s")
+            # new condition with the magnitude range and quiescent
+            conda = self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.ssfrm < -11)
+            if len(self.massb[conda]) > 0:
+                ax.scatter(self.massb[conda], self.mabsk[conda], s=1, color="r", alpha=0.2, marker="s")
 
-                ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(6.5, -23), color="black", fontsize=15)
+            ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(6.5, -23), color="black", fontsize=15)
 
         return
 
@@ -2671,30 +2685,31 @@ class PlotUtils:
         # Produces plots of M(U) versus SFR
         """
         plt.clf()
-        f, axarr = plt.subplots(self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8))
+        f, axarr = plt.subplots(
+            self.nbRowM, self.nbColM, sharex=True, sharey=True, figsize=(12, 8), squeeze=False
+        )
         plt.subplots_adjust(hspace=0, wspace=0)
 
         f.text(0.5, 0.04, "$log10(SFR)$", ha="center", fontsize=15)
         f.text(0.04, 0.5, "$M(U)$", va="center", rotation="vertical", fontsize=15)
 
-        for rm in range(len(self.range_z)):
-            if rm > 0:
-                ax = axarr[int(ceil(rm / 2.0) - 1), int(ceil(rm % 2) - 1)]
-                zmin = self.range_z[rm - 1]
-                zmax = self.range_z[rm]
+        for rm in range(len(self.range_z) - 1):
+            ax = axarr[int(rm // 2.0), int(rm % 2)]
+            zmin = self.range_z[rm]
+            zmax = self.range_z[rm + 1]
 
-                ax.axis([-4, 4, -24.9, -13])
+            ax.axis([-4, 4, -24.9, -13])
 
-                # new condition with the redshift range and star-forming
-                conda = self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.sfrb > -90)
-                condb = conda & (self.ebv <= 0.1)
-                ax.scatter(self.sfrb[condb], self.mabsu[condb], s=1, color="b", alpha=0.2, marker="s")
-                condb = conda & (self.ebv > 0.1) & (self.ebv < 0.3)
-                ax.scatter(self.sfrb[condb], self.mabsu[condb], s=1, color="g", alpha=0.2, marker="s")
-                condb = conda & (self.ebv >= 0.3)
-                ax.scatter(self.sfrb[condb], self.mabsu[condb], s=1, color="r", alpha=0.2, marker="s")
+            # new condition with the redshift range and star-forming
+            conda = self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.sfrb > -90)
+            condb = conda & (self.ebv <= 0.1)
+            ax.scatter(self.sfrb[condb], self.mabsu[condb], s=1, color="b", alpha=0.2, marker="s")
+            condb = conda & (self.ebv > 0.1) & (self.ebv < 0.3)
+            ax.scatter(self.sfrb[condb], self.mabsu[condb], s=1, color="g", alpha=0.2, marker="s")
+            condb = conda & (self.ebv >= 0.3)
+            ax.scatter(self.sfrb[condb], self.mabsu[condb], s=1, color="r", alpha=0.2, marker="s")
 
-                ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(-3, -23), color="black", fontsize=15)
+            ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(-3, -23), color="black", fontsize=15)
 
         return
 
