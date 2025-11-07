@@ -1,3 +1,4 @@
+from datetime import datetime
 from math import ceil, log10
 
 import matplotlib.pyplot as plt
@@ -5,6 +6,8 @@ import numpy as np
 from matplotlib import gridspec
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.interpolate import interp1d
+
+import lephare as lp
 
 # Compatibility shim
 trapezoid = np.trapezoid if hasattr(np, "trapezoid") else np.trapz
@@ -295,25 +298,27 @@ class PlotUtils:
         """
         # Get all callable public methods
         plot_methods = [
-            self.zml_zs(),
-            self.zp_zs(),
-            self.zml_zp(),
-            self.dist_z(),
-            self.dist_chi2(),
-            self.dist_filt(),
-            self.dist_model(),
-            self.dist_ebv(),
-            self.secondpeak(),
-            self.bzk(),
-            self.cumulative68(),
-            self.check_error(),
-            self.errormag(),
-            self.errorz(),
-            self.pit_qq(),
+            self.title_page,
+            self.zml_zs,
+            self.zp_zs,
+            self.zml_zp,
+            self.dist_z,
+            self.dist_chi2,
+            self.dist_filt,
+            self.dist_model,
+            self.dist_ebv,
+            self.secondpeak,
+            self.bzk,
+            self.cumulative68,
+            self.check_error,
+            self.errormag,
+            self.errorz,
+            self.pit_qq,
         ]
 
         with PdfPages(filename) as pdf:
-            for name, method in plot_methods:
+            for method in plot_methods:
+                name = method.__name__
                 print(f"Running plot method: {name}()")
 
                 plt.close("all")  # clear previous figures
@@ -331,8 +336,7 @@ class PlotUtils:
                     continue
 
                 for fig in figs:
-                    if not fig.axes or all(not ax.has_data() and len(ax.images) == 0 for ax in fig.axes):
-                        print(f"Skipping empty figure from {name}")
+                    if not fig.axes:
                         plt.close(fig)
                         continue
                     pdf.savefig(fig, bbox_inches="tight")
@@ -362,30 +366,32 @@ class PlotUtils:
         """
         # Get all callable public methods
         plot_methods = [
-            self.dist_z(),
-            self.dist_chi2(),
-            self.dist_filt(),
-            self.dist_model(),
-            self.dist_ebv(),
-            self.absmag_z(),
-            self.rf_color(),
-            self.william(),
-            self.dist_mass(),
-            self.dist_sfr(),
-            self.dist_ssfr(),
-            self.mass_med_best(),
-            self.sfr_med_best(),
-            self.mass_sfr(),
-            self.mass_z(),
-            self.sfr_z(),
-            self.lnuv_sfr(),
-            self.absmagu_sfr(),
-            self.absmagk_mass(),
-            self.masstolight_z(),
+            self.title_page,
+            self.dist_z,
+            self.dist_chi2,
+            self.dist_filt,
+            self.dist_model,
+            self.dist_ebv,
+            self.absmag_z,
+            self.rf_color,
+            self.william,
+            self.dist_mass,
+            self.dist_sfr,
+            self.dist_ssfr,
+            self.mass_med_best,
+            self.sfr_med_best,
+            self.mass_sfr,
+            self.mass_z,
+            self.sfr_z,
+            self.lnuv_sfr,
+            self.absmagu_sfr,
+            self.absmagk_mass,
+            self.masstolight_z,
         ]
 
         with PdfPages(filename) as pdf:
-            for name, method in plot_methods:
+            for method in plot_methods:
+                name = method.__name__
                 print(f"Running plot method: {name}()")
 
                 plt.close("all")  # clear previous figures
@@ -403,14 +409,38 @@ class PlotUtils:
                     continue
 
                 for fig in figs:
-                    if not fig.axes or all(not ax.has_data() and len(ax.images) == 0 for ax in fig.axes):
-                        print(f"Skipping empty figure from {name}")
+                    if not fig.axes:
                         plt.close(fig)
                         continue
                     pdf.savefig(fig, bbox_inches="tight")
                 plt.close("all")
 
         print(f"All plots saved to {filename}")
+
+    def title_page(self):
+        """Create a title page for diagnostic plots.
+
+        This method generates a simple title page summarizing the LePHARE
+        diagnostic plots. It includes the LePHARE version and the current date.
+        The information is displayed centered on the page.
+
+        The axes are retained (not hidden) so that further annotations or
+        plot elements can be added later if needed.
+        """
+
+        today = datetime.now().strftime("%Y-%m-%d")
+
+        # Message text
+        message = f"LePHARE Diagnostics\n" f"LePHARE version: {lp.__version__}\n" f"Date: {today}"
+
+        fig, ax = plt.subplots(figsize=(8.5, 11))  # standard A4-ish size
+        ax.axis("off")  # Remove all axes, ticks, and labels
+        ax.set_frame_on(False)  # Remove the border/frame
+        ax.text(0.5, 0.5, message, ha="center", va="center", fontsize=14, transform=ax.transAxes)
+
+        # Optionally, adjust limits for aesthetics
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
 
     def zml_zs(self):
         """
