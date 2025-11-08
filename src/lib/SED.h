@@ -403,6 +403,7 @@ class GalSED : public SED {
   ~GalSED() { flEm.clear(); }
 
   void SEDproperties();
+  vector<double> compute_luminosities();
   void add_neb_cont();
   GalSED generateEmSED(const string &emtype);
   void generateEmEmpUV(double MNUV_int, double NUVR);

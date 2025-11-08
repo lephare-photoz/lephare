@@ -116,3 +116,23 @@ def test_integration2():
         print(result, result2[3])
         print(v, ev)
         assert result == pytest.approx(v, ev)
+
+def test_sedproperties():
+    # test on a more realistic case
+    sed = GalSED("toto", 10)
+    sed.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
+    [luv, lopt, lnir, d4000, ltir] = sed.compute_luminosities()
+    sed.SEDproperties()
+    assert luv == pytest.approx(sed.luv, 1.e-2)
+    assert lopt == pytest.approx(sed.lopt, 1.e-2)
+    assert lnir == pytest.approx(sed.lnir, 1.e-2)
+    assert d4000 == pytest.approx(sed.d4000, 1.e-2)
+    assert ltir ==  lp.INVALID_VAL and sed.ltir == lp.INVALID_VAL
+    sed.read(os.path.join("../lephare-data/sed/GAL/DALE/dale_1.sed"))
+    [luv, lopt, lnir, d4000, ltir] = sed.compute_luminosities()
+    sed.SEDproperties()
+    assert luv == pytest.approx(sed.luv, 1.e-2)
+    assert lopt == pytest.approx(sed.lopt, 1.e-2)
+    assert lnir == pytest.approx(sed.lnir, 1.e-2)
+    assert d4000 == pytest.approx(sed.d4000, 1.e-2)
+    assert ltir == pytest.approx(sed.ltir, 1.e-2)

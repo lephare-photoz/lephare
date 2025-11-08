@@ -957,7 +957,7 @@ void GalSED::calc_ph() {
   wedge[1] = hc / 24.59;  // HeI edge in Angstroem
   wedge[2] = hc / 13.60;  // H edge in Angstroem
   wedge[3] = 1108.7;  // H_2 excitation from ground state (B-X) ############ A
-                      // vérifier ############
+                      // vérifier (11.18 eV)############
 
   // Definition :
   // qi[4] define in SED.h = ionising fluxes  for 4 elements [#photons.cm-2/s]
@@ -1531,6 +1531,34 @@ void GalSED::SEDproperties() {
   if (ltir > 0) ltir = log10(ltir / Lsol / fluxconv);
 
   return;
+}
+
+vector<double> GalSED::compute_luminosities() {
+  double fluxconv = (4 * pi * 100 * pow(pc, 2));
+
+  // construct a heaviside filter between 0.21 and 0.25 micron
+  // Integrate the SED in NUV : between 0.21 and 0.25 micron
+  luv = this->integrate(2100., 2500.);
+  if (luv > 0) luv = log10(luv * pow(2300, 2) / 400 / c * fluxconv);
+  
+  // Integrate the SED in optical : between 0.55 and 0.65 micron
+  lopt = this->integrate(5500., 6500.);
+  if (lopt > 0) lopt = log10(lopt * pow(6000, 2.) / 1000. / c * fluxconv);
+
+  // Integrate the SED in NUV : between 2.1 and 2.3 micron 
+  lnir = this->integrate(21000., 23000.);
+  if (lnir > 0) lnir = log10(lnir * pow(22000, 2) / 2000 / c * fluxconv);
+
+  // Integrate the SED before and after the Balmer break
+  double lBalm1 = this->integrate(3750., 3950.);
+  double lBalm2 = this->integrate(4050., 4250.);
+  if (lBalm1 > 0 && lBalm2 > 0) d4000 = lBalm2 / lBalm1;
+
+  // Integrate the SED in IR : between 8 and 1000 micron
+  ltir = this->integrate(80000., 10000000.);
+  if (ltir > 0) ltir = log10(ltir / Lsol * fluxconv);
+
+  return {luv, lopt, lnir, d4000, ltir};
 }
 
 /*
