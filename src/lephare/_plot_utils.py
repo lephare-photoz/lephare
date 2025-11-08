@@ -2081,13 +2081,13 @@ class PlotUtils:
                     label=r"$minimum\; \chi^2$",
                 )
 
-                # labels
-                ax.annotate(
-                    "$" + str(round(zmin, 2)) + " < z < " + str(round(zmax, 2)) + "$",
-                    xy=(-1.5, 1),
-                    color="black",
-                    fontsize=15,
-                )
+            # labels
+            ax.annotate(
+                "$" + str(round(zmin, 2)) + " < z < " + str(round(zmax, 2)) + "$",
+                xy=(8, 1),
+                color="black",
+                fontsize=15,
+            )
 
             # print the legend
             if rm == 1:
@@ -2181,7 +2181,7 @@ class PlotUtils:
             # labels
             ax.annotate(
                 "$" + str(round(zmin, 2)) + " < z < " + str(round(zmax, 2)) + "$",
-                xy=(7, 1),
+                xy=(-1, 1),
                 color="black",
                 fontsize=15,
             )
