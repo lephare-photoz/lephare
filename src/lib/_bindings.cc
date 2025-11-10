@@ -334,7 +334,7 @@ PYBIND11_MODULE(_lephare, mod) {
   mod.def("maxkcolor", &maxkcolor);
 
   mod.attr("maptype") = maptype;
-  py::class_<onesource>(mod, "onesource")
+  py::class_<onesource>(mod, "onesource", py::dynamic_attr())
       .def(py::init<>())
       .def(py::init<const int, vector<double>>())
       .def("setPriors", &onesource::setPriors)

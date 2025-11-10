@@ -17,6 +17,7 @@ from ._version import *
 get_lephare_env()  # noqa: F405
 
 from ._flt import *
+from ._onesource import *
 from ._pdf import *
 from ._photoz import *
 from ._spec import *
