@@ -1,8 +1,8 @@
 import os
-import pytest
 
 import lephare as lp
 import numpy as np
+import pytest
 import scipy.integrate as sciint
 
 
