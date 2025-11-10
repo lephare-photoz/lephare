@@ -1,7 +1,5 @@
-import numpy as np
-import lephare as lp
-from ._utils import continueClass
 from ._lephare import onesource
+from ._utils import continueClass
 
 __all__ = [
     "onesource",
@@ -13,7 +11,7 @@ class onesource:  # noqa
     def compute_quality_flag(self):
         """
         Compute and return the quality flag for the current PDF and center.
-        
+
         This method retrieves the PDF object from `self.pdfmap[9]`, uses the first
         element of `self.zgmin` as the center value, and computes a quality flag
         using the PDF's `compute_quality_flag` method.
@@ -26,4 +24,3 @@ class onesource:  # noqa
         tup = pdf.compute_quality_flag(center)
         self.flag = tup[0]
         return self.flag
-    
