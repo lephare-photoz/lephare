@@ -1,4 +1,5 @@
 import os
+import pytest
 
 import lephare as lp
 import numpy as np
