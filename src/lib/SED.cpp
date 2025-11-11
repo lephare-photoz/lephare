@@ -46,6 +46,9 @@ SED::SED(const string nameC, int nummodC, string type) {
   chi2 = HIGH_CHI2;  // chi2 of the fit
   dm = -999.;        // Rescaling of the template
   distMod = 0;
+  for (int i = 0; i < 4; i++) {
+    qi[i] = INVALID_PHYS;
+  }  // unattenuated number of ionizing photons for 4 different lines
 }
 
 /*
@@ -877,8 +880,7 @@ GalSED GalSED::generateEmSED(const string &emtype) {
   GalSED oneEm("");
   if (emtype[0] == 'P') {
     // new method to include emission lines, with physical recipes
-    calc_ph();       // compute the number of ionizing photons
-    add_neb_cont();  // Compute the continuum
+    add_neb_cont();                     // Compute the continuum
     oneEm.generateEmPhys(zmet, qi[2]);  // Generate the emission lines
   } else if (emtype.compare("EMP_UV") == 0) {
     // Empirical method for emission lines
@@ -1484,6 +1486,10 @@ void GalSED::SEDproperties() {
   ltir = (this->integrateSED(fltIR))[3];
   if (ltir > 0) ltir = log10(ltir / Lsol / fluxconv);
 
+  // compute the number of available ionizing photons at edge of
+  // HeII HeI H and H_2
+  this->calc_ph();
+
   return;
 }
 
@@ -1504,6 +1510,7 @@ void GalSED::writeSED(ofstream &ofsBin, ofstream &ofsPhys, ofstream &ofsDoc) {
   ofsBin.write((char *)&zmet, sizeof(double));
   ofsBin.write((char *)&tau, sizeof(double));
   ofsBin.write((char *)&d4000, sizeof(double));
+  ofsBin.write((char *)&qi[2], sizeof(double));
   ofsBin.write((char *)&age, sizeof(double));
 
   // Physical parameters in the ascii file
@@ -1537,6 +1544,7 @@ void GalSED::readSEDBin(ifstream &ins) {
   ins.read((char *)&zmet, sizeof(double));
   ins.read((char *)&tau, sizeof(double));
   ins.read((char *)&d4000, sizeof(double));
+  ins.read((char *)&qi[2], sizeof(double));
   ins.read((char *)&age, sizeof(double));
 
   return;
