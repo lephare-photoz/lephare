@@ -49,6 +49,9 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readwrite("ori", &oneElLambda::ori)
       .def("interp", &oneElLambda::interp, py::arg("previousEl"),
            py::arg("nextEl"));
+  mod.def("concatenate_and_sort", &concatenate_and_sort,
+          "concatenate and sorttwo vector of oneElLambda objects. Sorting is "
+          "in increasing lambda.");
 
   /******** CLASS COSMOLOGY*********/
   py::class_<cosmo>(mod, "cosmo")
@@ -97,8 +100,6 @@ PYBIND11_MODULE(_lephare, mod) {
   mod.def("cardelli_law", &cardelli_law,
           "compute albd/av at a given lambda (A) for the Cardelli law",
           py::arg("lb"));
-  mod.def("resample", &resample, py::arg("lamb_all"), py::arg("lamb_interp"),
-          py::arg("origine"), py::arg("lmin"), py::arg("lmax"));
   mod.def("read_flt", &read_flt, py::arg("sfiltIn"));
 
   /******** CLASS KEYWORD *********/
@@ -169,6 +170,7 @@ PYBIND11_MODULE(_lephare, mod) {
            py::arg("name"), py::arg("tau"), py::arg("age"), py::arg("nummod"),
            py::arg("type"), py::arg("idAge"))
       .def(py::init<const SED>())
+      .def_readonly("lamb_flux", &SED::lamb_flux)
       .def_readonly("extlawId", &SED::extlawId)
       .def_readonly("ebv", &SED::ebv)
       .def_readonly("name", &SED::name)
@@ -188,6 +190,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("rescale", &SED::rescale)
       .def("compute_magnitudes", &SED::compute_magnitudes)
       .def("compute_fluxes", &SED::compute_fluxes)
+      .def("emplace_back", &SED::emplace_back)
       .def("set_vector", &SED::set_vector)
       .def("readSEDBin",
            static_cast<void (SED::*)(const string &)>(&SED::readSEDBin))
@@ -336,7 +339,7 @@ PYBIND11_MODULE(_lephare, mod) {
   mod.def("maxkcolor", &maxkcolor);
 
   mod.attr("maptype") = maptype;
-  py::class_<onesource>(mod, "onesource")
+  py::class_<onesource>(mod, "onesource", py::dynamic_attr())
       .def(py::init<>())
       .def(py::init<const int, vector<double>>())
       .def("setPriors", &onesource::setPriors)
