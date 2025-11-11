@@ -124,3 +124,63 @@ def test_integration():
     print(result)
     print(true_res)
     assert np.allclose(np.array(result), np.array(true_res), 1.1e-2)
+
+
+def test_resample():
+    x1 = np.linspace(0, 10, 11)
+    y1 = np.ones_like(x1)
+    x2 = x1 + 0.5
+    y2 = np.zeros_like(x2)
+    z1 = []
+    z2 = []
+    for i in range(10):
+        z1.append(lp.oneElLambda(x1[i], y1[i], 0))
+        z2.append(lp.oneElLambda(x2[i], y2[i], 1))
+    z = lp.concatenate_and_sort(z1, z2)
+    print("z:")
+    print([e.lamb for e in z])
+    print([e.val for e in z])
+    print([e.ori for e in z])
+    # resample z1 at the position of z2
+    res = lp.SED.resample(z, 0, 0, 10)
+    print("res 0:")
+    print([e.lamb for e in res])
+    print([e.val for e in res])
+    print([e.ori for e in res])
+    res2 = SED.resample(z, 1, 0, 10)
+    print("res 1:")
+    print([e.lamb for e in res2])
+    print([e.val for e in res2])
+    print([e.ori for e in res2])
+    for e in res[:-1]:
+        assert e.ori == 0
+        assert e.val == 1
+    # resample z2 at the position of z1
+    for e in res2[1:]:
+        assert e.ori == 1
+        assert e.val == 0
+
+
+def test_resample2():
+    v = np.array(
+        [lp.oneElLambda(1, 1, 1), lp.oneElLambda(2, 0, 0), lp.oneElLambda(3, 0, 0), lp.oneElLambda(4, 1, 1)]
+    )
+
+    res = lp.SED.resample(v, 1, 1, 5)
+    print([e.lamb for e in res])
+    print([e.val for e in res])
+    print([e.ori for e in res])
+    for e in res:
+        assert e.val == 1
+        assert e.ori == 1
+
+    res = lp.SED.resample(v, 0, 1, 5)
+    print([e.lamb for e in res])
+    print([e.val for e in res])
+    print([e.ori for e in res])
+
+    for e in res[1:-1]:
+        assert e.val == 0
+        assert e.ori == 0
+    for e in (res[0], res[-1]):
+        assert e.ori == -99
