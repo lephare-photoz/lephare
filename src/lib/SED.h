@@ -262,21 +262,7 @@ class SED {
   /// for each magnitude \a #mag[k] compute kcorr = mag[k] - mag_z0[k] - distMod
   virtual void kcorrec(const vector<double> &magz0) {};
 
-  /*! Compute some integrals to be stored in the object
-   * This computes variables SED::luv, SED::lopt, SED::lnir, and SED::ltir
-   * luv, lopt, lnir, are monochromatic equivalent luminosities, for a source
-   * at 10 parsecs. As the SED unit is taken as erg/cm2/s/Hz, the monochromatic
-   * luminosity is obtained by integrating the SED in an interval [lmin, lmax],
-   * divided by (lmax-lmin) and multiplied by \f$4\pi(10pc)^2\f$. Note that
-   * given the units of an SED, it is defined as dF/dnu for F the corresponding
-   * flux. As a result the integral shows a \f$\lambda^2/c\f$ term so that
-   * \f$\frac{dF}{d\nu} = \frac{dF}{d\lambda} \frac{\lambda^2}{c}\f$ can be
-   * integrated in \f$\lambda\f$. For the variables computed here, in order to
-   * speed computation, \f$\lambda^2/c\f$ is evaluated at the center of the
-   * interval and taken out of the integral.
-   *
-   */
-  virtual void SEDproperties() {};
+  virtual void compute_luminosities() {};
 
   /*! Generate spectrum at given redshift, with given normalization, and
    * adding emission lines and extragalactic extinction
@@ -391,8 +377,21 @@ class GalSED : public SED {
          int nummodC, string typeC, int idAgeC);
   ~GalSED() { flEm.clear(); }
 
-  void SEDproperties();
-  vector<double> compute_luminosities();
+  /*! Compute some integrals to be stored in the object
+   * This computes variables SED::luv, SED::lopt, SED::lnir, and SED::ltir
+   * luv, lopt, lnir, are monochromatic equivalent luminosities, for a source
+   * at 10 parsecs. As the SED unit is taken as erg/cm2/s/Hz, the monochromatic
+   * luminosity is obtained by integrating the SED in an interval [lmin, lmax],
+   * divided by (lmax-lmin) and multiplied by \f$4\pi(10pc)^2\f$. Note that
+   * given the units of an SED, it is defined as dF/dnu for F the corresponding
+   * flux. As a result the integral shows a \f$\lambda^2/c\f$ term so that
+   * \f$\frac{dF}{d\nu} = \frac{dF}{d\lambda} \frac{\lambda^2}{c}\f$ can be
+   * integrated in \f$\lambda\f$. For the variables computed here, in order to
+   * speed computation, \f$\lambda^2/c\f$ is evaluated at the center of the
+   * interval and taken out of the integral.
+   *
+   */
+  void compute_luminosities();
   void add_neb_cont();
   GalSED generateEmSED(const string &emtype);
   void generateEmEmpUV(double MNUV_int, double NUVR);
