@@ -78,11 +78,11 @@ class SED {
   int extlawId;  ///< index of the extinction law when dust attenuation has been
                  ///< applied
 
-  double qi[4];  ///< Store the number flux (phot/cm\f$^{-2}\f$s\f$^{-1}\f$) of
-                 ///< ionizing photons for HeII, HeI, H, and H2. See
-                 ///< SED::calc_ph. In practice, qi[2] only is used, and only
-                 ///< for the physical modeling of emission lines
-                 ///< (EM_LINES="PHYS", see GalMag::read_SED)
+  double qi[4];  ///< Store the unnormalized number flux
+                 ///< (phot/cm\f$^{-2}\f$s\f$^{-1}\f$) of ionizing photons for
+                 ///< HeII, HeI, H, and H2. See SED::calc_ph. In practice, qi[2]
+                 ///< only is used, and only for the physical modeling of
+                 ///< emission lines (EM_LINES="PHYS", see GalMag::read_SED)
 
   vector<oneElLambda> fac_line;  ///< oneElLambda vector storing emission lines
 
@@ -174,19 +174,19 @@ class SED {
   /*!
    * resample the vector
    *
-  * @param lamb_all:  all elements concatenated (filter+SED)
-  * @param origin:  indicate which of the two concatenated vector is to be
-  returned interpolated
-  * @param lmin: min value of lambda to consider in lamb_all
-  * @param lmax: max value of lambda to consider in lamb_all
-  *
-  * @return : the vector corresponding to origin, with interpolation at the
-  * position of the other vector in lamb_all. If interpolation fails, the
-  * attribute `val` and `ori` of the oneElLambda element are set to -99
-  */
-  static void resample(vector<oneElLambda> &lamb_all,
-                       vector<oneElLambda> &lamb_new, const int origine,
-                       const double lmin, const double lmax);
+   * @param lamb_all:  all elements concatenated (filter+SED)
+   * @param origin:  indicate which of the two concatenated vector is to be
+   returned interpolated
+   * @param lmin: min value of lambda to consider in lamb_all
+   * @param lmax: max value of lambda to consider in lamb_all
+   *
+   * @return : the vector corresponding to origin, with interpolation at the
+   * position of the other vector in lamb_all. If interpolation fails, the
+   * attribute `val` and `ori` of the oneElLambda element are set to -99
+   !*/
+  static vector<oneElLambda> resample(vector<oneElLambda> &lamb_all,
+                                      const int origin, const double lmin,
+                                      const double lmax);
 
   /*! \brief Generate a calibration SED based on the argument calib
    *
@@ -201,8 +201,8 @@ class SED {
    * - calib=2 : \f$C(\lambda)=\lambda^{-3}\f$
    * - calib=3 : \f$C(\lambda)=Blackbody(\lambda, T=10000K)\f$
    * - calib=4 : \f$C(\lambda)=Blackbody(\lambda, T=10000K)\f$
-   - calib = 5: \f$C(\lambda) =\lambda ^{ -3 }\f$
-  */
+   * - calib = 5: \f$C(\lambda) =\lambda ^{ -3 }\f$
+   */
   void generateCalib(double lmin, double lmax, int Nsteps, int calib);
   /// return the size of the internal vector #lamb_flux
   int size() { return lamb_flux.size(); }
@@ -261,21 +261,6 @@ class SED {
   virtual void sumEmLines() {};
   /// for each magnitude \a #mag[k] compute kcorr = mag[k] - mag_z0[k] - distMod
   virtual void kcorrec(const vector<double> &magz0) {};
-  virtual void add_neb_cont() {};  // Add continuum
-  /*!
-   * Compute the number flux of photons able to ionize HeII, HeI, H, and H2
-   * For a given SED, this amounts to compute the integral
-   * \f$\int_0^{w_i} SED(\lambda)\cdot \frac{\lambda}{hc}\,d\lambda\quad,\f$
-   * where \f$w_i\f$=54.42, 24.52, 13.60, and 1108.7 A for HeII, HeI, H, and H2
-   respectively,
-   * and where \f$hc\f$ is in ergs.A. This normalization assumes that the SED
-   are provided in args/cm2/s/A.
-   * In practice the integral is approximated by :
-   \f$\sum_{\lambda_{min}}^{w_k}\frac{SED_{j-1}+SED_j}{2}\cdot(\lambda_j-\lambda_{j-1})\cdot\frac{\lambda_j}{hc}\f$.
-   *
-   * Results are stored in the q_i array member of size 4 of the SED instance.
-   */
-  virtual void calc_ph() {};
 
   /*! Compute some integrals to be stored in the object
    * This computes variables SED::luv, SED::lopt, SED::lnir, and SED::ltir
@@ -364,9 +349,13 @@ class SED {
     lamb_flux.emplace_back(lambda, value, 1);
   }
 
-  /// Helper function to set the sed vector as lambda=x and val = y
+  /*! Helper function to set the sed vector as lambda=x and val = y
+   * @param x: vector of lambda value
+   * @param y: vector of SED values at each lambda of x
+   */
   inline void set_vector(const vector<double> &x, const vector<double> &y) {
     if (x.size() != y.size()) throw runtime_error("vector sizes are different");
+    lamb_flux.clear();
     for (size_t k = 0; k < x.size(); k++) {
       emplace_back(x[k], y[k]);
     }
@@ -417,6 +406,19 @@ class GalSED : public SED {
   void kcorrec(const vector<double> &magz0);
   void rescaleEmLines();
   void zdepEmLines(int flag);
+  /*!
+   * Compute the number flux of photons able to ionize HeII, HeI, H, and H2
+   * For a given SED, this amounts to compute the integral
+   * \f$\int_0^{w_i} SED(\lambda)\cdot \frac{\lambda}{hc}\,d\lambda\quad,\f$
+   * where \f$w_i\f$=54.42, 24.52, 13.60, and 1108.7 A for HeII, HeI, H, and H2
+   respectively,
+   * and where \f$hc\f$ is in ergs.A. This normalization assumes that the SED
+   are provided in args/cm2/s/A.
+   * In practice the integral is approximated by :
+   \f$\sum_{\lambda_{min}}^{w_k}\frac{SED_{j-1}+SED_j}{2}\cdot(\lambda_j-\lambda_{j-1})\cdot\frac{\lambda_j}{hc}\f$.
+   *
+   * Results are stored in the q_i array member of size 4 of the SED instance.
+   */
   void calc_ph();
 
   void writeSED(ofstream &ofs, ofstream &ofsPhys, ofstream &ofsDoc);

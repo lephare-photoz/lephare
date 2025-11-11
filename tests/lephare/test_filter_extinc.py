@@ -2,6 +2,7 @@ import os
 
 import lephare as lp
 import numpy as np
+import pytest
 import scipy.integrate as sciint
 
 
@@ -24,7 +25,7 @@ def test_filter_extinc():
     assert os.path.exists(out_file)
     with open(out_file, "r") as f:
         contents = f.read()
-    assert contents.split()[-1] == "1.3039147701114893"
+    assert float(contents.split()[-1]) == pytest.approx(1.3039147701114893)
 
     # check computation
     atmoext = lp.ext("atmo", 0)
