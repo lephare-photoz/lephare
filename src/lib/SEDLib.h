@@ -141,8 +141,6 @@ void SEDLib<T>::write_SED_lib() {
     if (typ == "GAL") {
       // Compute some SED properties
       it->SEDproperties();
-      // Add by Cedric to derive the density of ionizing photons
-      it->calc_ph();
     }
     // Write the SED in the output binary file
     it->writeSED(sbinOut, sphysOut, sdocOut);
