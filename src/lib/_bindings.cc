@@ -235,7 +235,6 @@ PYBIND11_MODULE(_lephare, mod) {
            py::arg("name"), py::arg("tau"), py::arg("age"), py::arg("format"),
            py::arg("nummod"), py::arg("type"), py::arg("idAge"))
       .def_readonly("d4000", &GalSED::d4000)
-      .def("SEDproperties", &GalSED::SEDproperties)
       .def("compute_luminosities", &GalSED::compute_luminosities)
       .def("add_neb_cont", &GalSED::add_neb_cont)
       .def("generateEmEmpUV", &GalSED::generateEmEmpUV)

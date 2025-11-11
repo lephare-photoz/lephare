@@ -147,21 +147,40 @@ def test_sedproperties():
     # test on a more realistic case
     sed = GalSED("toto", 10)
     sed.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
-    [luv, lopt, lnir, d4000, ltir] = sed.compute_luminosities()
-    sed.SEDproperties()
-    assert luv == pytest.approx(sed.luv, 1.0e-2)
-    assert lopt == pytest.approx(sed.lopt, 1.0e-2)
-    assert lnir == pytest.approx(sed.lnir, 1.0e-2)
-    assert d4000 == pytest.approx(sed.d4000, 1.0e-2)
-    assert ltir == lp.INVALID_VAL and sed.ltir == lp.INVALID_VAL
-    sed.read(os.path.join("../lephare-data/sed/GAL/DALE/dale_1.sed"))
-    [luv, lopt, lnir, d4000, ltir] = sed.compute_luminosities()
-    sed.SEDproperties()
-    assert luv == pytest.approx(sed.luv, 1.0e-2)
-    assert lopt == pytest.approx(sed.lopt, 1.0e-2)
-    assert lnir == pytest.approx(sed.lnir, 1.0e-2)
-    assert d4000 == pytest.approx(sed.d4000, 1.0e-2)
-    assert ltir == pytest.approx(sed.ltir, 1.0e-2)
+    x, y = sed.data()
+
+    def interp(z):
+        return np.interp(z, x, y, 0, 0)
+
+    tmp = 4 * np.pi * 100 * (3.086e18) ** 2 / 2.99792458e18
+    sed.compute_luminosities()
+    # for lmin,lmax in [(2100, 2500), (5500, 6500), (21000, 23000), ]
+    res = sciint.quad(interp, 2100, 2500, limit=500, epsabs=1.0e-4, epsrel=1.0e-4)
+    assert np.log10(res[0] * 2300**2 / 400 * tmp) == pytest.approx(sed.luv, res[1])
+
+    res = sciint.quad(interp, 5500, 6500, limit=500, epsabs=1.0e-4, epsrel=1.0e-4)
+    assert np.log10(res[0] * 6000**2 / 1000 * tmp) == pytest.approx(sed.lopt, res[1])
+
+    res = sciint.quad(interp, 21000, 23000, limit=500, epsabs=1.0e-4, epsrel=1.0e-4)
+    assert np.log10(res[0] * 22000**2 / 2000 * tmp) == pytest.approx(sed.lnir, res[1])
+
+    res1 = sciint.quad(interp, 3750, 3950, limit=500, epsabs=1.0e-3, epsrel=1.0e-3)
+    res2 = sciint.quad(interp, 4050, 4250, limit=500, epsabs=1.0e-4, epsrel=1.0e-4)
+    assert res2[0] / res1[0] == pytest.approx(sed.d4000, res1[1])
+
+    assert sed.ltir == lp.INVALID_VAL
+
+    # need to turn qi as a vector to extract qi[2]
+    # edge = 12398.42/13.60
+    # res = sciint.quad(interp, sed.lamb_flux[0].lamb, edge, limit=500, epsabs=1.0e-4, epsrel=1.0e-4)
+    # print(sed.qi)
+    # assert res[0] == pytest.approx(sed.qi[2], res[1])
+
+    sed.read(os.path.join(TESTDATADIR, "sed/dale_1.sed"))
+    x, y = sed.data()
+    sed.compute_luminosities()
+    res = sciint.quad(interp, 80000, 1.0e6, limit=500, epsabs=1.0e-4, epsrel=1.0e-4)
+    assert np.log10(res[0] * tmp * 2.99792458e18 / 3.826e33) == pytest.approx(sed.ltir, res[1])
 
     # Tophat filter
     lmin = 200

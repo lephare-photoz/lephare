@@ -1473,52 +1473,7 @@ pair<vector<double>, vector<double>> SED::get_data_vector(double minl,
   return make_pair(lambs, vals);
 }
 
-/*
-  Fill the variable with the SED properties like D4000, or luv
-*/
-void GalSED::SEDproperties() {
-  double fluxconv = 1. / (4 * pi * 100 * pow(pc, 2));
-
-  // construct a heaviside filter between 0.21 and 0.25 micron
-  flt fltUV(2100., 2500., 100);
-  // Integrate the SED within this filter in NUV
-  luv = (this->integrateSED(fltUV))[3];
-  if (luv > 0) luv = log10(luv * pow(2300, 2) / 400 / c / fluxconv);
-  // construct a heaviside filter between 0.55 and 0.65 micron
-  flt fltOpt(5500., 6500., 100);
-  // Integrate the SED within this filter in optical
-  lopt = (this->integrateSED(fltOpt))[3];
-  if (lopt > 0) lopt = log10(lopt * pow(6000, 2.) / 1000. / c / fluxconv);
-
-  // construct a heaviside filter between 2.1 and 2.3 micron
-  flt fltNIR(21000., 23000., 100.);
-  // Integrate the SED within this filter in NUV
-  lnir = (this->integrateSED(fltNIR))[3];
-  if (lnir > 0) lnir = log10(lnir * pow(22000, 2) / 2000 / c / fluxconv);
-
-  // construct two heaviside filters between 0.375 and 0.425 micron to measure
-  // the balmer break
-  flt fltBalm1(3750., 3950., 100);
-  flt fltBalm2(4050., 4250., 100);
-  // Integrate the SED within this filter in optical
-  double lBalm1 = (this->integrateSED(fltBalm1))[3];
-  double lBalm2 = (this->integrateSED(fltBalm2))[3];
-  if (lBalm1 > 0 && lBalm2 > 0) d4000 = lBalm2 / lBalm1;
-
-  // construct a heaviside filter between 8 and 1000 micron
-  flt fltIR(80000., 10000000., 100);
-  // Integrate the SED within this filter in IR
-  ltir = (this->integrateSED(fltIR))[3];
-  if (ltir > 0) ltir = log10(ltir / Lsol / fluxconv);
-
-  // compute the number of available ionizing photons at edge of
-  // HeII HeI H and H_2
-  this->calc_ph();
-
-  return;
-}
-
-vector<double> GalSED::compute_luminosities() {
+void GalSED::compute_luminosities() {
   double fluxconv = (4 * pi * 100 * pow(pc, 2));
 
   // construct a heaviside filter between 0.21 and 0.25 micron
@@ -1543,7 +1498,11 @@ vector<double> GalSED::compute_luminosities() {
   ltir = this->integrate(80000., 10000000.);
   if (ltir > 0) ltir = log10(ltir / Lsol * fluxconv);
 
-  return {luv, lopt, lnir, d4000, ltir};
+  // compute the number of available ionizing photons at edge of
+  // HeII HeI H and H_2
+  this->calc_ph();
+
+  return;
 }
 
 /*

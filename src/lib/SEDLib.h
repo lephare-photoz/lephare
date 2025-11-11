@@ -139,7 +139,7 @@ void SEDLib<T>::write_SED_lib() {
     // Rescale the flux of each SED according to the factor given in keyword
     it->rescale(fscale);
     // Compute some SED properties: implemented for GalSED only
-    it->SEDproperties();
+    it->compute_luminosities();
     // Write the SED in the output binary file
     it->writeSED(sbinOut, sphysOut, sdocOut);
   }
