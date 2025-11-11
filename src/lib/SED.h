@@ -165,9 +165,10 @@ class SED {
 
   /*!
    * resample the vector
-   * 
+   *
    * @param lamb_all:  all elements concatenated (filter+SED)
-   * @param origin:  indicate which of the two concatenated vector is to be returned interpolated
+   * @param origin:  indicate which of the two concatenated vector is to be
+   returned interpolated
    * @param lmin: min value of lambda to consider in lamb_all
    * @param lmax: max value of lambda to consider in lamb_all
    *
@@ -175,9 +176,9 @@ class SED {
    * position of the other vector in lamb_all. If interpolation fails, the
    * attribute `val` and `ori` of the oneElLambda element are set to -99
    !*/
-   static vector<oneElLambda> resample(vector<oneElLambda> &lamb_all,
-				      const int origin, const double lmin,
-				      const double lmax);
+  static vector<oneElLambda> resample(vector<oneElLambda> &lamb_all,
+                                      const int origin, const double lmin,
+                                      const double lmax);
 
   /*! \brief Generate a calibration SED based on the argument calib
    *

@@ -355,9 +355,8 @@ double SED::trapzd() {
 }
 
 vector<oneElLambda> SED::resample(vector<oneElLambda> &lamb_all,
-				  const int origine,
-				  const double lmin, const double lmax)
-{
+                                  const int origine, const double lmin,
+                                  const double lmax) {
   vector<oneElLambda> lamb_interp;
   // Initialize the previous and next element used for the interpolation
   oneElLambda prevEl(-999, -999, -999);
@@ -386,7 +385,7 @@ vector<oneElLambda> SED::resample(vector<oneElLambda> &lamb_all,
     } else {
       // Check if the lower value is already defined, which is required for the
       // interpolation
-      if (prevEl.lamb > 0) {
+      if (prevEl.lamb >= 0) {
         // Increase the iterator to reach the next item with the right origin
         for (vector<oneElLambda>::iterator kt = it; kt < lamb_interp.end();
              ++kt) {

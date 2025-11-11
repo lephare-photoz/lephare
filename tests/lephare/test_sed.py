@@ -135,9 +135,12 @@ def test_resample():
         assert e.ori == 1
         assert e.val == 0
 
+
 def test_resample2():
-    v=np.array([lp.oneElLambda(1,1,1), lp.oneElLambda(2,0,0), lp.oneElLambda(3,0,0), lp.oneElLambda(4,1,1)])
-    
+    v = np.array(
+        [lp.oneElLambda(1, 1, 1), lp.oneElLambda(2, 0, 0), lp.oneElLambda(3, 0, 0), lp.oneElLambda(4, 1, 1)]
+    )
+
     res = lp.SED.resample(v, 1, 1, 5)
     print([e.lamb for e in res])
     print([e.val for e in res])
@@ -156,4 +159,3 @@ def test_resample2():
         assert e.ori == 0
     for e in (res[0], res[-1]):
         assert e.ori == -99
-
