@@ -347,6 +347,52 @@ vector<double> SED::integrateSED(const flt &filter) {
   return mag;
 }
 
+double SED::integrate(const double lmin, const double lmax) {
+  // restrict to cases where the SED is defined over the
+  // whole range
+  if (lamb_flux.front().lamb > lmin || lamb_flux.back().lamb < lmax) {
+    return INVALID_VAL;
+  }
+
+  auto up =
+      lower_bound(lamb_flux.begin(), lamb_flux.end(), oneElLambda(lmin, 1., 1));
+  size_t j = std::distance(lamb_flux.begin(), up) - 1;
+
+  // integrate from lmin to lamb_flux[j+1]
+  double x1 = lamb_flux[j].lamb;
+  double x2 = lamb_flux[j + 1].lamb;
+  double y1 = lamb_flux[j].val;
+  double y2 = lamb_flux[j + 1].val;
+
+  double slope = (y2 - y1) / (x2 - x1);
+  double interp = y1 + slope * (lmin - x1);
+  double res = (y2 + interp) * 0.5 * (x2 - lmin);
+  size_t lastidx = j + 1;
+
+  // #pragma omp parallel for reduction(+:res)
+  for (size_t i = j + 1; i < lamb_flux.size() - 1; i++) {
+    // if(lamb_flux[i].lamb<lmin) continue;
+    if (lamb_flux[i + 1].lamb >= lmax) {
+      lastidx = i;
+      break;
+    }
+    double fmean = (lamb_flux[i].val + lamb_flux[i + 1].val) / 2;
+    double dlbd = (lamb_flux[i + 1].lamb - lamb_flux[i].lamb);
+    res += dlbd * fmean;
+  }
+  // integrate from lamb_flux[lastidx] to lmax
+  x1 = lamb_flux[lastidx].lamb;
+  x2 = lamb_flux[lastidx + 1].lamb;
+  y1 = lamb_flux[lastidx].val;
+  y2 = lamb_flux[lastidx + 1].val;
+
+  slope = (y2 - y1) / (x2 - x1);
+  interp = y1 + slope * (lmax - x1);
+  res += (y1 + interp) * 0.5 * (lmax - x1);
+
+  return res;
+}
+
 // Integral of lamb_flux with the trapezoidal method
 double SED::trapzd() {
   double s = 0.0;
@@ -895,7 +941,7 @@ void GalSED::calc_ph() {
   wedge[1] = hc / 24.59;  // HeI edge in Angstroem
   wedge[2] = hc / 13.60;  // H edge in Angstroem
   wedge[3] = 1108.7;  // H_2 excitation from ground state (B-X) ############ A
-                      // vérifier ############
+                      // vérifier (11.18 eV)############
 
   // Definition :
   // qi[4] define in SED.h = ionising fluxes  for 4 elements [#photons.cm-2/s]
@@ -1470,6 +1516,34 @@ void GalSED::SEDproperties() {
   this->calc_ph();
 
   return;
+}
+
+vector<double> GalSED::compute_luminosities() {
+  double fluxconv = (4 * pi * 100 * pow(pc, 2));
+
+  // construct a heaviside filter between 0.21 and 0.25 micron
+  // Integrate the SED in NUV : between 0.21 and 0.25 micron
+  luv = this->integrate(2100., 2500.);
+  if (luv > 0) luv = log10(luv * pow(2300, 2) / 400 / c * fluxconv);
+  
+  // Integrate the SED in optical : between 0.55 and 0.65 micron
+  lopt = this->integrate(5500., 6500.);
+  if (lopt > 0) lopt = log10(lopt * pow(6000, 2.) / 1000. / c * fluxconv);
+
+  // Integrate the SED in NUV : between 2.1 and 2.3 micron 
+  lnir = this->integrate(21000., 23000.);
+  if (lnir > 0) lnir = log10(lnir * pow(22000, 2) / 2000 / c * fluxconv);
+
+  // Integrate the SED before and after the Balmer break
+  double lBalm1 = this->integrate(3750., 3950.);
+  double lBalm2 = this->integrate(4050., 4250.);
+  if (lBalm1 > 0 && lBalm2 > 0) d4000 = lBalm2 / lBalm1;
+
+  // Integrate the SED in IR : between 8 and 1000 micron
+  ltir = this->integrate(80000., 10000000.);
+  if (ltir > 0) ltir = log10(ltir / Lsol * fluxconv);
+
+  return {luv, lopt, lnir, d4000, ltir};
 }
 
 /*

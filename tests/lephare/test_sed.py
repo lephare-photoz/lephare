@@ -4,6 +4,7 @@ import tempfile
 import lephare as lp
 import numpy as np
 import pytest
+import scipy.integrate as sciint
 from lephare import QSOSED, SED, GalSED, StarSED, flt
 
 TESTDIR = os.path.abspath(os.path.dirname(__file__))
@@ -104,6 +105,63 @@ def test_set_vector():
 
 def test_integration():
     sed = SED("toto", 10, "GAL")
+    # test on a case of exact computation
+    x = np.linspace(100, 500, 101)
+    sed.set_vector(x, x)
+    for lmin, lmax in [(20, 50), (20, 150), (200, 700), (400, 800), (500, 800)]:
+        assert sed.integrate(lmin, lmax) == lp.INVALID_VAL
+
+    for lmin, lmax in [
+        (200, 300),
+        (199, 301),
+        (254, 256),
+        (100, 500),
+    ]:
+        result = sed.integrate(lmin, lmax)
+        print(result)
+        assert result == 0.5 * (lmax**2 - lmin**2)
+
+
+def test_integration2():
+    # test on a more realistic case
+    sed = SED("toto", 10, "GAL")
+    sed.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
+    x, y = sed.data()
+
+    def interp(z):
+        return np.interp(z, x, y, 0, 0)
+
+    for lmin, lmax in [(5000, 7000), (5001, 6999), (4996, 7003)]:
+        result = sed.integrate(lmin, lmax)
+        #
+        hat = flt(lmin, lmax, 100)
+        result2 = sed.integrateSED(hat)
+        #
+        v, ev = sciint.quad(interp, lmin, lmax, limit=500, epsabs=1.0e-4, epsrel=1.0e-4)
+        print(result, result2[3])
+        print(v, ev)
+        assert result == pytest.approx(v, ev)
+
+def test_sedproperties():
+    # test on a more realistic case
+    sed = GalSED("toto", 10)
+    sed.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
+    [luv, lopt, lnir, d4000, ltir] = sed.compute_luminosities()
+    sed.SEDproperties()
+    assert luv == pytest.approx(sed.luv, 1.e-2)
+    assert lopt == pytest.approx(sed.lopt, 1.e-2)
+    assert lnir == pytest.approx(sed.lnir, 1.e-2)
+    assert d4000 == pytest.approx(sed.d4000, 1.e-2)
+    assert ltir ==  lp.INVALID_VAL and sed.ltir == lp.INVALID_VAL
+    sed.read(os.path.join("../lephare-data/sed/GAL/DALE/dale_1.sed"))
+    [luv, lopt, lnir, d4000, ltir] = sed.compute_luminosities()
+    sed.SEDproperties()
+    assert luv == pytest.approx(sed.luv, 1.e-2)
+    assert lopt == pytest.approx(sed.lopt, 1.e-2)
+    assert lnir == pytest.approx(sed.lnir, 1.e-2)
+    assert d4000 == pytest.approx(sed.d4000, 1.e-2)
+    assert ltir == pytest.approx(sed.ltir, 1.e-2)
+
     # Tophat filter
     lmin = 200
     lmax = 300
@@ -184,3 +242,4 @@ def test_resample2():
         assert e.ori == 0
     for e in (res[0], res[-1]):
         assert e.ori == -99
+

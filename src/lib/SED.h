@@ -162,6 +162,14 @@ class SED {
   void read(const string &sedFile);
   void warning_integrateSED(const vector<flt> &filters, bool verbose = false);
   vector<double> integrateSED(const flt &filter);
+  /*! integrate the SED between bounds
+   * @param lmin : lower lambda bound
+   * @param lmax : lower lambda bound
+   * return the integral of the SED spectrum between lmin and lmax, *if*
+   * [lmin,lmax] is inside the definition domain of the SED.
+   * If not, INVALID_VAL is returned
+   */
+  double integrate(const double lmin, const double lmax);
 
   /*!
    * resample the vector
@@ -384,6 +392,7 @@ class GalSED : public SED {
   ~GalSED() { flEm.clear(); }
 
   void SEDproperties();
+  vector<double> compute_luminosities();
   void add_neb_cont();
   GalSED generateEmSED(const string &emtype);
   void generateEmEmpUV(double MNUV_int, double NUVR);
