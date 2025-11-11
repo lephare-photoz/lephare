@@ -253,21 +253,6 @@ class SED {
   virtual void sumEmLines() {};
   /// for each magnitude \a #mag[k] compute kcorr = mag[k] - mag_z0[k] - distMod
   virtual void kcorrec(const vector<double> &magz0) {};
-  virtual void add_neb_cont() {};  // Add continuum
-  /*!
-   * Compute the number flux of photons able to ionize HeII, HeI, H, and H2
-   * For a given SED, this amounts to compute the integral
-   * \f$\int_0^{w_i} SED(\lambda)\cdot \frac{\lambda}{hc}\,d\lambda\quad,\f$
-   * where \f$w_i\f$=54.42, 24.52, 13.60, and 1108.7 A for HeII, HeI, H, and H2
-   respectively,
-   * and where \f$hc\f$ is in ergs.A. This normalization assumes that the SED
-   are provided in args/cm2/s/A.
-   * In practice the integral is approximated by :
-   \f$\sum_{\lambda_{min}}^{w_k}\frac{SED_{j-1}+SED_j}{2}\cdot(\lambda_j-\lambda_{j-1})\cdot\frac{\lambda_j}{hc}\f$.
-   *
-   * Results are stored in the q_i array member of size 4 of the SED instance.
-   */
-  virtual void calc_ph() {};
 
   /*! Compute some integrals to be stored in the object
    * This computes variables SED::luv, SED::lopt, SED::lnir, and SED::ltir
@@ -408,6 +393,19 @@ class GalSED : public SED {
   void kcorrec(const vector<double> &magz0);
   void rescaleEmLines();
   void zdepEmLines(int flag);
+  /*!
+   * Compute the number flux of photons able to ionize HeII, HeI, H, and H2
+   * For a given SED, this amounts to compute the integral
+   * \f$\int_0^{w_i} SED(\lambda)\cdot \frac{\lambda}{hc}\,d\lambda\quad,\f$
+   * where \f$w_i\f$=54.42, 24.52, 13.60, and 1108.7 A for HeII, HeI, H, and H2
+   respectively,
+   * and where \f$hc\f$ is in ergs.A. This normalization assumes that the SED
+   are provided in args/cm2/s/A.
+   * In practice the integral is approximated by :
+   \f$\sum_{\lambda_{min}}^{w_k}\frac{SED_{j-1}+SED_j}{2}\cdot(\lambda_j-\lambda_{j-1})\cdot\frac{\lambda_j}{hc}\f$.
+   *
+   * Results are stored in the q_i array member of size 4 of the SED instance.
+   */
   void calc_ph();
 
   void writeSED(ofstream &ofs, ofstream &ofsPhys, ofstream &ofsDoc);
