@@ -356,9 +356,13 @@ class SED {
     lamb_flux.emplace_back(lambda, value, 1);
   }
 
-  /// Helper function to set the sed vector as lambda=x and val = y
+  /*! Helper function to set the sed vector as lambda=x and val = y
+   * @param x: vector of lambda value
+   * @param y: vector of SED values at each lambda of x
+   */
   inline void set_vector(const vector<double> &x, const vector<double> &y) {
     if (x.size() != y.size()) throw runtime_error("vector sizes are different");
+    lamb_flux.clear();
     for (size_t k = 0; k < x.size(); k++) {
       emplace_back(x[k], y[k]);
     }
