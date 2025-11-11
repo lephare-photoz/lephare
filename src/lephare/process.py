@@ -55,16 +55,20 @@ def process(
     n_filters = len(config["FILTER_LIST"].value.split(","))
     print(f"Processing {ng} objects with {n_filters} bands")
     photz = lp.PhotoZ(config)
-    # Loop over all ng galaxies!
-    srclist = []
-    for i in range(ng):
-        one_obj = lp.onesource(i, photz.gridz)
-        one_obj.readsource(str(id[i]), flux[i], flux_err[i], context[i], zspec[i], str(string_data[i]))
-        photz.prep_data(one_obj)
-        srclist.append(one_obj)
+    if config["AUTO_ADAPT"].split_bool("", 1):
+        print("AUTO_ADAPT is set to YES. Computing offsets.")
+        # Loop over all ng galaxies!
+        srclist = []
+        for i in range(ng):
+            one_obj = lp.onesource(i, photz.gridz)
+            one_obj.readsource(str(id[i]), flux[i], flux_err[i], context[i], zspec[i], str(string_data[i]))
+            photz.prep_data(one_obj)
+            srclist.append(one_obj)
 
-    # compute the offset, depending on the option in the code (AUTO_ADAPT, or APPLY_SYSSHIFT
-    a0 = photz.compute_offsets(srclist)
+        # compute the offset, depending on the option in the code (AUTO_ADAPT, or APPLY_SYSSHIFT
+        a0 = photz.compute_offsets(srclist)
+    else:
+        a0 = np.zeros(len(config["FILTER_LIST"].value.split(",")))
     offsets = ",".join(np.array(a0).astype(str))
     offsets = "# Offsets added to the modeled magnitudes (or substracted to the observed): " + offsets + "\n"
     print(offsets)
