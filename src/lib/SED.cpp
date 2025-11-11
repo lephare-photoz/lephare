@@ -1525,12 +1525,12 @@ vector<double> GalSED::compute_luminosities() {
   // Integrate the SED in NUV : between 0.21 and 0.25 micron
   luv = this->integrate(2100., 2500.);
   if (luv > 0) luv = log10(luv * pow(2300, 2) / 400 / c * fluxconv);
-  
+
   // Integrate the SED in optical : between 0.55 and 0.65 micron
   lopt = this->integrate(5500., 6500.);
   if (lopt > 0) lopt = log10(lopt * pow(6000, 2.) / 1000. / c * fluxconv);
 
-  // Integrate the SED in NUV : between 2.1 and 2.3 micron 
+  // Integrate the SED in NUV : between 2.1 and 2.3 micron
   lnir = this->integrate(21000., 23000.);
   if (lnir > 0) lnir = log10(lnir * pow(22000, 2) / 2000 / c * fluxconv);
 
