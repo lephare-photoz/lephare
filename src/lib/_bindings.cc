@@ -49,6 +49,9 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readwrite("ori", &oneElLambda::ori)
       .def("interp", &oneElLambda::interp, py::arg("previousEl"),
            py::arg("nextEl"));
+  mod.def("concatenate_and_sort", &concatenate_and_sort,
+          "concatenate and sorttwo vector of oneElLambda objects. Sorting is "
+          "in increasing lambda.");
 
   /******** CLASS COSMOLOGY*********/
   py::class_<cosmo>(mod, "cosmo")
@@ -97,8 +100,6 @@ PYBIND11_MODULE(_lephare, mod) {
   mod.def("cardelli_law", &cardelli_law,
           "compute albd/av at a given lambda (A) for the Cardelli law",
           py::arg("lb"));
-  mod.def("resample", &resample, py::arg("lamb_all"), py::arg("lamb_interp"),
-          py::arg("origine"), py::arg("lmin"), py::arg("lmax"));
   mod.def("read_flt", &read_flt, py::arg("sfiltIn"));
 
   /******** CLASS KEYWORD *********/
@@ -172,6 +173,10 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("lamb_flux", &SED::lamb_flux)
       .def_readonly("extlawId", &SED::extlawId)
       .def_readonly("ebv", &SED::ebv)
+      .def_readonly("luv", &SED::luv)
+      .def_readonly("lopt", &SED::lopt)
+      .def_readonly("lnir", &SED::lnir)
+      .def_readonly("ltir", &SED::ltir)
       .def_readonly("name", &SED::name)
       .def_readonly("nummod", &SED::nummod)
       .def_readonly("mag", &SED::mag)
@@ -183,6 +188,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("read", &SED::read)
       .def("size", &SED::size)
       .def("integrateSED", &SED::integrateSED)
+      .def("integrate", &SED::integrate)
       .def("resample", &SED::resample)
       .def("generateCalib", &SED::generateCalib)
       .def("rescale", &SED::rescale)
@@ -228,7 +234,8 @@ PYBIND11_MODULE(_lephare, mod) {
       .def(py::init<const string, double, double, string, int, string, int>(),
            py::arg("name"), py::arg("tau"), py::arg("age"), py::arg("format"),
            py::arg("nummod"), py::arg("type"), py::arg("idAge"))
-      .def("SEDproperties", &GalSED::SEDproperties)
+      .def_readonly("d4000", &GalSED::d4000)
+      .def("compute_luminosities", &GalSED::compute_luminosities)
       .def("add_neb_cont", &GalSED::add_neb_cont)
       .def("generateEmEmpUV", &GalSED::generateEmEmpUV)
       .def("generateEmEmpSFR", &GalSED::generateEmEmpSFR)
@@ -274,6 +281,7 @@ PYBIND11_MODULE(_lephare, mod) {
 
   /******** FUNCTIONS IN GLOBALS.H *********/
   mod.attr("HIGH_CHI2") = HIGH_CHI2;
+  mod.attr("INVALID_VAL") = INVALID_VAL;
   mod.def("get_lephare_env", &get_lephare_env);
   mod.def("check_first_char", &check_first_char);
   mod.def("blackbody", &blackbody);
@@ -336,7 +344,7 @@ PYBIND11_MODULE(_lephare, mod) {
   mod.def("maxkcolor", &maxkcolor);
 
   mod.attr("maptype") = maptype;
-  py::class_<onesource>(mod, "onesource")
+  py::class_<onesource>(mod, "onesource", py::dynamic_attr())
       .def(py::init<>())
       .def(py::init<const int, vector<double>>())
       .def("setPriors", &onesource::setPriors)

@@ -21,14 +21,14 @@ void oneElLambda::interp(const oneElLambda &previousEl,
                          const oneElLambda &nextEl) {
   // normal linear interpolation possible (the two lambda are positive and the
   // next value is above the previous one
-  if (previousEl.lamb > 0 && nextEl.lamb > previousEl.lamb) {
+  if (previousEl.lamb >= 0 && nextEl.lamb > previousEl.lamb) {
     double slope =
         (nextEl.val - previousEl.val) / (nextEl.lamb - previousEl.lamb);
     val = previousEl.val + (lamb - previousEl.lamb) * slope;
   } else {
     // Interpolation is not possible -> put the value at the latest one and
     // origin at -99
-    val = previousEl.val;
+    val = -99.;
     ori = -99;
   }
 
