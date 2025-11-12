@@ -66,7 +66,7 @@ void ext::read(string extFile) {
 /*
 Add a value to the extinction law
 */
-void ext::add_element(double lam, double val, double ori) {
+void ext::add_element(double lam, double val, short ori) {
   // fill the lambda/trans values of the SED
   lamb_ext.emplace_back(lam, val, ori);
 
@@ -77,7 +77,7 @@ void ext::add_element(double lam, double val, double ori) {
   return;
 }
 
-double compute_filter_extinction(const flt &oneFlt, const ext &oneExt) {
+double compute_filter_extinction2(const flt &oneFlt, const ext &oneExt) {
   // work with the original lamb_flux
   vector<oneElLambda> lamb_all = oneFlt.lamb_trans;
 
@@ -90,11 +90,9 @@ double compute_filter_extinction(const flt &oneFlt, const ext &oneExt) {
   sort(lamb_all.begin(), lamb_all.end());
 
   // Resample the filter into a common lambda range
-  vector<oneElLambda> new_lamb_flt;
-  SED::resample(lamb_all, new_lamb_flt, 0, 0, 1.e50);
+  vector<oneElLambda> new_lamb_flt = SED::resample(lamb_all, 0, 0, 1.e50);
   // Resample the extinction into a common lambda range
-  vector<oneElLambda> new_lamb_ext;
-  SED::resample(lamb_all, new_lamb_ext, 2, 0, 1.e50);
+  vector<oneElLambda> new_lamb_ext = SED::resample(lamb_all, 2, 0, 1.e50);
 
   double fint = 0;
   double aint = 0;
@@ -120,6 +118,36 @@ double compute_filter_extinction(const flt &oneFlt, const ext &oneExt) {
   lamb_all.clear();
   new_lamb_flt.clear();
   new_lamb_ext.clear();
+
+  return (aint /= fint);
+}
+
+double compute_filter_extinction(const flt &oneFlt, const ext &oneExt) {
+  auto fltp = to_pairs(oneFlt.lamb_trans);
+  auto extp = to_pairs(oneExt.lamb_ext);
+  auto [x, flty, exty] = common_interpolate_combined(
+      fltp.first, fltp.second, extp.first, extp.second, -1);
+
+  double fint = 0;
+  double aint = 0;
+
+  // integrate the extinction curve through the filter
+  // OMP overhead seems to be too much here to bother
+  // #pragma omp parallel for reduction(+:fint,aint)
+  //  for (int64_t i = 0; i < static_cast<int64_t>(x.size() - 1); i++) {
+  for (size_t i = 0; i < x.size() - 1; i++) {
+    // Integral of the transmission by the filter
+    double flt1 = flty[i];
+    double flt2 = flty[i + 1];
+    double ext1 = exty[i];
+    double ext2 = exty[i + 1];
+    double delta = x[i + 1] - x[i];
+    double mid_flt = (flt1 + flt2) / 2.;
+    double mid_ext = (ext1 + ext2) / 2.;
+    fint += mid_flt * delta;
+    // Integral of the transmission by the filter x extinction
+    aint += mid_flt * mid_ext * delta;
+  }
 
   return (aint /= fint);
 }
@@ -152,13 +180,12 @@ double cardelli_ext(flt &oneFlt) {
   double lmin = oneFlt.lmin();
   double lmax = oneFlt.lmax();
   ext oneExt("CARDELLI", 2);
-
   double lextg, extg;
 
   // computes the galactic extinction
   double dlbd = (lmax - lmin) / 400.;
   for (size_t i = 0; i < 402; i++) {
-    lextg = lmin + double(i - 1) * dlbd;
+    lextg = lmin + int(i - 1) * dlbd;
     extg = cardelli_law(lextg);
     oneExt.add_element(lextg, extg, 2);
   }
@@ -203,71 +230,4 @@ double cardelli_law(double lb) {
   }
 
   return (f1 + f2 / rv);
-}
-
-/*
-  resample the vector
-
-  INPUT
-   lamb_all= all elements concatenated (filter+SED)
-   origine=  indicate how the vector needs to be filled (0 for filter, 1 for
-  SED, 2 for attenuation laws, 3 opacity) lmin= lambda min to be considered
-   lmax= lambda max to be considered
-
-  OUTPUT
-   lamb_interp= vector with a value in each lambda element, obtained with linear
-  interpolation
-*/
-void resample(vector<oneElLambda> &lamb_all, vector<oneElLambda> &lamb_interp,
-              const int origine, const double lmin, const double lmax) {
-  // Initialize the previous and next element used for the interpolation
-  oneElLambda prevEl(-999, -999, -999);
-  oneElLambda nextEl(-999, -999, -999);
-
-  // Loop over the full vector with the two vectors concatenated
-  for (vector<oneElLambda>::iterator it = lamb_all.begin(); it < lamb_all.end();
-       ++it) {
-    // If well within the considered lambda range
-    if ((it->lamb) >= lmin && (it->lamb) <= lmax) {
-      // Add the new element
-      lamb_interp.push_back(*it);
-    }
-  }
-
-  // Loop over the full vector with the two vectors concatenated
-  for (vector<oneElLambda>::iterator it = lamb_interp.begin();
-       it < lamb_interp.end(); ++it) {
-    // If the considered origin is the one we want to fill -> don't do anything
-    if (it->ori == origine) {
-      // Store this element for the next interpolation
-      prevEl = *it;
-
-      // If the considered origin is not the one we want to fill, replace it
-      // with a linear interpolation of the others
-    } else {
-      // Check if the lower value is already defined, which is required for the
-      // interpolation
-      if (prevEl.lamb > 0) {
-        // Increase the iterator to reach the next item with the right origin
-        for (vector<oneElLambda>::iterator kt = it; kt < lamb_interp.end();
-             ++kt) {
-          // Store it as the upper value for the interpolation
-          if (kt->ori == origine) {
-            nextEl = *kt;
-            break;
-          }
-
-          // Case when the final position in the vector is examined without
-          // finding any item with the right origin Not possible to find an
-          // upper value for the interpolation
-          if (kt == lamb_interp.end()) nextEl.lamb = -999;
-        }
-      }
-
-      // Change the vector as the result of the interpolation
-      // Mofify the origin variable
-      it->interp(prevEl, nextEl);
-      it->ori = origine;
-    }
-  }
 }

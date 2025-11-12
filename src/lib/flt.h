@@ -106,7 +106,7 @@ class flt {
     double dlamb = (lmax - lmin) / double(nsteps);
     // First element at T=0
     oneElLambda litBeg(lmin - 1, 0, 0);
-    lamb_trans.push_back(litBeg);
+    //    lamb_trans.push_back(litBeg);
     for (int k = 0; k <= nsteps; k++) {
       double lamb = lmin + double(k) * dlamb;
       oneElLambda litOne(lamb, 1, 0);
@@ -114,7 +114,7 @@ class flt {
     }
     // Last element at T=0
     oneElLambda litFin(lmax + 1, 0, 0);
-    lamb_trans.push_back(litFin);
+    //    lamb_trans.push_back(litFin);
   }
 
   /* MP: erase all entries in lamb_trans */
