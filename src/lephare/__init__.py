@@ -20,6 +20,7 @@ from ._flt import *
 from ._onesource import *
 from ._pdf import *
 from ._photoz import *
+from ._plot_utils import *
 from ._spec import *
 from .data_retrieval import *
 from .default_cosmos_config import *

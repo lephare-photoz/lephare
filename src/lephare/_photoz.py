@@ -63,7 +63,7 @@ class PhotoZ:  # noqa: F811
             for src in srclist:
                 pdf = src.pdfmap[key]
                 arr.append(pdf.vPDF)
-            t.add_column(Column(name=typ, dtype=float, data=arr))
+            t.add_column(Column(name="PDF_" + typ + "()", dtype=float, data=arr))
             # use the last src object to get the x-axis values
             t.meta[typ] = " ".join(str(e) for e in pdf.xaxis)
 
