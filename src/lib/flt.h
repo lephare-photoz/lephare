@@ -140,6 +140,7 @@ class flt {
   /// V(\lambda)\, T(\lambda)\, \lambda\, d\lambda}{\int V(\lambda)\,
   /// T(\lambda)\, d\lambda}\f$.
   double lambdaEff(bool flag = true);
+    
   /// \brief effective wavelength based on a specific calibration SED.
   ///
   /// If \f$C(\lambda)\f$
@@ -150,6 +151,7 @@ class flt {
   double lambdaEff2(bool flag = true);
   /// absolute magnitude of the Sun
   double magsun(bool flag = true);
+
   /// Vega magnitude in this filter: \f$mag(Vega)
   /// = 2.5\cdot\log10\left(\frac{\int Vega(\lambda)\, T(\lambda)\,
   /// d\lambda}{\int T(\lambda)\, d\lambda}\right)\f$ where \f$Vega(\lambda)\f$
