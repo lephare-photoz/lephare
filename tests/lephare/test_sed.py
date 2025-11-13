@@ -285,6 +285,7 @@ def test_integratesed2():
         assert filt.lambdaEff(True) == pytest.approx(filt.lambdaEff(False))
         assert filt.lambdaEff2(True) == pytest.approx(filt.lambdaEff2(False))
         assert filt.abcorr(True) == pytest.approx(filt.abcorr(False))
+
         assert filt.vega(True) == pytest.approx(filt.vega(False))
         assert filt.magsun(True) == pytest.approx(filt.magsun(False))
         for sedfile in sed_filelist:
