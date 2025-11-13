@@ -1,3 +1,4 @@
+import glob
 import os
 import tempfile
 
@@ -277,3 +278,45 @@ def test_calc_ph():
     for i, e in enumerate([54.42, 24.59, 13.60, hc / 1108.7]):
         print(sed.qi[i])
         assert sed.qi[i] == pytest.approx(0.5 * (hc / e) ** 2, 1.0e-3)
+
+
+def test_integratesed2():
+    filter_file = os.path.join(TESTDATADIR, "filt", "LSST_FILTERS.dat")
+    filters = lp.GalMag.read_flt(filter_file)
+    sed_filelist = glob.glob(os.path.join(TESTDATADIR, "sed", "STAR", "PICKLES", "*"))
+    for sedfile in sed_filelist:
+        sed1 = SED()
+        sed1.read(sedfile)
+        sed1.compute_magnitudes(filters, False)
+        f1 = sed1.compute_fluxes(filters, False)
+        sed2 = SED()
+        sed2.read(sedfile)
+        sed2.compute_magnitudes(filters, True)
+        f2 = sed2.compute_fluxes(filters, True)
+        assert np.allclose(sed1.mag, sed2.mag)
+        assert np.allclose(f1, f2)
+
+    for filt in filters:
+        assert filt.lambdaEff(True) == pytest.approx(filt.lambdaEff(False))
+        assert filt.lambdaEff2(True) == pytest.approx(filt.lambdaEff2(False))
+        assert filt.abcorr(True) == pytest.approx(filt.abcorr(False))
+        assert filt.vega(True) == pytest.approx(filt.vega(False))
+        assert filt.magsun(True) == pytest.approx(filt.magsun(False))
+        for sedfile in sed_filelist:
+            sed = SED()
+            sed.read(sedfile)
+            d1 = sed.integrateSED(filt)
+            d2 = sed.integrateSED2(filt)
+            print(d1)
+            print(d2)
+            assert d1 == pytest.approx(d2)
+
+            # v1 = sed.lamb_flux
+            # v2 = filt.lamb_trans
+            # #d = lp.restricted_resampling(v1, v2, -1)
+            # #
+            # d = SED.resample2(v1, v2, 0, 1.e50)
+            # #
+            # #v = lp.concatenate_and_sort(v1, v2)
+            # #d = SED.resample(v, 0, 0., 1.e50)
+
