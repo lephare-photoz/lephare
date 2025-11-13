@@ -162,11 +162,12 @@ _html/
 
 
 simulation_catalogs/
-
+simulated_star_sed/
 !simulation_catalogs/**/
 
 !simulation_catalogs/buzzard_base/config_file.para
 !simulation_catalogs/buzzard_base/output_DC1.para
 !simulation_catalogs/DES/DES_STARCAT/WORK_COMPLETE2/zphota/output_STAR.para
 !simulation_catalogs/DES/DES_STARCAT/WORK_COMPLETE2/lib_bin/DES_STAR.list
+
 
