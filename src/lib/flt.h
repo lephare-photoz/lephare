@@ -139,7 +139,7 @@ class flt {
   /// ($LEPHAREDIR/vega/VegaLCB.sed). Then \f$\lambda_{eff} = \frac{\int
   /// V(\lambda)\, T(\lambda)\, \lambda\, d\lambda}{\int V(\lambda)\,
   /// T(\lambda)\, d\lambda}\f$.
-  double lambdaEff();
+  double lambdaEff(bool flag = false);
   /// \brief effective wavelength based on a specific calibration SED.
   ///
   /// If \f$C(\lambda)\f$
@@ -147,14 +147,14 @@ class flt {
   /// SED#generateCalib), then \f$\lambda_{eff2} = \frac{\int C(\lambda)\,
   /// T(\lambda)\, \lambda\, d\lambda}{\int C(\lambda)\, T(\lambda)\,
   /// d\lambda}\f$.
-  double lambdaEff2();
+  double lambdaEff2(bool flag = false);
   /// absolute magnitude of the Sun
-  double magsun();
+  double magsun(bool flag = false);
   /// Vega magnitude in this filter: \f$mag(Vega)
   /// = 2.5\cdot\log10\left(\frac{\int Vega(\lambda)\, T(\lambda)\,
   /// d\lambda}{\int T(\lambda)\, d\lambda}\right)\f$ where \f$Vega(\lambda)\f$
   /// is the Vega SED.
-  double vega();
+  double vega(bool flag = false);
 
   /*! \brief compute the flux correction based on keyword FILTER_CALIB
    *

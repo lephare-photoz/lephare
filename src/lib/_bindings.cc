@@ -49,8 +49,9 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readwrite("ori", &oneElLambda::ori)
       .def("interp", &oneElLambda::interp, py::arg("previousEl"),
            py::arg("nextEl"));
+  mod.def("restricted_resampling", &restricted_resampling);
   mod.def("concatenate_and_sort", &concatenate_and_sort,
-          "concatenate and sorttwo vector of oneElLambda objects. Sorting is "
+          "concatenate and sort two vector of oneElLambda objects. Sorting is "
           "in increasing lambda.");
 
   /******** CLASS COSMOLOGY*********/
@@ -139,6 +140,8 @@ PYBIND11_MODULE(_lephare, mod) {
            "Read filter info from stream")
       .def("lambdaMean", &flt::lambdaMean)
       .def("lambdaEff", &flt::lambdaEff)
+      .def("lambdaEff2", &flt::lambdaEff2)
+      .def("vega", &flt::vega)
       .def("magsun", &flt::magsun)
       .def("width", &flt::width)
       .def("lmin", &flt::lmin)
@@ -188,8 +191,11 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("read", &SED::read)
       .def("size", &SED::size)
       .def("integrateSED", &SED::integrateSED)
+      .def("integrateSED2", &SED::integrateSED2)
       .def("integrate", &SED::integrate)
       .def("resample", &SED::resample)
+      .def("resample2", &SED::resample2)
+      .def("resample3", &SED::resample3)
       .def("generateCalib", &SED::generateCalib)
       .def("rescale", &SED::rescale)
       .def("compute_magnitudes", &SED::compute_magnitudes)

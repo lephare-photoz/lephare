@@ -171,6 +171,8 @@ class SED {
    */
   double integrate(const double lmin, const double lmax);
 
+  vector<double> integrateSED2(const flt &filter);
+
   /*!
    * resample the vector
    *
@@ -187,6 +189,22 @@ class SED {
   static vector<oneElLambda> resample(vector<oneElLambda> &lamb_all,
                                       const int origin, const double lmin,
                                       const double lmax);
+
+  static inline std::tuple<vector<oneElLambda>, vector<oneElLambda>> resample2(
+      const vector<oneElLambda> &v1, const vector<oneElLambda> &v2,
+      const double lmin, const double lmax) {
+    short ori1 = v1.front().ori;
+    short ori2 = v2.front().ori;
+    auto v = concatenate_and_sort(v1, v2);
+    auto res1 = resample(v, ori1, lmin, lmax);
+    auto res2 = resample(v, ori2, lmin, lmax);
+    return {res1, res2};
+  }
+
+  static inline std::tuple<vector<oneElLambda>, vector<oneElLambda>> resample3(
+      const SED &sed, const flt &f, const double lmin, const double lmax) {
+    return resample2(sed.lamb_flux, f.lamb_trans, lmin, lmax);
+  }
 
   /*! \brief Generate a calibration SED based on the argument calib
    *
@@ -209,9 +227,9 @@ class SED {
   /// rescale the lamb_flux.val as val *= scaleFac
   void rescale(double scaleFac);
   /// compute magnitude from filters
-  void compute_magnitudes(const vector<flt> &filters);
+  void compute_magnitudes(const vector<flt> &filters, bool flag = false);
   /// compute fluxed from filters
-  vector<double> compute_fluxes(const vector<flt> &filters);
+  vector<double> compute_fluxes(const vector<flt> &filters, bool flag = false);
   double trapzd();
   void sumSpectra(SED addSED, const double rescal);
   void reduce_memory(vector<flt> allFlt);
