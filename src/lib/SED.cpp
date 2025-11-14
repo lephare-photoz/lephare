@@ -2046,11 +2046,15 @@ void StarSED::writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
 /*
    compute the magnitudes in each of the filters
 */
-void SED::compute_magnitudes(const vector<flt> &filters) {
+void SED::compute_magnitudes(const vector<flt> &filters, bool flag) {
   double val;
   for (const auto &filter : filters) {
     // Derive the AB magnitudes in each filter
-    vector<double> intFlux = integrateSED(filter);
+    vector<double> intFlux;
+    if (flag)
+      intFlux = integrateSED2(filter);
+    else
+      intFlux = integrateSED(filter);
     if (intFlux[3] != INVALID_VAL) {
       if (intFlux[3] > 0.0) {
         val = -2.5 * LOG10D(intFlux[3] / intFlux[1] * filter.fcorr) - 48.6 +
@@ -2064,14 +2068,47 @@ void SED::compute_magnitudes(const vector<flt> &filters) {
   }
 }
 
-vector<double> SED::compute_fluxes(const vector<flt> &filters) {
+vector<double> SED::compute_fluxes(const vector<flt> &filters, bool flag) {
   size_t imagm = filters.size();
   vector<double> result(imagm, NULL_FLUX);
   // check that the SED is defined
   for (size_t k = 0; k < imagm; k++) {
-    vector<double> intFlux = integrateSED(filters[k]);
+    vector<double> intFlux;
+    if (flag)
+      intFlux = integrateSED2(filters[k]);
+    else
+      intFlux = integrateSED(filters[k]);
     result[k] =
         (intFlux[3] == INVALID_VAL) ? INVALID_FLUX : intFlux[3] / intFlux[1];
   }
   return result;
+}
+
+vector<double> SED::integrateSED2(const flt &filter) {
+  vector<double> results(6, 0.);
+
+  if (lamb_flux.front().lamb > filter.lmin() ||
+      lamb_flux.back().lamb < filter.lmax()) {
+    return vector<double>(6, INVALID_VAL);
+  }
+
+  auto [x, newsed, newflt] =
+      restricted_resampling(lamb_flux, filter.lamb_trans, -1);
+
+  double r0, r1, r2, r3, r4, r5;
+#pragma omp parallel for reduction(+ : r0, r1, r2, r3, r4, r5)
+  for (size_t i = 0; i < x.size() - 1; i++) {
+    double lmean = (x[i] + x[i + 1]) / 2;
+    double tmean = (newflt[i] + newflt[i + 1]) / 2;
+    double fmean = (newsed[i] + newsed[i + 1]) / 2;
+    double dlbd = (x[i + 1] - x[i]);
+    double tmp = tmean * dlbd;
+    r0 += tmp;
+    r2 += tmp * lmean;
+    r3 += tmp * fmean;
+    r4 += tmp * fmean * lmean;
+    r5 += tmp / pow(lmean, 2);
+  }
+  r1 = r5 * c;
+  return vector<double>{r0, r1, r2, r3, r4, r5};
 }
