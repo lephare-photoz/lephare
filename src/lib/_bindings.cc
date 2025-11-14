@@ -139,10 +139,11 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("read", static_cast<void (flt::*)(ifstream &)>(&flt::read),
            "Read filter info from stream")
       .def("lambdaMean", &flt::lambdaMean)
-      .def("lambdaEff", &flt::lambdaEff)
+      .def("lambdaEff", &flt::lambdaEff, py::arg("flag") = true)
       .def("lambdaEff2", &flt::lambdaEff2)
       .def("vega", &flt::vega)
       .def("magsun", &flt::magsun)
+      .def("abcorr", &flt::abcorr)
       .def("width", &flt::width)
       .def("lmin", &flt::lmin)
       .def("lmax", &flt::lmax)

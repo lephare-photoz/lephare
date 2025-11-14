@@ -42,15 +42,20 @@ void oneElLambda::interp(const oneElLambda& previousEl,
 }
 
 // --- interpolation linéaire (x croissant, sans extrapolation) ---
+// on suppose x croissant, ce sont les lambda typiquement
+// y est le vecteur des valeurs correspondantes
+// on determine l'interpolation linéaire en xi
+// retourne 0 si xi est en dehors des x
 static inline double interp_linear_point(const std::vector<double>& x,
                                          const std::vector<double>& y,
                                          double xi) {
-  if (xi <= x.front()) return y.front();
-  if (xi >= x.back()) return y.back();
+  if (xi <= x.front()) return 0.;
+  if (xi >= x.back()) return 0.;
 
   auto it = std::lower_bound(x.begin(), x.end(), xi);
   size_t idx = std::distance(x.begin(), it);
   if (idx == 0) return y[0];
+  // à tester le cas > ... Ca ne devrait jamais arriver....
   if (idx >= x.size()) return y.back();
 
   double x0 = x[idx - 1], x1 = x[idx];
@@ -60,6 +65,8 @@ static inline double interp_linear_point(const std::vector<double>& x,
 }
 
 // --- interpolation vectorisée (parallèle OpenMP) ---
+// pareil que interp_linear_point mais avec un vecteur de valeurs cibles
+// xi. OMP est commenté car l'overhead semble trop important
 std::vector<double> interp_linear_vec(const std::vector<double>& x,
                                       const std::vector<double>& y,
                                       const std::vector<double>& q) {
@@ -72,6 +79,10 @@ std::vector<double> interp_linear_vec(const std::vector<double>& x,
 }
 
 // --- création d’une grille régulière ---
+// J'ai défini un code qui généralise l'ancien resample et peut
+// creer une grille uniforme si besoin, plutôt que de rassembler
+// les points des deux vecteur d'input.
+// Cela peut disparaitre à terme
 std::vector<double> make_regular_grid(double lo, double hi, double dx) {
   if (dx <= 0) throw std::runtime_error("dx must be positive");
   size_t n = static_cast<size_t>((hi - lo) / dx) + 1;
@@ -83,6 +94,9 @@ std::vector<double> make_regular_grid(double lo, double hi, double dx) {
 }
 
 // --- création de la grille issue de l’union de x1 et x2 ---
+// Ca c'est le cas resample classique de lephare. C'est chatgpt
+// qui m'a sorti l'usage de std::set. Je pense que son utilisation
+// impose de ne pas paralléliser avec OMP, mais je n'ai pas creusé
 std::vector<double> make_union_grid(const std::vector<double>& x1,
                                     const std::vector<double>& x2, double lo,
                                     double hi) {
@@ -97,6 +111,14 @@ std::vector<double> make_union_grid(const std::vector<double>& x1,
 // --- fonction principale unifiée ---
 // dx > 0  → grille régulière
 // dx < 0  → union triée de x1 et x2 dans l’intervalle commun
+// Ca c'est ce qui remplace resample mais j'ai opté pour des inputs
+// plus génériques : (x1, y1) et (x2, y2) sont les deux vecteurs oneElLambda
+// mais dissociées en deux paires de vector<double>
+// De même je retourne l'intersection de x1, et x2 dans x_common, donc
+// je n'ai pas les soucis que tu as de maintenir la même taille d'entrée et
+// et de sortie qu'on a dans SED::resample
+// donc l'output est cette intersection, et les valeurs interpolées
+// correspondantes de y1 et y2
 std::tuple<std::vector<double>, std::vector<double>, std::vector<double>>
 common_interpolate_combined(const std::vector<double>& x1,
                             const std::vector<double>& y1,
