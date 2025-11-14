@@ -161,7 +161,7 @@ class SED {
   /// types are treated in inherited class methods.
   void read(const string &sedFile);
   void warning_integrateSED(const vector<flt> &filters, bool verbose = false);
-  vector<double> integrateSED(const flt &filter);
+
   /*! integrate the SED between bounds
    * @param lmin : lower lambda bound
    * @param lmax : lower lambda bound
@@ -227,9 +227,9 @@ class SED {
   /// rescale the lamb_flux.val as val *= scaleFac
   void rescale(double scaleFac);
   /// compute magnitude from filters
-  void compute_magnitudes(const vector<flt> &filters, bool flag = true);
+  void compute_magnitudes(const vector<flt> &filters);
   /// compute fluxed from filters
-  vector<double> compute_fluxes(const vector<flt> &filters, bool flag = true);
+  vector<double> compute_fluxes(const vector<flt> &filters);
   double trapzd();
   void sumSpectra(SED addSED, const double rescal);
   void reduce_memory(vector<flt> allFlt);

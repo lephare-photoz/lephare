@@ -139,7 +139,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("read", static_cast<void (flt::*)(ifstream &)>(&flt::read),
            "Read filter info from stream")
       .def("lambdaMean", &flt::lambdaMean)
-      .def("lambdaEff", &flt::lambdaEff, py::arg("flag") = true)
+      .def("lambdaEff", &flt::lambdaEff)
       .def("lambdaEff2", &flt::lambdaEff2)
       .def("vega", &flt::vega)
       .def("magsun", &flt::magsun)
@@ -191,7 +191,6 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("is_qso", &SED::is_qso)
       .def("read", &SED::read)
       .def("size", &SED::size)
-      .def("integrateSED", &SED::integrateSED)
       .def("integrateSED2", &SED::integrateSED2)
       .def("integrate", &SED::integrate)
       .def("resample", &SED::resample)

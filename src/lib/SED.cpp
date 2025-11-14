@@ -223,130 +223,6 @@ void SED::warning_integrateSED(const vector<flt> &filters, bool verbose) {
   }
 }
 
-/*
-  Integrate within a filter, valid in the three cases GAL/QSO/STARS
-*/
-vector<double> SED::integrateSED(const flt &filter) {
-  vector<oneElLambda> lamb_all;
-  vector<double> mag;
-  double area = 0.;
-  double arean = 0.;
-  double areaCorr = 0.;
-  double fmel = 0.;
-  double lmoy = 0.;
-  double lnum = 0.;
-
-  // Check that the full SED is defined over the filter
-  if (lamb_flux.front().lamb < filter.lmin() &&
-      lamb_flux.back().lamb > filter.lmax()) {
-    // Check that there is a minimum coverage between the SED and the filter
-    // if( (lamb_flux.begin())->lamb < filter.lmax() &&
-    // (lamb_flux.end()-1)->lamb > filter.lmin()){
-
-    // Initialise with a flux=0 at lambda=0
-    lamb_all.emplace_back(0, 0, 1);
-    // Loop over the SED
-    for (vector<oneElLambda>::iterator it = lamb_flux.begin();
-         it < lamb_flux.end(); ++it) {
-      // Keep the first element before lmin (replace as long as you don't meet
-      // the filter).
-      if (it->lamb < filter.lmin()) lamb_all[0] = *it;
-      // keep the SED when well included in the filter lambda range
-      if ((it->lamb) >= filter.lmin() && (it->lamb) <= filter.lmax())
-        lamb_all.push_back(*it);
-      // keep only the last element after lmax
-      if (it->lamb > filter.lmax()) {
-        lamb_all.push_back(*it);
-        break;
-      }
-    }
-
-    // Concatenate two vectors composed of the filter and the SED
-    lamb_all.insert(lamb_all.end(), (filter.lamb_trans).begin(),
-                    (filter.lamb_trans).end());
-
-    // Sort the vector in increasing lambda (vector including the filter and the
-    // SED)
-    sort(lamb_all.begin(), lamb_all.end());
-
-    // be sure that the first and the last element of the concatenate vector is
-    // the SED, not the filter If not, add an element with a flux=0 before or
-    // after
-    if (lamb_all.begin()->ori == 0) {
-      lamb_all.emplace(lamb_all.begin(), lamb_all.begin()->lamb - 1., 0, 1);
-    }
-    if (lamb_all.back().ori == 0) {
-      lamb_all.emplace_back(lamb_all.back().lamb + 1., 0, 1);
-    }
-
-    // Resample in two vectors with a common lambda range (the combination of
-    // the filter and SED lambda) filter
-    vector<oneElLambda> new_trans = resample(lamb_all, 0, 0, 1.e50);
-    // sed
-    vector<oneElLambda> new_sed = resample(lamb_all, 1, 0, 1.e50);
-
-    // Loop to find the mean lambda, mean flux, mean trans
-    // sum to get the area, arean, the integrated flux, the integrated flux
-    // accros the filter
-    for (int k = 0; k < int(new_sed.size()) - 1; ++k) {
-      // In case the resampling was impossible, put the value at 0 (means no
-      // transmission or no SED emission)
-      if (new_sed[k].ori < 0) new_sed[k].val = 0;
-      if (new_sed[k + 1].ori < 0) new_sed[k + 1].val = 0;
-      if (new_trans[k].ori < 0) new_trans[k].val = 0;
-      if (new_trans[k + 1].ori < 0) new_trans[k + 1].val = 0;
-      // lambda mean
-      double lmean = ((new_sed[k]).lamb + (new_sed[k + 1]).lamb) / 2.;
-      // trans mean
-      double tmean = ((new_trans[k]).val + (new_trans[k + 1]).val) / 2.;
-      // flux mean
-      double fmean = ((new_sed[k]).val + (new_sed[k + 1]).val) / 2.;
-      // delta lambda
-      double dlbd = ((new_sed[k + 1]).lamb - (new_sed[k]).lamb);
-      // conv
-      double conv = c / pow(lmean, 2.);
-      // integral T dlambda
-      area = area + tmean * dlbd;
-      // integral (T*c/lambda**2) dlambda
-      arean = arean + tmean * conv * dlbd;
-      // integral (T*lambda) dlambda
-      lmoy = lmoy + lmean * tmean * dlbd;
-      // integral (F*T) dlambda
-      fmel = fmel + fmean * tmean * dlbd;
-      // integral (F*T*lambda) dlambda
-      lnum = lnum + fmean * tmean * lmean * dlbd;
-      // integral (T/lambda^2) dlambda
-      areaCorr = areaCorr + tmean / pow(lmean, 2.) * dlbd;
-    }
-
-  } else {
-    // SED not defined over the full filter
-    area = INVALID_VAL;
-    arean = INVALID_VAL;
-    lmoy = INVALID_VAL;
-    fmel = INVALID_VAL;
-    lnum = INVALID_VAL;
-    areaCorr = INVALID_VAL;
-  }
-
-  // 0el: int (T) dlambda
-  // 1el: int (T*c/lambda^2) dlambda
-  // 2el: int (T*lambda) dlambda
-  // 3el: int (F*T) dlambda
-  // 4el: int (F*T*lambda) dlambda
-  // 5el: int (T/lambda^2) dlambda
-  mag.push_back(area);
-  mag.push_back(arean);
-  mag.push_back(lmoy);
-  mag.push_back(fmel);
-  mag.push_back(lnum);
-  mag.push_back(areaCorr);
-
-  lamb_all.clear();
-
-  return mag;
-}
-
 double SED::integrate(const double lmin, const double lmax) {
   // restrict to cases where the SED is defined over the
   // whole range
@@ -662,53 +538,25 @@ void SED::redshift() {
 */
 void SED::applyExt(const double ebv, const ext &oneext) {
   (*this).ebv = ebv;
-  // if needed because E(b-V)>0
-  if (ebv > 1.e-20) {
-    // work with the original lamb_flux
-    vector<oneElLambda> lamb_all = lamb_flux;
-
-    // Concatenate two vectors composed of "oneElLambda" including the
-    // extinction law and the SED
-    lamb_all.insert(lamb_all.end(), oneext.lamb_ext.begin(),
-                    oneext.lamb_ext.end());
-
-    // Sort the vector in increasing lambda (vector including the extinction law
-    // and the SED)
-    sort(lamb_all.begin(), lamb_all.end());
-    // Resample the extinction in a lambda range combining the SED and the
-    // extinction law
-    vector<oneElLambda> new_ext = resample(lamb_all, 2, 0., 1e20);
-
-    // Loop over the SED and extinction curves using the concatenate ext+SED
-    // vector
-    vector<oneElLambda> lamb_new;
-    for (size_t k = 0; k < lamb_all.size(); ++k) {
-      // If we are well looking at the original SED
-      if (lamb_all[k].ori == 1) {
-        double val = lamb_all[k].val;
-        double lamb = lamb_all[k].lamb;
-        if (oneext.lmin < lamb && oneext.lmax > lamb) {
-          // If extinction not defined (resampling failed), put it at 0
-          if (new_ext[k].ori < 0) new_ext[k].val = 0;
-          // Change the value of the flux according to the dust extinction
-          val = (lamb_all[k]).val * pow(10., (-0.4 * ebv * (new_ext[k]).val));
-        }
-        // Store the result into a new lamb_flux vector
-        lamb_new.emplace_back(lamb, val, 1);
-      }
-    }
-
-    // Replace the old lambda flux vector with the new one including extinction
-    lamb_flux = lamb_new;
-
-    // Indicate what is the value of the ebv and the index of the extinction law
-    extlawId = oneext.numext;
-
-    // Clean
-    lamb_all.clear();
-    lamb_new.clear();
-    new_ext.clear();
+  // if E(b-V)~0 we do not loose time applying extinction
+  if (ebv <= 1.e-20) return;
+  // resample the sed and ext object
+  auto [lamb_all, sed_flux, new_ext] =
+      restricted_resampling(lamb_flux, oneext.lamb_ext, -1);
+  // clear the sed oneElVector as we are about to rebuild it with extinction
+  // applied
+  lamb_flux.clear();
+  for (size_t k = 0; k < lamb_all.size(); ++k) {
+    double val = sed_flux[k];
+    double lamb = lamb_all[k];
+    double ext = new_ext[k];
+    // Change the value of the flux according to the dust extinction
+    val *= pow(10., -0.4 * ebv * ext);
+    // Store the result into the SED lamb_flux vector
+    lamb_flux.emplace_back(lamb, val, 1);
   }
+  // save the extinction id used
+  extlawId = oneext.numext;
 
   return;
 }
@@ -2046,15 +1894,11 @@ void StarSED::writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
 /*
    compute the magnitudes in each of the filters
 */
-void SED::compute_magnitudes(const vector<flt> &filters, bool flag) {
+void SED::compute_magnitudes(const vector<flt> &filters) {
   double val;
   for (const auto &filter : filters) {
     // Derive the AB magnitudes in each filter
-    vector<double> intFlux;
-    if (flag)
-      intFlux = integrateSED2(filter);
-    else
-      intFlux = integrateSED(filter);
+    vector<double> intFlux = integrateSED2(filter);
     if (intFlux[3] != INVALID_VAL) {
       if (intFlux[3] > 0.0) {
         val = -2.5 * LOG10D(intFlux[3] / intFlux[1] * filter.fcorr) - 48.6 +
@@ -2068,16 +1912,12 @@ void SED::compute_magnitudes(const vector<flt> &filters, bool flag) {
   }
 }
 
-vector<double> SED::compute_fluxes(const vector<flt> &filters, bool flag) {
+vector<double> SED::compute_fluxes(const vector<flt> &filters) {
   size_t imagm = filters.size();
   vector<double> result(imagm, NULL_FLUX);
   // check that the SED is defined
   for (size_t k = 0; k < imagm; k++) {
-    vector<double> intFlux;
-    if (flag)
-      intFlux = integrateSED2(filters[k]);
-    else
-      intFlux = integrateSED(filters[k]);
+    vector<double> intFlux = integrateSED2(filters[k]);
     result[k] =
         (intFlux[3] == INVALID_VAL) ? INVALID_FLUX : intFlux[3] / intFlux[1];
   }
