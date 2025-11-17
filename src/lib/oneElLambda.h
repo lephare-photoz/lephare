@@ -62,6 +62,8 @@ class oneElLambda {
   inline bool operator<(const oneElLambda& rhs) const {
     return lamb < rhs.lamb;
   }
+
+  inline bool operator<(const double rhs) const { return lamb < rhs; }
 };
 
 typedef vector<oneElLambda> oneElVector;
@@ -83,9 +85,8 @@ inline std::tuple<std::vector<double>, std::vector<double>> to_tuple(
   return {p.first, p.second};
 }
 
-static inline double interp_linear_point(const std::vector<double>& x,
-                                         const std::vector<double>& y,
-                                         double xi);
+double interp_linear_point(const std::vector<double>& x,
+                           const std::vector<double>& y, double xi);
 
 std::vector<double> interp_linear_vec(const std::vector<double>& x,
                                       const std::vector<double>& y,

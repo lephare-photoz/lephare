@@ -12,6 +12,33 @@ TESTDIR = os.path.abspath(os.path.dirname(__file__))
 TESTDATADIR = os.path.join(TESTDIR, "../data")
 
 
+def test_apply_ext():
+    onext = lp.ext("", 0)
+    x1 = np.linspace(0, 50, 20)
+    y1 = np.ones_like(x1) / 0.4
+    onext.set_vector(x1, y1)
+
+    sed = SED()
+    x2 = np.linspace(10, 20, 10)
+    y2 = x2
+
+    sed.set_vector(x2, y2)
+    sed.applyExt(1.0, onext)
+    res1 = sed.lamb_flux
+    print([el.lamb for el in res1])
+    print([el.val for el in res1])
+
+    sed = SED()
+    x2 = np.linspace(10, 20, 10)
+    y2 = x2
+    sed.set_vector(x2, y2)
+    sed.applyExt2(1.0, onext)
+    res2 = sed.lamb_flux
+    print([el.lamb for el in res2])
+    print([el.val for el in res2])
+    assert 1 == 0
+
+
 def test_string_to_object():
     for t in ["s", "S", "sOap", "STAR"]:
         a = lp.SED.string_to_object(t)

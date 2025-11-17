@@ -46,11 +46,11 @@ void oneElLambda::interp(const oneElLambda& previousEl,
 // y est le vecteur des valeurs correspondantes
 // on determine l'interpolation linéaire en xi
 // retourne 0 si xi est en dehors des x
-static inline double interp_linear_point(const std::vector<double>& x,
-                                         const std::vector<double>& y,
-                                         double xi) {
-  if (xi <= x.front()) return 0.;
-  if (xi >= x.back()) return 0.;
+double interp_linear_point(const std::vector<double>& x,
+                           const std::vector<double>& y, double xi) {
+  if (xi < x.front() || xi > x.back()) return 0;
+  if (xi == x.front()) return y.front();
+  if (xi == x.back()) return y.back();
 
   auto it = std::lower_bound(x.begin(), x.end(), xi);
   size_t idx = std::distance(x.begin(), it);

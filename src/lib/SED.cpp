@@ -517,6 +517,31 @@ void SED::generateCalib(double lmin, double lmax, int Nsteps, int calib) {
   return;
 }
 
+void SED::sumSpectra2(SED addSED, const double rescal) {
+  auto [x1, y1] = to_tuple(lamb_flux);
+  auto [x2, y2] = to_tuple(addSED.lamb_flux);
+
+  // sorted union of x values
+  auto x3 = x1;
+  x3.insert(x3.end(), x2.begin(), x2.end());
+  std::sort(x3.begin(), x3.end());
+  x3.erase(std::unique(x3.begin(), x3.end()), x3.end());
+
+  // prepare lamb_flux.
+  // reserve is useful. Without it push_back is dynamically reallocated
+  // chunks of memory and copying. Not a big deal with our typical vector sizes
+  // but still good practice
+  lamb_flux.clear();
+  lamb_flux.reserve(x3.size());
+
+  for (double x : x3) {
+    double v1 = interp_linear_point(x1, y1, x);
+    double v2 = interp_linear_point(x2, y2, x);
+    lamb_flux.emplace_back(x, v1 + v2, 1);
+  }
+  return;
+}
+
 /*
   Sum an additional contribution to the existing spectra
 */
@@ -657,6 +682,39 @@ void SED::redshift() {
   return;
 }
 
+void SED::applyExt2(const double ebv, const ext &oneext) {
+  (*this).ebv = ebv;
+  // No need to loose time if E(b-V)~0
+  if (ebv <= 1.e-20) return;
+
+  // bracket the extinction curve by the sed curve
+  auto left = lower_bound(lamb_flux.begin(), lamb_flux.end(), oneext.lmin);
+  auto right = lower_bound(lamb_flux.begin(), lamb_flux.end(), oneext.lmax);
+
+  oneElVector inrange(left, right);
+  // resample in the common interval
+  auto [lambdas, sed_vals, ext_vals] =
+      restricted_resampling(inrange, oneext.lamb_ext, -1);
+
+  vector<oneElLambda> lamb_new(lamb_flux.begin(), left);
+  for (size_t k = 0; k < lambdas.size(); ++k) {
+    double val = sed_vals[k];
+    double lamb = lambdas[k];
+    //      cout<<k<<" "<<lamb<<" "<<val<<" "<<ext_vals[k]<<endl;
+    // Change the value of the flux according to the dust extinction
+    val *= pow(10., -0.4 * ebv * ext_vals[k]);
+    lamb_new.emplace_back(lamb, val, 1);
+  }
+  // add the end of lamb_flux, which was outside the oneext range
+  lamb_new.insert(lamb_new.end(), right, lamb_flux.end());
+  //  cout<<lamb_new.size()<<endl;
+  lamb_flux.clear();
+  lamb_flux = lamb_new;
+  // Indicate what is the value of the ebv and the index of the extinction law
+  extlawId = oneext.numext;
+  return;
+}
+
 /*
   Apply dust extinction on the original flux of the sed
   Only for galaxies and QSO
@@ -718,6 +776,49 @@ void SED::applyExt(const double ebv, const ext &oneext) {
   Apply dust extinction on the emission lines (fac_line)
   Only for galaxies and QSO
 */
+void SED::applyExtLines2(const ext &oneext) {
+  // If you want to use the redshift dependency of the attenuation line versus
+  // continuum F=F(z=0)+a*z If such option is re-activated, absolutely need to
+  // change the code in read_lib and onesource.cpp
+  // double a=0.2;
+  // No redshift dependency
+  double a = 0.;
+
+  // needed to establish the escape fraction.
+  // Relation by Hayes et al 2011 :
+  // https://iopscience.iop.org/article/10.1088/0004-637X/730/1/8
+  double CLya = 0.445;
+  double kLya = 13.8;
+
+  if (ebv <= 1.e-20) return;
+
+  // Interpolate the extinction curve to the line positions
+  auto [extx, exty] = to_tuple(oneext.lamb_ext);
+  for (size_t i = 0; i < NUM_EMISSION_LINES; i++) {
+    double line_lamb = fac_line[i].lamb;
+    double line_val = fac_line[i].val;
+    double attenuation = interp_linear_point(extx, exty, line_lamb);
+
+    double f = (ebvFac[i] + a * red);
+    if (f > 1) f = 1.;
+
+    line_val *= pow(10., -0.4 * ebv / f * attenuation);
+    // For the Lya line one must also account for escape.
+    //  Relation by Hayes et al 2011 to derive the escape fraction
+    if (line_lamb > 1215. && line_lamb < 1216.) {
+      // we could condition on i=0 as Lyalpha is the first line
+      double f_esc_Lya = CLya * pow(10., (-0.4 * ebv / f * kLya));
+      line_val *= f_esc_Lya;
+    }
+    fac_line[i].val = line_val;
+  }
+  return;
+}
+
+/*
+  Apply dust extinction on the emission lines (fac_line)
+  Only for galaxies and QSO
+*/
 void SED::applyExtLines(const ext &oneext) {
   // Local value from Calzetti
   // double ebvFac[65] =
@@ -739,64 +840,115 @@ void SED::applyExtLines(const ext &oneext) {
   // No redshift dependency
   double a = 0.;
 
-  // needed to establish the escape fraction. Relation by Hayes et al 2011.
+  // needed to establish the escape fraction.
+  // Relation by Hayes et al 2011 :
+  // https://iopscience.iop.org/article/10.1088/0004-637X/730/1/8
   double CLya = 0.445;
   double kLya = 13.8;
 
-  // if needed because E(b-V)>0
-  if (ebv > 1.e-20) {
-    // work with fac_line as spectra
-    vector<oneElLambda> line_all = fac_line;
+  if (ebv <= 1.e-20) return;
 
-    // Concatenate two vectors composed of "oneElLambda" including the
-    // extinction law and the SED
-    line_all.insert(line_all.end(), oneext.lamb_ext.begin(),
-                    oneext.lamb_ext.end());
+  // work with fac_line as spectra
+  vector<oneElLambda> line_all = fac_line;
 
-    // Sort the vector in increasing lambda (vector including the extinction law
-    // and the SED)
-    sort(line_all.begin(), line_all.end());
+  // Concatenate two vectors composed of "oneElLambda" including the
+  // extinction law and the SED
+  line_all.insert(line_all.end(), oneext.lamb_ext.begin(),
+                  oneext.lamb_ext.end());
 
-    // Resample the extinction in a lambda range combining the SED and the
-    // extinction law
-    vector<oneElLambda> new_ext = resample(line_all, 2, 0., 1e20);
+  // Sort the vector in increasing lambda (vector including the extinction law
+  // and the SED)
+  sort(line_all.begin(), line_all.end());
 
-    // Loop over the SED and extinction curves using the concatenate ext+SED
-    // vector
-    vector<oneElLambda> lamb_new;
-    int l = 0;
-    for (size_t k = 0; k < line_all.size(); ++k) {
-      // If we are well looking at the original lines
-      if ((line_all[k]).ori == 5) {
-        double lamb = line_all[k].lamb;
-        double val = line_all[k].val;
-        if (oneext.lmin < lamb && oneext.lmax > lamb) {
-          // Change the value of the flux according to the duts extinction
-          double f = (ebvFac[l] + a * red);
-          if (f > 1) f = 1.;
-          // Check that the extinction is well defined, other put 0
-          if (new_ext[k].ori < 0) new_ext[k].val = 0.;
-          val =
-              (line_all[k]).val * pow(10., (-0.4 * ebv / f * (new_ext[k]).val));
-          // Relation by Hayes et al 2011 to derive the escape fraction
-          if (line_all[k].lamb > 1215. && line_all[k].lamb < 1216.) {
-            double f_esc_Lya = CLya * pow(10., (-0.4 * ebv / f * kLya));
-            val = val * f_esc_Lya;
-          }
+  // Resample the extinction in a lambda range combining the SED and the
+  // extinction law
+  vector<oneElLambda> new_ext = resample(line_all, 2, 0., 1e20);
+
+  // Loop over the SED and extinction curves using the concatenate ext+SED
+  // vector
+  vector<oneElLambda> lamb_new;
+  int l = 0;
+  for (size_t k = 0; k < line_all.size(); ++k) {
+    // If we are well looking at the original lines
+    if ((line_all[k]).ori == 5) {
+      double lamb = line_all[k].lamb;
+      double val = line_all[k].val;
+      if (oneext.lmin < lamb && oneext.lmax > lamb) {
+        // Change the value of the flux according to the duts extinction
+        double f = (ebvFac[l] + a * red);
+        if (f > 1) f = 1.;
+        // Check that the extinction is well defined, other put 0
+        if (new_ext[k].ori < 0) new_ext[k].val = 0.;
+        val = (line_all[k]).val * pow(10., (-0.4 * ebv / f * (new_ext[k]).val));
+        // Relation by Hayes et al 2011 to derive the escape fraction
+        if (line_all[k].lamb > 1215. && line_all[k].lamb < 1216.) {
+          double f_esc_Lya = CLya * pow(10., (-0.4 * ebv / f * kLya));
+          val = val * f_esc_Lya;
         }
-        // Count what is the line according to the original fac_line
-        l++;
-        // Store the result into a new lamb_flux vector
-        lamb_new.emplace_back(lamb, val, 1);
       }
+      // Count what is the line according to the original fac_line
+      l++;
+      // Store the result into a new lamb_flux vector
+      lamb_new.emplace_back(lamb, val, 1);
     }
-
-    // Replace the old lambda flux vector with the new one including extinction
-    fac_line.clear();
-    fac_line = lamb_new;
-    lamb_new.clear();
-    new_ext.clear();
   }
+
+  // Replace the old lambda flux vector with the new one including extinction
+  fac_line.clear();
+  fac_line = lamb_new;
+  lamb_new.clear();
+  new_ext.clear();
+
+  return;
+}
+
+/*
+  product of the sed with the opacity of the IGM
+  only for galaxies and QSO
+*/
+void SED::applyOpa2(const vector<opa> &opaAll) {
+  // Select the right opacity file according to the redshift of the source
+  // Do not use simply 0.1 -> need to have the same as the fortran version and
+  // some rounding problem (e.g. z=0.15 with step=0.01)
+  int ind = lround(red / 0.100000000000001);
+  // In lepharedir/opa/ there are opacity files up to z=8 (file #80),
+  // use the last one (transmission=0 at all lambda<1216) also when z>8
+  if (ind > 80) {
+    ind = 80;
+  }
+  auto opa = opaAll[ind];
+
+  // No need to do anything above the high limit of the intergalactic
+  // attenuation curves
+  auto limit = lower_bound(lamb_flux.begin(), lamb_flux.end(), 1215.67);
+  oneElVector lamb_all(lamb_flux.begin(), limit + 1);
+  oneElVector lamb_end(limit + 1, lamb_flux.end());
+  auto [x1, y1] = to_tuple(lamb_all);
+
+  // and no need to include opa points well below the start of the SED
+  // the OPA are defined from 17 Angstrom to 1215.67 Angstrom
+  limit =
+      lower_bound(opa.lamb_opa.begin(), opa.lamb_opa.end(), lamb_flux.front());
+  oneElVector opa2(limit - 1, opa.lamb_opa.end());
+  auto [x2, y2] = to_tuple(opa2);
+
+  // sorted union of x values
+  auto x3 = x1;
+  x3.insert(x3.end(), x2.begin(), x2.end());
+  std::sort(x3.begin(), x3.end());
+  x3.erase(std::unique(x3.begin(), x3.end()), x3.end());
+
+  lamb_flux.clear();
+  lamb_flux.reserve(x3.size());
+
+  for (double x : x3) {
+    double v1 = interp_linear_point(x1, y1, x);
+    double v2 = interp_linear_point(x2, y2, x);
+    double y = v2 <= 0. ? v1 : v1 * v2;
+    lamb_flux.emplace_back(x, y, 1);
+  }
+  // Add the SED at lambda > 1216
+  lamb_flux.insert(lamb_flux.end(), lamb_end.begin(), lamb_end.end());
 
   return;
 }
@@ -990,8 +1142,6 @@ void GalSED::add_neb_cont() {
   //  Different from Schearer, use Osterbrock
   double n_heII =
       0.1;  // proportion of Helium compared to hydrogen = n(HeII)/n(HI)
-  
-
 
   // store wavelength, emission coefficients &  type in vector <oneElLambda> for
   // H, 2q(2 ph decay) & HeI
@@ -1094,7 +1244,7 @@ void GalSED::generateEmPhys(double zmet, double qi) {
       f_ga * qi * 4.780e-13;  // [erg.s-1.cm-2], different value than Schearer
                               // because of the different alpha_B value
 
-// Select the right table depending on the metallicity Zmet
+  // Select the right table depending on the metallicity Zmet
   // Multiply by the reference luminosity
   fac_line.clear();
   for (size_t i = 0; i < 65; i++) {
@@ -1128,15 +1278,13 @@ void GalSED::generateEmEmpUV(double MNUV_int, double NUVR) {
   // galaxies Using Halpha as a reference.
   // 2.85 is the intrinsic Halpha to Hbeta flux line ratio
   double scaleFac = 0;
- //correct only for blue enough galaxies
- if (NUVR < 4)
-    scaleFac = pow(10., -0.4 * MNUV_int - 6.224) / 2.85;
+  // correct only for blue enough galaxies
+  if (NUVR < 4) scaleFac = pow(10., -0.4 * MNUV_int - 6.224) / 2.85;
 
   // Create the emission line and rescale them
   fac_line.clear();
   for (size_t i = 0; i < NUM_EMISSION_LINES; i++) {
-    fac_line.emplace_back(emission_lines[i],
-			  scaleFac * empirical_ratio[i], 5);
+    fac_line.emplace_back(emission_lines[i], scaleFac * empirical_ratio[i], 5);
   }
   // sort the vector by wavelength
   sort(fac_line.begin(), fac_line.end());
@@ -1151,16 +1299,16 @@ void GalSED::generateEmEmpSFR(double sfr, double NUVR) {
   // galaxies Using Halpha as a reference
   // 2.85 is the intrinsic Halpha to Hbeta flux line ratio
   double scaleFac = 0;
-  //correct only for blue enough galaxies
+  // correct only for blue enough galaxies
   if (NUVR < 4)
     scaleFac = pow(10., log10(sfr) + 41.27 -
-		   log10(4 * pi * 100 * pow(3.08568, 2)) - 36) / 2.85;
+                            log10(4 * pi * 100 * pow(3.08568, 2)) - 36) /
+               2.85;
 
   // Create the emission line and rescale them
   fac_line.clear();
   for (size_t i = 0; i < 65; i++) {
-    fac_line.emplace_back(emission_lines[i],
-			  scaleFac * empirical_ratio2[i], 5);
+    fac_line.emplace_back(emission_lines[i], scaleFac * empirical_ratio2[i], 5);
   }
   // sort the vector by wavelength
   sort(fac_line.begin(), fac_line.end());

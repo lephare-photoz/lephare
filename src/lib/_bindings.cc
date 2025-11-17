@@ -10,6 +10,7 @@ namespace py = pybind11;
 #include "SED.h"
 #include "SEDLib.h"
 #include "cosmology.h"
+#include "emission_lines.h"
 #include "ext.h"
 #include "flt.h"
 #include "globals.h"
@@ -91,7 +92,8 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("lmin", &ext::lmin, "return smallest wavelength stored")
       .def_readonly("lmax", &ext::lmax, "return largest wavelength stored")
       .def("read", &ext::read, py::arg("extFile"), "read an extinction file")
-      .def("add_element", &ext::add_element);
+      .def("add_element", &ext::add_element)
+      .def("set_vector", &ext::set_vector);
   mod.def("compute_filter_extinction", &compute_filter_extinction,
           "Compute extinction in a filter band.");
   mod.def("cardelli_ext", &cardelli_ext,
@@ -184,15 +186,25 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("name", &SED::name)
       .def_readonly("nummod", &SED::nummod)
       .def_readonly("mag", &SED::mag)
+      .def_readwrite("red", &SED::red)
       .def_readwrite("index_z0", &SED::index_z0)
       .def("string_to_object", &SED::string_to_object)
+      .def("redshift", &SED::redshift)
       .def("is_gal", &SED::is_gal)
       .def("is_star", &SED::is_star)
       .def("is_qso", &SED::is_qso)
       .def("read", &SED::read)
       .def("size", &SED::size)
+      .def("sumSpectra", &SED::sumSpectra)
+      .def("sumSpectra2", &SED::sumSpectra2)
       .def("integrateSED", &SED::integrateSED)
       .def("integrateSED2", &SED::integrateSED2)
+      .def("applyExt", &SED::applyExt)
+      .def("applyExt2", &SED::applyExt2)
+      .def("applyExtLines", &SED::applyExtLines)
+      .def("applyExtLines2", &SED::applyExtLines2)
+      .def("applyOpa", &SED::applyOpa)
+      .def("applyOpa2", &SED::applyOpa2)
       .def("integrate", &SED::integrate)
       .def("resample", &SED::resample)
       .def("resample2", &SED::resample2)
@@ -220,6 +232,7 @@ PYBIND11_MODULE(_lephare, mod) {
         }
         return result;
       });
+  mod.attr("emission_lines") = emission_lines;
 
   py::class_<StarSED, SED>(mod, "StarSED")
       .def(py::init<const SED &>())
