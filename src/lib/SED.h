@@ -234,6 +234,7 @@ class SED {
   vector<double> compute_fluxes(const vector<flt> &filters, bool flag = true);
   double trapzd();
   void sumSpectra(SED addSED, const double rescal);
+  void sumSpectra2(SED addSED, const double rescal);
   void reduce_memory(vector<flt> allFlt);
 
   /*
@@ -336,18 +337,21 @@ class SED {
    * \param obj instance of class ext
    */
   void applyExt(const double ebv, const ext &obj);
+  void applyExt2(const double ebv, const ext &obj);
 
   /*! Apply dust extinction to the emission lines (stored in `fac_line`)
    * Only for galaxies and QSO
    * \param obj instance of class `ext`
    */
   void applyExtLines(const ext &obj);
+  void applyExtLines2(const ext &obj);
 
   /*! Apply extinction due to intergalactic medium (only for GAL and QSO)
    * \param opaAll Vector of opacities to compute extinction
    * along the line of sight
    */
   void applyOpa(const vector<opa> &opaAll);
+  void applyOpa2(const vector<opa> &opaAll);
 
   /// Helper function to append the oneElLambda(lambda, value) object to the sed
   /// vector
