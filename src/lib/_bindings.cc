@@ -232,9 +232,9 @@ PYBIND11_MODULE(_lephare, mod) {
       .def(py::init<const GalSED &>())
       .def(py::init<const string, int>(), py::arg("name"),
            py::arg("nummod") = 0)
-      .def(py::init<const string, double, double, string, int, string, int>(),
+      .def(py::init<const string, double, double, string, int, int>(),
            py::arg("name"), py::arg("tau"), py::arg("age"), py::arg("format"),
-           py::arg("nummod"), py::arg("type"), py::arg("idAge"))
+           py::arg("nummod"), py::arg("idAge"))
       .def_readonly("d4000", &GalSED::d4000)
       .def("compute_luminosities", &GalSED::compute_luminosities)
       .def("add_neb_cont", &GalSED::add_neb_cont)

@@ -889,8 +889,8 @@ GalSED::GalSED(const string nameC, int nummodC) : SED(nameC, nummodC, "GAL") {
   extended constructor
 */
 GalSED::GalSED(const string nameC, double tauC, double ageC, string formatC,
-               int nummodC, string typeC, int idAgeC)
-    : SED(nameC, tauC, ageC, nummodC, typeC, idAgeC) {
+               int nummodC, int idAgeC)
+    : SED(nameC, tauC, ageC, nummodC, "GAL", idAgeC) {
   format = formatC;
   tau = tauC;
   d4000 = -999;

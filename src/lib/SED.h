@@ -375,8 +375,8 @@ class GalSED : public SED {
 
   /// Standard constructor
   GalSED(const string nameC, int nummodC = 0);
-  GalSED(const string nameC, double tauC, double ageC, string formatC,
-         int nummodC, string typeC, int idAgeC);
+  GalSED(const string name, double tau, double age, string format, int nummod,
+         int idAge);
   ~GalSED() { flEm.clear(); }
 
   /*! Compute some integrals to be stored in the object
