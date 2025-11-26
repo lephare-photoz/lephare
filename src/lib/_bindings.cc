@@ -28,6 +28,7 @@ void applySEDLibTemplate(modT &m, std::string name) {
            py::arg("config"), py::arg("typ"))
       .def("print_info", &SEDLib<x>::print_info)
       .def("read_model_list", &SEDLib<x>::read_model_list)
+      .def("readSED", &SEDLib<x>::readSED)
       .def("write_SED_lib", &SEDLib<x>::write_SED_lib)
       .def("print_time_tofile", &SEDLib<x>::print_time_tofile)
       .def("close_output_files", &SEDLib<x>::close_output_files);
@@ -235,6 +236,10 @@ PYBIND11_MODULE(_lephare, mod) {
         return result;
       });
   mod.attr("emission_lines") = emission_lines;
+  mod.attr("ga_lamb") = ga_lamb;
+  mod.attr("ga_H_val") = ga_H_val;
+  mod.attr("ga_2q_val") = ga_2q_val;
+  mod.attr("ga_HeI_val") = ga_HeI_val;
 
   py::class_<StarSED, SED>(mod, "StarSED")
       .def(py::init<const SED &>())
@@ -259,6 +264,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("d4000", &GalSED::d4000)
       .def("compute_luminosities", &GalSED::compute_luminosities)
       .def("add_neb_cont", &GalSED::add_neb_cont)
+      .def("add_neb_cont2", &GalSED::add_neb_cont2)
       .def("generateEmEmpUV", &GalSED::generateEmEmpUV)
       .def("generateEmEmpSFR", &GalSED::generateEmEmpSFR)
       .def("generateEmPhys", &GalSED::generateEmPhys)
