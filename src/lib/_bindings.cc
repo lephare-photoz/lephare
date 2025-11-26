@@ -177,6 +177,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("lopt", &SED::lopt)
       .def_readonly("lnir", &SED::lnir)
       .def_readonly("ltir", &SED::ltir)
+      .def_readonly("qi", &SED::qi)
       .def_readonly("name", &SED::name)
       .def_readonly("nummod", &SED::nummod)
       .def_readonly("mag", &SED::mag)

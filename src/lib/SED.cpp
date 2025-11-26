@@ -46,9 +46,7 @@ SED::SED(const string nameC, int nummodC, string type) {
   chi2 = HIGH_CHI2;  // chi2 of the fit
   dm = -999.;        // Rescaling of the template
   distMod = 0;
-  for (int i = 0; i < 4; i++) {
-    qi[i] = INVALID_PHYS;
-  }  // unattenuated number of ionizing photons for 4 different lines
+  qi = {0., 0., 0., 0.};
 }
 
 /*

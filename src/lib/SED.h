@@ -7,6 +7,7 @@
 #ifndef SED_H  // check that this keyword has been set already
 #define SED_H  // define the keyword to be checked
 
+#include <array>
 #include <string>
 #include <vector>
 
@@ -78,11 +79,12 @@ class SED {
   int extlawId;  ///< index of the extinction law when dust attenuation has been
                  ///< applied
 
-  double qi[4];  ///< Store the unnormalized number flux
-                 ///< (phot/cm\f$^{-2}\f$s\f$^{-1}\f$) of ionizing photons for
-                 ///< HeII, HeI, H, and H2. See SED::calc_ph. In practice, qi[2]
-                 ///< only is used, and only for the physical modeling of
-                 ///< emission lines (EM_LINES="PHYS", see GalMag::read_SED)
+  array<double, 4>
+      qi;  ///< Store the unnormalized number flux
+           ///< (phot/cm\f$^{-2}\f$s\f$^{-1}\f$) of ionizing photons for
+           ///< HeII, HeI, H, and H2. See SED::calc_ph. In practice, qi[2]
+           ///< only is used, and only for the physical modeling of
+           ///< emission lines (EM_LINES="PHYS", see GalMag::read_SED)
 
   vector<oneElLambda> fac_line;  ///< oneElLambda vector storing emission lines
 
