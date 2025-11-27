@@ -394,7 +394,7 @@ class GalSED : public SED {
    *
    */
   void compute_luminosities();
-  void add_neb_cont();
+  vector<double> add_neb_cont();
   GalSED generateEmSED(const string &emtype);
   void generateEmEmpUV(double MNUV_int, double NUVR);
   void generateEmEmpSFR(double MNUV_int, double NUVR);

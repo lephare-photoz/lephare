@@ -177,6 +177,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("lopt", &SED::lopt)
       .def_readonly("lnir", &SED::lnir)
       .def_readonly("ltir", &SED::ltir)
+      .def_readonly("age", &SED::age)
       .def_readonly("qi", &SED::qi)
       .def_readonly("name", &SED::name)
       .def_readonly("nummod", &SED::nummod)
@@ -252,6 +253,7 @@ PYBIND11_MODULE(_lephare, mod) {
   applySEDLibTemplate<StarSED>(mod, "StarSEDLib");
   applySEDLibTemplate<QSOSED>(mod, "QSOSEDLib");
   applySEDLibTemplate<GalSED>(mod, "GalSEDLib");
+  mod.def("readBC03", &readBC03);
 
   /******** CLASS MAG *********/
 #define MAGDEFS(c, n)                                      \
