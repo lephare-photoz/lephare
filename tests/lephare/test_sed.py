@@ -262,3 +262,18 @@ def test_resample2():
         assert e.ori == 0
     for e in (res[0], res[-1]):
         assert e.ori == -99
+
+
+def test_calc_ph():
+    sed = GalSED("", 0)
+    hc = 12398.42
+    x = np.linspace(0, 1500, 10000)
+    # with such a sed, calc_ph just computes the integral of lambda
+    # from 0 to the 4 edges
+    y = np.ones_like(x) * (hc * 1.6022e-12)
+    sed.set_vector(x, y)
+    assert sed.qi == [0.0, 0.0, 0.0, 0.0]
+    sed.calc_ph()
+    for i, e in enumerate([54.42, 24.59, 13.60, hc / 1108.7]):
+        print(sed.qi[i])
+        assert sed.qi[i] == pytest.approx(0.5 * (hc / e) ** 2, 1.0e-3)
