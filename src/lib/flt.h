@@ -140,7 +140,7 @@ class flt {
   /// V(\lambda)\, T(\lambda)\, \lambda\, d\lambda}{\int V(\lambda)\,
   /// T(\lambda)\, d\lambda}\f$.
   double lambdaEff(bool flag = true);
-    
+
   /// \brief effective wavelength based on a specific calibration SED.
   ///
   /// If \f$C(\lambda)\f$

@@ -1059,8 +1059,8 @@ GalSED GalSED::generateEmSED(const string &emtype) {
   GalSED oneEm("");
   if (emtype[0] == 'P') {
     // new method to include emission lines, with physical recipes
-    auto nebular_contribution = add_neb_cont();// Compute the continuum
-    oneEm.generateEmPhys(zmet, qi[2]);  // Generate the emission lines
+    auto nebular_contribution = add_neb_cont();  // Compute the continuum
+    oneEm.generateEmPhys(zmet, qi[2]);           // Generate the emission lines
   } else if (emtype.compare("EMP_UV") == 0) {
     // Empirical method for emission lines
     // Need the SED M(NUV) and NUV_R before applying extinction to get the
@@ -1117,8 +1117,10 @@ void GalSED::calc_ph() {
     i++;  // next wavelength
   } while (lamb_flux[i].lamb <= wedge[3]);  // limite
 
-  cout << "nombre de photons ionisants : \n pour HeII : "  << qi[0] << "\n pour HeI : "  << qi[1] << "\n pour H (Lyman-continuum flux) : " << qi[2] <<
-      "\n pour H_2 : " << qi[3] << endl;
+  cout << "nombre de photons ionisants : \n pour HeII : " << qi[0]
+       << "\n pour HeI : " << qi[1]
+       << "\n pour H (Lyman-continuum flux) : " << qi[2]
+       << "\n pour H_2 : " << qi[3] << endl;
 
   return;
 }
@@ -1253,7 +1255,7 @@ oneElVector GalSED::add_neb_cont2(double qi) {
   */
 
   // Atomic data :
-    double alpha_B = 2.59e-13; // [cm^3 s^-1] : total recombination coeff for
+  double alpha_B = 2.59e-13;  // [cm^3 s^-1] : total recombination coeff for
   // hydrogen in case B (except to groundstate), for Te = 10kK
   //  Different from Schearer, use Osterbrock
   double n_heII =
@@ -1261,8 +1263,8 @@ oneElVector GalSED::add_neb_cont2(double qi) {
 
   oneElVector ga;
   for (size_t i = 0; i < 71; i++) {
-    double val = ga_H_val[i] + ga_2q_val[i] + n_heII*ga_HeI_val[i];
-    val = val<=0 ? -100 : log10(val);
+    double val = ga_H_val[i] + ga_2q_val[i] + n_heII * ga_HeI_val[i];
+    val = val <= 0 ? -100 : log10(val);
     ga.emplace_back(ga_lamb[i], val, 4);
   }
 
@@ -1270,8 +1272,8 @@ oneElVector GalSED::add_neb_cont2(double qi) {
   sort(ga.begin(), ga.end());
   auto ga_interp = resample(ga, 4, 0, 1.6e+6);
   for (size_t i = 0; i < ga_interp.size(); i++)
-      ga_interp[i].val = pow(10, ga_interp[i].val);
-  
+    ga_interp[i].val = pow(10, ga_interp[i].val);
+
   return ga_interp;
 }
 
