@@ -488,10 +488,8 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
             file_list = np.array(file_text.split())[0:-1:2]
         download_all_files(retriever, file_list, ignore_registry=False)
     if additional_files is not None:
-        # Get the file list in case wildcards used
-        registry = download_registry_from_github()
         # Get just the list of files
-        files = [s.split()[0] for s in registry.split("\n")[:-1]]
+        files = [s.split()[0] for s in file_text.split("\n")[:-1]]
         # Check for wildcard matches using fnmatch
         matched = [f for f in files if any(fnmatch.fnmatch(f, p) for p in list(additional_files))]
         download_all_files(retriever, matched, ignore_registry=False)
