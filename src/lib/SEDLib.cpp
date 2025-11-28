@@ -22,17 +22,14 @@
 using namespace std;
 
 // prototypes
-vector<GalSED> readBC03(string sedFile, int nummod, string type,
-                        vector<double> &ageSel);
-vector<GalSED> readPEGASE(string sedFile, int nummod, string type,
-                          vector<double> &ageSel);
+vector<GalSED> readBC03(string sedFile, int nummod, vector<double> &ageSel);
+vector<GalSED> readPEGASE(string sedFile, int nummod, vector<double> &ageSel);
 vector<bool> closeAge(vector<double> ageSel, vector<double> age);
 
 /*
 READ THE SED GENERATED WITH BRUZUAL & CHARLOT
 */
-vector<GalSED> readBC03(string sedFile, int nummod, string type,
-                        vector<double> &ageSel) {
+vector<GalSED> readBC03(string sedFile, int nummod, vector<double> &ageSel) {
   ifstream ssed;
   string lit, id, id2, id3;
   vector<GalSED> outSED;
@@ -93,7 +90,7 @@ vector<GalSED> readBC03(string sedFile, int nummod, string type,
   // Create an object SED and store it in the output vector
   for (int i = 0; i < nages; i++) {
     // Construct the object SED and store the various relevant informations
-    GalSED oneSED(sedFile, tau, age[i], "BC03", nummod, type, i);
+    GalSED oneSED(sedFile, tau, age[i], "BC03", nummod, i);
 
     // Attribute the metallicity to the SED
     oneSED.zmet = zmett;
@@ -189,8 +186,7 @@ vector<GalSED> readBC03(string sedFile, int nummod, string type,
 /*
 READ THE SED GENERATED WITH PEGASE
 */
-vector<GalSED> readPEGASE(string sedFile, int nummod, string type,
-                          vector<double> &ageSel) {
+vector<GalSED> readPEGASE(string sedFile, int nummod, vector<double> &ageSel) {
   vector<GalSED> outSED;
 
   cout << " Need to implement the PEGASE format in SED reading " << endl;
