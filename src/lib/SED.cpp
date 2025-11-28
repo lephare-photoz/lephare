@@ -46,9 +46,7 @@ SED::SED(const string nameC, int nummodC, string type) {
   chi2 = HIGH_CHI2;  // chi2 of the fit
   dm = -999.;        // Rescaling of the template
   distMod = 0;
-  for (int i = 0; i < 4; i++) {
-    qi[i] = INVALID_PHYS;
-  }  // unattenuated number of ionizing photons for 4 different lines
+  qi = {0., 0., 0., 0.};
 }
 
 /*
@@ -891,8 +889,8 @@ GalSED::GalSED(const string nameC, int nummodC) : SED(nameC, nummodC, "GAL") {
   extended constructor
 */
 GalSED::GalSED(const string nameC, double tauC, double ageC, string formatC,
-               int nummodC, string typeC, int idAgeC)
-    : SED(nameC, tauC, ageC, nummodC, typeC, idAgeC) {
+               int nummodC, int idAgeC)
+    : SED(nameC, tauC, ageC, nummodC, "GAL", idAgeC) {
   format = formatC;
   tau = tauC;
   d4000 = -999;
@@ -977,14 +975,14 @@ void GalSED::calc_ph() {
   Add the continuum from the nebular regions
   Work done by Cedric Dubois
 */
-void GalSED::add_neb_cont() {
+vector<double> GalSED::add_neb_cont() {
   /* we assume that the emitting gas has an electron temperature of Te = 10000
      K, an electron density N = 100 cm-3 (low density limite), and a helium
      abundance of 10% by number relative to hydrogen.
   */
 
   // Atomic data :
-  // double alpha_B = 2.59e-13; // [cm^3 s^-1] : total recombination coeff for
+  double alpha_B = 2.59e-13;  // [cm^3 s^-1] : total recombination coeff for
   // hydrogen in case B (except to groundstate), for Te = 10kK
   //  Different from Schearer, use Osterbrock
   double n_heII =
@@ -1133,7 +1131,21 @@ void GalSED::add_neb_cont() {
     ga_tot.emplace_back(ga_H_interp[i].lamb, val, 4);
   }
 
-  return;
+  // Take the vector lamb_flux and add the nebular continu in .val
+  double flux_neb;
+  vector<double> neb_contrib;
+  cout << qi[2] << endl;
+  for (i = 0; i < int(lamb_flux.size()); i++) {
+    // c/lambda^2*gamma/alpha_B * number of ionizing photons * fraction of
+    // absorbed photons 1e-40 since c in A/s and gamma in 10^-40 erg
+    flux_neb = ((c * 1e-40) / (lamb_flux[i].lamb * lamb_flux[i].lamb)) *
+               (ga_tot[i].val / alpha_B) * qi[2] * f_ga;
+    neb_contrib.push_back(flux_neb);
+    // Sum the nebular flux to the original flux from stellar population
+    lamb_flux[i].val = lamb_flux[i].val + flux_neb;
+  }
+
+  return neb_contrib;
 }
 
 /*

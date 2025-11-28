@@ -13,10 +13,8 @@
 #include "globals.h"
 #include "keyword.h"
 
-vector<GalSED> readBC03(string sedFile, int nummod, string type,
-                        vector<double> &ageSel);
-vector<GalSED> readPEGASE(string sedFile, int nummod, string type,
-                          vector<double> &ageSel);
+vector<GalSED> readBC03(string sedFile, int nummod, vector<double> &ageSel);
+vector<GalSED> readPEGASE(string sedFile, int nummod, vector<double> &ageSel);
 vector<bool> closeAge(vector<double> ageSel, vector<double> age);
 
 /*!
@@ -81,8 +79,7 @@ class SEDLib {
    * @param nummod index of the SED; see SED
    * @param type type of the SED S|Q|G for star|qso|galaxy; see SED
    !*/
-  virtual void readSED(string sedFile, string sedFormat, int nummod,
-                       string type);
+  virtual void readSED(string sedFile, string sedFormat, int nummod);
 
   /// For GAL, read the file with the selected galaxy ages, provided as kw
   /// SEL_AGE
@@ -146,8 +143,7 @@ void SEDLib<T>::write_SED_lib() {
 }
 
 template <class T>
-void SEDLib<T>::readSED(string sedFile, string sedFormat, int nummod,
-                        string type) {
+void SEDLib<T>::readSED(string sedFile, string sedFormat, int nummod) {
   // Create one object "SED" and fill it with one ascii file
   T oneSEDascii(sedFile, nummod);
   oneSEDascii.read(sedFile);
@@ -262,7 +258,7 @@ void SEDLib<T>::read_model_list() {
       if (!ss.eof()) ss >> formatSED;
       // Read the file and output a vector of SED
       // (in some file, you have several SEDs with different ages)
-      readSED(nameSED, formatSED, nbSED + 1, typ);
+      readSED(nameSED, formatSED, nbSED + 1);
       nbSED++;
     }
   }
@@ -318,17 +314,16 @@ void SEDLib<T>::read_age(string ageFich) {
 }
 
 template <>
-void SEDLib<GalSED>::readSED(string sedFile, string sedFormat, int nummod,
-                             string type) {
+void SEDLib<GalSED>::readSED(string sedFile, string sedFormat, int nummod) {
   resultSED.clear();
 
   if (sedFormat[0] == 'B') {
     // BC03 case
-    resultSED = readBC03(sedFile, nummod, type, ageSel);
+    resultSED = readBC03(sedFile, nummod, ageSel);
 
   } else if (sedFormat[0] == 'P' || sedFormat[0] == 'F') {
     // PEGASE
-    resultSED = readPEGASE(sedFile, nummod, type, ageSel);
+    resultSED = readPEGASE(sedFile, nummod, ageSel);
 
   } else {
     // ASCII by default
