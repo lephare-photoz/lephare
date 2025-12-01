@@ -1117,10 +1117,10 @@ void GalSED::calc_ph() {
     i++;  // next wavelength
   } while (lamb_flux[i].lamb <= wedge[3]);  // limite
 
-  cout << "nombre de photons ionisants : \n pour HeII : " << qi[0]
-       << "\n pour HeI : " << qi[1]
-       << "\n pour H (Lyman-continuum flux) : " << qi[2]
-       << "\n pour H_2 : " << qi[3] << endl;
+  // cout << "nombre de photons ionisants : \n pour HeII : " << qi[0]
+  //      << "\n pour HeI : " << qi[1]
+  //      << "\n pour H (Lyman-continuum flux) : " << qi[2]
+  //      << "\n pour H_2 : " << qi[3] << endl;
 
   return;
 }

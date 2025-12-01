@@ -434,14 +434,15 @@ class GalSED : public SED {
    * Compute the number flux of photons able to ionize HeII, HeI, H, and H2
    * For a given SED, this amounts to compute the integral
    * \f$\int_0^{w_i} SED(\lambda)\cdot \frac{\lambda}{hc}\,d\lambda\quad,\f$
-   * where \f$w_i\f$=54.42, 24.52, 13.60, and 1108.7 A for HeII, HeI, H, and H2
-   respectively,
+   * where \f$w_i\f$=hc/54.42, hc/24.52, hc/13.60, and 1108.7 A for HeII, HeI,
+   H, and H2 respectively,
    * and where \f$hc\f$ is in ergs.A. This normalization assumes that the SED
    are provided in args/cm2/s/A.
    * In practice the integral is approximated by :
    \f$\sum_{\lambda_{min}}^{w_k}\frac{SED_{j-1}+SED_j}{2}\cdot(\lambda_j-\lambda_{j-1})\cdot\frac{\lambda_j}{hc}\f$.
    *
-   * Results are stored in the q_i array member of size 4 of the SED instance.
+   * Results are stored in the \f$q_i$\f array member of size 4 of the SED
+   instance.
    */
   void calc_ph();
 
