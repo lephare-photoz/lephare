@@ -197,7 +197,7 @@ def test_get_auxiliary_data(test_data_dir: str):
     )
     # Check some examples
     for f in [
-        "sed/GAL/BC03_CHAB/BC03_chab_0.02_10Myr.ised_ASCII",
+        "sed/GAL/BC03_CHAB/bc2003_lr_m42_chab_tau01_dust00.ised_ASCII",
         "sed/GAL/MAGDIS/sed_z2_U2.dat",
         "examples/config_svo_filters.yml",
     ]:
