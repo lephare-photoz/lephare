@@ -488,6 +488,27 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
         download_all_files(retriever, file_list, ignore_registry=False)
     if additional_files is not None:
         # Check for wildcard matches using fnmatch
-        matched = [f for f in all_files if any(fnmatch.fnmatch(f, p) for p in list(additional_files))]
+        matched = [
+            f for f in all_files if any(fnmatch.fnmatch(f, p) for p in _expand_folders(additional_files))
+        ]
         download_all_files(retriever, matched, ignore_registry=False)
     os.system(f"rm {registry_file}")
+
+
+def _expand_folders(items):
+    """Expand folder paths in a list of items to include all files within those folders."""
+    result = []
+    for item in items:
+        # Check for file extension (there is a dot after last slash)
+        basename = os.path.basename(item)
+
+        is_file = "." in basename
+        has_wildcard = "*" in item
+
+        if not is_file and not has_wildcard:
+            # Treat as folder and append wildcard
+            item = os.path.join(item, "*")
+
+        result.append(item)
+
+    return result
