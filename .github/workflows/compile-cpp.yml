@@ -16,7 +16,7 @@ jobs:
         os: [ubuntu-22.04, macos-13, macos-14]
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         submodules: resursive
 
