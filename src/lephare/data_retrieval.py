@@ -122,7 +122,8 @@ def download_registry_from_github(url="", outfile=""):
     # If local registry hash matches remote hash, our registry is already up-to-date:
     if os.path.isfile(outfile) and _check_registry_is_latest_version(url, outfile):
         print(f"Local registry file is up to date: {outfile}")
-        return
+        with open(outfile, "r", encoding="utf-8") as f:
+            return f.read()
 
     # Download the registry file
     response = requests.get(url, headers={"User-Agent": "LePHARE"}, timeout=120)
