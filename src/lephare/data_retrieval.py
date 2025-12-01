@@ -463,6 +463,7 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
 
     # Get the registry file
     file_text = download_registry_from_github()
+    all_files = np.array(file_text.split())[0:-1:2]
     base_url = DEFAULT_BASE_DATA_URL
     repo_name = "lephare-data"
     repo_url = f"https://github.com/lephare-photoz/{repo_name}"
@@ -482,15 +483,10 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
             os.system(f"git clone {repo_url} {lephare_dir}")
     else:
         retriever = make_retriever(base_url=base_url, registry_file=registry_file, data_path=data_path)
-        if keymap is not None:
-            file_list = config_to_required_files(keymap)
-        else:
-            file_list = np.array(file_text.split())[0:-1:2]
+        file_list = config_to_required_files(keymap) if keymap is not None else all_files
         download_all_files(retriever, file_list, ignore_registry=False)
     if additional_files is not None:
-        # Get just the list of files
-        files = [s.split()[0] for s in file_text.split("\n")[:-1]]
         # Check for wildcard matches using fnmatch
-        matched = [f for f in files if any(fnmatch.fnmatch(f, p) for p in list(additional_files))]
+        matched = [f for f in all_files if any(fnmatch.fnmatch(f, p) for p in list(additional_files))]
         download_all_files(retriever, matched, ignore_registry=False)
     os.system(f"rm {registry_file}")
