@@ -220,6 +220,52 @@ void SED::warning_integrateSED(const vector<flt> &filters, bool verbose) {
   }
 }
 
+double SED::integrateSED3(const double lmin, const double lmax) {
+    
+  if (lamb_flux.front().lamb > lmin ||
+      lamb_flux.back().lamb < lmax) 
+      { return INVALID_VAL;}
+  
+  double res = 0.;
+  //#pragma omp parallel for reduction(+:res)
+  for (size_t i = 0; i < lamb_flux.size() - 1; i++) {
+      if(lamb_flux[i].lamb<lmin) continue;
+      if(lamb_flux[i].lamb>lmax) break;
+      double fmean = (lamb_flux[i].val + lamb_flux[i+1].val)/2;
+      double dlbd = (lamb_flux[i+1].lamb - lamb_flux[i].lamb);
+      res += dlbd * fmean;
+  }
+  return res;
+}
+
+vector<double> SED::integrateSED2(const flt &filter) {
+    
+  vector<double> results(6, 0.);
+    
+  if (lamb_flux.front().lamb > filter.lmin() ||
+      lamb_flux.back().lamb < filter.lmax()) 
+      { return vector<double>(6, INVALID_VAL);}
+  
+  auto [x, newsed, newflt] = restricted_resampling(lamb_flux, filter.lamb_trans,-1);
+
+  double r0, r1, r2, r3, r4, r5;
+#pragma omp parallel for reduction(+:r0,r1,r2,r3,r4,r5)
+  for (size_t i = 0; i < x.size() - 1; i++) {
+      double lmean = (x[i] + x[i+1])/2;
+      double tmean = (newflt[i] + newflt[i+1])/2;
+      double fmean = (newsed[i] + newsed[i+1])/2;
+      double dlbd = (x[i+1] - x[i]);
+      double conv = c / pow(lmean, 2.);
+      r0 += tmean * dlbd;
+      r1 += tmean * dlbd * conv;
+      r2 += tmean * dlbd * lmean;
+      r3 += tmean * dlbd * fmean;
+      r4 += tmean * dlbd * fmean * lmean;
+      r5 += tmean * dlbd / pow(lmean, 2);
+  }
+  return vector<double>{r0, r1, r2, r3, r4, r5};
+}
+
 /*
   Integrate within a filter, valid in the three cases GAL/QSO/STARS
 */
@@ -278,11 +324,9 @@ vector<double> SED::integrateSED(const flt &filter) {
 
     // Resample in two vectors with a common lambda range (the combination of
     // the filter and SED lambda) filter
-    vector<oneElLambda> new_trans;
-    resample(lamb_all, new_trans, 0, 0, 1.e50);
+    vector<oneElLambda> new_trans = resample(lamb_all, 0, 0, 1.e50);
     // sed
-    vector<oneElLambda> new_sed;
-    resample(lamb_all, new_sed, 1, 0, 1.e50);
+    vector<oneElLambda> new_sed = resample(lamb_all, 1, 0, 1.e50);
 
     // Loop to find the mean lambda, mean flux, mean trans
     // sum to get the area, arean, the integrated flux, the integrated flux
@@ -356,27 +400,16 @@ double SED::trapzd() {
   return s;
 }
 
-/*
-  resample the vector
-
-  INPUT
-  lamb_all= all elements concatenated (filter+SED)
-  origine=  indicate how the vector needs to be filled (0 for filter, 1 for SED,
-  2 for attenuation laws, 3 opacity) lmin= lambda min to be considered lmax=
-  lambda max to be considered
-
-  OUTPUT
-  lamb_interp= vector with a value in each lambda element, obtained with linear
-  interpolation
-*/
-void SED::resample(vector<oneElLambda> &lamb_all,
-                   vector<oneElLambda> &lamb_interp, const int origine,
-                   const double lmin, const double lmax) {
+vector<oneElLambda> SED::resample(vector<oneElLambda> &lamb_all,
+                                  const int origine, const double lmin,
+                                  const double lmax) {
+  vector<oneElLambda> lamb_interp;
   // Initialize the previous and next element used for the interpolation
   oneElLambda prevEl(-999, -999, -999);
   oneElLambda nextEl(-999, -999, -999);
 
   // Loop over the full vector with the two vectors concatenated
+  //  #pragma omp parallel for schedule(static)
   for (vector<oneElLambda>::iterator it = lamb_all.begin(); it < lamb_all.end();
        ++it) {
     // If well within the considered lambda range
@@ -399,7 +432,7 @@ void SED::resample(vector<oneElLambda> &lamb_all,
     } else {
       // Check if the lower value is already defined, which is required for the
       // interpolation
-      if (prevEl.lamb > 0) {
+      if (prevEl.lamb >= 0) {
         // Increase the iterator to reach the next item with the right origin
         for (vector<oneElLambda>::iterator kt = it; kt < lamb_interp.end();
              ++kt) {
@@ -420,6 +453,7 @@ void SED::resample(vector<oneElLambda> &lamb_all,
         it->interp(prevEl, nextEl);
         // If the interpolation was possible
         if (it->ori >= 0) it->ori = origine;
+
       } else {
         // If the interpolation wasn't possible
         it->val = -99;
@@ -427,6 +461,7 @@ void SED::resample(vector<oneElLambda> &lamb_all,
       }
     }
   }
+  return lamb_interp;
 }
 
 /*
@@ -501,11 +536,9 @@ void SED::sumSpectra(SED addSED, const double rescal) {
   sort(lamb_flux.begin(), lamb_flux.end());
 
   // Resample the first spectra into a common lambda range
-  vector<oneElLambda> spectra_ori;
-  resample(lamb_flux, spectra_ori, 0, 0., 1e20);
+  vector<oneElLambda> spectra_ori = resample(lamb_flux, 0, 0., 1e20);
   // Resample the second spectra into a common lambda range
-  vector<oneElLambda> spectra_add;
-  resample(lamb_flux, spectra_add, 1, 0., 1e20);
+  vector<oneElLambda> spectra_add = resample(lamb_flux, 1, 0., 1e20);
 
   // Sum the two spectra and generate a new lamb_flux
   lamb_flux.clear();
@@ -632,7 +665,6 @@ void SED::applyExt(const double ebv, const ext &oneext) {
   if (ebv > 1.e-20) {
     // work with the original lamb_flux
     vector<oneElLambda> lamb_all = lamb_flux;
-    vector<oneElLambda> new_ext;
 
     // Concatenate two vectors composed of "oneElLambda" including the
     // extinction law and the SED
@@ -644,7 +676,7 @@ void SED::applyExt(const double ebv, const ext &oneext) {
     sort(lamb_all.begin(), lamb_all.end());
     // Resample the extinction in a lambda range combining the SED and the
     // extinction law
-    resample(lamb_all, new_ext, 2, 0., 1e20);
+    vector<oneElLambda> new_ext = resample(lamb_all, 2, 0., 1e20);
 
     // Loop over the SED and extinction curves using the concatenate ext+SED
     // vector
@@ -713,7 +745,6 @@ void SED::applyExtLines(const ext &oneext) {
   if (ebv > 1.e-20) {
     // work with fac_line as spectra
     vector<oneElLambda> line_all = fac_line;
-    vector<oneElLambda> new_ext;
 
     // Concatenate two vectors composed of "oneElLambda" including the
     // extinction law and the SED
@@ -726,7 +757,7 @@ void SED::applyExtLines(const ext &oneext) {
 
     // Resample the extinction in a lambda range combining the SED and the
     // extinction law
-    resample(line_all, new_ext, 2, 0., 1e20);
+    vector<oneElLambda> new_ext = resample(line_all, 2, 0., 1e20);
 
     // Loop over the SED and extinction curves using the concatenate ext+SED
     // vector
@@ -802,10 +833,9 @@ void SED::applyOpa(const vector<opa> &opaAll) {
   // and the SED)
   sort(lamb_all.begin(), lamb_all.end());
 
-  vector<oneElLambda> new_opa;
   // Resample the IGM opacity in a lambda range combining the SED and the
   // opacity
-  resample(lamb_all, new_opa, 3, 0., 1.e20);
+  vector<oneElLambda> new_opa = resample(lamb_all, 3, 0., 1.e20);
 
   // Loop over the SED and opacity using the concatenate opa+SED vector
   vector<oneElLambda> lamb_new;
@@ -1072,18 +1102,15 @@ void GalSED::add_neb_cont() {
     ga_HeI_all[i].val = log10(ga_HeI_all[i].val);
   }
 
-  // Log interpolation of the 3 gamma functions using "resample"
-  vector<oneElLambda> ga_H_interp, ga_2q_interp, ga_HeI_interp;
-
   // Sort by increasing order :
   sort(ga_H_all.begin(), ga_H_all.end());
   sort(ga_2q_all.begin(), ga_2q_all.end());
   sort(ga_HeI_all.begin(), ga_HeI_all.end());
 
   // Log interpolation
-  resample(ga_H_all, ga_H_interp, 4, 0, 1.6e+6);
-  resample(ga_2q_all, ga_2q_interp, 4, 0, 1.6e+6);
-  resample(ga_HeI_all, ga_HeI_interp, 4, 0, 1.6e+6);
+  vector<oneElLambda> ga_H_interp = resample(ga_H_all, 4, 0, 1.6e+6);
+  vector<oneElLambda> ga_2q_interp = resample(ga_2q_all, 4, 0, 1.6e+6);
+  vector<oneElLambda> ga_HeI_interp = resample(ga_HeI_all, 4, 0, 1.6e+6);
 
   // Remove the log used only for interpolation
   // H :

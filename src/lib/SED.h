@@ -120,11 +120,11 @@ class SED {
 
   //! Convert string to object_type
   /*!
-    \param type String starting with either g, q, or s,
-    in either lower or upper case. If it is not the case,
-    throw invalid argument exception.
-
-    \return object_type corresponding to input, if valid.
+   * @param type: string starting with either g, q, or s,
+   * in either lower or upper case. If it is not the case,
+   * throw invalid argument exception.
+   *
+   * @return object_type corresponding to input, if valid.
    */
   inline static object_type string_to_object(const string &type) {
     char t = toupper(type[0]);
@@ -162,24 +162,41 @@ class SED {
   void read(const string &sedFile);
   void warning_integrateSED(const vector<flt> &filters, bool verbose = false);
   vector<double> integrateSED(const flt &filter);
-  static void resample(vector<oneElLambda> &lamb_all,
-                       vector<oneElLambda> &lamb_new, const int origine,
-                       const double lmin, const double lmax);
+  vector<double> integrateSED2(const flt &filter);
+  double integrateSED3(const double lmin, const double lmax);
 
-  ///\brief Generate a calibration SED based on the argument calib
-  ///
-  ///@param lmin start of the lambda vector
-  ///@param lmax end of the lambda vector
-  ///@param Nsteps number of intervals between $lambda values (hence there are
-  /// Nsteps+1 values of \f$\lambda\f$)
-  ///@param calib: parameter FILTER_CALIB passed as argument to define the
-  /// calibration function \f$C(\lambda)\f$
-  /// - calib=0 : \f$C(\lambda)=\lambda^{-2}\f$
-  /// - calib=1 : \f$C(\lambda)=\lambda^{-1}\f$
-  /// - calib=2 : \f$C(\lambda)=\lambda^{-3}\f$
-  /// - calib=3 : \f$C(\lambda)=Blackbody(\lambda, T=10000K)\f$
-  /// - calib=4 : \f$C(\lambda)=Blackbody(\lambda, T=10000K)\f$
-  /// - calib=5 : \f$C(\lambda)=\lambda^{-3}\f$
+  /*!
+   * resample the vector
+   *
+   * @param lamb_all:  all elements concatenated (filter+SED)
+   * @param origin:  indicate which of the two concatenated vector is to be
+   returned interpolated
+   * @param lmin: min value of lambda to consider in lamb_all
+   * @param lmax: max value of lambda to consider in lamb_all
+   *
+   * @return : the vector corresponding to origin, with interpolation at the
+   * position of the other vector in lamb_all. If interpolation fails, the
+   * attribute `val` and `ori` of the oneElLambda element are set to -99
+   */
+  static vector<oneElLambda> resample(vector<oneElLambda> &lamb_all,
+                                      const int origin, const double lmin,
+                                      const double lmax);
+
+  /*! \brief Generate a calibration SED based on the argument calib
+   *
+   * @param lmin start of the lambda vector
+   * @param lmax end of the lambda vector
+   * @param Nsteps number of intervals between $lambda values (hence there are
+   * Nsteps+1 values of \f$\lambda\f$)
+   * @param calib: parameter FILTER_CALIB passed as argument to define the
+   * calibration function \f$C(\lambda)\f$
+   * - calib=0 : \f$C(\lambda)=\lambda^{-2}\f$
+   * - calib=1 : \f$C(\lambda)=\lambda^{-1}\f$
+   * - calib=2 : \f$C(\lambda)=\lambda^{-3}\f$
+   * - calib=3 : \f$C(\lambda)=Blackbody(\lambda, T=10000K)\f$
+   * - calib=4 : \f$C(\lambda)=Blackbody(\lambda, T=10000K)\f$
+   * - calib = 5: \f$C(\lambda) =\lambda ^{ -3 }\f$
+   */
   void generateCalib(double lmin, double lmax, int Nsteps, int calib);
   /// return the size of the internal vector #lamb_flux
   int size() { return lamb_flux.size(); }
@@ -294,7 +311,7 @@ class SED {
    * @param other: the SED to compare to
    * equality of the following attributes are compared:
    * `nummod`, `ebv`, and `age`
-   !*/
+   */
   inline bool is_same_model(const SED &other) {
     return ((*this).nummod == other.nummod && (*this).ebv == other.ebv &&
             (*this).age == other.age);
@@ -437,7 +454,7 @@ class StarSED : public SED {
   /*! constructor
    * @param name: name given to the SED object
    * @param nummod: identity number given to the SED object
-   !*/
+   */
   StarSED(const string name, int nummod = 0) : SED(name, nummod, "STAR") { ; }
   /// destructor (does nothing)
   ~StarSED() { ; }
