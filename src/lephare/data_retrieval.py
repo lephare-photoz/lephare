@@ -4,6 +4,7 @@ This module provides functionality for downloading and managing data files using
 """
 
 import concurrent.futures
+import fnmatch
 import os
 import warnings
 from functools import partial
@@ -121,7 +122,8 @@ def download_registry_from_github(url="", outfile=""):
     # If local registry hash matches remote hash, our registry is already up-to-date:
     if os.path.isfile(outfile) and _check_registry_is_latest_version(url, outfile):
         print(f"Local registry file is up to date: {outfile}")
-        return
+        with open(outfile, "r", encoding="utf-8") as f:
+            return f.read()
 
     # Download the registry file
     response = requests.get(url, headers={"User-Agent": "LePHARE"}, timeout=120)
@@ -462,6 +464,7 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
 
     # Get the registry file
     file_text = download_registry_from_github()
+    all_files = np.array(file_text.split())[0:-1:2]
     base_url = DEFAULT_BASE_DATA_URL
     repo_name = "lephare-data"
     repo_url = f"https://github.com/lephare-photoz/{repo_name}"
@@ -481,11 +484,31 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
             os.system(f"git clone {repo_url} {lephare_dir}")
     else:
         retriever = make_retriever(base_url=base_url, registry_file=registry_file, data_path=data_path)
-        if keymap is not None:
-            file_list = config_to_required_files(keymap)
-        else:
-            file_list = np.array(file_text.split())[0:-1:2]
+        file_list = config_to_required_files(keymap) if keymap is not None else all_files
         download_all_files(retriever, file_list, ignore_registry=False)
     if additional_files is not None:
-        download_all_files(retriever, additional_files, ignore_registry=False)
+        # Check for wildcard matches using fnmatch
+        matched = [
+            f for f in all_files if any(fnmatch.fnmatch(f, p) for p in _expand_folders(additional_files))
+        ]
+        download_all_files(retriever, matched, ignore_registry=False)
     os.system(f"rm {registry_file}")
+
+
+def _expand_folders(items):
+    """Expand folder paths in a list of items to include all files within those folders."""
+    result = []
+    for item in items:
+        # Check for file extension (there is a dot after last slash)
+        basename = os.path.basename(item)
+
+        is_file = "." in basename
+        has_wildcard = "*" in item
+
+        if not is_file and not has_wildcard:
+            # Treat as folder and append wildcard
+            item = os.path.join(item, "*")
+
+        result.append(item)
+
+    return result
