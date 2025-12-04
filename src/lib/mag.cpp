@@ -560,12 +560,11 @@ vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
                 // change
                 GalSED oneEmInt(oneEm);
                 oneEmInt.ebv = ebv[j];
-                // set the value of fracEm
-                oneEmInt.fracEm = fracEm[l];
                 oneEmInt.red = gridz[k];
                 // For the emission lines, use only the MW. Change fac_line
                 oneEmInt.applyExtLines(extAll[nextlaw]);
                 // rescale the lines as a free parameter
+                oneEmInt.fracEm = fracEm[l];
                 oneEmInt.rescaleEmLines();
                 /*
                 // Decide to not applied.
