@@ -1230,7 +1230,6 @@ vector<double> GalSED::add_neb_cont() {
   // Take the vector lamb_flux and add the nebular continu in .val
   double flux_neb;
   vector<double> neb_contrib;
-  cout << qi[2] << endl;
   for (i = 0; i < int(lamb_flux.size()); i++) {
     // c/lambda^2*gamma/alpha_B * number of ionizing photons * fraction of
     // absorbed photons 1e-40 since c in A/s and gamma in 10^-40 erg
