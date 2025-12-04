@@ -774,7 +774,7 @@ void SED::applyExt(const double ebv, const ext &oneext) {
   Apply dust extinction on the emission lines (fac_line)
   Only for galaxies and QSO
 */
-void SED::applyExtLines2(const ext &oneext) {
+void SED::applyExtLines2(double ebv, const ext &oneext) {
   // If you want to use the redshift dependency of the attenuation line versus
   // continuum F=F(z=0)+a*z If such option is re-activated, absolutely need to
   // change the code in read_lib and onesource.cpp
@@ -817,7 +817,7 @@ void SED::applyExtLines2(const ext &oneext) {
   Apply dust extinction on the emission lines (fac_line)
   Only for galaxies and QSO
 */
-void SED::applyExtLines(const ext &oneext) {
+void SED::applyExtLines(double ebv, const ext &oneext) {
   // Local value from Calzetti
   // double ebvFac[65] =
   // {0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44

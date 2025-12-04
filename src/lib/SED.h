@@ -342,9 +342,10 @@ class SED {
   /*! Apply dust extinction to the emission lines (stored in `fac_line`)
    * Only for galaxies and QSO
    * \param obj instance of class `ext`
+   * \param ebv value of E(B-V)
    */
-  void applyExtLines(const ext &obj);
-  void applyExtLines2(const ext &obj);
+  void applyExtLines(double ebv, const ext &obj);
+  void applyExtLines2(double ebv, const ext &obj);
 
   /*! Apply extinction due to intergalactic medium (only for GAL and QSO)
    * \param opaAll Vector of opacities to compute extinction
