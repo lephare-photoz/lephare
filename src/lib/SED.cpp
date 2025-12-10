@@ -1059,7 +1059,7 @@ GalSED GalSED::generateEmSED(const string &emtype) {
   GalSED oneEm("");
   if (emtype[0] == 'P') {
     // new method to include emission lines, with physical recipes
-    auto nebular_contribution = add_neb_cont();  // Compute the continuum
+    auto nebular_contribution = add_neb_cont(qi[2]);  // Compute the continuum
     oneEm.generateEmPhys(zmet, qi[2]);           // Generate the emission lines
   } else if (emtype.compare("EMP_UV") == 0) {
     // Empirical method for emission lines
@@ -1129,7 +1129,7 @@ void GalSED::calc_ph() {
   Add the continuum from the nebular regions
   Work done by Cedric Dubois
 */
-vector<double> GalSED::add_neb_cont() {
+vector<double> GalSED::add_neb_cont(double qi) {
   /* we assume that the emitting gas has an electron temperature of Te = 10000
      K, an electron density N = 100 cm-3 (low density limite), and a helium
      abundance of 10% by number relative to hydrogen.
