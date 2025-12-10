@@ -1135,109 +1135,33 @@ vector<double> GalSED::add_neb_cont(double qi) {
      abundance of 10% by number relative to hydrogen.
   */
 
-  // Atomic data :
-  double alpha_B = 2.59e-13;  // [cm^3 s^-1] : total recombination coeff for
-  // hydrogen in case B (except to groundstate), for Te = 10kK
-  //  Different from Schearer, use Osterbrock
-  double n_heII =
-      0.1;  // proportion of Helium compared to hydrogen = n(HeII)/n(HI)
-
-  // store wavelength, emission coefficients &  type in vector <oneElLambda> for
-  // H, 2q(2 ph decay) & HeI
-  vector<oneElLambda> ga_H;
-  vector<oneElLambda> ga_2q;
-  vector<oneElLambda> ga_HeI;
-  int i;
-
-  // fill the vectors gamma
-  // notation 4 for the gama values
-  for (i = 0; i < 71; i++) {
-    // H :
-    ga_H.emplace_back(ga_lamb[i], ga_H_val[i], 4);
-    // 2q :
-    ga_2q.emplace_back(ga_lamb[i], ga_2q_val[i], 4);
-    // HeI :
-    ga_HeI.emplace_back(ga_lamb[i], ga_HeI_val[i], 4);
+  oneElVector ga;
+  for (size_t i = 0; i < 71; i++) {
+    double val = ga_total[i];
+       val = val <= 0 ? -100 : log10(val);
+    ga.emplace_back(ga_lamb[i], val, 4);
   }
 
-  // on utilise une fonction pour concatener lamb_flux et ga_H/2q/HeI (avec les
-  // .val en log pour ensuite interpoler en log NB : pas besoin de prendre le
-  // log des valeurs de lamb_flux.val car on va les écraser)
-
-  // Concatenate lamb_flux & ga_H/2q/HeI in order have gama in the same lambda
-  // as the SED. Interpolate in log scale.
-  vector<oneElLambda> ga_H_all, ga_2q_all, ga_HeI_all;
-
-  // For H :
-  ga_H_all = lamb_flux;
-  ga_H_all.insert(ga_H_all.end(), ga_H.begin(), ga_H.end());
-  // Convert the value in log
-  for (size_t i = 0; i < ga_H_all.size(); i++) {
-    ga_H_all[i].val = log10(ga_H_all[i].val);
-  }
-
-  // For 2q :
-  ga_2q_all = lamb_flux;
-  ga_2q_all.insert(ga_2q_all.end(), ga_2q.begin(), ga_2q.end());
-  for (size_t i = 0; i < ga_2q_all.size(); i++) {
-    if (ga_2q_all[i].val > 0) {  // Some value of gamma are at 0. Need to deal
-                                 // with them to use the log
-      ga_2q_all[i].val = log10(ga_2q_all[i].val);  // convert in log
-    } else {
-      ga_2q_all[i].val =
-          -100;  // Use an extreme value in log, since the original value is 0
-    }
-  }
-
-  // For HeI :
-  ga_HeI_all = lamb_flux;
-  ga_HeI_all.insert(ga_HeI_all.end(), ga_HeI.begin(), ga_HeI.end());
-  for (size_t i = 0; i < ga_HeI_all.size(); i++) {
-    ga_HeI_all[i].val = log10(ga_HeI_all[i].val);
-  }
-
-  // Sort by increasing order :
-  sort(ga_H_all.begin(), ga_H_all.end());
-  sort(ga_2q_all.begin(), ga_2q_all.end());
-  sort(ga_HeI_all.begin(), ga_HeI_all.end());
-
-  // Log interpolation
-  vector<oneElLambda> ga_H_interp = resample(ga_H_all, 4, 0, 1.6e+6);
-  vector<oneElLambda> ga_2q_interp = resample(ga_2q_all, 4, 0, 1.6e+6);
-  vector<oneElLambda> ga_HeI_interp = resample(ga_HeI_all, 4, 0, 1.6e+6);
-
-  // Remove the log used only for interpolation
-  // H :
-  for (size_t i = 0; i < ga_H_interp.size(); i++)
-    ga_H_interp[i].val = pow(10, ga_H_interp[i].val);
-  // 2q :
-  for (size_t i = 0; i < ga_2q_interp.size(); i++)
-    ga_2q_interp[i].val = pow(10, ga_2q_interp[i].val);
-  // HeI :
-  for (size_t i = 0; i < ga_HeI_interp.size(); i++)
-    ga_HeI_interp[i].val = pow(10, ga_HeI_interp[i].val);
-
-  // Sum the three gamma values
-  vector<oneElLambda> ga_tot;
-  for (size_t i = 0; i < ga_H_interp.size(); i++) {
-    double val = 0;
-    if (ga_H_interp[i].lamb > 1000)
-      val = (ga_H_interp[i].val + ga_2q_interp[i].val +
-             ga_HeI_interp[i].val * n_heII);  // Sum the gamma values
-    ga_tot.emplace_back(ga_H_interp[i].lamb, val, 4);
-  }
+  ga.insert(ga.end(), lamb_flux.begin(), lamb_flux.end());
+  sort(ga.begin(), ga.end());
+  auto ga_interp = resample(ga, 4, 0, 1.6e+6);
+  for (size_t i = 0; i < ga_interp.size(); i++)
+      ga_interp[i].val = pow(10, ga_interp[i].val);
+  
 
   // Take the vector lamb_flux and add the nebular continu in .val
   double flux_neb;
   vector<double> neb_contrib;
-  for (i = 0; i < int(lamb_flux.size()); i++) {
+  double cst = c * 1e-40 * qi * f_ga / alpha_B;
+  for (size_t i = 0; i < lamb_flux.size(); i++) {
+    double x = lamb_flux[i].lamb;
+    double v = lamb_flux[i].val;
     // c/lambda^2*gamma/alpha_B * number of ionizing photons * fraction of
     // absorbed photons 1e-40 since c in A/s and gamma in 10^-40 erg
-    flux_neb = ((c * 1e-40) / (lamb_flux[i].lamb * lamb_flux[i].lamb)) *
-               (ga_tot[i].val / alpha_B) * qi[2] * f_ga;
+    flux_neb = cst / (x * x) * ga_interp[i].val;
     neb_contrib.push_back(flux_neb);
     // Sum the nebular flux to the original flux from stellar population
-    lamb_flux[i].val = lamb_flux[i].val + flux_neb;
+    lamb_flux[i].val = v + flux_neb;
   }
 
   return neb_contrib;
@@ -1247,33 +1171,44 @@ vector<double> GalSED::add_neb_cont(double qi) {
   Add the continuum from the nebular regions
   Work done by Cedric Dubois
 */
-oneElVector GalSED::add_neb_cont2(double qi) {
+vector<double> GalSED::add_neb_cont2(double qi) {
   /* we assume that the emitting gas has an electron temperature of Te = 10000
      K, an electron density N = 100 cm-3 (low density limite), and a helium
      abundance of 10% by number relative to hydrogen.
   */
 
-  // Atomic data :
-  double alpha_B = 2.59e-13;  // [cm^3 s^-1] : total recombination coeff for
-  // hydrogen in case B (except to groundstate), for Te = 10kK
-  //  Different from Schearer, use Osterbrock
-  double n_heII =
-      0.1;  // proportion of Helium compared to hydrogen = n(HeII)/n(HI)
-
   oneElVector ga;
-  for (size_t i = 0; i < 71; i++) {
-    double val = ga_H_val[i] + ga_2q_val[i] + n_heII * ga_HeI_val[i];
-    val = val <= 0 ? -100 : log10(val);
+  //note: this is done repeatedly for each template
+  //of the initial set (sedtolib output), while it does not depend on it
+  //So this could/should be improved
+  for (size_t i = 0; i < NUM_NEBULAR_DATA; i++) {
+    double val = ga_total[i];
+    //    val = val <= 0 ? -100 : log10(val);
     ga.emplace_back(ga_lamb[i], val, 4);
   }
+  auto [x1, y1] = to_tuple(lamb_flux);
+  auto [x2, y2] = to_tuple(ga);
 
-  ga.insert(ga.end(), lamb_flux.begin(), lamb_flux.end());
-  sort(ga.begin(), ga.end());
-  auto ga_interp = resample(ga, 4, 0, 1.6e+6);
-  for (size_t i = 0; i < ga_interp.size(); i++)
-    ga_interp[i].val = pow(10, ga_interp[i].val);
+  auto x3 = x1;
+  x3.insert(x3.end(), x2.begin(), x2.end());
+  std::sort(x3.begin(), x3.end());//no unique as the nebular continuum has vertical drops
 
-  return ga_interp;
+  lamb_flux.clear();
+  lamb_flux.reserve(x3.size());
+
+  double scale = c * 1.e-40 / alpha_B  * qi * f_ga;
+  double flux_neb;
+  vector<double> neb_contrib;
+  for (double x : x3) {
+    double v1 = interp_linear_point(x1, y1, x);
+    double v2 = interp_linear_point(x2, y2, x);
+    //    flux_neb = scale / (x * x) * pow(10, v2);
+    flux_neb = scale / (x * x) * v2;
+    neb_contrib.push_back(flux_neb);
+    lamb_flux.emplace_back(x, v1 + flux_neb, 1);
+  }
+  //return for control
+  return neb_contrib;
 }
 
 /*

@@ -1,9 +1,16 @@
+#include <valarray>
 #include <array>
 
 namespace {
 
 #define NUM_EMISSION_LINES 65
 #define NUM_NEBULAR_DATA 71
+// proportion of Helium compared to hydrogen = n(HeII)/n(HI)
+#define n_heII 0.1
+// [cm^3 s^-1] : total recombination coeff for
+// hydrogen in case B (except to groundstate), for Te = 10kK
+//  Different from Schearer, use Osterbrock
+#define alpha_B 2.59e-13
 
 /*! Rest frame wavelength of the emission lines considered in LePHARE
 'H_Lya', '[CII]', '[OIII]', '[CIII]', '[NII]', '[CII]',
@@ -102,7 +109,7 @@ const std::array<double, NUM_EMISSION_LINES> ebvFac = {
 //  Wavelength grid for wavelength & emission coefficient :
 //  Points from Aller (1984)   for lambda=1000 to 10000.1 (54 pts)
 //  Points from Ferland (1980) for lambda > 10000.1     (17 pts)
-const std::array<double, NUM_NEBULAR_DATA> ga_lamb = {
+const std::valarray<double> ga_lamb = {
     1000.,  1200.,  1300.,  1400.,  1500.,  1600.,   1800.,   2051.,  2053.,
     2200.,  2400.1, 2599.4, 2600.8, 2725.4, 2855.2,  2997.9,  3121.4, 3122.,
     3331.,  3421.4, 3422.,  3527.,  3642.,  3648.,   3679.2,  3679.9, 4000.,
@@ -117,7 +124,7 @@ const std::array<double, NUM_NEBULAR_DATA> ga_lamb = {
     all for Te = 10000 K: gamma_H in [1.d-40 ergs cm^3 s^-1 Hz^-1]
 */
 // Hydrogen recombination
-const std::array<double, NUM_NEBULAR_DATA> ga_H_val = {
+const std::valarray<double> ga_H_val = {
     0.001,  0.009,  0.023,  0.051,  0.100,  0.181,  0.486,  1.272,  1.280,
     2.026,  3.453,  5.404,  5.419,  6.928,  8.740,  11.020, 13.231, 13.242,
     17.477, 19.490, 19.505, 21.976, 24.841, 1.387,  1.434,  1.435,  1.950,
@@ -131,7 +138,7 @@ const std::array<double, NUM_NEBULAR_DATA> ga_H_val = {
      assume ga_2q=0 for lambda >=10000 A
 */
 // To be check
-const std::array<double, NUM_NEBULAR_DATA> ga_2q_val = {
+const std::valarray<double> ga_2q_val = {
     0.000, 0.000, 5.611, 8.236, 9.210, 9.478, 9.196, 8.433, 8.426, 7.947, 7.314,
     6.747, 6.743, 6.423, 6.096, 5.770, 5.508, 5.507, 5.206, 4.947, 4.946, 4.771,
     4.588, 4.579, 4.532, 4.531, 4.088, 3.746, 3.512, 3.055, 2.975, 2.715, 2.554,
@@ -143,7 +150,7 @@ const std::array<double, NUM_NEBULAR_DATA> ga_2q_val = {
     assume ga_hei=ga_h for lambda >=10000 A
 */
 // Helium recombination
-const std::array<double, NUM_NEBULAR_DATA> ga_HeI_val = {
+const std::valarray<double> ga_HeI_val = {
     0.046,  0.079,  0.126,  0.210,  0.400,  0.869,  1.650,  3.895,  3.926,
     6.087,  9.014,  11.861, 7.156,  9.976,  12.651, 15.326, 17.443, 15.873,
     20.979, 22.989, 4.321,  4.902,  5.501,  5.532,  5.687,  1.450,  2.070,
@@ -152,5 +159,9 @@ const std::array<double, NUM_NEBULAR_DATA> ga_HeI_val = {
     5.041,  5.048,  5.050,  5.098,  4.360,  4.596,  5.065,  5.483,  5.860,
     9.04,   5.93,   8.51,   6.90,   8.50,   7.56,   8.66,   8.06,   8.87,
     8.47,   9.11,   8.82,   9.34,   9.14,   9.58,   9.42,   9.80};
+
+const std::valarray<double>
+ga_total = ga_H_val + ga_2q_val + 0.1 * ga_HeI_val;
+//ga_total = ga_H_val + ga_2q_val + n_heII * ga_HeI_val;
 
 }  // namespace
