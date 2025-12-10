@@ -535,7 +535,7 @@ void SED::sumSpectra2(SED addSED, const double rescal) {
   for (double x : x3) {
     double v1 = interp_linear_point(x1, y1, x);
     double v2 = interp_linear_point(x2, y2, x);
-    lamb_flux.emplace_back(x, v1 + v2, 1);
+    lamb_flux.emplace_back(x, v1 + v2*rescal, 1);
   }
   return;
 }
