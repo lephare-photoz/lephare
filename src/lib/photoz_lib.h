@@ -49,7 +49,7 @@ class PhotoZ {
  public:
   vector<vector<double>> flux, fluxIR;
   vector<double> zLib, zLibIR;
-  vector<SED *> fullLib, fullLibIR, lightLib;
+  SEDVec fullLib, fullLibIR;
   vector<flt> allFilters;
   vector<double> gridz;
   vector<string> outkeywords, pdftype;
@@ -58,15 +58,6 @@ class PhotoZ {
   string outputHeader, outpara;
 
   PhotoZ(keymap &key_analysed);
-
-  virtual ~PhotoZ() {
-    for (auto &sed : fullLib) delete sed;
-    for (auto &sed : fullLibIR) delete sed;
-    for (auto &sed : lightLib) delete sed;
-    fullLib.clear();
-    fullLibIR.clear();
-    lightLib.clear();
-  }
 
   vector<double> compute_offsets(vector<onesource *>);
   vector<double> run_autoadapt(vector<onesource *>);
@@ -77,7 +68,7 @@ class PhotoZ {
 
   void write_outputs(vector<onesource *> sources, const time_t &ti1);
 
-  void read_lib(vector<SED *> &fullLib, int &ind, int nummodpre[3],
+  void read_lib(SEDVec &fullLib, int &ind, int nummodpre[3],
                 const string libName, string &filtname, vector<int> emMod,
                 int &babs);
 
@@ -115,15 +106,15 @@ void auto_adapt(const vector<onesource *> adaptSources, vector<double> &a0,
                 int &converge, int &iteration);
 
 vector<vector<int>> bestFilter(int nbFlt, vector<double> gridz,
-                               vector<SED *> fullLib, int method,
+                               const SEDVec &fullLib, int method,
                                vector<long> magabscont, vector<int> bapp,
                                vector<int> bappOp, vector<double> zbmin,
                                vector<double> zbmax);
 
-vector<vector<double>> maxkcolor(vector<double> gridz, vector<SED *> fullLib,
+vector<vector<double>> maxkcolor(vector<double> gridz, const SEDVec &fullLib,
                                  vector<vector<int>> bestFlt);
 
-void minimizekcolor(vector<double> gridz, vector<SED *> fulllib,
+void minimizekcolor(vector<double> gridz, const SEDVec &fulllib,
                     vector<vector<int>> &bestFlt, vector<long> magabscont);
 
 #endif

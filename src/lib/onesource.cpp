@@ -334,7 +334,7 @@ void onesource::rescale_flux_errors(const vector<double> min_err,
 /*
  Principal function of the code with the fitting procedure
  */
-void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
+void onesource::fit(SEDVec &fulllib, const vector<vector<double>> &flux,
                     const vector<size_t> &va, const double &funz0,
                     const array<int, 2> &bp) {
   int number_threads = 1, thread_id = 0;
@@ -418,17 +418,14 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
 
       // Model rejection based on prior
       // Abs mag rejection
-      double reds;
-      int libtype;
-      SED *sed = fulllib[i];
-      reds = sed->red;
-      libtype = sed->nlib;
+      double reds = fulllib.red[i];
+      int libtype = fulllib.nlib[i];
       // Abs Magnitude from model @ z=0 for rejection for galaxies and AGN
       if ((mabsGALprior && libtype == 0) || (mabsAGNprior && libtype == 1)) {
         // predicted magnitudes within the babs filter renormalized by the
         // scaling
         double abs_mag;
-        abs_mag = sed->mag0 - 2.5 * log10(dmloc);
+        abs_mag = fulllib.mag0[i] - 2.5 * log10(dmloc);
         // specific case when the redshift is 0
         if (reds < 1.e-10) abs_mag = abs_mag - funz0;
         // Galaxy rejection
@@ -440,22 +437,22 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
       }
       // Prior N(z)
       if (bp[0] >= 0 && libtype == 0) {
-        double pweight = nzprior(sed->luv, sed->lnir, reds, bp);
+        double pweight = nzprior(fulllib.luv[i], fulllib.lnir[0], reds, bp);
         chi2loc = chi2loc - 2. * log(pweight);
       }
 
       // keep track of the minimum chi2 for each object type, over the threads
       if (chi2loc < HIGH_CHI2) {
-        object_type type = sed->get_object_type();
+        object_type type = fulllib.nlib[i];
         if (chi2_vals[thread_id][type] > chi2loc) {
           chi2_vals[thread_id][type] = chi2loc;
-          chi2_idx[thread_id][type] = sed->index;
+          chi2_idx[thread_id][type] = fulllib.index[i];
         }
       }
 
       // Write the chi2
-      sed->chi2 = chi2loc;
-      sed->dm = dmloc;
+      fulllib.chi2[i] = chi2loc;
+      fulllib.dm[i] = dmloc;
     }
 
 #ifdef _OPENMP
@@ -480,40 +477,41 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
   // Store the minimum redshift, dm, model for each type
   for (int k = 0; k < 3; k++) {
     if (indmin[k] >= 0) {
-      zmin[k] = fulllib[indmin[k]]->red;
-      dmmin[k] = fulllib[indmin[k]]->dm;
-      imasmin[k] = fulllib[indmin[k]]->nummod;
+      zmin[k] = fulllib.red[indmin[k]];
+      dmmin[k] = fulllib.dm[indmin[k]];
+      imasmin[k] = fulllib.nummod[indmin[k]];
     }
   }
 
   return;
 }
 
-void onesource::compute_best_fit_physical_quantities(vector<SED *> &fulllib) {
+void onesource::compute_best_fit_physical_quantities(SEDVec &fulllib) {
   // Best fit values for GAL physical parameters
   if (indmin[0] >= 0 && dmmin[0] > 0) {
-    auto best_gal_sed = fulllib[indmin[0]];
+    auto best_gal_sed = indmin[0];
     double tmp1 = dmmin[0];
     double tmp2 = tmp1 / Lsol;
     // Be sure that the mass is defined
-    if (best_gal_sed->mass > 0) {
-      results["MASS_BEST"] = LOG10D(best_gal_sed->mass * tmp1);
-      results["SFR_BEST"] = LOG10D(best_gal_sed->sfr * tmp1);
-      results["SSFR_BEST"] = LOG10D(best_gal_sed->sfr / best_gal_sed->mass);
-      results["LDUST_BEST"] = best_gal_sed->ltir + LOG10D(tmp1);
+    if (fulllib.mass[best_gal_sed] > 0) {
+      results["MASS_BEST"] = LOG10D(fulllib.mass[best_gal_sed] * tmp1);
+      results["SFR_BEST"] = LOG10D(fulllib.sfr[best_gal_sed] * tmp1);
+      results["SSFR_BEST"] =
+          LOG10D(fulllib.sfr[best_gal_sed] / fulllib.mass[best_gal_sed]);
+      results["LDUST_BEST"] = fulllib.ltir[best_gal_sed] + LOG10D(tmp1);
     }
-    double age = best_gal_sed->age;
+    double age = fulllib.age[best_gal_sed];
     results["AGE_BEST"] = (age != INVALID_PHYS) ? LOG10D(age) : INVALID_PHYS;
-    results["EBV_BEST"] = best_gal_sed->ebv;
+    results["EBV_BEST"] = fulllib.ebv[best_gal_sed];
     // Add +1 to have the first dust attenuation curve starting at 1 in the
     // output
-    results["EXTLAW_BEST"] = best_gal_sed->extlawId + 1;
+    results["EXTLAW_BEST"] = fulllib.extlawId[best_gal_sed] + 1;
     results["LUM_NUV_BEST"] =
-        best_gal_sed->luv + LOG10D(3.e18 * 400 / pow(2300, 2) * tmp2);
+        fulllib.luv[best_gal_sed] + LOG10D(3.e18 * 400 / pow(2300, 2) * tmp2);
     results["LUM_R_BEST"] =
-        best_gal_sed->lopt + LOG10D(3.e18 * 1000 / pow(6000, 2) * tmp2);
-    results["LUM_K_BEST"] =
-        best_gal_sed->lnir + LOG10D(3.e18 * 2000 / pow(22000, 2) * tmp2);
+        fulllib.lopt[best_gal_sed] + LOG10D(3.e18 * 1000 / pow(6000, 2) * tmp2);
+    results["LUM_K_BEST"] = fulllib.lnir[best_gal_sed] +
+                            LOG10D(3.e18 * 2000 / pow(22000, 2) * tmp2);
   }
   return;
 }
@@ -615,7 +613,7 @@ double onesource::nzprior(const double luv, const double lnir,
  Test if some bands can be removed to improve the chi2, as long as the chi2
  remains above a threshold Done over all libraries
 */
-void onesource::rm_discrepant(vector<SED *> &fulllib,
+void onesource::rm_discrepant(SEDVec &fulllib,
                               const vector<vector<double>> &flux,
                               const vector<size_t> &va, const double funz0,
                               const array<int, 2> bp, double thresholdChi2) {
@@ -667,8 +665,7 @@ void onesource::rm_discrepant(vector<SED *> &fulllib,
 /*
  Compute the chi2 for the IR library
 */
-void onesource::fitIR(vector<SED *> &fulllibIR,
-                      const vector<vector<double>> &fluxIR,
+void onesource::fitIR(SEDVec &fulllibIR, const vector<vector<double>> &fluxIR,
                       const vector<size_t> &va, const int imagm,
                       const string fit_frsc, cosmo lcdm) {
   int number_threads = 1, thread_id = 0;
@@ -702,9 +699,9 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
 #pragma omp for schedule(static, 10000)
     for (size_t v = 0; v < va.size(); v++) {
       size_t i = va[v];
-      SED *sed = fulllibIR[i];
       double dmcor;
-      dmcor = pow(10., (0.4 * (lcdm.distMod(sed->red) - lcdm.distMod(consiz))));
+      dmcor = pow(
+          10., (0.4 * (lcdm.distMod(fulllibIR.red[i]) - lcdm.distMod(consiz))));
 
       // normalization
       // Measurement of scaling factor dm only with (fobs>flim), dchi2/ddm = 0
@@ -740,12 +737,12 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
       // keep track of the minimum chi2 for each object type, over the threads
       if (locChi2[thread_id] > chi2loc) {
         locChi2[thread_id] = chi2loc;
-        locInd[thread_id] = sed->index;
+        locInd[thread_id] = fulllibIR.index[i];
       }
 
       // Associate results to the SED
-      sed->dm = dmEff;
-      sed->chi2 = chi2loc;
+      fulllibIR.dm[i] = dmEff;
+      fulllibIR.chi2[i] = chi2loc;
     }
 
 #ifdef _OPENMP
@@ -763,10 +760,10 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
   }
 
   if (indminIR >= 0) {
-    zminIR = fulllibIR[indminIR]->red;
-    dmminIR = fulllibIR[indminIR]->dm;
-    imasminIR = fulllibIR[indminIR]->nummod;
-    results["LUM_TIR_BEST"] = fulllibIR[indminIR]->ltir + log10(dmminIR);
+    zminIR = fulllibIR.red[indminIR];
+    dmminIR = fulllibIR.dm[indminIR];
+    imasminIR = fulllibIR.nummod[indminIR];
+    results["LUM_TIR_BEST"] = fulllibIR.ltir[indminIR] + log10(dmminIR);
   }
 
   return;
@@ -776,7 +773,7 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
  Generate PDF marginalized over several parameters
  based on the chi2 stored in the SED class
 */
-void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
+void onesource::generatePDF(SEDVec &fulllib, const vector<size_t> &va,
                             const vector<int> fltColRF, int fltREF,
                             const bool zfix) {
   // dimension of the redshift grid for the PDF
@@ -797,7 +794,6 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
   // to create the marginalized PDF
   int pos = 0;
   double col1 = -999., col2 = -999.;
-  SED *rfSED;
   double prob;
   // need to convert into 1 dimension array for openMP reduction
   // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] / 5:["AGE"] /
@@ -843,7 +839,6 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
   auto &pdfsfr = pdfmap[1];
   auto &pdfssfr = pdfmap[2];
   auto &pdfldust = pdfmap[3];
-  auto &pdflir = pdfmap[4];
   auto &pdfage = pdfmap[5];
   auto &pdfcol1 = pdfmap[6];
   auto &pdfcol2 = pdfmap[7];
@@ -856,7 +851,7 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
   // parrallellize over each SED
 #ifdef _OPENMP
   // double start = omp_get_wtime();
-#pragma omp parallel private(pos, col1, col2, rfSED, prob) firstprivate( \
+#pragma omp parallel private(pos, col1, col2, prob) firstprivate( \
         thread_id, dimzg, number_threads) shared(locChi2, locInd, fulllib)
   {
 // We need to define the vector reduction we want, which is elementwise addition
@@ -875,11 +870,10 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
 #endif
     // Loop over all SEDs, which is parallelized
     for (size_t i = 0; i < va.size(); i++) {
-      size_t il = va[i];
-      SED *sed = fulllib[il];
+      size_t sed = va[i];
       // Check that the model has a defined probability
-      if (sed->chi2 < HIGH_CHI2) {
-        object_type nlibloc = sed->get_object_type();
+      if (fulllib.chi2[sed] < HIGH_CHI2) {
+        object_type nlibloc = fulllib.nlib[sed];
 
         // Marginalization for the galaxies
         if (nlibloc == object_type::GAL) {
@@ -887,16 +881,16 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
           // exp(-chi2_min/2) for the same object Since the the PDF is
           // normalized later, this factor vanishes. It allows to compute
           // probabities with chi2>>1000 (not feasible with double type)
-          prob = exp(-0.5 * (sed->chi2 - chimin[0]));
+          prob = exp(-0.5 * (fulllib.chi2[sed] - chimin[0]));
           // photo-z PDF of galaxies
           // Sum the proba to marginalize
-          pos = pdfbayzg.index(sed->red);
+          pos = pdfbayzg.index(fulllib.red[sed]);
           PDFzloc[pos] += prob;
 
           // If able to determine a normalisation and get a the mass (assume
           // that the other are feasible in this case)
-          double dmloc = sed->dm;
-          double massloc = sed->mass;
+          double dmloc = fulllib.dm[sed];
+          double massloc = fulllib.mass[sed];
           if (dmloc > 0 && massloc > 0) {
             // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] /
             // 5:["AGE"] / 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] /
@@ -906,20 +900,20 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
             PDFmassloc[pos] += prob;
 
             // SFR PDF of galaxies
-            pos = pdfsfr.index(LOG10D(sed->sfr * dmloc));
+            pos = pdfsfr.index(LOG10D(fulllib.sfr[sed] * dmloc));
             PDFSFRloc[pos] += prob;
 
             // sSFR PDF of galaxies
-            pos = pdfssfr.index(LOG10D(sed->ssfr));
+            pos = pdfssfr.index(LOG10D(fulllib.ssfr[sed]));
             PDFsSFRloc[pos] += prob;
 
             // Age PDF of galaxies
-            pos = pdfage.index(LOG10D(sed->age));
+            pos = pdfage.index(LOG10D(fulllib.age[sed]));
             PDFAgeloc[pos] += prob;
 
             // Ldust PDF of galaxies, ltir already in log
-            if (sed->ltir >= 0) {
-              pos = pdfldust.index(sed->ltir + log10(dmloc));
+            if (fulllib.ltir[sed] >= 0) {
+              pos = pdfldust.index(fulllib.ltir[sed] + log10(dmloc));
               PDFLdustloc[pos] += prob;
             }
           }
@@ -927,29 +921,32 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
           // Only if we need an analysis of the colors
           if (colAnalysis) {
             // Retrieved the corresponding SED at z=0
-            rfSED = fulllib[sed->index_z0];
+            size_t rfSED = fulllib.index_z0[sed];
 
             // First rest-frame color
-            col1 = rfSED->mag[fltColRF[0] - 1] - rfSED->mag[fltColRF[1] - 1];
+            col1 = fulllib.mag[rfSED][fltColRF[0] - 1] -
+                   fulllib.mag[rfSED][fltColRF[1] - 1];
             pos = pdfcol1.index(col1);
             PDFcol1loc[pos] += prob;
 
             // Second rest-frame color
-            col2 = rfSED->mag[fltColRF[2] - 1] - rfSED->mag[fltColRF[3] - 1];
+            col2 = fulllib.mag[rfSED][fltColRF[2] - 1] -
+                   fulllib.mag[rfSED][fltColRF[3] - 1];
             pos = pdfcol2.index(col2);
             PDFcol2loc[pos] += prob;
 
             // Reference absolute magnitude
-            pos = pdfmref.index(rfSED->mag[fltREF - 1] - 2.5 * log10(dmloc));
+            pos = pdfmref.index(fulllib.mag[rfSED][fltREF - 1] -
+                                2.5 * log10(dmloc));
             PDFmrefloc[pos] += prob;
           }
 
           // marginalization for the QSO
         } else if (nlibloc == object_type::QSO) {
-          prob = exp(-0.5 * (sed->chi2 - chimin[1]));
+          prob = exp(-0.5 * (fulllib.chi2[sed] - chimin[1]));
 
           // photo-z PDF of QSO
-          pos = pdfbayzq.index(sed->red);
+          pos = pdfbayzq.index(fulllib.red[sed]);
           PDFzqloc[pos] += prob;
         }
       }
@@ -962,15 +959,14 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
       // parallelised loop over the library
 #pragma omp for schedule(static, 10000)
       for (size_t i = 0; i < va.size(); i++) {
-        size_t il = va[i];
-        SED *sed = fulllib[il];
+        size_t sed = va[i];
         // Index of the considered redshift into the PDF
-        double chi2loc = sed->chi2;
+        double chi2loc = fulllib.chi2[sed];
         if (chi2loc < HIGH_CHI2) {
           // 11: BAYZG
-          int poszloc = pdfbayzg.index(sed->red);
-          object_type nlibloc = sed->get_object_type();
-          int indloc = sed->index;
+          int poszloc = pdfbayzg.index(fulllib.red[sed]);
+          object_type nlibloc = fulllib.nlib[sed];
+          int indloc = fulllib.index[sed];
           // If local minimum inside the thread, store the new minimum for the
           // thread
           if (locChi2[thread_id][nlibloc][poszloc] > chi2loc) {
@@ -1042,7 +1038,7 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
  Generate PDF marginalized over LIR
  based on the chi2 stored in the SED class
 */
-void onesource::generatePDF_IR(vector<SED *> &fulllib) {
+void onesource::generatePDF_IR(SEDVec &fulllib) {
   // 4:["LIR"]
   double PDFlirloc[pdfmap[4].size()];
   for (size_t i = 0; i < pdfmap[4].size(); ++i) PDFlirloc[i] = 0.0;
@@ -1056,19 +1052,18 @@ void onesource::generatePDF_IR(vector<SED *> &fulllib) {
 #endif
 
     // Loop over all SEDs
-    for (vector<SED *>::const_iterator it = fulllib.begin(); it < fulllib.end();
-         ++it) {
-      const SED *sed = *it;
-      double prob = exp(-0.5 * (sed->chi2 - chiminIR));
+    for (size_t sed = 0; sed != fulllib.size(); ++sed) {
+      double prob = exp(-0.5 * (fulllib.chi2[sed] - chiminIR));
 
       // Check that the model has a defined probability
-      if (sed->chi2 >= 0 && sed->chi2 < HIGH_CHI2) {
+      if (fulllib.chi2[sed] >= 0 && fulllib.chi2[sed] < HIGH_CHI2) {
         // If able to determine a normalisation
-        if (sed->dm > 0) {
+        if (fulllib.dm[sed] > 0) {
           // LIR PDF of galaxies, ltir already in log
-          if (sed->ltir > 0) {
+          if (fulllib.ltir[sed] > 0) {
             // Index of the considered library age into the PDF
-            int pos = pdfmap[4].index(sed->ltir + log10(sed->dm));
+            int pos =
+                pdfmap[4].index(fulllib.ltir[sed] + log10(fulllib.dm[sed]));
             // Sum the proba to marginalize
             PDFlirloc[pos] += prob;
           }
@@ -1413,19 +1408,18 @@ void onesource::write_pdz(vector<string> pdztype,
  INTERPOLATE LINEARILY IN THE LIBRARY
  Do it only for GAL
 */
-void onesource::interp_lib(vector<SED *> &fulllib, const int imagm,
-                           cosmo lcdm) {
+void onesource::interp_lib(SEDVec &fulllib, const int imagm, cosmo lcdm) {
   magm.clear();
 
   // Take the value of zs to interpolate in the library
   if (indmin[0] >= 0) {
     // If zs is above or below the best fit bin
-    int sens = int(copysign(1.0, consiz - (fulllib[indmin[0]]->red)));
+    int sens = int(copysign(1.0, consiz - (fulllib.red[indmin[0]])));
     // Since galaxy templates are duplicated when add dispersion in emission
     // lines, need to go to the next template having a different redshift
     int deca = sens;
     if ((size_t)(indmin[0] + deca) <= fulllib.size() - 1) {
-      while (fulllib[indmin[0]]->red == fulllib[indmin[0] + deca]->red) {
+      while (fulllib.red[indmin[0]] == fulllib.red[indmin[0] + deca]) {
         deca += sens;
         if ((size_t)(indmin[0] + deca) >= fulllib.size() ||
             indmin[0] + deca < 0) {
@@ -1440,38 +1434,43 @@ void onesource::interp_lib(vector<SED *> &fulllib, const int imagm,
     // Check if the next template is still the good one (could happen with BC03
     // if age close to the age of the Universe) If not, the redshift would be
     // zero, so no interpolation can be done if it happens
-    if (fulllib[indmin[0] + deca]->red < 1.e-10) deca = 0;
+    if (fulllib.red[indmin[0] + deca] < 1.e-10) deca = 0;
 
     // Store in two SED around zs
-    SED SEDa(*(fulllib[indmin[0]]));
-    SED SEDb(*(fulllib[indmin[0] + deca]));
+    // TODO potentially illegally modifying fulllib
+    size_t SEDa(indmin[0]);
+    size_t SEDb(indmin[0] + deca);
 
     // Check that the interpolation can be done
     // same model in the library around zs
-    if (SEDa.is_same_model(SEDb) && deca != 0) {
+    if (fulllib.is_same_model(SEDa, SEDb) && deca != 0) {
       // Linear factor for interpolation
-      double a = abs((consiz - SEDa.red) / (SEDa.red - SEDb.red));
-      if (abs(SEDa.age - SEDb.age) > 1.)
-        cout << " ALARM " << SEDa.age << " " << SEDb.age << endl;
+      double a = abs((consiz - fulllib.red[SEDa]) /
+                     (fulllib.red[SEDa] - fulllib.red[SEDb]));
+      if (abs(fulllib.age[SEDa] - fulllib.age[SEDb]) > 1.)
+        cout << " ALARM " << fulllib.age[SEDa] << " " << fulllib.age[SEDb]
+             << endl;
 
       // Loop over the filters
       for (int k = 0; k < imagm; k++) {
         // Check if the interpolation if possible
-        if (SEDb.mag[k] > 90) a = 0.0;
+        if (fulllib.mag[SEDb][k] > 90) a = 0.0;
         // Interpolation of the predicted magnitudes.
-        magm.push_back(a * SEDb.mag[k] + (1. - a) * SEDa.mag[k]);
+        magm.push_back(a * fulllib.mag[SEDb][k] +
+                       (1. - a) * fulllib.mag[SEDa][k]);
         // Check if the interpolation if possible
-        if (SEDb.kcorr[k] > 90) a = 0.0;
+        if (fulllib.kcorr[SEDb][k] > 90) a = 0.0;
         // Interpolation of the k-corrections
-        kap.push_back(a * SEDb.kcorr[k] + (1. - a) * SEDa.kcorr[k]);
+        kap.push_back(a * fulllib.kcorr[SEDb][k] +
+                      (1. - a) * fulllib.kcorr[SEDa][k]);
       }
 
     } else {
       // No interpolation is possible
       // Loop over the filters
       for (int k = 0; k < imagm; k++) {
-        magm.push_back(SEDa.mag[k]);
-        kap.push_back(SEDa.kcorr[k]);
+        magm.push_back(fulllib.mag[SEDa][k]);
+        kap.push_back(fulllib.kcorr[SEDa][k]);
       }
     }
 
@@ -1479,15 +1478,15 @@ void onesource::interp_lib(vector<SED *> &fulllib, const int imagm,
     int index0 = indmin[0];
     // go down in the index as long as the redshift >0 and that the model is the
     // same
-    while ((*(fulllib[index0])).red > 1.e-20 &&
-           SEDa.is_same_model(*fulllib[index0])) {
+    while (fulllib.red[index0] > 1.e-20 &&
+           fulllib.is_same_model(SEDa, index0)) {
       index0--;
     }
-    if ((*(fulllib[index0])).red > 1.e-20)
+    if (fulllib.red[index0] > 1.e-20)
       cout << " do not find redshift 0 for rest-frame colors. Problem." << endl;
     // Store the predicted magnitudes at z=0
     for (int k = 0; k < imagm; k++) {
-      magm0.push_back((*(fulllib[index0])).mag[k]);
+      magm0.push_back(fulllib.mag[index0][k]);
     }
 
     // Rescale the predicted magnitudes with the template scaling dm
@@ -1648,7 +1647,7 @@ void onesource::uncertaintiesBay() {
      As pdfmap[9]=="MIN_ZG" is harcoded here, this is only valid
      for the GAL solutions.
 */
-void onesource::secondpeak(vector<SED *> &fulllib, const double dz_win,
+void onesource::secondpeak(SEDVec &fulllib, const double dz_win,
                            const double min_thres) {
   // Detect the other maximum in the PDF
   pdfmap[9].secondMax(dz_win);
@@ -1669,13 +1668,13 @@ void onesource::secondpeak(vector<SED *> &fulllib, const double dz_win,
       int idx = pdfmap[9].secondInd[1];
       // Keep the information for all the secondary solution
       zsec = pdfmap[9].secondX[1];
-      zsecChi2 = (fulllib[idx])->chi2;
-      zsecEbv = (fulllib[idx])->ebv;
-      zsecExtlaw = (fulllib[idx])->extlawId;
-      zsecScale = (fulllib[idx])->dm;
+      zsecChi2 = fulllib.chi2[idx];
+      zsecEbv = fulllib.ebv[idx];
+      zsecExtlaw = fulllib.extlawId[idx];
+      zsecScale = fulllib.dm[idx];
       zsecProb = pdfmap[9].secondP[1];
-      zsecMod = (fulllib[idx])->nummod;
-      zsecAge = (fulllib[idx])->age;
+      zsecMod = fulllib.nummod[idx];
+      zsecAge = fulllib.age[idx];
       indminSec = idx;
     }
   }
@@ -1728,8 +1727,7 @@ void onesource::absmag(const vector<vector<int>> &bestFlt,
 /*
  Compute the emission lines to add them in the output later
 */
-void onesource::computeEmFlux(vector<SED *> &fulllib, cosmo lcdm,
-                              vector<opa> opaAll) {
+void onesource::computeEmFlux(SEDVec &fulllib, cosmo lcdm, vector<opa> opaAll) {
   /// rest frame wavelengths [Lya, OII, Hb, OIIIa, OIIIb, Ha, SIIIa, SIIIb]
   array<double, 8> lambda_em = {1215.67, 3727.00, 4861.32, 4958.91,
                                 5006.84, 6562.80, 9068.60, 9530.85};
@@ -1739,27 +1737,29 @@ void onesource::computeEmFlux(vector<SED *> &fulllib, cosmo lcdm,
   int ind0;
   if (indmin[0] >= 0) {
     // Do it only if emission have been generated
-    if (fulllib[indmin[0]]->has_emlines) {
+    if (fulllib.has_emlines[indmin[0]]) {
       // Generate a SED based on the index at z=0: extract the rest-frame SED
-      ind0 = (fulllib[indmin[0]])->index_z0;
+      ind0 = fulllib.index_z0[indmin[0]];
+      SEDVec gals;
+      size_t SEDz0_Gal = copy_sed(gals, fulllib, ind0);
+
       // Generate the continuum SED at z=0
-      GalSED SEDz0_Gal(*(fulllib[ind0]));
       // Rescale SED continuum
-      SEDz0_Gal.rescale(dmmin[0]);
+      rescale_sed(gals, dmmin[0], SEDz0_Gal);
       // Opacity applied in rest-frame, depending on the redshift of the source
-      SEDz0_Gal.applyOpa(opaAll);
+      applyOpa_sed(gals, opaAll, SEDz0_Gal);
 
       // Create a SED of emission lines at z
-      GalSED SEDz0_Em(*(fulllib[ind0]));
+      size_t SEDz0_Em = copy_sed(gals, fulllib, ind0);
       // GalSED SEDz0_Em(*(fulllib[indmin[0]])); // To be re-activated if EL
       // ratio can change with z
       //// Generate the emission line spectra
-      SEDz0_Em.generateEmSpectra(40);
+      generateEmSpectra_sed(gals, 40, SEDz0_Em);
       // Rescale the emission lines
-      SEDz0_Em.rescale(dmmin[0]);
+      rescale_sed(gals, dmmin[0], SEDz0_Em);
       // Opacity applied in rest-frame (lines are in rest-frame), depending on
       // the redshift of the source
-      SEDz0_Em.applyOpa(opaAll);
+      applyOpa_sed(gals, opaAll, SEDz0_Em);
 
       // Integrated flux divide by the filter area for emission lines. Reference
       // was at 10pc, which explain the 100 factor. The distance is in Mpc
@@ -1776,15 +1776,14 @@ void onesource::computeEmFlux(vector<SED *> &fulllib, cosmo lcdm,
         flt fltEmC(lambda_em[k] - 30., lambda_em[k] + 30., 21);
 
         // Integrate the SED (emission lines & continuum) within the filter
-        vector<double> emF, contiF;
         // If a sepctra exist
-        if (SEDz0_Em.lamb_flux.size() > 0) {
+        if (gals.lamb_flux[SEDz0_Em].size() > 0) {
           // int (F*T) dlambda
           // SEDz0_Em.warning_integrateSED(fltEm);
-          emF = SEDz0_Em.integrateSED(fltEm);
+          auto emF = integrateSED(gals, fltEm, SEDz0_Em);
           // int (F*T) dlambda / int (T) dlambda
           // SEDz0_Gal.warning_integrateSED(fltEmC);
-          contiF = SEDz0_Gal.integrateSED(fltEmC);
+          auto contiF = integrateSED(gals, fltEmC, SEDz0_Gal);
           // Integrated flux divide by the filter area for emission lines.
           // Reference was at 10pc, which explain the 100 factor. The distance
           // is in Mpc explaining the 10^12
@@ -1792,15 +1791,14 @@ void onesource::computeEmFlux(vector<SED *> &fulllib, cosmo lcdm,
           // Equivalent width
           // int (Fem*T) dlambda / [int (Fcont*T) dlambda / int (T) dlambda]
           EW_em[k] = emF[3] * contiF[0] / contiF[3];
-          emF.clear();
-          contiF.clear();
         } else {
           flux_em[k] = 0.;
           EW_em[k] = 0.;
         }
         // Keep all emission lines
         for (size_t l = 0; l < 65; l++)
-          fluxEL_SED[l] = (SEDz0_Em.fac_line[l].val) * rescaleDist * dmmin[0];
+          fluxEL_SED[l] =
+              (gals.fac_line[SEDz0_Em][l].val) * rescaleDist * dmmin[0];
         // Replace Lyman alpha by the integral of the line in the spectra, to
         // get the opacity of the intergalactic medium
         fluxEL_SED[0] = flux_em[0];
@@ -1823,8 +1821,8 @@ void onesource::computeEmFlux(vector<SED *> &fulllib, cosmo lcdm,
 /*
 Compute predicted magnitude in new filters
 */
-void onesource::computePredMag(vector<SED *> &fulllib, cosmo lcdm,
-                               vector<opa> opaAll, vector<flt> allFltAdd) {
+void onesource::computePredMag(SEDVec &fulllib, cosmo lcdm, vector<opa> opaAll,
+                               vector<flt> allFltAdd) {
   double val;
 
   if (indmin[0] > 0) {
@@ -1832,21 +1830,22 @@ void onesource::computePredMag(vector<SED *> &fulllib, cosmo lcdm,
     // GalSED SED_emSave(*(fulllib[indmin[0]])); // To be re-activated if EL
     // ratio can change with z Extract the rest-frame spectra for the continuum
     // (spectra store only at z=0)
-    int ind0 = (fulllib[indmin[0]])->index_z0;
-    GalSED SED_gal(*(fulllib[ind0]));
+    int ind0 = fulllib.index_z0[indmin[0]];
+    size_t SED_gal = ind0;
     // Associate the right emission lines (fac_line depends on z)
     // SED_gal.fac_line=SED_emSave.fac_line; // To be re-activated if EL ratio
     // can change with z Generate the spectra at the right redshift, opacity,
     // emission lines
-    if (consiz > 0) SED_gal.generate_spectra(consiz, dmmin[0], opaAll);
+    if (consiz > 0)
+      generate_spectra_sed(fulllib, consiz, dmmin[0], opaAll, SED_gal);
     // check that the filter cover a SED
-    SED_gal.warning_integrateSED(allFltAdd, true);
+    warning_integrateSED_sed(fulllib, allFltAdd, true, SED_gal);
 
     magPred.clear();
     // Loop over the filters
     for (size_t itf = 0; itf < allFltAdd.size(); ++itf) {
       // Derive the AB magnitudes in each filter
-      vector<double> intFlux = SED_gal.integrateSED(allFltAdd[itf]);
+      array<double, 6> intFlux = integrateSED(fulllib, allFltAdd[itf], SED_gal);
       if (intFlux[3] > INVALID_FLUX) {
         if (intFlux[3] > NULL_FLUX) {
           val = flux2mag(intFlux[3] / intFlux[1], lcdm.distMod(consiz));
@@ -1868,7 +1867,7 @@ void onesource::computePredMag(vector<SED *> &fulllib, cosmo lcdm,
 /*
 Compute absolute magnitudes in new filters
 */
-void onesource::computePredAbsMag(vector<SED *> &fulllib, cosmo lcdm,
+void onesource::computePredAbsMag(SEDVec &fulllib, cosmo lcdm,
                                   vector<opa> opaAll, vector<flt> allFltAdd) {
   double val;
 
@@ -1877,21 +1876,24 @@ void onesource::computePredAbsMag(vector<SED *> &fulllib, cosmo lcdm,
     // GalSED SED_emSave(*(fulllib[indmin[0]])); // To be re-activated if EL
     // ratio can change with z Extract the rest-frame spectra for the continuum
     // (spectra store only at z=0)
-    int ind0 = (fulllib[indmin[0]])->index_z0;
-    GalSED SED_gal(*(fulllib[ind0]));
+    // TODO I think I did this wrong because generate_spectra_sed modifies the
+    // new object
+    int ind0 = fulllib.index_z0[indmin[0]];
+    size_t SED_gal = ind0;
     // Associate the right emission lines (fac_line depends on z)
     // SED_gal.fac_line=SED_emSave.fac_line; // To be re-activated if EL ratio
     // can change with z Generate the spectra at the right redshift, opacity,
     // emission lines
-    if (consiz > 0) SED_gal.generate_spectra(0., dmmin[0], opaAll);
+    if (consiz > 0)
+      generate_spectra_sed(fulllib, 0., dmmin[0], opaAll, SED_gal);
     // check that the filter cover a SED
-    SED_gal.warning_integrateSED(allFltAdd, true);
+    warning_integrateSED_sed(fulllib, allFltAdd, true, SED_gal);
 
     absmagPred.clear();
     // Loop over the filters
     for (size_t itf = 0; itf < allFltAdd.size(); ++itf) {
       // Derive the AB magnitudes in each filter
-      vector<double> intFlux = SED_gal.integrateSED(allFltAdd[itf]);
+      array<double, 6> intFlux = integrateSED(fulllib, allFltAdd[itf], SED_gal);
       if (intFlux[3] > 0) {
         val = flux2mag(intFlux[3] / intFlux[1]);
       } else
@@ -1912,7 +1914,7 @@ void onesource::computePredAbsMag(vector<SED *> &fulllib, cosmo lcdm,
 Compute the maximum redshift at which a source can be observed given the
 magnitude selection
 */
-void onesource::limits(vector<SED *> &fulllib, vector<double> &limits_zbin,
+void onesource::limits(SEDVec &fulllib, vector<double> &limits_zbin,
                        int limits_ref, vector<int> &limits_sel,
                        vector<double> &limits_cut) {
   // Be careful with the convention of filter in the parameter file : start at 1
@@ -1946,8 +1948,8 @@ void onesource::limits(vector<SED *> &fulllib, vector<double> &limits_zbin,
     while (diff < (MagSel - mab[FltSel])) {
       // check if the difference between the observed magnitude at the minimum
       // redshift and maximum redshift
-      diff = fulllib[indmin[0] + deca]->mag[FltSel] -
-             fulllib[indmin[0]]->mag[FltSel];
+      diff = fulllib.mag[indmin[0] + deca][FltSel] -
+             fulllib.mag[indmin[0]][FltSel];
       deca += 1;
 
       // Check that we are below the size of the library
@@ -1956,13 +1958,13 @@ void onesource::limits(vector<SED *> &fulllib, vector<double> &limits_zbin,
         break;
       }
       // Check that we didn't reach the maximum redshift of this model
-      if ((fulllib[indmin[0] + deca]->red < fulllib[indmin[0]]->red)) {
+      if ((fulllib.red[indmin[0] + deca] < fulllib.red[indmin[0]])) {
         deca -= 1;
         break;
       }
     }
     // Assign the final z_max
-    limits_zmax = (fulllib[indmin[0] + deca]->red);
+    limits_zmax = (fulllib.red[indmin[0] + deca]);
 
     // Compute the absolute magnitude faint limit
     limits_Mfaint = -999.9;
@@ -1979,8 +1981,8 @@ void onesource::limits(vector<SED *> &fulllib, vector<double> &limits_zbin,
 
 // Used for the python interface in the notebook
 pair<vector<double>, vector<double>> onesource::best_spec_vec(
-    short sol, vector<SED *> &fulllib, cosmo lcdm, vector<opa> opaAll,
-    double minl, double maxl) {
+    short sol, SEDVec &fulllib, cosmo lcdm, vector<opa> opaAll, double minl,
+    double maxl) {
   // sol=0 for GAL-1, sol=1 for GAL-2, sol=2 for FIR, sol=3 for QSO, sol=4 for
   // STAR
   int index = -1;     // index of the best fit
@@ -1990,28 +1992,28 @@ pair<vector<double>, vector<double>> onesource::best_spec_vec(
   if (sol == 0) {     // GAL-1
     index = indmin[0];
     if (index >= 0) {
-      index_z0 = fulllib[index]->index_z0;
+      index_z0 = fulllib.index_z0[index];
       scale = dmmin[0];
       red = consiz;
     }
   } else if (sol == 1) {  // GAL-2
     index = indminSec;
     if (index >= 0) {
-      index_z0 = fulllib[index]->index_z0;
+      index_z0 = fulllib.index_z0[index];
       scale = zsecScale;
       red = zsec;
     }
   } else if (sol == 2) {  // FIR
     index = indminIR;
     if (index >= 0) {
-      index_z0 = fulllib[index]->index_z0;
+      index_z0 = fulllib.index_z0[index];
       scale = dmminIR;
       red = zminIR;
     }
   } else if (sol == 3) {  // QSO
     index = indmin[1];
     if (index >= 0) {
-      index_z0 = fulllib[index]->index_z0;
+      index_z0 = fulllib.index_z0[index];
       scale = dmmin[1];
       red = zmin[1];
     }
@@ -2025,15 +2027,16 @@ pair<vector<double>, vector<double>> onesource::best_spec_vec(
   }
 
   if (index >= 0) {
-    SED tmpSED(*fulllib[index_z0]);
+    SEDVec tmp;
+    copy_sed(tmp, fulllib, index_z0);
     // To be re-activated if EL ratio can change with z
     // if(sol==0 || sol == 1){
     //  SED emlinesSED(*fulllib[index]);
     //  tmpSED.fac_line = emlinesSED.fac_line;
     // }
-    tmpSED.generate_spectra(red, scale, opaAll);
+    generate_spectra_sed(tmp, red, scale, opaAll, 0);
     // for STAR, red=zmin[2]=0 by construction
-    return tmpSED.get_data_vector(minl, maxl, true, lcdm.distMod(red));
+    return get_data_vector(tmp, minl, maxl, true, lcdm.distMod(red), 0);
   }
 
   pair<vector<double>, vector<double>> p({}, {});
@@ -2043,9 +2046,9 @@ pair<vector<double>, vector<double>> onesource::best_spec_vec(
 /*
  WRITE .SPEC FILE
 */
-void onesource::writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
-                          cosmo lcdm, vector<opa> opaAll,
-                          const vector<flt> &allflt, const string outspdir) {
+void onesource::writeSpec(SEDVec &fulllib, SEDVec &fulllibIR, cosmo lcdm,
+                          vector<opa> opaAll, const vector<flt> &allflt,
+                          const string outspdir) {
   // open the output file
   ofstream stospec;
   string ospec = "Id" + string(spec) + ".spec";
@@ -2231,7 +2234,7 @@ void onesource::writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
 /*
  WRITE FULL CHI2 FILE
 */
-void onesource::writeFullChi(const vector<SED *> &fulllib) {
+void onesource::writeFullChi(const SEDVec &fulllib) {
   double sca;
 
   // open the output file
@@ -2244,32 +2247,32 @@ void onesource::writeFullChi(const vector<SED *> &fulllib) {
   // Loop over all SEDs from the library
   for (size_t k = 0; k < fulllib.size(); k++) {
     // Normalisation
-    sca = fulllib[k]->dm;
+    sca = fulllib.dm[k];
     // Write
-    stochi << fulllib[k]->get_object_type() << " ";
-    stochi << fulllib[k]->red << " ";
-    stochi << fulllib[k]->nummod << " ";
-    stochi << fulllib[k]->age << " ";
-    stochi << fulllib[k]->extlawId << " ";
-    stochi << fulllib[k]->ebv << " ";
+    stochi << fulllib.nlib[k] << " ";
+    stochi << fulllib.red[k] << " ";
+    stochi << fulllib.nummod[k] << " ";
+    stochi << fulllib.age[k] << " ";
+    stochi << fulllib.extlawId[k] << " ";
+    stochi << fulllib.ebv[k] << " ";
     // Check that the scaling and mass defined
-    if (((fulllib[k])->mass > 0) && sca > 0) {
-      stochi << (fulllib[k])->ltir + log10(sca) << " ";
-      stochi << (fulllib[k])->luv + log10(3.e18 * 400 / pow(2300, 2)) -
+    if (fulllib.mass[k] > 0 && sca > 0) {
+      stochi << fulllib.ltir[k] + log10(sca) << " ";
+      stochi << fulllib.luv[k] + log10(3.e18 * 400 / pow(2300, 2)) -
                     log10(Lsol) + log10(sca)
              << " ";
-      stochi << (fulllib[k])->lopt + log10(3.e18 * 1000 / pow(6000, 2)) -
+      stochi << fulllib.lopt[k] + log10(3.e18 * 1000 / pow(6000, 2)) -
                     log10(Lsol) + log10(sca)
              << " ";
-      stochi << (fulllib[k])->lnir + log10(3.e18 * 2000 / pow(22000, 2)) -
+      stochi << fulllib.lnir[k] + log10(3.e18 * 2000 / pow(22000, 2)) -
                     log10(Lsol) + log10(sca)
              << " ";
-      stochi << log10((fulllib[k])->mass * sca) << " ";
-      stochi << log10((fulllib[k])->sfr * sca) << " ";
+      stochi << log10(fulllib.mass[k] * sca) << " ";
+      stochi << log10(fulllib.sfr[k] * sca) << " ";
     } else {
       stochi << " -99 -99 -99 -99 -99 -99 ";
     }
-    stochi << fulllib[k]->chi2 << endl;
+    stochi << fulllib.chi2[k] << endl;
   }
   return;
 }

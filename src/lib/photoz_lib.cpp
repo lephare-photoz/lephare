@@ -414,19 +414,19 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   for (size_t i = 0; i < fullLib.size(); i++) {
     // Loop over the filters
     for (size_t k = 0; k < allFilters.size(); k++) {
-      flux[i][k] = pow(10., -0.4 * (fullLib[i]->mag[k] + 48.6));
+      flux[i][k] = pow(10., -0.4 * (fullLib.mag[i][k] + 48.6));
     }
     // create a vector with the redshift of the library
-    zLib[i] = fullLib[i]->red;
+    zLib[i] = fullLib.red[i];
   }
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
   for (size_t i = 0; i < fullLibIR.size(); i++) {
     for (size_t k = 0; k < allFilters.size(); k++) {
-      fluxIR[i][k] = pow(10., -0.4 * (fullLibIR[i]->mag[k] + 48.6));
+      fluxIR[i][k] = pow(10., -0.4 * (fullLibIR.mag[i][k] + 48.6));
     }
-    zLibIR[i] = fullLibIR[i]->red;
+    zLibIR[i] = fullLibIR.red[i];
   }
 }
 
@@ -491,7 +491,7 @@ void PhotoZ::check_consistency(keymap &keys) {
 /*
   Read the magnitude library
 */
-void PhotoZ::read_lib(vector<SED *> &libFull, int &ind, int nummodpre[3],
+void PhotoZ::read_lib(SEDVec &libFull, int &ind, int nummodpre[3],
                       const string libName, string &filtname, vector<int> emMod,
                       int &babs) {
   keyword oneel;
@@ -544,74 +544,80 @@ void PhotoZ::read_lib(vector<SED *> &libFull, int &ind, int nummodpre[3],
   int ind0 = 0;
   vector<double> mag_z0;
   while (slibIn.tellg() < length) {
-    SED *oneSED;
+    object_type type;
 
     if (valc[0] == 'G' || valc[0] == 'g') {
-      oneSED = new GalSED("bid.dat", 0);
+      type = GAL;
       // If emission lines used, only for galaxies
-      if (emlines[0] == 'P' || emlines[0] == 'E') oneSED->has_emlines = true;
     } else if (valc[0] == 'Q' || valc[0] == 'q') {
-      oneSED = new QSOSED("bid.dat", 0);
+      type = QSO;
     } else if (valc[0] == 'S' || valc[0] == 's') {
-      oneSED = new StarSED("bid.dat", 0);
+      type = STAR;
     } else {
       throw invalid_argument("There is no such SED type defined: " + valc);
     }
+    push_sed(libFull, "bid.dat", 0, type);
+    if (type == GAL and (emlines[0] == 'P' || emlines[0] == 'E'))
+      libFull.has_emlines.back() = true;
     // read each SED in the library binary file
-    oneSED->readMagBin(slibIn);
+    size_t back_idx = libFull.size() - 1;
+    readMagBin_sed(libFull, slibIn, back_idx);
+
+    bool sed_suitable =
+        ((libFull.red.back() >= zrange[0] && libFull.red.back() <= zrange[1]) ||
+         libFull.red.back() < 1.e-20) and
+        ((libFull.ebv.back() >= ebvrange[0] &&
+          libFull.ebv.back() <= ebvrange[1]) ||
+         libFull.ebv.back() < 1.e-20);
+
+    if (!sed_suitable) {
+      libFull.pop();
+      continue;
+    }
 
     // Keep in the library only redshift or EBV in of the prior range (except 0
     // in all cases).
-    if ((oneSED->red >= zrange[0] && oneSED->red <= zrange[1]) ||
-        oneSED->red < 1.e-20) {
-      if ((oneSED->ebv >= ebvrange[0] && oneSED->ebv <= ebvrange[1]) ||
-          oneSED->ebv < 1.e-20) {
-        // Case in which we add the emission lines (only for galaxies), if
-        // option turned on
-        if ((valc[0] == 'G' || valc[0] == 'g') &&
-            (emlines[0] == 'P' || emlines[0] == 'E')) {
-          // Check if we are well in the considered model range to add lines
-          if (emMod[0] >= 0 && emMod[1] >= 0 && (oneSED->nummod) >= emMod[0] &&
-              (oneSED->nummod) <= emMod[1]) {
-            oneSED->sumEmLines();
-          } else {
-            // Loop over the lines: put them at 0 since out of the considered
-            // model range
-            if (oneSED->red == 0) {
-              for (int k = 0; k < 65; k++) {
-                oneSED->fac_line[k].val = 0.;
-              }
-            }
+    // Case in which we add the emission lines (only for galaxies), if
+    // option turned on
+    if (type == GAL && (emlines[0] == 'P' || emlines[0] == 'E')) {
+      // Check if we are well in the considered model range to add lines
+      if (emMod[0] >= 0 && emMod[1] >= 0 &&
+          (libFull.nummod.back()) >= emMod[0] &&
+          (libFull.nummod.back()) <= emMod[1]) {
+        sumEmLines_sed(libFull, back_idx);
+      } else {
+        // Loop over the lines: put them at 0 since out of the considered
+        // model range
+        if (libFull.red.back() == 0) {
+          for (int k = 0; k < 65; k++) {
+            libFull.fac_line.back()[k].val = 0.;
           }
         }
-        // Index la SED
-        (oneSED->index) = ind;
-        // keep the index and mag at z=0
-        if (oneSED->red == 0) {
-          ind0 = oneSED->index;
-          // Keep the magnitude in each band
-          mag_z0.clear();
-          for (int k = 0; k < int((oneSED->mag).size()); k++)
-            mag_z0.push_back(oneSED->mag[k]);
-        }
-        // Store the index at z=0 in the SED
-        oneSED->index_z0 = ind0;
-        // Store the magnitude in the band used for the prior
-        oneSED->mag0 = mag_z0[babs];
-        // Recompute the kcorr because of the emission lines not included in
-        // mag_gal
-        oneSED->kcorrec(mag_z0);
-        // Add the model number of the previous library, for each library
-        oneSED->nummod += nummodpre[oneSED->nlib];
-        // Add a new SED to the output
-        libFull.push_back(oneSED);
-        ind++;
       }
     }
+    // Index la SED
+    libFull.index.back() = ind;
+    // keep the index and mag at z=0
+    if (libFull.red.back() == 0) {
+      ind0 = libFull.index.back();
+      // Keep the magnitude in each band
+      mag_z0 = libFull.mag.back();
+    }
+    // Store the index at z=0 in the SED
+    libFull.index_z0.back() = ind0;
+    // Store the magnitude in the band used for the prior
+    libFull.mag0.back() = mag_z0[babs];
+    // Recompute the kcorr because of the emission lines not included in
+    // mag_gal
+    kcorrec_sed(libFull, mag_z0, back_idx);
+    // Add the model number of the previous library, for each library
+    libFull.nummod.back() += nummodpre[libFull.nlib.back()];
+    // Add a new SED to the output
+    ind++;
   }
   // keep the last model number to start the numbering with it at the next
   // library
-  nummodpre[libFull.back()->nlib] = (libFull.back())->nummod;
+  nummodpre[libFull.nlib.back()] = libFull.nummod.back();
   slibIn.close();
   cout << " Done with the library reading with " << libFull.size()
        << " SED read. " << endl;
@@ -1132,7 +1138,7 @@ void auto_adapt(const vector<onesource *> adaptSources, vector<double> &a0,
    Determine the best filter to be used as a function of redshift
 */
 vector<vector<int>> bestFilter(int nbFlt, vector<double> gridz,
-                               vector<SED *> fulllib, int method,
+                               const SEDVec &fulllib, int method,
                                vector<long> magabscont, vector<int> bapp,
                                vector<int> bappOp, vector<double> zbmin,
                                vector<double> zbmax) {
@@ -1203,7 +1209,7 @@ vector<vector<int>> bestFilter(int nbFlt, vector<double> gridz,
   Derive the k-color term (rest-frame color - k-correction) maximum, in order to
   conserve the error bars for the absolute magnitudes
 */
-vector<vector<double>> maxkcolor(vector<double> gridz, vector<SED *> fulllib,
+vector<vector<double>> maxkcolor(vector<double> gridz, const SEDVec &fulllib,
                                  vector<vector<int>> bestFlt) {
   vector<vector<double>> extremeDiff, extremeDiffMin, extremeDiffMax;
   vector<double> extremeValMin, extremeValMax, extremeVal, di;
@@ -1228,19 +1234,18 @@ vector<vector<double>> maxkcolor(vector<double> gridz, vector<SED *> fulllib,
   {
 #pragma omp for
 #endif
-    for (vector<SED *>::iterator it = fulllib.begin(); it < fulllib.end();
-         ++it) {
+    for (size_t it = 0; it != fulllib.size(); ++it) {
       // computed only for galaxies
-      if ((*it)->nlib == 0) {
+      if (fulllib.nlib[it] == 0) {
         // loop over the rest-frame filters to be considered
         for (size_t k = 0; k < bestFlt[0].size(); ++k) {
           // obtain the index of the redshift grid
-          indz = indexz((*it)->red, gridz);
+          indz = indexz(fulllib.red[it], gridz);
           // derive the k-color term at this redshift: m(ref)-m(obs)-kcorr(ref)
           if (bestFlt[indz][k] >= 0) {
-            kcolor = ((fulllib[(*it)->index_z0])->mag[k]) -
-                     ((fulllib[(*it)->index_z0])->mag[bestFlt[indz][k]]) -
-                     (*it)->kcorr[bestFlt[indz][k]];
+            kcolor = (fulllib.mag[fulllib.index_z0[it]][k]) -
+                     (fulllib.mag[fulllib.index_z0[it]][bestFlt[indz][k]]) -
+                     fulllib.kcorr[it][bestFlt[indz][k]];
             // kcolor= (*it)->mag[k] - (*it)->mag[bestFlt[indz][k]] -
             // (*it)->kcorr[k]; Store it if the value is maximum or minimum
             if (extremeDiffMin[indz][k] > kcolor)
@@ -1271,7 +1276,7 @@ vector<vector<double>> maxkcolor(vector<double> gridz, vector<SED *> fulllib,
   Define the filters to pick (depending on the redshift) to minimize the
   k-correction + rest-frame color term in the absolute magnitude computation
 */
-void minimizekcolor(vector<double> gridz, vector<SED *> fulllib,
+void minimizekcolor(vector<double> gridz, const SEDVec &fulllib,
                     vector<vector<int>> &bestFlt, vector<long> magabscont) {
   vector<vector<double>> extremeDiffMin, extremeDiffMax;
   vector<double> extremeValMin, extremeValMax, extremeVal, di;
@@ -1327,20 +1332,19 @@ void minimizekcolor(vector<double> gridz, vector<SED *> fulllib,
     {
 #pragma omp for
 #endif
-      for (vector<SED *>::iterator it = fulllib.begin(); it < fulllib.end();
-           ++it) {
+      for (size_t it = 0; it != fulllib.size(); ++it) {
         // computed only for galaxies
-        if ((*it)->nlib == 0) {
+        if (fulllib.nlib[it] == 0) {
           // obtain the index of the redshift grid
-          indz = indexz((*it)->red, gridz);
+          indz = indexz(fulllib.red[it], gridz);
 
           // loop over the possible filters for the apparent magnitudes
           for (int l = 0; l < nbPossi; ++l) {
             // derive the k-color term at this redshift:
             // (m(ref)-m(obs))(z=0)-kcorr(obs)
-            kcolor = ((fulllib[(*it)->index_z0])->mag[r]) -
-                     ((fulllib[(*it)->index_z0])->mag[possiFlt[l]]) -
-                     (*it)->kcorr[possiFlt[l]];
+            kcolor = (fulllib.mag[fulllib.index_z0[it]][r]) -
+                     (fulllib.mag[fulllib.index_z0[it]][possiFlt[l]]) -
+                     fulllib.kcorr[it][possiFlt[l]];
 
             // Store it if the value is maximum or minimum
             if (extremeDiffMin[indz][possiFlt[l]] > kcolor)
@@ -1729,13 +1733,8 @@ void PhotoZ::write_outputs(vector<onesource *> sources, const time_t &ti1) {
     }
   stout.close();
 
-  for (auto it = fullLib.begin(); it != fullLib.end(); it++) {
-    delete *it;
-  }
+  // TODO probably not important
   fullLib.clear();
-  for (auto it = fullLibIR.begin(); it != fullLibIR.end(); it++) {
-    delete *it;
-  }
   fullLibIR.clear();
 
   return;
