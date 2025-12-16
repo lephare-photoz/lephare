@@ -391,70 +391,34 @@ void SED::generateCalib(double lmin, double lmax, int Nsteps, int calib) {
   return;
 }
 
-void SED::sumSpectra2(SED addSED, const double rescal) {
+void SED::sumSpectra(SED addSED, const double rescal) {
+  // no need to work if condition applies
+  if (addSED.lamb_flux.empty() || rescal == 0.) return;
+
+  // we need to interpolate both SED, as sed1+rescal*sed2
+  // is supposed to be defined on the union of the sed1 and
+  // sed2 domains, with sed1 or sed2=0 where they are not defined
   auto [x1, y1] = to_tuple(lamb_flux);
   auto [x2, y2] = to_tuple(addSED.lamb_flux);
-
-  // sorted union of x values
-  auto x3 = x1;
-  x3.insert(x3.end(), x2.begin(), x2.end());
-  std::sort(x3.begin(), x3.end());
-  x3.erase(std::unique(x3.begin(), x3.end()), x3.end());
-
-  // prepare lamb_flux.
-  // reserve is useful. Without it push_back is dynamically reallocated
-  // chunks of memory and copying. Not a big deal with our typical vector sizes
-  // but still good practice
-  lamb_flux.clear();
-  lamb_flux.reserve(x3.size());
-
-  for (double x : x3) {
-    double v1 = interp_linear_point(x1, y1, x);
-    double v2 = interp_linear_point(x2, y2, x);
-    lamb_flux.emplace_back(x, v1 + v2 * rescal, 1);
+  // addSED sampled at SED position
+  auto newy2 = fast_interpolate(x2, y2, x1, 0);
+  // SED sampled at addSED position
+  auto newy1 = fast_interpolate(x1, y1, x2, 0);
+  oneElVector allpoints;
+  allpoints.reserve(x1.size() + x2.size());
+  for (size_t k = 0; k < x1.size(); k++) {
+    allpoints.emplace_back(x1[k], y1[k] + rescal * newy2[k], 1);
   }
+  for (size_t k = 0; k < x2.size(); k++) {
+    allpoints.emplace_back(x2[k], newy1[k] + rescal * y2[k], 1);
+  }
+  std::sort(allpoints.begin(), allpoints.end());
+  allpoints.erase(std::unique(allpoints.begin(), allpoints.end()),
+                  allpoints.end());
+
+  lamb_flux.clear();
+  lamb_flux = allpoints;
   return;
-}
-
-/*
-  Sum an additional contribution to the existing spectra
-*/
-void SED::sumSpectra(SED addSED, const double rescal) {
-  // Change the origin of lamb_all
-  for (size_t i = 0; i < addSED.lamb_flux.size(); i++) {
-    addSED.lamb_flux[i].ori = 1;
-  }
-  for (size_t i = 0; i < lamb_flux.size(); i++) {
-    lamb_flux[i].ori = 0;
-  }
-
-  // Concatenate two vectors composed of "oneElLambda" including this spectra
-  // and the one to be added
-  lamb_flux.insert(lamb_flux.end(), addSED.lamb_flux.begin(),
-                   addSED.lamb_flux.end());
-
-  // Sort the vector in increasing lambda
-  sort(lamb_flux.begin(), lamb_flux.end());
-
-  // Resample the first spectra into a common lambda range
-  vector<oneElLambda> spectra_ori = resample(lamb_flux, 0, 0., 1e20);
-  // Resample the second spectra into a common lambda range
-  vector<oneElLambda> spectra_add = resample(lamb_flux, 1, 0., 1e20);
-
-  // Sum the two spectra and generate a new lamb_flux
-  lamb_flux.clear();
-  for (size_t i = 0; i < spectra_ori.size(); i++) {
-    // Check that the two have been well resample before
-    if (spectra_add[i].ori < 0) spectra_add[i].val = 0.;
-    if (spectra_ori[i].ori < 0) spectra_ori[i].val = 0.;
-    lamb_flux.emplace_back(spectra_add[i].lamb,
-                           (spectra_add[i].val * rescal) + spectra_ori[i].val,
-                           1);
-  }
-
-  // clean
-  spectra_add.clear();
-  spectra_ori.clear();
 }
 
 /*

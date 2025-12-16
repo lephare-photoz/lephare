@@ -200,7 +200,6 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("read", &SED::read)
       .def("size", &SED::size)
       .def("sumSpectra", &SED::sumSpectra)
-      .def("sumSpectra2", &SED::sumSpectra2)
       .def("integrateSED", &SED::integrateSED)
       .def("apply_extinction", &SED::apply_extinction)
       .def("applyExtLines", &SED::applyExtLines)

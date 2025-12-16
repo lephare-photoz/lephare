@@ -234,7 +234,6 @@ class SED {
   vector<double> compute_fluxes(const vector<flt> &filters);
   double trapzd();
   void sumSpectra(SED addSED, const double rescal);
-  void sumSpectra2(SED addSED, const double rescal);
   void reduce_memory(vector<flt> allFlt);
 
   /*

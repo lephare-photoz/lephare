@@ -296,3 +296,51 @@ def test_calc_ph():
     for i, e in enumerate([54.42, 24.59, 13.60, hc / 1108.7]):
         print(sed.qi[i])
         assert sed.qi[i] == pytest.approx(0.5 * (hc / e) ** 2, 1.0e-3)
+
+
+def test_sumspectra():
+    sed1 = GalSED("toto", 10)
+    sed1.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
+    x1, y1 = sed1.data()
+    sed2 = GalSED("toto", 11)
+    sed1.sumSpectra(sed2, 0)  # case of empty additional sed
+    for xx1, yy1, o1 in zip(x1, y1, sed1.lamb_flux):
+        assert o1.lamb == xx1
+        assert o1.val == yy1
+    sed2.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
+    sed1.sumSpectra(sed2, 0)  # case of nul rescale factor
+    for xx1, yy1, o1 in zip(x1, y1, sed1.lamb_flux):
+        assert o1.lamb == xx1
+        assert o1.val == yy1
+
+    # easy case : sum the same SED with a rescal factor of 2
+    # here in practice there is no interpolation and so the
+    # the input and output have the same size
+    sed1 = GalSED("toto", 10)
+    sed1.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
+    sed2 = GalSED("toto", 11)
+    sed2.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
+    sed1.sumSpectra(sed2, 2)
+    x2, y2 = sed2.data()
+    x1, y1 = sed1.data()
+    print(len(x1), len(x2))
+    assert np.allclose(np.array(y1), 3 * np.array(y2))
+
+    # harder case : different SEDs
+    sed1 = GalSED("toto", 10)
+    sed1.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
+    sed2 = GalSED("toto", 11)
+    sed2.read(os.path.join(TESTDATADIR, "sed/GAL/COSMOS_SED/Ell1_A_0.sed"))
+    x2, y2 = sed2.data()
+    x1, y1 = sed1.data()
+    sed1.sumSpectra(sed2, 1)
+    x3, y3 = sed1.data()
+
+    def f1(x):
+        return np.interp(x, x1, y1, 0, 0)
+
+    def f2(x):
+        return np.interp(x, x2, y2, 0, 0)
+
+    newy3 = f1(x3) + f2(x3)
+    assert np.allclose(newy3, y3)

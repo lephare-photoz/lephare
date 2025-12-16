@@ -64,6 +64,10 @@ class oneElLambda {
   }
 
   inline bool operator<(const double rhs) const { return lamb < rhs; }
+
+  inline bool operator==(const oneElLambda& rhs) const {
+    return lamb == rhs.lamb;
+  }
 };
 
 typedef vector<oneElLambda> oneElVector;
