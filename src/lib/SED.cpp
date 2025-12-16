@@ -680,93 +680,30 @@ void SED::redshift() {
   return;
 }
 
-void SED::applyExt2(const double ebv, const ext &oneext) {
+void SED::apply_extinction(const double ebv, const ext &oneext) {
   (*this).ebv = ebv;
   // No need to loose time if E(b-V)~0
   if (ebv <= 1.e-20) return;
+  // if empty spectrum return
+  if (lamb_flux.empty()) return;
 
-  // bracket the extinction curve by the sed curve
-  auto left = lower_bound(lamb_flux.begin(), lamb_flux.end(), oneext.lmin);
-  auto right = lower_bound(lamb_flux.begin(), lamb_flux.end(), oneext.lmax);
+  // the extinction is the (x,y) curve
+  auto [x, y] = to_tuple(oneext.lamb_ext);
+  auto [z, t] = to_tuple(lamb_flux);
+  // interpolate the extinction curve at the position of the SED lambdas
+  // extrapolations set to 0 so that the exponential in the for loop is 1
+  auto newext_val = fast_interpolate(x, y, z, 0);
 
-  oneElVector inrange(left, right);
-  // resample in the common interval
-  auto [lambdas, sed_vals, ext_vals] =
-      restricted_resampling(inrange, oneext.lamb_ext, -1);
-
-  vector<oneElLambda> lamb_new(lamb_flux.begin(), left);
-  for (size_t k = 0; k < lambdas.size(); ++k) {
-    double val = sed_vals[k];
-    double lamb = lambdas[k];
-    //      cout<<k<<" "<<lamb<<" "<<val<<" "<<ext_vals[k]<<endl;
+  for (size_t k = 0; k < z.size(); ++k) {
+    double val = t[k];
+    double lamb = z[k];
+    double ext_val = newext_val[k];
     // Change the value of the flux according to the dust extinction
-    val *= pow(10., -0.4 * ebv * ext_vals[k]);
-    lamb_new.emplace_back(lamb, val, 1);
+    lamb_flux[k].val *= pow(10., -0.4 * ebv * ext_val);
   }
-  // add the end of lamb_flux, which was outside the oneext range
-  lamb_new.insert(lamb_new.end(), right, lamb_flux.end());
-  //  cout<<lamb_new.size()<<endl;
-  lamb_flux.clear();
-  lamb_flux = lamb_new;
+
   // Indicate what is the value of the ebv and the index of the extinction law
   extlawId = oneext.numext;
-  return;
-}
-
-/*
-  Apply dust extinction on the original flux of the sed
-  Only for galaxies and QSO
-*/
-void SED::applyExt(const double ebv, const ext &oneext) {
-  (*this).ebv = ebv;
-  // if needed because E(b-V)>0
-  if (ebv > 1.e-20) {
-    // work with the original lamb_flux
-    vector<oneElLambda> lamb_all = lamb_flux;
-
-    // Concatenate two vectors composed of "oneElLambda" including the
-    // extinction law and the SED
-    lamb_all.insert(lamb_all.end(), oneext.lamb_ext.begin(),
-                    oneext.lamb_ext.end());
-
-    // Sort the vector in increasing lambda (vector including the extinction law
-    // and the SED)
-    sort(lamb_all.begin(), lamb_all.end());
-    // Resample the extinction in a lambda range combining the SED and the
-    // extinction law
-    vector<oneElLambda> new_ext = resample(lamb_all, 2, 0., 1e20);
-
-    // Loop over the SED and extinction curves using the concatenate ext+SED
-    // vector
-    vector<oneElLambda> lamb_new;
-    for (size_t k = 0; k < lamb_all.size(); ++k) {
-      // If we are well looking at the original SED
-      if (lamb_all[k].ori == 1) {
-        double val = lamb_all[k].val;
-        double lamb = lamb_all[k].lamb;
-        if (oneext.lmin < lamb && oneext.lmax > lamb) {
-          // If extinction not defined (resampling failed), put it at 0
-          if (new_ext[k].ori < 0) new_ext[k].val = 0;
-          // Change the value of the flux according to the dust extinction
-          val = (lamb_all[k]).val * pow(10., (-0.4 * ebv * (new_ext[k]).val));
-        }
-        // Store the result into a new lamb_flux vector
-        lamb_new.emplace_back(lamb, val, 1);
-      }
-    }
-
-    // Replace the old lambda flux vector with the new one including extinction
-    lamb_flux = lamb_new;
-
-    // Indicate what is the value of the ebv and the index of the extinction law
-    extlawId = oneext.numext;
-
-    // Clean
-    lamb_all.clear();
-    lamb_new.clear();
-    new_ext.clear();
-  }
-
   return;
 }
 

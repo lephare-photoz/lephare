@@ -336,8 +336,7 @@ class SED {
    * \param ebv value of E(B-V)
    * \param obj instance of class ext
    */
-  void applyExt(const double ebv, const ext &obj);
-  void applyExt2(const double ebv, const ext &obj);
+  void apply_extinction(const double ebv, const ext &obj);
 
   /*! Apply dust extinction to the emission lines (stored in `fac_line`)
    * Only for galaxies and QSO

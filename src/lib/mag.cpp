@@ -525,7 +525,7 @@ vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
               double LbeforeExt = oneSEDInt.trapzd();
 
               // product of the SED with the extinction law
-              oneSEDInt.applyExt(ebv[j], extAll[i]);
+              oneSEDInt.apply_extinction(ebv[j], extAll[i]);
 
               // Difference between the integrated flux with and without
               // extinction (without is computed just above) flux integrate of
@@ -793,7 +793,7 @@ vector<QSOSED> QSOMag::make_maglib(const QSOSED &oneSED) {
           oneSEDInt.warning_integrateSED(allFlt, verbose);
 
           // product of the SED with the extinction law
-          oneSEDInt.applyExt(ebv[j], extAll[i]);
+          oneSEDInt.apply_extinction(ebv[j], extAll[i]);
 
           // Opacity applied in rest-frame, depending on the redshift of the
           // source

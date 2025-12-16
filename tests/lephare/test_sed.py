@@ -23,23 +23,12 @@ def test_apply_ext():
     y2 = x2
 
     sed.set_vector(x2, y2)
-    sed.applyExt(1.0, onext)
+    sed.apply_extinction(1.0, onext)
     res1 = sed.lamb_flux
     print([el.lamb for el in res1])
     res1y = [el.val for el in res1]
     print(res1y)
     assert np.allclose(res1y, np.array(y2) / 10.0)
-
-    sed = SED()
-    x2 = np.linspace(10, 20, 10)
-    y2 = x2
-    sed.set_vector(x2, y2)
-    sed.applyExt2(1.0, onext)
-    res2 = sed.lamb_flux
-    print([el.lamb for el in res2])
-    res2y = [el.val for el in res1]
-    print(res2y)
-    assert np.allclose(res2y, np.array(y2) / 10.0)
 
 
 def test_string_to_object():
