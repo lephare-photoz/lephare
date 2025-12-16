@@ -142,3 +142,31 @@ vector<size_t> indexes_in_vec(const double &value, const vector<double> &vec,
 
   return result;
 }
+
+vector<double> fast_interpolate(const std::vector<double> &x,
+                                const std::vector<double> &y,
+                                const std::vector<double> &z, double d) {
+  std::vector<double> out;
+  out.reserve(z.size());
+
+  std::size_t i = 0;  // pointer in x,y
+
+  // Loop through all target points z[k]
+  for (double zk : z) {
+    // Out of bounds → return d
+    if (zk < x.front() || zk > x.back()) {
+      out.push_back(d);
+      continue;
+    }
+    // Advance i until x[i] <= zk <= x[i+1]
+    while (i + 1 < x.size() && x[i + 1] < zk) {
+      ++i;
+    }
+    // Now interpolate between (x[i], y[i]) and (x[i+1], y[i+1])
+    double x0 = x[i], x1 = x[i + 1];
+    double y0 = y[i], y1 = y[i + 1];
+    double t = (zk - x0) / (x1 - x0);
+    out.push_back(y0 + t * (y1 - y0));
+  }
+  return out;
+}
