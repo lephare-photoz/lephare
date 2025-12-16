@@ -142,7 +142,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("read", static_cast<void (flt::*)(ifstream &)>(&flt::read),
            "Read filter info from stream")
       .def("lambdaMean", &flt::lambdaMean)
-      .def("lambdaEff", &flt::lambdaEff, py::arg("flag") = true)
+      .def("lambdaEff", &flt::lambdaEff)
       .def("lambdaEff2", &flt::lambdaEff2)
       .def("vega", &flt::vega)
       .def("magsun", &flt::magsun)
@@ -202,7 +202,6 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("sumSpectra", &SED::sumSpectra)
       .def("sumSpectra2", &SED::sumSpectra2)
       .def("integrateSED", &SED::integrateSED)
-      .def("integrateSED2", &SED::integrateSED2)
       .def("apply_extinction", &SED::apply_extinction)
       .def("applyExtLines", &SED::applyExtLines)
       .def("applyExtLines2", &SED::applyExtLines2)

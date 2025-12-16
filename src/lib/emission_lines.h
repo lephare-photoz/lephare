@@ -1,5 +1,5 @@
-#include <valarray>
 #include <array>
+#include <valarray>
 
 namespace {
 
@@ -160,8 +160,7 @@ const std::valarray<double> ga_HeI_val = {
     9.04,   5.93,   8.51,   6.90,   8.50,   7.56,   8.66,   8.06,   8.87,
     8.47,   9.11,   8.82,   9.34,   9.14,   9.58,   9.42,   9.80};
 
-const std::valarray<double>
-ga_total = ga_H_val + ga_2q_val + 0.1 * ga_HeI_val;
-//ga_total = ga_H_val + ga_2q_val + n_heII * ga_HeI_val;
+const std::valarray<double> ga_total = ga_H_val + ga_2q_val + 0.1 * ga_HeI_val;
+// ga_total = ga_H_val + ga_2q_val + n_heII * ga_HeI_val;
 
 }  // namespace

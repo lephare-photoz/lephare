@@ -139,7 +139,7 @@ class flt {
   /// ($LEPHAREDIR/vega/VegaLCB.sed). Then \f$\lambda_{eff} = \frac{\int
   /// V(\lambda)\, T(\lambda)\, \lambda\, d\lambda}{\int V(\lambda)\,
   /// T(\lambda)\, d\lambda}\f$.
-  double lambdaEff(bool flag = true);
+  double lambdaEff();
 
   /// \brief effective wavelength based on a specific calibration SED.
   ///
@@ -148,15 +148,15 @@ class flt {
   /// SED#generateCalib), then \f$\lambda_{eff2} = \frac{\int C(\lambda)\,
   /// T(\lambda)\, \lambda\, d\lambda}{\int C(\lambda)\, T(\lambda)\,
   /// d\lambda}\f$.
-  double lambdaEff2(bool flag = true);
+  double lambdaEff2();
   /// absolute magnitude of the Sun
-  double magsun(bool flag = true);
+  double magsun();
 
   /// Vega magnitude in this filter: \f$mag(Vega)
   /// = 2.5\cdot\log10\left(\frac{\int Vega(\lambda)\, T(\lambda)\,
   /// d\lambda}{\int T(\lambda)\, d\lambda}\right)\f$ where \f$Vega(\lambda)\f$
   /// is the Vega SED.
-  double vega(bool flag = true);
+  double vega();
 
   /*! \brief compute the flux correction based on keyword FILTER_CALIB
    *
@@ -181,7 +181,7 @@ class flt {
   /// AB-Vega correction \f$ =  -2.5\,\log10\left(\frac{\int
   /// F(Vega)\,T(\lambda)\,d\lambda}{\int T(\lambda)\,
   /// c\lambda^{-2}\,d\lambda}\right)\f$
-  double abcorr(bool flag = true);
+  double abcorr();
 
   /// Thuan Gunn correction \f$ =  2.5\,\log10\left(\frac{\int
   /// F(BD+17o4708)\,T(\lambda)\,d\lambda}{\int Vega(\lambda)\, T(\lambda)\,

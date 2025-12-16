@@ -1834,7 +1834,7 @@ void onesource::computePredMag(vector<SED *> &fulllib, cosmo lcdm,
     // Loop over the filters
     for (size_t itf = 0; itf < allFltAdd.size(); ++itf) {
       // Derive the AB magnitudes in each filter
-      vector<double> intFlux = SED_gal.integrateSED2(allFltAdd[itf]);
+      vector<double> intFlux = SED_gal.integrateSED(allFltAdd[itf]);
       if (intFlux[3] > INVALID_FLUX) {
         if (intFlux[3] > NULL_FLUX) {
           val = flux2mag(intFlux[3] / intFlux[1], lcdm.distMod(consiz));
@@ -1879,7 +1879,7 @@ void onesource::computePredAbsMag(vector<SED *> &fulllib, cosmo lcdm,
     // Loop over the filters
     for (size_t itf = 0; itf < allFltAdd.size(); ++itf) {
       // Derive the AB magnitudes in each filter
-      vector<double> intFlux = SED_gal.integrateSED2(allFltAdd[itf]);
+      vector<double> intFlux = SED_gal.integrateSED(allFltAdd[itf]);
       if (intFlux[3] > 0) {
         val = flux2mag(intFlux[3] / intFlux[1]);
       } else
