@@ -350,7 +350,6 @@ class SED {
    * along the line of sight
    */
   void applyOpa(const vector<opa> &opaAll);
-  void applyOpa2(const vector<opa> &opaAll);
 
   /// Helper function to append the oneElLambda(lambda, value) object to the sed
   /// vector

@@ -681,7 +681,7 @@ void SED::applyExtLines(double ebv, const ext &oneext) {
   product of the sed with the opacity of the IGM
   only for galaxies and QSO
 */
-void SED::applyOpa2(const vector<opa> &opaAll) {
+void SED::applyOpa(const vector<opa> &opaAll) {
   // Select the right opacity file according to the redshift of the source
   // Do not use simply 0.1 -> need to have the same as the fortran version and
   // some rounding problem (e.g. z=0.15 with step=0.01)
@@ -696,101 +696,21 @@ void SED::applyOpa2(const vector<opa> &opaAll) {
   // No need to do anything above the high limit of the intergalactic
   // attenuation curves
   auto limit = lower_bound(lamb_flux.begin(), lamb_flux.end(), 1215.67);
-  oneElVector lamb_all(lamb_flux.begin(), limit + 1);
-  oneElVector lamb_end(limit + 1, lamb_flux.end());
-  auto [x1, y1] = to_tuple(lamb_all);
 
-  // and no need to include opa points well below the start of the SED
-  // the OPA are defined from 17 Angstrom to 1215.67 Angstrom
-  limit =
-      lower_bound(opa.lamb_opa.begin(), opa.lamb_opa.end(), lamb_flux.front());
-  oneElVector opa2(limit - 1, opa.lamb_opa.end());
-  auto [x2, y2] = to_tuple(opa2);
+  oneElVector temp(lamb_flux.begin(), limit);
+  // the opacity is the (x,y) curve
+  auto [x, y] = to_tuple(opa.lamb_opa);
+  auto [z, t] = to_tuple(temp);
+  // interpolate the opacity curve at the position of the SED lambdas
+  // extrapolations set to 1 so that the input spectrum is left untouched
+  // by multiplication
+  auto newopa = fast_interpolate(x, y, z, 1);
 
-  // sorted union of x values
-  auto x3 = x1;
-  x3.insert(x3.end(), x2.begin(), x2.end());
-  std::sort(x3.begin(), x3.end());
-  x3.erase(std::unique(x3.begin(), x3.end()), x3.end());
-
-  lamb_flux.clear();
-  lamb_flux.reserve(x3.size());
-
-  for (double x : x3) {
-    double v1 = interp_linear_point(x1, y1, x);
-    double v2 = interp_linear_point(x2, y2, x);
-    double y = v2 <= 0. ? v1 : v1 * v2;
-    lamb_flux.emplace_back(x, y, 1);
+  // directly modify the lamb_fluxes values for lambda<1215.67,
+  // which is z.size()
+  for (size_t k = 0; k < z.size(); ++k) {
+    lamb_flux[k].val *= newopa[k];
   }
-  // Add the SED at lambda > 1216
-  lamb_flux.insert(lamb_flux.end(), lamb_end.begin(), lamb_end.end());
-
-  return;
-}
-
-/*
-  product of the sed with the opacity of the IGM
-  only for galaxies and QSO
-*/
-void SED::applyOpa(const vector<opa> &opaAll) {
-  // Select the right opacity file according to the redshift of the source
-  // Do not use simply 0.1 -> need to have the same as the fortran version and
-  // some rounding problem (e.g. z=0.15 with step=0.01)
-  int ind = lround(red / 0.100000000000001);
-  // In lepharedir/opa/ there are opacity files up to z=8 (file #80),
-  // use the last one (transmission=0 at all lambda<1216) also when z>8
-  if (ind > 80) {
-    ind = 80;
-  }
-
-  vector<oneElLambda> lamb_all, lamb_end;
-  // Split in two the SED lambda (below and above 1216A)
-  for (size_t k = 0; k < lamb_flux.size(); ++k) {
-    // If below 1215.67, fill lamb_all, otherwise keep that in lamb_end
-    if (lamb_flux[k].lamb < 1215.67) {
-      lamb_all.push_back(lamb_flux[k]);
-    } else {
-      lamb_end.push_back(lamb_flux[k]);
-    }
-  }
-  // Concatenate two vectors composed of "oneElLambda" including the IGM opacity
-  // and the SED below 1216
-  lamb_all.insert(lamb_all.end(), (opaAll[ind].lamb_opa).begin(),
-                  (opaAll[ind].lamb_opa).end());
-
-  // Sort the vector in increasing lambda (vector including the extinction law
-  // and the SED)
-  sort(lamb_all.begin(), lamb_all.end());
-
-  // Resample the IGM opacity in a lambda range combining the SED and the
-  // opacity
-  vector<oneElLambda> new_opa = resample(lamb_all, 3, 0., 1.e20);
-
-  // Loop over the SED and opacity using the concatenate opa+SED vector
-  vector<oneElLambda> lamb_new;
-  for (size_t k = 0; k < lamb_all.size(); ++k) {
-    // If we are well looking at the original SED
-    if ((lamb_all[k]).ori == 1) {
-      double lamb = lamb_all[k].lamb;
-      double val = lamb_all[k].val;
-      if (opaAll[ind].lmin < lamb && opaAll[ind].lmax > lamb) {
-        // Put the opacity at 1 if the resample is not done (do nothing on the
-        // flux)
-        if ((new_opa[k]).ori < 0) (new_opa[k]).val = 1;
-        // Multiply the flux with the opacity
-        val = (lamb_all[k]).val * (new_opa[k]).val;
-      }
-      lamb_new.emplace_back(lamb, val, 1);
-    }
-  }
-
-  // Replace the old lambda flux vector with the new one including IGM
-  lamb_flux = lamb_new;
-  // Add the SED at lambda > 1216
-  lamb_flux.insert(lamb_flux.end(), lamb_end.begin(), lamb_end.end());
-  lamb_new.clear();
-  lamb_all.clear();
-
   return;
 }
 

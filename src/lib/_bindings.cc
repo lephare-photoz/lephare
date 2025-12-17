@@ -205,7 +205,6 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("applyExtLines", &SED::applyExtLines)
       .def("applyExtLines2", &SED::applyExtLines2)
       .def("applyOpa", &SED::applyOpa)
-      .def("applyOpa2", &SED::applyOpa2)
       .def("integrate", &SED::integrate)
       .def("resample", &SED::resample)
       .def("resample2", &SED::resample2)
