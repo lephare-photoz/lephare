@@ -192,22 +192,6 @@ class SED {
                                       const int origin, const double lmin,
                                       const double lmax);
 
-  static inline std::tuple<vector<oneElLambda>, vector<oneElLambda>> resample2(
-      const vector<oneElLambda> &v1, const vector<oneElLambda> &v2,
-      const double lmin, const double lmax) {
-    short ori1 = v1.front().ori;
-    short ori2 = v2.front().ori;
-    auto v = concatenate_and_sort(v1, v2);
-    auto res1 = resample(v, ori1, lmin, lmax);
-    auto res2 = resample(v, ori2, lmin, lmax);
-    return {res1, res2};
-  }
-
-  static inline std::tuple<vector<oneElLambda>, vector<oneElLambda>> resample3(
-      const SED &sed, const flt &f, const double lmin, const double lmax) {
-    return resample2(sed.lamb_flux, f.lamb_trans, lmin, lmax);
-  }
-
   /*! \brief Generate a calibration SED based on the argument calib
    *
    * @param lmin start of the lambda vector
@@ -339,11 +323,10 @@ class SED {
 
   /*! Apply dust extinction to the emission lines (stored in `fac_line`)
    * Only for galaxies and QSO
-   * \param obj instance of class `ext`
    * \param ebv value of E(B-V)
+   * \param obj instance of class `ext`
    */
-  void applyExtLines(double ebv, const ext &obj);
-  void applyExtLines2(double ebv, const ext &obj);
+  void apply_extinction_to_lines(double ebv, const ext &obj);
 
   /*! Apply extinction due to intergalactic medium (only for GAL and QSO)
    * \param opaAll Vector of opacities to compute extinction
@@ -415,7 +398,6 @@ class GalSED : public SED {
    */
   void compute_luminosities();
   vector<double> add_neb_cont(double);
-  vector<double> add_neb_cont2(double);
   GalSED generateEmSED(const string &emtype);
   void generateEmEmpUV(double MNUV_int, double NUVR);
   void generateEmEmpSFR(double MNUV_int, double NUVR);

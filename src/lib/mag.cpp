@@ -562,7 +562,7 @@ vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
                 oneEmInt.ebv = ebv[j];
                 oneEmInt.red = gridz[k];
                 // For the emission lines, use only the MW. Change fac_line
-                oneEmInt.applyExtLines(ebv[j], extAll[nextlaw]);
+                oneEmInt.apply_extinction_to_lines(ebv[j], extAll[nextlaw]);
                 // rescale the lines as a free parameter
                 oneEmInt.fracEm = fracEm[l];
                 oneEmInt.rescaleEmLines();

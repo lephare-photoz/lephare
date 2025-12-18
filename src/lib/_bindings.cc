@@ -20,6 +20,9 @@ namespace py = pybind11;
 #include "opa.h"
 #include "photoz_lib.h"
 
+static_assert(PYBIND11_VERSION_MAJOR >= 2 && PYBIND11_VERSION_MINOR >= 11,
+              "pybind11 headers are too old");
+
 template <typename x, typename modT>
 void applySEDLibTemplate(modT &m, std::string name) {
   py::class_<SEDLib<x>>(m, name.c_str())
@@ -202,13 +205,10 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("sumSpectra", &SED::sumSpectra)
       .def("integrateSED", &SED::integrateSED)
       .def("apply_extinction", &SED::apply_extinction)
-      .def("applyExtLines", &SED::applyExtLines)
-      .def("applyExtLines2", &SED::applyExtLines2)
+      .def("apply_extinction_to_lines", &SED::apply_extinction_to_lines)
       .def("applyOpa", &SED::applyOpa)
       .def("integrate", &SED::integrate)
       .def("resample", &SED::resample)
-      .def("resample2", &SED::resample2)
-      .def("resample3", &SED::resample3)
       .def("generateCalib", &SED::generateCalib)
       .def("rescale", &SED::rescale)
       .def("compute_magnitudes", &SED::compute_magnitudes)
@@ -233,6 +233,9 @@ PYBIND11_MODULE(_lephare, mod) {
         return result;
       });
   mod.attr("emission_lines") = emission_lines;
+  mod.attr("empirical_ratio") = empirical_ratio;
+  mod.attr("empirical_ratio2") = empirical_ratio2;
+  mod.attr("ga_total") = ga_total;
   mod.attr("ga_lamb") = ga_lamb;
   mod.attr("ga_H_val") = ga_H_val;
   mod.attr("ga_2q_val") = ga_2q_val;
@@ -262,7 +265,6 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("zmet", &GalSED::zmet)
       .def("compute_luminosities", &GalSED::compute_luminosities)
       .def("add_neb_cont", &GalSED::add_neb_cont)
-      .def("add_neb_cont2", &GalSED::add_neb_cont2)
       .def("generateEmEmpUV", &GalSED::generateEmEmpUV)
       .def("generateEmEmpSFR", &GalSED::generateEmEmpSFR)
       .def("generateEmPhys", &GalSED::generateEmPhys)

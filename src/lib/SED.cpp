@@ -531,12 +531,11 @@ void SED::apply_extinction(const double ebv, const ext &oneext) {
   auto [x, y] = to_tuple(oneext.lamb_ext);
   auto [z, t] = to_tuple(lamb_flux);
   // interpolate the extinction curve at the position of the SED lambdas
-  // extrapolations set to 0 so that the exponential in the for loop is 1
+  // extrapolations set to 0 so that the exponent in the for loop is 1
   auto newext_val = fast_interpolate(x, y, z, 0);
 
   for (size_t k = 0; k < z.size(); ++k) {
     double val = t[k];
-    double lamb = z[k];
     double ext_val = newext_val[k];
     // Change the value of the flux according to the dust extinction
     lamb_flux[k].val *= pow(10., -0.4 * ebv * ext_val);
@@ -551,7 +550,7 @@ void SED::apply_extinction(const double ebv, const ext &oneext) {
   Apply dust extinction on the emission lines (fac_line)
   Only for galaxies and QSO
 */
-void SED::applyExtLines2(double ebv, const ext &oneext) {
+void SED::apply_extinction_to_lines(double ebv, const ext &oneext) {
   // If you want to use the redshift dependency of the attenuation line versus
   // continuum F=F(z=0)+a*z If such option is re-activated, absolutely need to
   // change the code in read_lib and onesource.cpp
@@ -566,18 +565,25 @@ void SED::applyExtLines2(double ebv, const ext &oneext) {
   double kLya = 13.8;
 
   if (ebv <= 1.e-20) return;
+  if (fac_line.empty()) return;
 
-  // Interpolate the extinction curve to the line positions
-  auto [extx, exty] = to_tuple(oneext.lamb_ext);
-  for (size_t i = 0; i < NUM_EMISSION_LINES; i++) {
-    double line_lamb = fac_line[i].lamb;
-    double line_val = fac_line[i].val;
-    double attenuation = interp_linear_point(extx, exty, line_lamb);
+  // the extinction is the (x,y) curve
+  auto [x, y] = to_tuple(oneext.lamb_ext);
+  auto [z, t] = to_tuple(fac_line);
+  // interpolate the extinction curve at the position of the fac_line lambdas
+  // extrapolations set to 0 so that the exponential in the for loop is 1
+  auto newext_val = fast_interpolate(x, y, z, 0);
 
-    double f = (ebvFac[i] + a * red);
+  for (size_t k = 0; k < fac_line.size(); k++) {
+    double line_val = t[k];
+    double line_lamb = z[k];
+    double ext_val = newext_val[k];
+
+    double f = (ebvFac[k] + a * red);
     if (f > 1) f = 1.;
 
-    line_val *= pow(10., -0.4 * ebv / f * attenuation);
+    line_val *= pow(10., -0.4 * ebv / f * ext_val);
+
     // For the Lya line one must also account for escape.
     //  Relation by Hayes et al 2011 to derive the escape fraction
     if (line_lamb > 1215. && line_lamb < 1216.) {
@@ -585,95 +591,9 @@ void SED::applyExtLines2(double ebv, const ext &oneext) {
       double f_esc_Lya = CLya * pow(10., (-0.4 * ebv / f * kLya));
       line_val *= f_esc_Lya;
     }
-    fac_line[i].val = line_val;
+
+    fac_line[k].val = line_val;
   }
-  return;
-}
-
-/*
-  Apply dust extinction on the emission lines (fac_line)
-  Only for galaxies and QSO
-*/
-void SED::applyExtLines(double ebv, const ext &oneext) {
-  // Local value from Calzetti
-  // double ebvFac[65] =
-  // {0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44,0.44
-  // }; use the same attenuation for stellar continuum and emission lines
-  double ebvFac[65] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
-                       1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
-                       1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
-                       1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
-                       1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
-                       1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
-  // Check size
-  int longEL = sizeof(ebvFac) / sizeof(ebvFac[0]);
-  if (longEL != 65) cout << " Error with size of ebv lines " << longEL << endl;
-  // If you want to use the redshift dependency of the attenuation line versus
-  // continuum F=F(z=0)+a*z If such option is re-activated, absolutely need to
-  // change the code in read_lib and onesource.cpp
-  // double a=0.2;
-  // No redshift dependency
-  double a = 0.;
-
-  // needed to establish the escape fraction.
-  // Relation by Hayes et al 2011 :
-  // https://iopscience.iop.org/article/10.1088/0004-637X/730/1/8
-  double CLya = 0.445;
-  double kLya = 13.8;
-
-  if (ebv <= 1.e-20) return;
-
-  // work with fac_line as spectra
-  vector<oneElLambda> line_all = fac_line;
-
-  // Concatenate two vectors composed of "oneElLambda" including the
-  // extinction law and the SED
-  line_all.insert(line_all.end(), oneext.lamb_ext.begin(),
-                  oneext.lamb_ext.end());
-
-  // Sort the vector in increasing lambda (vector including the extinction law
-  // and the SED)
-  sort(line_all.begin(), line_all.end());
-
-  // Resample the extinction in a lambda range combining the SED and the
-  // extinction law
-  vector<oneElLambda> new_ext = resample(line_all, 2, 0., 1e20);
-
-  // Loop over the SED and extinction curves using the concatenate ext+SED
-  // vector
-  vector<oneElLambda> lamb_new;
-  int l = 0;
-  for (size_t k = 0; k < line_all.size(); ++k) {
-    // If we are well looking at the original lines
-    if ((line_all[k]).ori == 5) {
-      double lamb = line_all[k].lamb;
-      double val = line_all[k].val;
-      if (oneext.lmin < lamb && oneext.lmax > lamb) {
-        // Change the value of the flux according to the duts extinction
-        double f = (ebvFac[l] + a * red);
-        if (f > 1) f = 1.;
-        // Check that the extinction is well defined, other put 0
-        if (new_ext[k].ori < 0) new_ext[k].val = 0.;
-        val = (line_all[k]).val * pow(10., (-0.4 * ebv / f * (new_ext[k]).val));
-        // Relation by Hayes et al 2011 to derive the escape fraction
-        if (line_all[k].lamb > 1215. && line_all[k].lamb < 1216.) {
-          double f_esc_Lya = CLya * pow(10., (-0.4 * ebv / f * kLya));
-          val = val * f_esc_Lya;
-        }
-      }
-      // Count what is the line according to the original fac_line
-      l++;
-      // Store the result into a new lamb_flux vector
-      lamb_new.emplace_back(lamb, val, 1);
-    }
-  }
-
-  // Replace the old lambda flux vector with the new one including extinction
-  fac_line.clear();
-  fac_line = lamb_new;
-  lamb_new.clear();
-  new_ext.clear();
-
   return;
 }
 
@@ -826,83 +746,121 @@ void GalSED::calc_ph() {
   Add the continuum from the nebular regions
   Work done by Cedric Dubois
 */
+// vector<double> GalSED::add_neb_cont(double qi) {
+//   /* we assume that the emitting gas has an electron temperature of Te =
+//   10000
+//      K, an electron density N = 100 cm-3 (low density limite), and a helium
+//      abundance of 10% by number relative to hydrogen.
+//   */
+
+//   oneElVector ga;
+//   for (size_t i = 0; i < 71; i++) {
+//     double val = ga_total[i];
+//     val = val <= 0 ? -100 : log10(val);
+//     ga.emplace_back(ga_lamb[i], val, 4);
+//   }
+
+//   ga.insert(ga.end(), lamb_flux.begin(), lamb_flux.end());
+//   sort(ga.begin(), ga.end());
+//   auto ga_interp = resample(ga, 4, 0, 1.6e+6);
+//   for (size_t i = 0; i < ga_interp.size(); i++)
+//     ga_interp[i].val = pow(10, ga_interp[i].val);
+
+//   // Take the vector lamb_flux and add the nebular continu in .val
+//   double flux_neb;
+//   vector<double> neb_contrib;
+//   double cst = c * 1e-40 * qi * f_ga / alpha_B;
+//   for (size_t i = 0; i < lamb_flux.size(); i++) {
+//     double x = lamb_flux[i].lamb;
+//     double v = lamb_flux[i].val;
+//     // c/lambda^2*gamma/alpha_B * number of ionizing photons * fraction of
+//     // absorbed photons 1e-40 since c in A/s and gamma in 10^-40 erg
+//     flux_neb = cst / (x * x) * ga_interp[i].val;
+//     neb_contrib.push_back(flux_neb);
+//     // Sum the nebular flux to the original flux from stellar population
+//     lamb_flux[i].val = v + flux_neb;
+//   }
+
+//   return neb_contrib;
+// }
+
+// /*
+//   Add the continuum from the nebular regions
+//   Work done by Cedric Dubois
+// */
+// vector<double> GalSED::add_neb_cont2(double qi) {
+//   /* we assume that the emitting gas has an electron temperature of Te =
+//   10000
+//      K, an electron density N = 100 cm-3 (low density limite), and a helium
+//      abundance of 10% by number relative to hydrogen.
+//   */
+
+//   oneElVector ga;
+//   // note: this is done repeatedly for each template
+//   // of the initial set (sedtolib output), while it does not depend on it
+//   // So this could/should be improved
+//   for (size_t i = 0; i < NUM_NEBULAR_DATA; i++) {
+//     double val = ga_total[i];
+//     //    val = val <= 0 ? -100 : log10(val);
+//     ga.emplace_back(ga_lamb[i], val, 4);
+//   }
+//   auto [x1, y1] = to_tuple(lamb_flux);
+//   auto [x2, y2] = to_tuple(ga);
+
+//   auto x3 = x1;
+//   x3.insert(x3.end(), x2.begin(), x2.end());
+//   std::sort(x3.begin(),
+//             x3.end());  // no unique as the nebular continuum has vertical
+//             drops
+
+//   lamb_flux.clear();
+//   lamb_flux.reserve(x3.size());
+
+//   double scale = c * 1.e-40 / alpha_B * qi * f_ga;
+//   double flux_neb;
+//   vector<double> neb_contrib;
+//   for (double x : x3) {
+//     double v1 = interp_linear_point(x1, y1, x);
+//     double v2 = interp_linear_point(x2, y2, x);
+//     //    flux_neb = scale / (x * x) * pow(10, v2);
+//     flux_neb = scale / (x * x) * v2;
+//     neb_contrib.push_back(flux_neb);
+//     lamb_flux.emplace_back(x, v1 + flux_neb, 1);
+//   }
+//   // return for control
+//   return neb_contrib;
+// }
+
+/*
+  Add the continuum from the nebular regions
+  Work done by Cedric Dubois
+*/
 vector<double> GalSED::add_neb_cont(double qi) {
   /* we assume that the emitting gas has an electron temperature of Te = 10000
      K, an electron density N = 100 cm-3 (low density limite), and a helium
      abundance of 10% by number relative to hydrogen.
   */
 
-  oneElVector ga;
-  for (size_t i = 0; i < 71; i++) {
-    double val = ga_total[i];
-    val = val <= 0 ? -100 : log10(val);
-    ga.emplace_back(ga_lamb[i], val, 4);
-  }
-
-  ga.insert(ga.end(), lamb_flux.begin(), lamb_flux.end());
-  sort(ga.begin(), ga.end());
-  auto ga_interp = resample(ga, 4, 0, 1.6e+6);
-  for (size_t i = 0; i < ga_interp.size(); i++)
-    ga_interp[i].val = pow(10, ga_interp[i].val);
-
-  // Take the vector lamb_flux and add the nebular continu in .val
-  double flux_neb;
-  vector<double> neb_contrib;
-  double cst = c * 1e-40 * qi * f_ga / alpha_B;
-  for (size_t i = 0; i < lamb_flux.size(); i++) {
-    double x = lamb_flux[i].lamb;
-    double v = lamb_flux[i].val;
-    // c/lambda^2*gamma/alpha_B * number of ionizing photons * fraction of
-    // absorbed photons 1e-40 since c in A/s and gamma in 10^-40 erg
-    flux_neb = cst / (x * x) * ga_interp[i].val;
-    neb_contrib.push_back(flux_neb);
-    // Sum the nebular flux to the original flux from stellar population
-    lamb_flux[i].val = v + flux_neb;
-  }
-
-  return neb_contrib;
-}
-
-/*
-  Add the continuum from the nebular regions
-  Work done by Cedric Dubois
-*/
-vector<double> GalSED::add_neb_cont2(double qi) {
-  /* we assume that the emitting gas has an electron temperature of Te = 10000
-     K, an electron density N = 100 cm-3 (low density limite), and a helium
-     abundance of 10% by number relative to hydrogen.
-  */
-
-  oneElVector ga;
-  // note: this is done repeatedly for each template
-  // of the initial set (sedtolib output), while it does not depend on it
-  // So this could/should be improved
-  for (size_t i = 0; i < NUM_NEBULAR_DATA; i++) {
-    double val = ga_total[i];
-    //    val = val <= 0 ? -100 : log10(val);
-    ga.emplace_back(ga_lamb[i], val, 4);
-  }
-  auto [x1, y1] = to_tuple(lamb_flux);
-  auto [x2, y2] = to_tuple(ga);
-
-  auto x3 = x1;
-  x3.insert(x3.end(), x2.begin(), x2.end());
-  std::sort(x3.begin(),
-            x3.end());  // no unique as the nebular continuum has vertical drops
+  // need to recast ga_lamb and ga_total into vector<double>
+  vector<double> vec_ga_lamb(begin(ga_lamb), end(ga_lamb));
+  vector<double> vec_ga_val(begin(ga_total), end(ga_total));
+  // the nebular curve is defined by the arrays ga_lamb and ga_total
+  // we want to interpolate this curve at the SED lamb_flux lambdas
+  auto [x, y] = to_tuple(lamb_flux);
+  // default 0 so that extrapolation means that we do not add
+  // any contribution to SED when extrapolating out of ga_lamb range
+  auto newga_val = fast_interpolate(vec_ga_lamb, vec_ga_val, x, 0);
 
   lamb_flux.clear();
-  lamb_flux.reserve(x3.size());
+  lamb_flux.reserve(x.size());
 
   double scale = c * 1.e-40 / alpha_B * qi * f_ga;
   double flux_neb;
   vector<double> neb_contrib;
-  for (double x : x3) {
-    double v1 = interp_linear_point(x1, y1, x);
-    double v2 = interp_linear_point(x2, y2, x);
-    //    flux_neb = scale / (x * x) * pow(10, v2);
-    flux_neb = scale / (x * x) * v2;
+  for (size_t k = 0; k < x.size(); k++) {
+    flux_neb = scale / (x[k] * x[k]) * newga_val[k];
     neb_contrib.push_back(flux_neb);
-    lamb_flux.emplace_back(x, v1 + flux_neb, 1);
+    lamb_flux[k].val += flux_neb;
   }
   // return for control
   return neb_contrib;
@@ -984,7 +942,7 @@ void GalSED::generateEmEmpSFR(double sfr, double NUVR) {
 
   // Create the emission line and rescale them
   fac_line.clear();
-  for (size_t i = 0; i < 65; i++) {
+  for (size_t i = 0; i < NUM_EMISSION_LINES; i++) {
     fac_line.emplace_back(emission_lines[i], scaleFac * empirical_ratio2[i], 5);
   }
   // sort the vector by wavelength

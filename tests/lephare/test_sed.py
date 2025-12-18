@@ -30,6 +30,43 @@ def test_apply_ext():
     assert np.allclose(res1y, np.array(y2) / 10.0)
 
 
+def test_generate_lines():
+    sed = lp.GalSED("", 0)
+    mnuv_int = -3
+    nuvr = 3
+    scalefac = 1
+    sed.generateEmEmpUV(mnuv_int, nuvr)
+    if nuvr < 4:
+        scalefac = 10 ** (-0.4 * mnuv_int - 6.224) / 2.85
+    vals = [ell.val for ell in sed.fac_line]
+    assert np.allclose(np.array(vals), scalefac * np.array(lp.empirical_ratio))
+    sfr = 10**50.0
+    sed.generateEmEmpSFR(sfr, nuvr)
+    if nuvr < 4:
+        scalefac = 10 ** (np.log10(sfr) + 41.27 - np.log10(4 * np.pi * 100 * 3.08568**2) - 36) / 2.85
+    vals = [ell.val for ell in sed.fac_line]
+    print(vals)
+    print(scalefac * np.array(lp.empirical_ratio2))
+    assert np.allclose(np.array(vals), scalefac * np.array(lp.empirical_ratio2))
+
+
+# def test_apply_ext_lines():
+#     onext = lp.ext("", 0)
+#     x1 = np.linspace(1000, 17000, 20)
+#     y1 = np.ones_like(x1) / 0.4
+#     onext.set_vector(x1, y1)
+
+#     sed = SED()
+#     x2 = np.linspace(10, 20, 10)
+#     y2 = x2
+#     sed.set_vector(x2, y2)
+#     sed.fac_line = lp.ga_total
+
+#     sed.apply_extinction_to_lines(.1, onext)
+#     res1 = sed.fac_line
+#     assert np.allclose(res1, np.array(lp.ga_total) / 10.0)
+
+
 def test_string_to_object():
     for t in ["s", "S", "sOap", "STAR"]:
         a = lp.SED.string_to_object(t)
