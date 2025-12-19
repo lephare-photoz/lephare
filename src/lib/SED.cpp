@@ -698,9 +698,6 @@ vector<double> GalSED::add_neb_cont(double qi) {
   // any contribution to SED when extrapolating out of ga_lamb range
   auto newga_val = fast_interpolate(vec_ga_lamb, vec_ga_val, x, 0);
 
-  lamb_flux.clear();
-  lamb_flux.reserve(x.size());
-
   double scale = c * 1.e-40 / alpha_B * qi * f_ga;
   double flux_neb;
   vector<double> neb_contrib;
