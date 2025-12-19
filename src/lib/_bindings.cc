@@ -228,14 +228,17 @@ PYBIND11_MODULE(_lephare, mod) {
         }
         return result;
       });
-  mod.attr("emission_lines") = emission_lines;
-  mod.attr("empirical_ratio") = empirical_ratio;
-  mod.attr("empirical_ratio2") = empirical_ratio2;
-  mod.attr("ga_total") = ga_total;
-  mod.attr("ga_lamb") = ga_lamb;
-  mod.attr("ga_H_val") = ga_H_val;
-  mod.attr("ga_2q_val") = ga_2q_val;
-  mod.attr("ga_HeI_val") = ga_HeI_val;
+  mod.attr("_emission_lines") = emission_lines;
+  mod.attr("_empirical_ratio") = empirical_ratio;
+  mod.attr("_empirical_ratio2") = empirical_ratio2;
+  mod.attr("_ga_total") = ga_total;
+  mod.attr("_ga_lamb") = ga_lamb;
+  mod.attr("_ga_H_val") = ga_H_val;
+  mod.attr("_ga_HeI_val") = ga_HeI_val;
+  mod.attr("_ga_2q_val") = ga_2q_val;
+  // can add a doc: , mod.attr("_ga_2q_val").doc()="internal use only"
+  // other option is getter to ensure that it is readonly:
+  // mod.def("ga_HeI_val", [] {return ga_HeI_val;});
 
   py::class_<StarSED, SED>(mod, "StarSED")
       .def(py::init<const SED &>())

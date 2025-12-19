@@ -60,11 +60,11 @@ def test_generate_lines():
 #     x2 = np.linspace(10, 20, 10)
 #     y2 = x2
 #     sed.set_vector(x2, y2)
-#     sed.fac_line = lp.ga_total
+#     sed.fac_line = lp._ga_total
 
 #     sed.apply_extinction_to_lines(.1, onext)
 #     res1 = sed.fac_line
-#     assert np.allclose(res1, np.array(lp.ga_total) / 10.0)
+#     assert np.allclose(res1, np.array(lp._ga_total) / 10.0)
 
 
 def test_string_to_object():

@@ -14,7 +14,6 @@ def test_one_ei_lambda_constructor():
     assert el1.val == el2.val
 
 
-
 def test_one_ei_lambda_constructor2():
     ext = lp.ext(name="test", numext=10)
     assert ext.name == "test"
