@@ -218,8 +218,8 @@ vector<opa> Mag::read_opa() {
   // In oder to fill the two last elements around Lyman alpha
   // Put 1 for the last element
   // Put the last value of the opa below 1215.67 just before
-  oneElLambda beflastOpa(1215.66, 1., 3);
-  oneElLambda lastOpa(1215.67, 1., 3);
+  oneElLambda beflastOpa(1215.66, 1.);
+  oneElLambda lastOpa(1215.67, 1.);
 
   ifstream stream = Mag::open_opa_files();
   vector<opa> result;

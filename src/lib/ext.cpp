@@ -47,7 +47,7 @@ void ext::read(string extFile) {
       double l, v;
       ss >> l;
       ss >> v;
-      lamb_ext.emplace_back(l, v, 2);
+      lamb_ext.emplace_back(l, v);
     }
   }
 
@@ -66,9 +66,9 @@ void ext::read(string extFile) {
 /*
 Add a value to the extinction law
 */
-void ext::add_element(double lam, double val, short ori) {
+void ext::add_element(double lam, double val) {
   // fill the lambda/trans values of the SED
-  lamb_ext.emplace_back(lam, val, ori);
+  lamb_ext.emplace_back(lam, val);
 
   // minimum and maximum lambda of the extinction curves
   lmin = (lamb_ext[0]).lamb;
@@ -145,7 +145,7 @@ double cardelli_ext(flt &oneFlt) {
   for (int i = 0; i < 402; i++) {
     lextg = lmin + double(i - 1) * dlbd;
     extg = cardelli_law(lextg);
-    oneExt.add_element(lextg, extg, 2);
+    oneExt.add_element(lextg, extg);
   }
 
   return compute_filter_extinction(oneFlt, oneExt);

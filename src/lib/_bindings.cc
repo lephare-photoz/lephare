@@ -46,14 +46,11 @@ PYBIND11_MODULE(_lephare, mod) {
 
   /******** CLASS ONEELLAMBDA *********/
   py::class_<oneElLambda>(mod, "oneElLambda")
-      .def(py::init<double, double, int>(), py::arg("lambin"), py::arg("valin"),
-           py::arg("oriin"), "standard constructor")
+      .def(py::init<double, double>(), py::arg("lambin"), py::arg("valin"),
+           "standard constructor")
       .def(py::init<oneElLambda>(), py::arg("elIn"), "copy constructor")
       .def_readwrite("lamb", &oneElLambda::lamb)
-      .def_readwrite("val", &oneElLambda::val)
-      .def_readwrite("ori", &oneElLambda::ori)
-      .def("interp", &oneElLambda::interp, py::arg("previousEl"),
-           py::arg("nextEl"));
+      .def_readwrite("val", &oneElLambda::val);
   mod.def("restricted_resampling", &restricted_resampling);
   mod.def("concatenate_and_sort", &concatenate_and_sort,
           "concatenate and sort two vector of oneElLambda objects. Sorting is "
@@ -208,7 +205,6 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("apply_extinction_to_lines", &SED::apply_extinction_to_lines)
       .def("applyOpa", &SED::applyOpa)
       .def("integrate", &SED::integrate)
-      .def("resample", &SED::resample)
       .def("generateCalib", &SED::generateCalib)
       .def("rescale", &SED::rescale)
       .def("compute_magnitudes", &SED::compute_magnitudes)

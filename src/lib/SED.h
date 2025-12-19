@@ -157,8 +157,8 @@ class SED {
   ///\brief Read sedFile assumed to be ASCII and build the #lamb_flux vector of
   /// oneElLambda elements.
   ///
-  /// Negative flux values are set to 0, oneElLambda::ori=1 to indicate that it
-  /// is a SED. The #lamb_flux vector is filled iteratively with each line of
+  /// Negative flux values are set to 0. The #lamb_flux vector is
+  /// filled iteratively with each line of
   /// the file, and is finally sorted by ascending lambda. More complex input
   /// types are treated in inherited class methods.
   void read(const string &sedFile);
@@ -174,23 +174,6 @@ class SED {
   double integrate(const double lmin, const double lmax);
 
   vector<double> integrateSED(const flt &filter);
-
-  /*!
-   * resample the vector
-   *
-   * @param lamb_all:  all elements concatenated (filter+SED)
-   * @param origin:  indicate which of the two concatenated vector is to be
-   returned interpolated
-   * @param lmin: min value of lambda to consider in lamb_all
-   * @param lmax: max value of lambda to consider in lamb_all
-   *
-   * @return : the vector corresponding to origin, with interpolation at the
-   * position of the other vector in lamb_all. If interpolation fails, the
-   * attribute `val` and `ori` of the oneElLambda element are set to -99
-   !*/
-  static vector<oneElLambda> resample(vector<oneElLambda> &lamb_all,
-                                      const int origin, const double lmin,
-                                      const double lmax);
 
   /*! \brief Generate a calibration SED based on the argument calib
    *
@@ -337,7 +320,7 @@ class SED {
   /// Helper function to append the oneElLambda(lambda, value) object to the sed
   /// vector
   inline void emplace_back(const double lambda, const double value) {
-    lamb_flux.emplace_back(lambda, value, 1);
+    lamb_flux.emplace_back(lambda, value);
   }
 
   /*! Helper function to set the sed vector as lambda=x and val = y

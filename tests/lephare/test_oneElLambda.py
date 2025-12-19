@@ -5,23 +5,14 @@ import numpy as np
 
 
 def test_one_ei_lambda_constructor():
-    el1 = lp.oneElLambda(10, 10, 0)
+    el1 = lp.oneElLambda(10, 10)
     # test that 1 + 1 = 2
     assert el1.lamb == 10
     assert el1.val == 10
-    assert el1.ori == 0
     el2 = lp.oneElLambda(el1)
     assert el1.lamb == el2.lamb
     assert el1.val == el2.val
-    assert el1.ori == el2.ori
 
-
-def test_one_ei_lambda_interp():
-    el1 = lp.oneElLambda(10, 10, 0)
-    el2 = lp.oneElLambda(20, 20, 0)
-    el3 = lp.oneElLambda(15, 0, 0)
-    el3.interp(el1, el2)
-    assert el3.val == 15
 
 
 def test_one_ei_lambda_constructor2():
@@ -53,12 +44,11 @@ def test_concatenate_and_sort():
     z1 = []
     z2 = []
     for i in range(10):
-        z1.append(lp.oneElLambda(x1[i], y1[i], 0))
-        z2.append(lp.oneElLambda(x2[i], y2[i], 1))
+        z1.append(lp.oneElLambda(x1[i], y1[i]))
+        z2.append(lp.oneElLambda(x2[i], y2[i]))
     z = lp.concatenate_and_sort(z1, z2)
     zl = [zz.lamb for zz in z]
     zv = [zz.val for zz in z]
-    zo = [zz.ori for zz in z]
     assert zl == [
         0.0,
         0.5,
@@ -102,26 +92,4 @@ def test_concatenate_and_sort():
         0.0,
         1.0,
         0.0,
-    ]
-    assert zo == [
-        0.0,
-        1.0,
-        0.0,
-        1.0,
-        0.0,
-        1.0,
-        0.0,
-        1.0,
-        0.0,
-        1.0,
-        0.0,
-        1.0,
-        0.0,
-        1.0,
-        0.0,
-        1.0,
-        0.0,
-        1.0,
-        0.0,
-        1.0,
     ]

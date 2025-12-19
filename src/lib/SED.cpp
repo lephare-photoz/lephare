@@ -112,7 +112,7 @@ void SED::read(const string &sedFile) {
       ss >> v;
       // if negative flux, put it at 0 because unphysical
       if (v < 0) v = 0.;
-      lamb_flux.emplace_back(l, v, 1);
+      lamb_flux.emplace_back(l, v);
     }
   }
 
@@ -170,7 +170,7 @@ void SED::readSEDBin(ifstream &ins) {
     throw runtime_error("SED::readSEDBin(ifstream& ins) lamb flux is zero");
   }
 
-  lamb_flux.resize(nbw, oneElLambda(-99, -99, 1));
+  lamb_flux.resize(nbw, oneElLambda(-99, -99));
   // Read the wavelength
   for (auto &oneEl : lamb_flux) {
     ins.read((char *)&oneEl.lamb, sizeof(double));
@@ -199,7 +199,7 @@ void SED::warning_integrateSED(const vector<flt> &filters, bool verbose) {
       // flux=0 to extralolate in blue.  " << endl;
       //}
       // Put the extreme value at 0, in order to define the SED in the blue part
-      lamb_flux.emplace(lamb_flux.begin(), 0, 0, 1);
+      lamb_flux.emplace(lamb_flux.begin(), 0, 0);
     }
 
     if (((lamb_flux.end() - 1)->lamb) * (1. + red) < filter.lmax()) {
@@ -217,7 +217,7 @@ void SED::warning_integrateSED(const vector<flt> &filters, bool verbose) {
       // SED in the red part This is a linear extrapolation from the last point
       // defined in the SED. The extrapolation should be done in the template
       // itself, with a physical meaning. Need to avoid such situation.
-      lamb_flux.emplace_back(1.e8 * (1. + red), 0, 1);
+      lamb_flux.emplace_back(1.e8 * (1. + red), 0);
     }
   }
 }
@@ -230,7 +230,7 @@ double SED::integrate(const double lmin, const double lmax) {
   }
 
   auto up =
-      lower_bound(lamb_flux.begin(), lamb_flux.end(), oneElLambda(lmin, 1., 1));
+      lower_bound(lamb_flux.begin(), lamb_flux.end(), oneElLambda(lmin, 1.));
   size_t j = std::distance(lamb_flux.begin(), up) - 1;
 
   // integrate from lmin to lamb_flux[j+1]
@@ -278,68 +278,6 @@ double SED::trapzd() {
   return s;
 }
 
-vector<oneElLambda> SED::resample(vector<oneElLambda> &lamb_all,
-                                  const int origine, const double lmin,
-                                  const double lmax) {
-  vector<oneElLambda> lamb_interp;
-  // Initialize the previous and next element used for the interpolation
-  oneElLambda prevEl(-999, -999, -999);
-  oneElLambda nextEl(-999, -999, -999);
-
-  // Loop over the full vector with the two vectors concatenated
-  for (vector<oneElLambda>::iterator it = lamb_all.begin(); it < lamb_all.end();
-       ++it) {
-    // If well within the considered lambda range
-    if ((it->lamb) >= lmin && (it->lamb) <= lmax) {
-      // Add the new element
-      lamb_interp.push_back(*it);
-    }
-  }
-
-  // Loop over the full vector with the two vectors concatenated
-  for (vector<oneElLambda>::iterator it = lamb_interp.begin();
-       it < lamb_interp.end(); ++it) {
-    // If the considered origin is the one we want to fill -> don't do anything
-    if (it->ori == origine) {
-      // Store this element for the next interpolation
-      prevEl = *it;
-
-      // If the considered origin is not the one we want to fill, replace it
-      // with a linear interpolation of the others
-    } else {
-      // Check if the lower value is already defined, which is required for the
-      // interpolation
-      if (prevEl.lamb >= 0) {
-        // Increase the iterator to reach the next item with the right origin
-        for (vector<oneElLambda>::iterator kt = it; kt < lamb_interp.end();
-             ++kt) {
-          // Store the upper value for the interpolation
-          if (kt->ori == origine) {
-            nextEl = *kt;
-            break;
-          }
-
-          // Case when the final position in the vector is examined without
-          // finding any item with the right origin Not possible to find an
-          // upper value for the interpolation
-          if (kt == lamb_interp.end() - 1) nextEl.lamb = -999;
-        }
-
-        // Change the vector as the result of the interpolation
-        // Mofify the origin variable
-        it->interp(prevEl, nextEl);
-        // If the interpolation was possible
-        if (it->ori >= 0) it->ori = origine;
-      } else {
-        // If the interpolation wasn't possible
-        it->val = -99;
-        it->ori = -99;
-      }
-    }
-  }
-  return lamb_interp;
-}
-
 /*
   Create a SED corresponding to the calibration studied, used for filter
 */
@@ -385,7 +323,7 @@ void SED::generateCalib(double lmin, double lmax, int Nsteps, int calib) {
     }
 
     // fill the lambda/trans values of the object
-    lamb_flux.emplace_back(lamb, flux, 1);
+    lamb_flux.emplace_back(lamb, flux);
   }
 
   return;
@@ -407,10 +345,10 @@ void SED::sumSpectra(SED addSED, const double rescal) {
   oneElVector allpoints;
   allpoints.reserve(x1.size() + x2.size());
   for (size_t k = 0; k < x1.size(); k++) {
-    allpoints.emplace_back(x1[k], y1[k] + rescal * newy2[k], 1);
+    allpoints.emplace_back(x1[k], y1[k] + rescal * newy2[k]);
   }
   for (size_t k = 0; k < x2.size(); k++) {
-    allpoints.emplace_back(x2[k], newy1[k] + rescal * y2[k], 1);
+    allpoints.emplace_back(x2[k], newy1[k] + rescal * y2[k]);
   }
   std::sort(allpoints.begin(), allpoints.end());
   allpoints.erase(std::unique(allpoints.begin(), allpoints.end()),
@@ -430,8 +368,6 @@ void SED::reduce_memory(vector<flt> allFlt) {
     vector<bool> flags;
     flags.resize(lamb_flux.size(), false);
 
-    // Loop over the filters, and set the origin at -1 when encompassed in the
-    // filter curve
     for (const auto &flt : allFlt) {
       // Loop over all the lambda of the SED
       for (size_t k = 1; k < lamb_flux.size() - 1; ++k) {
@@ -746,95 +682,6 @@ void GalSED::calc_ph() {
   Add the continuum from the nebular regions
   Work done by Cedric Dubois
 */
-// vector<double> GalSED::add_neb_cont(double qi) {
-//   /* we assume that the emitting gas has an electron temperature of Te =
-//   10000
-//      K, an electron density N = 100 cm-3 (low density limite), and a helium
-//      abundance of 10% by number relative to hydrogen.
-//   */
-
-//   oneElVector ga;
-//   for (size_t i = 0; i < 71; i++) {
-//     double val = ga_total[i];
-//     val = val <= 0 ? -100 : log10(val);
-//     ga.emplace_back(ga_lamb[i], val, 4);
-//   }
-
-//   ga.insert(ga.end(), lamb_flux.begin(), lamb_flux.end());
-//   sort(ga.begin(), ga.end());
-//   auto ga_interp = resample(ga, 4, 0, 1.6e+6);
-//   for (size_t i = 0; i < ga_interp.size(); i++)
-//     ga_interp[i].val = pow(10, ga_interp[i].val);
-
-//   // Take the vector lamb_flux and add the nebular continu in .val
-//   double flux_neb;
-//   vector<double> neb_contrib;
-//   double cst = c * 1e-40 * qi * f_ga / alpha_B;
-//   for (size_t i = 0; i < lamb_flux.size(); i++) {
-//     double x = lamb_flux[i].lamb;
-//     double v = lamb_flux[i].val;
-//     // c/lambda^2*gamma/alpha_B * number of ionizing photons * fraction of
-//     // absorbed photons 1e-40 since c in A/s and gamma in 10^-40 erg
-//     flux_neb = cst / (x * x) * ga_interp[i].val;
-//     neb_contrib.push_back(flux_neb);
-//     // Sum the nebular flux to the original flux from stellar population
-//     lamb_flux[i].val = v + flux_neb;
-//   }
-
-//   return neb_contrib;
-// }
-
-// /*
-//   Add the continuum from the nebular regions
-//   Work done by Cedric Dubois
-// */
-// vector<double> GalSED::add_neb_cont2(double qi) {
-//   /* we assume that the emitting gas has an electron temperature of Te =
-//   10000
-//      K, an electron density N = 100 cm-3 (low density limite), and a helium
-//      abundance of 10% by number relative to hydrogen.
-//   */
-
-//   oneElVector ga;
-//   // note: this is done repeatedly for each template
-//   // of the initial set (sedtolib output), while it does not depend on it
-//   // So this could/should be improved
-//   for (size_t i = 0; i < NUM_NEBULAR_DATA; i++) {
-//     double val = ga_total[i];
-//     //    val = val <= 0 ? -100 : log10(val);
-//     ga.emplace_back(ga_lamb[i], val, 4);
-//   }
-//   auto [x1, y1] = to_tuple(lamb_flux);
-//   auto [x2, y2] = to_tuple(ga);
-
-//   auto x3 = x1;
-//   x3.insert(x3.end(), x2.begin(), x2.end());
-//   std::sort(x3.begin(),
-//             x3.end());  // no unique as the nebular continuum has vertical
-//             drops
-
-//   lamb_flux.clear();
-//   lamb_flux.reserve(x3.size());
-
-//   double scale = c * 1.e-40 / alpha_B * qi * f_ga;
-//   double flux_neb;
-//   vector<double> neb_contrib;
-//   for (double x : x3) {
-//     double v1 = interp_linear_point(x1, y1, x);
-//     double v2 = interp_linear_point(x2, y2, x);
-//     //    flux_neb = scale / (x * x) * pow(10, v2);
-//     flux_neb = scale / (x * x) * v2;
-//     neb_contrib.push_back(flux_neb);
-//     lamb_flux.emplace_back(x, v1 + flux_neb, 1);
-//   }
-//   // return for control
-//   return neb_contrib;
-// }
-
-/*
-  Add the continuum from the nebular regions
-  Work done by Cedric Dubois
-*/
 vector<double> GalSED::add_neb_cont(double qi) {
   /* we assume that the emitting gas has an electron temperature of Te = 10000
      K, an electron density N = 100 cm-3 (low density limite), and a helium
@@ -885,12 +732,12 @@ void GalSED::generateEmPhys(double zmet, double qi) {
   for (size_t i = 0; i < 65; i++) {
     // Find the line ratio
     if (zmet / 0.02 <= 0.03) {
-      fac_line.emplace_back(emission_lines[i], L_ref * Z1_line[i], 5);
+      fac_line.emplace_back(emission_lines[i], L_ref * Z1_line[i]);
     } else if (zmet / 0.02 > 0.03 && zmet / 0.02 <= 0.3) {
-      fac_line.emplace_back(emission_lines[i], L_ref * Z2_line[i], 5);
+      fac_line.emplace_back(emission_lines[i], L_ref * Z2_line[i]);
 
     } else if (0.3 < zmet / 0.02) {
-      fac_line.emplace_back(emission_lines[i], L_ref * Z3_line[i], 5);
+      fac_line.emplace_back(emission_lines[i], L_ref * Z3_line[i]);
     } else {
       cout << "enter a valid value of Z metalicity " << endl;
     }
@@ -919,7 +766,7 @@ void GalSED::generateEmEmpUV(double MNUV_int, double NUVR) {
   // Create the emission line and rescale them
   fac_line.clear();
   for (size_t i = 0; i < NUM_EMISSION_LINES; i++) {
-    fac_line.emplace_back(emission_lines[i], scaleFac * empirical_ratio[i], 5);
+    fac_line.emplace_back(emission_lines[i], scaleFac * empirical_ratio[i]);
   }
   // sort the vector by wavelength
   sort(fac_line.begin(), fac_line.end());
@@ -943,7 +790,7 @@ void GalSED::generateEmEmpSFR(double sfr, double NUVR) {
   // Create the emission line and rescale them
   fac_line.clear();
   for (size_t i = 0; i < NUM_EMISSION_LINES; i++) {
-    fac_line.emplace_back(emission_lines[i], scaleFac * empirical_ratio2[i], 5);
+    fac_line.emplace_back(emission_lines[i], scaleFac * empirical_ratio2[i]);
   }
   // sort the vector by wavelength
   sort(fac_line.begin(), fac_line.end());
@@ -981,7 +828,7 @@ void GalSED::generateEmSpectra(int nstep) {
         double lb = fac_line[j].lamb - nbsigma * sigma[j] + double(i) * step;
         // Add it to the emission line spectra
         // Start with a -nbsigma*sigma put at 0
-        lamb_flux.emplace_back(lb, 0., 1);
+        lamb_flux.emplace_back(lb, 0.);
       }
     }
   }
@@ -1011,17 +858,17 @@ void GalSED::generateEmSpectra(int nstep) {
       // if nothing at more than 1A after the considered lambda, it is the end
       // of one line
       if ((lamb_flux[k].lamb + 1.) < lamb_flux[k + 1].lamb) {
-        insert_lamb.emplace_back(lamb_flux[k].lamb + 0.1, 0., 1);
+        insert_lamb.emplace_back(lamb_flux[k].lamb + 0.1, 0.);
       }
       // if nothing at more than 1A below the considered lambda, it is the
       // beginning of a line
       if ((lamb_flux[k - 1].lamb + 1.) < lamb_flux[k].lamb) {
-        insert_lamb.emplace_back(lamb_flux[k].lamb - 0.1, 0., 1);
+        insert_lamb.emplace_back(lamb_flux[k].lamb - 0.1, 0.);
       }
     }
     // Add val=0 at extreme wavelengths
-    insert_lamb.emplace_back(0, 0., 1);
-    insert_lamb.emplace_back(10000000., 0., 1);
+    insert_lamb.emplace_back(0, 0.);
+    insert_lamb.emplace_back(10000000., 0.);
 
     // Add this vector to the first one
     lamb_flux.insert(lamb_flux.end(), insert_lamb.begin(), insert_lamb.end());
@@ -1298,7 +1145,7 @@ void GalSED::readMagBin(ifstream &ins) {
       // Read the emission lines fluxes
       int nbEm;
       ins.read((char *)&nbEm, sizeof(int));
-      fac_line.resize(nbEm, oneElLambda(-999, -999, 1));
+      fac_line.resize(nbEm, oneElLambda(-999, -999));
       for (auto &eml : fac_line) {
         ins.read((char *)&eml.lamb, sizeof(double));
       }
@@ -1312,8 +1159,7 @@ void GalSED::readMagBin(ifstream &ins) {
   if (red < 1.e-20) {
     int nblamb;
     ins.read((char *)&nblamb, sizeof(int));
-    // put ori=1 because it's a SED
-    lamb_flux.resize(nblamb, oneElLambda(-999, -999, 1));
+    lamb_flux.resize(nblamb, oneElLambda(-999, -999));
     for (auto &oneEl : lamb_flux) {
       ins.read((char *)&oneEl.lamb, sizeof(double));
     }
@@ -1526,8 +1372,7 @@ void QSOSED::readMagBin(ifstream &ins) {
   if (red < 1.e-20) {
     int nblamb;
     ins.read((char *)&nblamb, sizeof(int));
-    // put ori=1 because it's a SED
-    lamb_flux.resize(nblamb, oneElLambda(-999, -999, 1));
+    lamb_flux.resize(nblamb, oneElLambda(-999, -999));
     for (auto &oneEl : lamb_flux) {
       ins.read((char *)&oneEl.lamb, sizeof(double));
     }
@@ -1565,8 +1410,7 @@ void StarSED::readMagBin(ifstream &ins) {
   // read the spectra only if the redshift is 0
   int nblamb;
   ins.read((char *)&nblamb, sizeof(int));
-  // put ori=1 because it's a SED
-  lamb_flux.resize(nblamb, oneElLambda(-999, -999, 1));
+  lamb_flux.resize(nblamb, oneElLambda(-999, -999));
   for (auto &oneEl : lamb_flux) {
     ins.read((char *)&oneEl.lamb, sizeof(double));
   }

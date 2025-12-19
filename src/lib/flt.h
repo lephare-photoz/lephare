@@ -105,15 +105,15 @@ class flt {
     // Delta lambda
     double dlamb = (lmax - lmin) / double(nsteps);
     // First element at T=0
-    oneElLambda litBeg(lmin - 1, 0, 0);
+    oneElLambda litBeg(lmin - 1, 0);
     lamb_trans.push_back(litBeg);
     for (int k = 0; k <= nsteps; k++) {
       double lamb = lmin + double(k) * dlamb;
-      oneElLambda litOne(lamb, 1, 0);
+      oneElLambda litOne(lamb, 1);
       lamb_trans.push_back(litOne);
     }
     // Last element at T=0
-    oneElLambda litFin(lmax + 1, 0, 0);
+    oneElLambda litFin(lmax + 1, 0);
     lamb_trans.push_back(litFin);
   }
 

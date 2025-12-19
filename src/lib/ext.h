@@ -42,7 +42,7 @@ class ext {
   void read(string extFile);
 
   /// add a single element
-  void add_element(double lam, double val, short ori);
+  void add_element(double lam, double val);
 
   /*! Helper function to set the sed vector as lambda=x and val = y
    * @param x: ordered vector of lambda value
@@ -52,7 +52,7 @@ class ext {
     if (x.size() != y.size()) throw runtime_error("vector sizes are different");
     lamb_ext.clear();
     for (size_t k = 0; k < x.size(); k++) {
-      lamb_ext.emplace_back(x[k], y[k], 2);
+      lamb_ext.emplace_back(x[k], y[k]);
     }
     lmin = x.front();
     lmax = x.back();

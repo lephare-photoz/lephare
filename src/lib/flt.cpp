@@ -49,7 +49,7 @@ void flt::read(const string &fltFile) {
       ss >> l;  // 1 col: lambda
       ss >> v;  // 2 column: transmission
       // origin at 0 to indicate that this element refers to a filter
-      lamb_trans.emplace_back(l, v, 0);
+      lamb_trans.emplace_back(l, v);
     }
   }
 
@@ -94,7 +94,7 @@ void flt::read(ifstream &sfiltIn) {
       sfiltIn >> l;    // 1 col: lambda
       sfiltIn >> v;    // 2 column: transmission
       sfiltIn >> bid;  // consume comment string in file
-      lamb_trans.emplace_back(l, v, 0);
+      lamb_trans.emplace_back(l, v);
     }
   }
 
@@ -126,10 +126,10 @@ void flt::clean() {
 
   // Add 0 value at the two extreme ends of the filter, 10 Angtrom below and
   // above
-  oneElLambda addFirstEl((*lamb_trans.begin()).lamb - 10, 0, 0);
-  lamb_trans.emplace(lamb_trans.begin(), lamb_trans.front().lamb - 10, 0, 0);
-  oneElLambda addLastEl((*(lamb_trans.end() - 1)).lamb + 10, 0, 0);
-  lamb_trans.emplace(lamb_trans.end(), lamb_trans.back().lamb + 10, 0, 0);
+  oneElLambda addFirstEl((*lamb_trans.begin()).lamb - 10, 0);
+  lamb_trans.emplace(lamb_trans.begin(), lamb_trans.front().lamb - 10, 0);
+  oneElLambda addLastEl((*(lamb_trans.end() - 1)).lamb + 10, 0);
+  lamb_trans.emplace(lamb_trans.end(), lamb_trans.back().lamb + 10, 0);
 
   return;
 }
@@ -595,7 +595,7 @@ vector<flt> read_doc_filters(const string filtFile) {
           nbLines;
 
       // store all filters in one vector
-      oneFilt.lamb_trans.resize(nbLines, oneElLambda(-999, -999, -999));
+      oneFilt.lamb_trans.resize(nbLines, oneElLambda(-999, -999));
       allFilt.push_back(oneFilt);
     }
   }
