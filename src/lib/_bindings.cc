@@ -282,6 +282,7 @@ PYBIND11_MODULE(_lephare, mod) {
   applySEDLibTemplate<QSOSED>(mod, "QSOSEDLib");
   applySEDLibTemplate<GalSED>(mod, "GalSEDLib");
   mod.def("readBC03", &readBC03);
+  mod.def("readPEGASE", &readPEGASE);
 
   /******** CLASS MAG *********/
 #define MAGDEFS(c, n)                                      \

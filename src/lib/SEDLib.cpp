@@ -187,9 +187,81 @@ vector<GalSED> readBC03(string sedFile, int nummod, vector<double> &ageSel) {
 READ THE SED GENERATED WITH PEGASE
 */
 vector<GalSED> readPEGASE(string sedFile, int nummod, vector<double> &ageSel) {
-  vector<GalSED> outSED;
+  ifstream ssed;
+  string line;
+  size_t n_ages, n_points, n_lines;
 
-  cout << " Need to implement the PEGASE format in SED reading " << endl;
+  // open the SED file
+  ssed.open(sedFile.c_str());
+  if (!ssed) {
+    throw invalid_argument("Can't open the BC03 file " + sedFile);
+  }
+
+  while (line.substr(0, 5) != "*****") {
+    ssed >> line;
+    if (line.substr(0, 23) == "Type of star formation:") {
+      char type = line.back();
+      if (type != '3')
+        throw invalid_argument(std::string("type ") + type +
+                               "not yet implemented");
+    }
+    continue;
+  }
+
+  ssed >> n_ages >> n_points >> n_lines;
+  vector<double> lambdas(n_points);
+  for (double &v : lambdas) {
+    ssed >> v;
+  }
+  vector<double> lines(n_lines);
+  for (double &v : lines) {
+    ssed >> v;
+  }
+
+  // conversion for PEGASE2 from Lum {erg/s/A} to flux {erg/cm2/s/A}
+  //         Fluxconv {1/cm^2}= 1/[4.pi.(10pc)^2{cm^2}]
+  double fluxconv = 1. / (4 * pi * 100 * pow(pc, 2));
+
+  vector<GalSED> outSED;
+  for (int count = 0; count < n_ages; count++) {
+    vector<double> ancillaries(19);
+    for (double &v : ancillaries) {
+      ssed >> v;
+    }
+
+    double age(ancillaries[0] * 1.e6);
+    bool useAge = ageSel.empty() ? true : closeAge(ageSel, {age}).front();
+
+    double mass(ancillaries[2]);
+    double zmet(ancillaries[7]);
+    double ltir0(ancillaries[10]);
+    double ltir1(ancillaries[12]);
+    double ltir = log10(ltir0 * ltir1 / Lsol);
+    double sfr = ancillaries[13] / 1.e6;
+    double tau = -999.;
+
+    GalSED oneSED(sedFile, tau, age, "PEGASE2", nummod, (int)count);
+    oneSED.lamb_flux.reserve(n_points);
+    double val;
+    for (size_t k = 0; k < n_points; k++) {
+      ssed >> val;
+      oneSED.lamb_flux.emplace_back(lambdas[k], val * fluxconv, 1);
+    }
+
+    for (size_t k = 0; k < n_lines; k++) {
+      ssed >> val;
+      // looks like we dont do anything with the lines in the fortran code
+      // oneSED.lamb_flux.emplace_back(lambdas[k], val*fluxconv, 1);
+    }
+
+    oneSED.ltir = ltir;
+    oneSED.sfr = sfr;
+    oneSED.zmet = zmet;
+    oneSED.mass = mass;
+    if (useAge) {
+      outSED.push_back(oneSED);
+    }
+  }
 
   return outSED;
 }
