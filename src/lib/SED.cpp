@@ -1502,27 +1502,41 @@ vector<double> SED::compute_fluxes(const vector<flt> &filters) {
 vector<double> SED::integrateSED(const flt &filter) {
   vector<double> results(6, 0.);
 
+  // don't integrate if:
+  // - the lowest lambda of the SED above the minimum lambda of the filter
+  // - the highest lambda of the SED below the maximum lambda of the filter
   if (lamb_flux.front().lamb > filter.lmin() ||
       lamb_flux.back().lamb < filter.lmax()) {
     return vector<double>(6, INVALID_VAL);
   }
 
+  // resample to a common lambda which is the union of both lambda
   auto [x, newsed, newflt] =
       restricted_resampling(lamb_flux, filter.lamb_trans, -1);
 
   double r0, r1, r2, r3, r4, r5;
   for (size_t i = 0; i < x.size() - 1; i++) {
+    // lambda mean
     double lmean = (x[i] + x[i + 1]) / 2;
+    // trans mean
     double tmean = (newflt[i] + newflt[i + 1]) / 2;
+    // flux mean
     double fmean = (newsed[i] + newsed[i + 1]) / 2;
+    // delta lambda
     double dlbd = (x[i + 1] - x[i]);
     double tmp = tmean * dlbd;
+    // integral T dlambda
     r0 += tmp;
+    // integral (T*lambda) dlambda
     r2 += tmp * lmean;
+    // integral (F*T) dlambda
     r3 += tmp * fmean;
+    // integral (F*T*lambda) dlambda
     r4 += tmp * fmean * lmean;
+    // integral (T/lambda^2) dlambda
     r5 += tmp / pow(lmean, 2);
   }
+  // integral (T*c/lambda**2) dlambda
   r1 = r5 * c;
   return vector<double>{r0, r1, r2, r3, r4, r5};
 }
