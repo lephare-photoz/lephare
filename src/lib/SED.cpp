@@ -1511,7 +1511,6 @@ vector<double> SED::integrateSED(const flt &filter) {
       restricted_resampling(lamb_flux, filter.lamb_trans, -1);
 
   double r0, r1, r2, r3, r4, r5;
-#pragma omp parallel for reduction(+ : r0, r1, r2, r3, r4, r5)
   for (size_t i = 0; i < x.size() - 1; i++) {
     double lmean = (x[i] + x[i + 1]) / 2;
     double tmean = (newflt[i] + newflt[i + 1]) / 2;
