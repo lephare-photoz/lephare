@@ -21,6 +21,782 @@
 
 using namespace std;
 
+size_t copy_sed(SEDVec &dst, SEDVec const &src, size_t idx) {
+  push_sed(dst, src.name[idx], src.nummod[idx], src.nlib[idx]);
+
+  dst.idAge.back() = src.idAge[idx];
+  dst.lamb_flux.back() = src.lamb_flux[idx];
+  dst.kcorr.back() = src.kcorr[idx];
+  dst.mag.back() = src.mag[idx];
+  dst.has_emlines.back() = src.has_emlines[idx];
+  dst.index.back() = src.index[idx];
+  dst.index_z0.back() = src.index_z0[idx];
+  dst.red.back() = src.red[idx];
+  dst.chi2.back() = src.chi2[idx];
+  dst.dm.back() = src.dm[idx];
+  dst.mass.back() = src.mass[idx];
+  dst.age.back() = src.age[idx];
+  dst.sfr.back() = src.sfr[idx];
+  dst.ltir.back() = src.ltir[idx];
+  dst.ebv.back() = src.ebv[idx];
+  dst.extlawId.back() = src.extlawId[idx];
+  dst.fac_line.back() = src.fac_line[idx];
+  dst.distMod.back() = src.distMod[idx];
+  return dst.size() - 1;
+}
+
+void rescale_sed(SEDVec &sed_vec, double scaleFac, size_t idx) {
+  // Loop over the full vector with the two vectors concatenated
+  auto &lamb_flux = sed_vec.lamb_flux[idx];
+  for (auto it = lamb_flux.begin(); it < lamb_flux.end(); ++it) {
+    // multiply the flux by a given factor
+    it->val = (it->val) * scaleFac;
+  }
+  return;
+}
+void applyOpa_sed(SEDVec &sed_vec, const vector<opa> &opaAll, size_t idx) {
+  // Select the right opacity file according to the redshift of the source
+  // Do not use simply 0.1 -> need to have the same as the fortran version and
+  // some rounding problem (e.g. z=0.15 with step=0.01)
+  int ind = lround(sed_vec.red[idx] / 0.100000000000001);
+  // In lepharedir/opa/ there are opacity files up to z=8 (file #80),
+  // use the last one (transmission=0 at all lambda<1216) also when z>8
+  if (ind > 80) {
+    ind = 80;
+  }
+  auto &lamb_flux = sed_vec.lamb_flux[idx];
+
+  vector<oneElLambda> lamb_all, lamb_end;
+  // Split in two the SED lambda (below and above 1216A)
+  for (size_t k = 0; k < lamb_flux.size(); ++k) {
+    // If below 1215.67, fill lamb_all, otherwise keep that in lamb_end
+    if (lamb_flux[k].lamb < 1215.67) {
+      lamb_all.push_back(lamb_flux[k]);
+    } else {
+      lamb_end.push_back(lamb_flux[k]);
+    }
+  }
+  // Concatenate two vectors composed of "oneElLambda" including the IGM opacity
+  // and the SED below 1216
+  lamb_all.insert(lamb_all.end(), (opaAll[ind].lamb_opa).begin(),
+                  (opaAll[ind].lamb_opa).end());
+
+  // Sort the vector in increasing lambda (vector including the extinction law
+  // and the SED)
+  sort(lamb_all.begin(), lamb_all.end());
+
+  vector<oneElLambda> new_opa;
+  // Resample the IGM opacity in a lambda range combining the SED and the
+  // opacity
+  SED::resample(lamb_all, new_opa, 3, 0., 1.e20);
+
+  // Loop over the SED and opacity using the concatenate opa+SED vector
+  vector<oneElLambda> lamb_new;
+  for (size_t k = 0; k < lamb_all.size(); ++k) {
+    // If we are well looking at the original SED
+    if ((lamb_all[k]).ori == 1) {
+      double lamb = lamb_all[k].lamb;
+      double val = lamb_all[k].val;
+      if (opaAll[ind].lmin < lamb && opaAll[ind].lmax > lamb) {
+        // Put the opacity at 1 if the resample is not done (do nothing on the
+        // flux)
+        if ((new_opa[k]).ori < 0) (new_opa[k]).val = 1;
+        // Multiply the flux with the opacity
+        val = (lamb_all[k]).val * (new_opa[k]).val;
+      }
+      lamb_new.emplace_back(lamb, val, 1);
+    }
+  }
+
+  // Replace the old lambda flux vector with the new one including IGM
+  lamb_flux = lamb_new;
+  // Add the SED at lambda > 1216
+  lamb_flux.insert(lamb_flux.end(), lamb_end.begin(), lamb_end.end());
+
+  return;
+}
+
+void generateEmSpectra_sed(SEDVec &sed_vec, int nstep, size_t idx) {
+  // Number of sigma to generate the gaussian.
+  double nbsigma = 6;
+
+  auto &lamb_flux = sed_vec.lamb_flux[idx];
+  auto &fac_line = sed_vec.fac_line[idx];
+
+  lamb_flux.clear();
+
+  // Define sigma of the lines
+  double sigma[65];
+  for (size_t j = 0; j < fac_line.size(); j++) {
+    // Distribute the flux through an effective sigma width
+    // no real idea of width to take (depends on inclination, how the HII
+    // regions are distributed, etc) Take 100 km/s
+    sigma[j] = 100. * fac_line[j].lamb / c / 2.355 * 1.e13;
+  }
+
+  // Loop over each emission line considered here in order to define the lambda
+  // array in which to distribute the EL line
+  for (size_t j = 0; j < fac_line.size(); j++) {
+    // Generate the line only of necessary
+    if (fac_line[j].val > 0) {
+      // step in lambda
+      double step = nbsigma * 2. * sigma[j] / double(nstep);
+      // Loop to cover the full line
+      for (int i = 0; i < nstep; i++) {
+        // Lambda corresponding to this index
+        double lb = fac_line[j].lamb - nbsigma * sigma[j] + double(i) * step;
+        // Add it to the emission line spectra
+        // Start with a -nbsigma*sigma put at 0
+        lamb_flux.emplace_back(lb, 0., 1);
+      }
+    }
+  }
+  // Sort the lambda, necessary in case of overlapp between lines
+  sort(lamb_flux.begin(), lamb_flux.end());
+
+  // Loop over each emission line considered here in order to estimate the flux
+  // and sum it to the other lines
+  for (size_t j = 0; j < fac_line.size(); j++) {
+    // Generate the line only of necessary
+    if (fac_line[j].val > 0) {
+      // Loop over the original lambda-flux
+      for (size_t k = 0; k < lamb_flux.size(); k++) {
+        double lineFl = (fac_line[j].val) / (sigma[j] * sqrt(2. * pi)) *
+                        exp(-pow((lamb_flux[k].lamb - fac_line[j].lamb), 2.) /
+                            (2 * pow(sigma[j], 2.)));
+        lamb_flux[k].val += lineFl;
+      }
+    }
+  }
+
+  // Add 0 before/after each line
+  if (lamb_flux.size() > 0) {
+    vector<oneElLambda> insert_lamb;
+    // Loop over all the line elements
+    for (size_t k = 1; k < lamb_flux.size() - 1; k++) {
+      // if nothing at more than 1A after the considered lambda, it is the end
+      // of one line
+      if ((lamb_flux[k].lamb + 1.) < lamb_flux[k + 1].lamb) {
+        insert_lamb.emplace_back(lamb_flux[k].lamb + 0.1, 0., 1);
+      }
+      // if nothing at more than 1A below the considered lambda, it is the
+      // beginning of a line
+      if ((lamb_flux[k - 1].lamb + 1.) < lamb_flux[k].lamb) {
+        insert_lamb.emplace_back(lamb_flux[k].lamb - 0.1, 0., 1);
+      }
+    }
+    // Add val=0 at extreme wavelengths
+    insert_lamb.emplace_back(0, 0., 1);
+    insert_lamb.emplace_back(10000000., 0., 1);
+
+    // Add this vector to the first one
+    lamb_flux.insert(lamb_flux.end(), insert_lamb.begin(), insert_lamb.end());
+    // Sort the lambda, necessary in case of overlapp between lines
+    sort(lamb_flux.begin(), lamb_flux.end());
+  }
+
+  return;
+}
+
+void generate_spectra_sed(SEDVec &sed_vec, double zin, double dmin,
+                          vector<opa> opaAll, size_t idx) {
+  if (sed_vec.nlib[idx] == 0) {
+    // GAL
+    sed_vec.red[idx] = zin;
+    // Create a SED of emission lines
+    SEDVec gals;
+    size_t SEDz0_Em = copy_sed(gals, sed_vec, idx);
+    // Don't keep the original lamb_flux, replace it with emission lines.
+    gals.lamb_flux[SEDz0_Em].clear();
+    generateEmSpectra_sed(gals, 40, SEDz0_Em);
+    // Add them to the continuum
+    sumSpectra_sed(sed_vec, idx, gals, SEDz0_Em, 1.0);
+    // Opacity applied in rest-frame, depending on the redshift of the source
+    applyOpa_sed(sed_vec, opaAll, idx);
+    // Redshift the SED at the redshift extracted from the minimum chi2
+    redshift(sed_vec, idx);
+    // Rescale la SED
+    rescale_sed(sed_vec, dmin, idx);
+  } else if (sed_vec.nlib[idx] == 1) {
+    // QSO
+    sed_vec.red[idx] = zin;
+    // Rescale la SED
+    rescale_sed(sed_vec, dmin, idx);
+    // Opacity applied in rest-frame, depending on the redshift of the source
+    applyOpa_sed(sed_vec, opaAll, idx);
+    //// Redshift the SED at the redshift extracted from the minimum chi2
+    redshift(sed_vec, idx);
+  } else if (sed_vec.nlib[idx] == 2) {
+    // STAR
+    //  Rescale la SED
+    rescale_sed(sed_vec, dmin, idx);
+  }
+  return;
+}
+
+void redshift(SEDVec &sed_vec, size_t idx) {
+  // Loop over the full vector with the two vectors concatenated
+  for (vector<oneElLambda>::iterator it = sed_vec.lamb_flux[idx].begin();
+       it < sed_vec.lamb_flux[idx].end(); ++it) {
+    // lambda(1+z) and flux/(1+z)
+    it->val = (it->val) / (1 + sed_vec.red[idx]);
+    it->lamb = (it->lamb) * (1 + sed_vec.red[idx]);
+  }
+
+  return;
+}
+
+void sumSpectra_sed(SEDVec &sed_vec, size_t idx, SEDVec &gals, size_t addSED,
+                    const double rescal) {
+  // Change the origin of lamb_all
+  for (size_t i = 0; i < gals.lamb_flux[addSED].size(); i++) {
+    gals.lamb_flux[addSED][i].ori = 1;
+  }
+  for (size_t i = 0; i < sed_vec.lamb_flux[idx].size(); i++) {
+    sed_vec.lamb_flux[idx][i].ori = 0;
+  }
+
+  // Concatenate two vectors composed of "oneElLambda" including this spectra
+  // and the one to be added
+  sed_vec.lamb_flux[idx].insert(sed_vec.lamb_flux[idx].end(),
+                                gals.lamb_flux[addSED].begin(),
+                                gals.lamb_flux[addSED].end());
+
+  // Sort the vector in increasing lambda
+  sort(sed_vec.lamb_flux[idx].begin(), sed_vec.lamb_flux[idx].end());
+
+  // Resample the first spectra into a common lambda range
+  vector<oneElLambda> spectra_ori;
+  SED::resample(sed_vec.lamb_flux[idx], spectra_ori, 0, 0., 1e20);
+  // Resample the second spectra into a common lambda range
+  vector<oneElLambda> spectra_add;
+  SED::resample(sed_vec.lamb_flux[idx], spectra_add, 1, 0., 1e20);
+
+  // Sum the two spectra and generate a new lamb_flux
+  sed_vec.lamb_flux[idx].clear();
+  for (size_t i = 0; i < spectra_ori.size(); i++) {
+    // Check that the two have been well resample before
+    if (spectra_add[i].ori < 0) spectra_add[i].val = 0.;
+    if (spectra_ori[i].ori < 0) spectra_ori[i].val = 0.;
+    sed_vec.lamb_flux[idx].emplace_back(
+        spectra_add[i].lamb, (spectra_add[i].val * rescal) + spectra_ori[i].val,
+        1);
+  }
+}
+
+void warning_integrateSED_sed(SEDVec &sed_vec, const vector<flt> &filters,
+                              bool verbose, size_t idx) {
+  // Loop over the filters
+  auto &lamb_flux = sed_vec.lamb_flux[idx];
+  double red = sed_vec.red[idx];
+  for (const auto &filter : filters) {
+    if (((lamb_flux.begin())->lamb) * (1. + red) > filter.lmin()) {
+      // if(verbose){
+      // cout << "A problem could occur since minimum of SED " <<
+      // (lamb_flux.begin())->lamb << " above min of the filter " <<
+      // filter.lmin() ; cout << " with filters bluer than " << filter.name << "
+      // and SED " << name << " and z " << red << "." ; cout << " Add lambda=0 ;
+      // flux=0 to extralolate in blue.  " << endl;
+      //}
+      // Put the extreme value at 0, in order to define the SED in the blue part
+      lamb_flux.emplace(lamb_flux.begin(), 0, 0, 1);
+    }
+
+    if (((lamb_flux.end() - 1)->lamb) * (1. + red) < filter.lmax()) {
+      if (verbose && (red == 0)) {
+        cout << "A problem could occur since maximum of SED "
+             << lamb_flux.back().lamb << " below max of the filter "
+             << filter.lmax();
+        cout << " with filters redder than " << filter.name << " and SED "
+             << sed_vec.name[idx] << " and z " << red << ".";
+        cout << " Add lambda=1.e8 ; flux=0 to extralolate in red. Really "
+                "risky: check templates. linear extrapolation not physical. "
+             << endl;
+      }
+      // Put the extreme value at lambda=1e8 and flux=0, in order to define the
+      // SED in the red part This is a linear extrapolation from the last point
+      // defined in the SED. The extrapolation should be done in the template
+      // itself, with a physical meaning. Need to avoid such situation.
+      lamb_flux.emplace_back(1.e8 * (1. + red), 0, 1);
+    }
+  }
+}
+
+pair<vector<double>, vector<double>> get_data_vector(SEDVec &vec, double minl,
+                                                     double maxl, bool mag,
+                                                     double offset,
+                                                     size_t idx) {
+  vector<double> lambs, vals;
+  double lamb, val;
+  for (const auto &onel : vec.lamb_flux[idx]) {
+    lamb = onel.lamb;
+    val = onel.val;
+    if (lamb <= minl || lamb >= maxl) continue;
+
+    lambs.push_back(lamb);
+
+    if (mag) {
+      val = val <= 0.0 ? HIGH_MAG : flux2mag(val * lamb * lamb / c, offset);
+    }
+
+    vals.push_back(val);
+  }
+  return make_pair(lambs, vals);
+}
+
+void push_sed(SEDVec &sed_vec, const string &name, int nummodC,
+              object_type type) {
+  sed_vec.name.push_back(name);
+  sed_vec.nummod.push_back(nummodC);
+  sed_vec.nlib.push_back(type);
+  sed_vec.has_emlines.push_back(false);
+  sed_vec.idAge.push_back(0);
+  sed_vec.age.push_back(-999);
+  sed_vec.red.push_back(0.);
+  sed_vec.index.push_back(0);
+  sed_vec.index_z0.push_back(0);
+  sed_vec.mass.push_back(-999);
+  sed_vec.sfr.push_back(-999);
+  sed_vec.ltir.push_back(-999);
+  sed_vec.ebv.push_back(0.);
+  sed_vec.extlawId.push_back(0);
+  sed_vec.chi2.push_back(HIGH_CHI2);
+  sed_vec.dm.push_back(-999.);
+  sed_vec.distMod.push_back(0);
+
+  sed_vec.lamb_flux.push_back({});
+  sed_vec.fac_line.push_back({});
+  sed_vec.kcorr.push_back({});
+  sed_vec.mag_z0.push_back({});
+  sed_vec.mag.push_back({});
+
+  sed_vec.luv.push_back(0.);
+  sed_vec.lopt.push_back(0.);
+  sed_vec.lnir.push_back(0.);
+  sed_vec.ssfr.push_back(0.);
+  sed_vec.mag0.push_back(0.);
+  sed_vec.qi.push_back({});
+
+  sed_vec.flEm.push_back({});
+  sed_vec.format.push_back({});
+  sed_vec.tau.push_back(-999);
+  sed_vec.zmet.push_back(-999);
+  sed_vec.d4000.push_back(-999);
+  sed_vec.fracEm.push_back(1.);
+
+  if (type == GAL) {
+    sed_vec.format.back() = 'A';
+    sed_vec.lnir.back() = -999;
+    sed_vec.luv.back() = -999;
+    sed_vec.lopt.back() = -999;
+  }
+}
+
+bool SEDVec::check_ok() {
+#define CHK(X) and X.size() == s
+
+  const auto s = name.size();
+  return true CHK(lamb_flux) CHK(fac_line) CHK(kcorr) CHK(mag_z0) CHK(mag)
+      CHK(name) CHK(has_emlines) CHK(nlib) CHK(idAge) CHK(nummod) CHK(index)
+          CHK(index_z0) CHK(red) CHK(chi2) CHK(dm) CHK(luv) CHK(lopt) CHK(lnir)
+              CHK(ltir) CHK(mass) CHK(age) CHK(sfr) CHK(ssfr) CHK(ebv) CHK(mag0)
+                  CHK(distMod) CHK(extlawId) CHK(qi) CHK(flEm) CHK(format)
+                      CHK(tau) CHK(zmet) CHK(d4000) CHK(fracEm);
+
+#undef CHK
+}
+
+/*
+  read the templates in ascii, ascii valid for QSO/STARS/GAL
+  It will be overwritten in derived classes for more complex reading
+*/
+void read_sed(SEDVec &sed_vec, const string &name, const string &sedFile) {
+  push_sed(sed_vec, name);
+  ifstream ssed;
+
+  // open the SED template file into a stream
+  ssed.open(sedFile.c_str());
+  if (!ssed) {
+    throw invalid_argument(
+        "Can't open the file with the list of SED to be used " + sedFile);
+  }
+
+  // Take the stream line by line
+  string lit;
+  while (getline(ssed, lit)) {
+    // If the first character of the line is not #
+    if (check_first_char(lit)) {
+      // put the line into the stream ss again
+      stringstream ss(lit);
+
+      // fill the lambda/trans values of the SED
+      double l, v;
+      ss >> l;
+      ss >> v;
+      // if negative flux, put it at 0 because unphysical
+      if (v < 0) v = 0.;
+      sed_vec.lamb_flux.back().emplace_back(l, v, 1);
+    }
+  }
+
+  if (sed_vec.lamb_flux.back().size() == 0) {
+    throw runtime_error("SED::read(string sedFile) lam flux is zero");
+  }
+
+  // Close the stream
+  ssed.close();
+
+  // Sort the vector according to ascending lambda
+  sort(sed_vec.lamb_flux.back().begin(), sed_vec.lamb_flux.back().end());
+
+  return;
+}
+
+/*
+  Integrate within a filter, valid in the three cases GAL/QSO/STARS
+*/
+array<double, 6> integrateSED(const SEDVec &sed_vec, const flt &filter,
+                              size_t s_id) {
+  double area = 0.;
+  double arean = 0.;
+  double areaCorr = 0.;
+  double fmel = 0.;
+  double lmoy = 0.;
+  double lnum = 0.;
+
+  auto &lamb_flux = sed_vec.lamb_flux[s_id];
+
+  // Check that the full SED is defined over the filter
+  if (lamb_flux.front().lamb < filter.lmin() &&
+      lamb_flux.back().lamb > filter.lmax()) {
+    // Check that there is a minimum coverage between the SED and the filter
+    // if( (lamb_flux.begin())->lamb < filter.lmax() &&
+    // (lamb_flux.end()-1)->lamb > filter.lmin()){
+
+    // Initialise with a flux=0 at lambda=0
+    vector<oneElLambda> lamb_all;
+    lamb_all.emplace_back(0, 0, 1);
+    // Loop over the SED
+    for (auto l : lamb_flux) {
+      // Keep the first element before lmin (replace as long as you don't meet
+      // the filter).
+      if (l.lamb < filter.lmin()) lamb_all[0] = l;
+      // keep the SED when well included in the filter lambda range
+      if ((l.lamb) >= filter.lmin() && (l.lamb) <= filter.lmax())
+        lamb_all.push_back(l);
+      // keep only the last element after lmax
+      if (l.lamb > filter.lmax()) {
+        lamb_all.push_back(l);
+        break;
+      }
+    }
+
+    // Concatenate two vectors composed of the filter and the SED
+    lamb_all.insert(lamb_all.end(), (filter.lamb_trans).begin(),
+                    (filter.lamb_trans).end());
+
+    // Sort the vector in increasing lambda (vector including the filter and the
+    // SED)
+    sort(lamb_all.begin(), lamb_all.end());
+
+    // be sure that the first and the last element of the concatenate vector is
+    // the SED, not the filter If not, add an element with a flux=0 before or
+    // after
+    if (lamb_all.begin()->ori == 0) {
+      lamb_all.emplace(lamb_all.begin(), lamb_all.begin()->lamb - 1., 0, 1);
+    }
+    if (lamb_all.back().ori == 0) {
+      lamb_all.emplace_back(lamb_all.back().lamb + 1., 0, 1);
+    }
+
+    // Resample in two vectors with a common lambda range (the combination of
+    // the filter and SED lambda) filter
+    vector<oneElLambda> new_trans;
+    SED::resample(lamb_all, new_trans, 0, 0, 1.e50);
+    // sed
+    vector<oneElLambda> new_sed;
+    SED::resample(lamb_all, new_sed, 1, 0, 1.e50);
+
+    // Loop to find the mean lambda, mean flux, mean trans
+    // sum to get the area, arean, the integrated flux, the integrated flux
+    // accros the filter
+    for (int k = 0; k < int(new_sed.size()) - 1; ++k) {
+      // In case the resampling was impossible, put the value at 0 (means no
+      // transmission or no SED emission)
+      if (new_sed[k].ori < 0) new_sed[k].val = 0;
+      if (new_sed[k + 1].ori < 0) new_sed[k + 1].val = 0;
+      if (new_trans[k].ori < 0) new_trans[k].val = 0;
+      if (new_trans[k + 1].ori < 0) new_trans[k + 1].val = 0;
+      // lambda mean
+      double lmean = ((new_sed[k]).lamb + (new_sed[k + 1]).lamb) / 2.;
+      // trans mean
+      double tmean = ((new_trans[k]).val + (new_trans[k + 1]).val) / 2.;
+      // flux mean
+      double fmean = ((new_sed[k]).val + (new_sed[k + 1]).val) / 2.;
+      // delta lambda
+      double dlbd = ((new_sed[k + 1]).lamb - (new_sed[k]).lamb);
+      // conv
+      double conv = c / pow(lmean, 2.);
+      // integral T dlambda
+      area = area + tmean * dlbd;
+      // integral (T*c/lambda**2) dlambda
+      arean = arean + tmean * conv * dlbd;
+      // integral (T*lambda) dlambda
+      lmoy = lmoy + lmean * tmean * dlbd;
+      // integral (F*T) dlambda
+      fmel = fmel + fmean * tmean * dlbd;
+      // integral (F*T*lambda) dlambda
+      lnum = lnum + fmean * tmean * lmean * dlbd;
+      // integral (T/lambda^2) dlambda
+      areaCorr = areaCorr + tmean / pow(lmean, 2.) * dlbd;
+    }
+
+  } else {
+    // SED not defined over the full filter
+    area = INVALID_VAL;
+    arean = INVALID_VAL;
+    lmoy = INVALID_VAL;
+    fmel = INVALID_VAL;
+    lnum = INVALID_VAL;
+    areaCorr = INVALID_VAL;
+  }
+
+  // 0el: int (T) dlambda
+  // 1el: int (T*c/lambda^2) dlambda
+  // 2el: int (T*lambda) dlambda
+  // 3el: int (F*T) dlambda
+  // 4el: int (F*T*lambda) dlambda
+  // 5el: int (T/lambda^2) dlambda
+  array<double, 6> mag{area, arean, lmoy, fmel, lnum, areaCorr};
+
+  return mag;
+}
+
+/*
+  Create a SED corresponding to the calibration studied, used for filter
+*/
+void generateCalib(SEDVec &sed_vec, double lmin, double lmax, int Nsteps,
+                   int calib, size_t sed_id) {
+  // Define a lambda range of Nsteps steps between lambda min and max
+  const double dl = (lmax - lmin) / double(Nsteps);
+  double flux;
+
+  auto &lamb_flux = sed_vec.lamb_flux[sed_id];
+  lamb_flux.clear();
+  lamb_flux.reserve(Nsteps);
+
+  // Define the SED depending on the keyword "CALIB"
+  // Loop over the 1000 steps
+  for (int k = 0; k <= Nsteps; ++k) {
+    // Step in lambda
+    double lamb = lmin + dl * double(k);
+
+    switch (calib) {
+      case 1:
+        // reference function: 1/lambda (nuBnu=cst)
+        flux = 1. / lamb;
+        break;
+      case 2:
+        // reference function: 1/lambda^3 (Bnu=nu)
+        flux = 1. / pow(lamb, 3.);
+        break;
+      case 3:
+        // reference function: black body at 10000K
+        flux = blackbody(10000, lamb);
+        break;
+      case 4:
+        // reference function: black body at 10000K
+        flux = blackbody(10000, lamb);
+        break;
+      case 5:
+        // reference function: 1/lambda^3 (Bnu=nu)
+        flux = 1. / pow(lamb, 3.);
+        break;
+      default:
+        // reference function: 1/lambda^2 (Bnu=cst)
+        flux = 1. / pow(lamb, 2.);  // Standard case 0 and others >5
+        break;
+    }
+
+    // fill the lambda/trans values of the object
+    lamb_flux.emplace_back(lamb, flux, 1);
+  }
+}
+
+void readMagBin_sed(SEDVec &sed_vec, ifstream &ins, size_t idx) {
+  if (sed_vec.nlib[idx] == GAL) {
+    int nbFlt;
+
+    ins.read((char *)&sed_vec.luv[idx], sizeof(double));
+    ins.read((char *)&sed_vec.lopt[idx], sizeof(double));
+    ins.read((char *)&sed_vec.lnir[idx], sizeof(double));
+    ins.read((char *)&sed_vec.ltir[idx], sizeof(double));
+    ins.read((char *)&sed_vec.mass[idx], sizeof(double));
+    ins.read((char *)&sed_vec.sfr[idx], sizeof(double));
+    ins.read((char *)&sed_vec.zmet[idx], sizeof(double));
+    ins.read((char *)&sed_vec.tau[idx], sizeof(double));
+    ins.read((char *)&sed_vec.d4000[idx], sizeof(double));
+
+    // Read information conserning the SED which is read
+    ins.read((char *)&sed_vec.nummod[idx], sizeof(int));
+    ins.read((char *)&sed_vec.extlawId[idx], sizeof(int));
+    ins.read((char *)&sed_vec.ebv[idx], sizeof(double));
+    ins.read((char *)&sed_vec.fracEm[idx], sizeof(double));
+    ins.read((char *)&sed_vec.red[idx], sizeof(double));
+    ins.read((char *)&sed_vec.distMod[idx], sizeof(double));
+    ins.read((char *)&sed_vec.age[idx], sizeof(double));
+    ins.read((char *)&nbFlt, sizeof(int));
+
+    // define the ssfr
+    if (sed_vec.mass[idx] > 0) {
+      sed_vec.ssfr[idx] = sed_vec.sfr[idx] / sed_vec.mass[idx];
+    } else {
+      sed_vec.ssfr[idx] = -999.;
+    }
+
+    // Read the magnitudes
+    sed_vec.mag[idx].resize(nbFlt, 99);
+    for (auto &m : sed_vec.mag[idx]) {
+      ins.read((char *)&m, sizeof(double));
+    }
+    sed_vec.kcorr[idx].resize(nbFlt, 0);
+    for (auto &k : sed_vec.kcorr[idx]) {
+      ins.read((char *)&k, sizeof(double));
+    }
+
+    // Read the emission lines fluxes integrated into filters
+    if (sed_vec.has_emlines[idx]) {
+      sed_vec.flEm[idx].resize(nbFlt, 0.);
+      for (auto &flem : sed_vec.flEm[idx]) {
+        ins.read((char *)&flem, sizeof(double));
+      }
+      // Don't read the lines at z>0, to save RAM. With such cleaning, no z
+      // dependency on line ratio can be implemented.
+      if (sed_vec.red[idx] < 1.e-20) {
+        // Read the emission lines fluxes
+        int nbEm;
+        ins.read((char *)&nbEm, sizeof(int));
+        sed_vec.fac_line[idx].resize(nbEm, oneElLambda(-999, -999, 1));
+        for (auto &eml : sed_vec.fac_line[idx]) {
+          ins.read((char *)&eml.lamb, sizeof(double));
+        }
+        for (auto &eml : sed_vec.fac_line[idx]) {
+          ins.read((char *)&eml.val, sizeof(double));
+        }
+      }
+    }
+
+    // read the spectra only if the redshift is 0
+    if (sed_vec.red[idx] < 1.e-20) {
+      int nblamb;
+      ins.read((char *)&nblamb, sizeof(int));
+      // put ori=1 because it's a SED
+      sed_vec.lamb_flux[idx].resize(nblamb, oneElLambda(-999, -999, 1));
+      for (auto &oneEl : sed_vec.lamb_flux[idx]) {
+        ins.read((char *)&oneEl.lamb, sizeof(double));
+      }
+      for (auto &oneEl : sed_vec.lamb_flux[idx]) {
+        ins.read((char *)&oneEl.val, sizeof(double));
+      }
+    }
+
+    return;
+  } else if (sed_vec.nlib[idx] == QSO) {
+    int nbFlt;
+
+    // Read information conserning the SED which is read
+    ins.read((char *)&sed_vec.nummod[idx], sizeof(int));
+    ins.read((char *)&sed_vec.extlawId[idx], sizeof(int));
+    ins.read((char *)&sed_vec.ebv[idx], sizeof(double));
+    ins.read((char *)&sed_vec.red[idx], sizeof(double));
+    ins.read((char *)&sed_vec.distMod[idx], sizeof(double));
+    ins.read((char *)&nbFlt, sizeof(int));
+
+    // Read the magnitudes
+    sed_vec.mag[idx].assign(nbFlt, HIGH_MAG);
+    for (auto &m : sed_vec.mag[idx]) {
+      ins.read((char *)&m, sizeof(double));
+    }
+    sed_vec.kcorr[idx].assign(nbFlt, 0);
+    for (auto &k : sed_vec.kcorr[idx]) {
+      ins.read((char *)&k, sizeof(double));
+    }
+
+    // read the spectra only if the redshift is 0
+    if (sed_vec.red[idx] < 1.e-20) {
+      int nblamb;
+      ins.read((char *)&nblamb, sizeof(int));
+      // put ori=1 because it's a SED
+      sed_vec.lamb_flux[idx].resize(nblamb, oneElLambda(-999, -999, 1));
+      for (auto &oneEl : sed_vec.lamb_flux[idx]) {
+        ins.read((char *)&oneEl.lamb, sizeof(double));
+      }
+      for (auto &oneEl : sed_vec.lamb_flux[idx]) {
+        ins.read((char *)&oneEl.val, sizeof(double));
+      }
+    }
+
+    return;
+  } else if (sed_vec.nlib[idx] == STAR) {
+    int nbFlt;
+    // Read information conserning the SED which is read
+    ins.read((char *)&sed_vec.nummod[idx], sizeof(int));
+    ins.read((char *)&nbFlt, sizeof(int));
+
+    // Read the magnitudes
+    sed_vec.mag[idx].resize(nbFlt, 99);
+    for (auto &m : sed_vec.mag[idx]) {
+      ins.read((char *)&m, sizeof(double));
+    }
+
+    // read the spectra only if the redshift is 0
+    int nblamb;
+    ins.read((char *)&nblamb, sizeof(int));
+    // put ori=1 because it's a SED
+    sed_vec.lamb_flux[idx].resize(nblamb, oneElLambda(-999, -999, 1));
+    for (auto &oneEl : sed_vec.lamb_flux[idx]) {
+      ins.read((char *)&oneEl.lamb, sizeof(double));
+    }
+    for (auto &oneEl : sed_vec.lamb_flux[idx]) {
+      ins.read((char *)&oneEl.val, sizeof(double));
+    }
+
+    return;
+  }
+}
+void sumEmLines_sed(SEDVec &sed_vec, size_t idx) {
+  if (sed_vec.nlib[idx] == GAL) {
+    // Loop over each filter.
+    for (size_t k = 0; k < sed_vec.mag[idx].size(); k++) {
+      // sum it to the original flux, before having applied any emission line
+      double fluxinter =
+          pow(10., -0.4 * (sed_vec.mag[idx][k] + 48.6)) + sed_vec.flEm[idx][k];
+      if (fluxinter > 0) {
+        sed_vec.mag[idx][k] = -2.5 * log10(fluxinter) - 48.6;
+      } else {
+        sed_vec.mag[idx][k] = 999.9;
+      }
+    }
+    // Clean the emission line from the SED after its used. Save memory.
+    sed_vec.flEm[idx].clear();
+
+    return;
+  }
+}
+void kcorrec_sed(SEDVec &sed_vec, const vector<double> &magz0, size_t idx) {
+  if (sed_vec.nlib[idx] == GAL) {
+    // Loop over each filter.
+    for (size_t k = 0; k < sed_vec.mag[idx].size(); k++) {
+      // Substract the magnitude at z and the one at z=0
+      // kcorr[k]=mag[k]-mag_z0[k]-distMod;
+      sed_vec.kcorr[idx][k] =
+          sed_vec.mag[idx][k] - magz0[k] - sed_vec.distMod[idx];
+    }
+
+    return;
+  }
+}
+
 /*
   General construction of the basis class SED
 */

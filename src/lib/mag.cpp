@@ -142,7 +142,7 @@ void Mag::open_files() {
 
     sdatOut << "# Filter list: \n";
     if (allFlt.size() != 0) {
-      for (const auto f : allFlt) {
+      for (const auto &f : allFlt) {
         sdatOut << "#" << f.name << "\n";
       }
     }

@@ -226,7 +226,7 @@ pair<double, double> PDF::confidence_interval(float dchi) {
   // Now we search for the position where the chi2 curve goes above chiLim,
   // right and left from index min_ib, which remains reasonable compared to zmin
   // position Loop over each point of the PDF to find the minimum error
-  for (int k = 0; k < min_ib; k++) {
+  for (size_t k = 0; k < min_ib; k++) {
     // When the considered chi2 is below the chi2 limit and the following one
     // above
     if (chi2[k] >= chiLim && chi2[k + 1] < chiLim) {

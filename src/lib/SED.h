@@ -24,11 +24,114 @@ enum object_type {
   STAR /*!< Star object */
 };
 
-/*! \brief SED base class
- *
- * The SED class is in charge of representing a template and performing
- * all the necessary computation on it.
+struct SEDVec {
+  vector<vector<oneElLambda>> lamb_flux, fac_line;
+  vector<vector<double>> kcorr, mag_z0, mag;
+  vector<string> name;
+  vector<bool> has_emlines;
+  vector<object_type> nlib;
+  vector<int> idAge, nummod, index, index_z0;
+  vector<double> red, chi2, dm, luv, lopt, lnir, ltir, mass, age, sfr, ssfr,
+      ebv, mag0, distMod, extlawId;
+  vector<array<double, 4>> qi;
+
+  // GALSED extras
+  vector<vector<double>> flEm;
+  vector<string> format;
+  vector<double> tau, zmet, d4000, fracEm;
+
+  bool check_ok();
+  inline size_t size() const noexcept { return name.size(); }
+  inline bool is_same_model(size_t lhs, size_t rhs) {
+    return nummod[lhs] == nummod[rhs] && ebv[lhs] == ebv[rhs] &&
+           age[lhs] == age[rhs];
+  }
+
+  void pop() {
+    lamb_flux.pop_back(), fac_line.pop_back();
+    kcorr.pop_back(), mag_z0.pop_back(), mag.pop_back();
+    name.pop_back();
+    has_emlines.pop_back();
+    nlib.pop_back();
+    idAge.pop_back(), nummod.pop_back(), index.pop_back(), index_z0.pop_back();
+    red.pop_back(), chi2.pop_back(), dm.pop_back(), luv.pop_back(),
+        lopt.pop_back(), lnir.pop_back(), ltir.pop_back(), mass.pop_back(),
+        age.pop_back(), sfr.pop_back(), ssfr.pop_back(), ebv.pop_back(),
+        mag0.pop_back(), distMod.pop_back(), extlawId.pop_back();
+    qi.pop_back();
+
+    // GALSED extras
+    flEm.pop_back();
+    format.pop_back();
+    tau.pop_back(), zmet.pop_back(), d4000.pop_back(), fracEm.pop_back();
+  }
+
+  void clear() {
+    lamb_flux.clear(), fac_line.clear();
+    kcorr.clear(), mag_z0.clear(), mag.clear();
+    name.clear();
+    has_emlines.clear();
+    nlib.clear();
+    idAge.clear(), nummod.clear(), index.clear(), index_z0.clear();
+    red.clear(), chi2.clear(), dm.clear(), luv.clear(), lopt.clear(),
+        lnir.clear(), ltir.clear(), mass.clear(), age.clear(), sfr.clear(),
+        ssfr.clear(), ebv.clear(), mag0.clear(), distMod.clear(),
+        extlawId.clear();
+    qi.clear();
+
+    // GALSED extras
+    flEm.clear();
+    format.clear();
+    tau.clear(), zmet.clear(), d4000.clear(), fracEm.clear();
+  }
+};
+void push_sed(SEDVec &sed_vec, const string &name, int nummodC = 0,
+              object_type type = GAL);
+void read_sed(SEDVec &sed_vec, const string &name, const string &sedFile);
+array<double, 6> integrateSED(const SEDVec &sed_vec, const flt &filter,
+                              size_t s_id);
+void generateCalib(SEDVec &sed_vec, double lmin, double lmax, int Nsteps,
+                   int calib, size_t sed_id);
+size_t copy_sed(SEDVec &dst, SEDVec const &src, size_t idx);
+void rescale_sed(SEDVec &sed_vec, double scaleFac, size_t idx);
+void applyOpa_sed(SEDVec &sed_vec, const vector<opa> &opaAll, size_t idx);
+void generateEmSpectra_sed(SEDVec &sed_vec, int nstep, size_t idx);
+void generate_spectra_sed(SEDVec &sed_vec, double zin, double dmin,
+                          vector<opa> opaAll, size_t idx);
+void warning_integrateSED_sed(SEDVec &sed_vec, const vector<flt> &filters,
+                              bool verbose, size_t idx);
+void sumSpectra_sed(SEDVec &sed_vec, size_t idx, SEDVec &gals, size_t addSED,
+                    const double rescal);
+void redshift(SEDVec &sed_vec, size_t idx);
+pair<vector<double>, vector<double>> get_data_vector(SEDVec &vec, double minl,
+                                                     double maxl, bool mag,
+                                                     double offset, size_t idx);
+void readMagBin_sed(SEDVec &sed_vec, ifstream &ins, size_t idx);
+void sumEmLines_sed(SEDVec &sed_vec, size_t idx);
+void kcorrec_sed(SEDVec &sed_vec, const vector<double> &magz0, size_t idx);
+void sed_resample(vector<oneElLambda> &lamb_all, vector<oneElLambda> &lamb_new,
+                  const int origine, const double lmin, const double lmax);
+//! Convert string to object_type
+/*!
+  \param type String starting with either g, q, or s,
+  in either lower or upper case. If it is not the case,
+  throw invalid argument exception.
+
+  \return object_type corresponding to input, if valid.
  */
+inline static object_type string_to_object(const string &type) {
+  char t = toupper(type[0]);
+  if (t == 'S') {
+    return STAR;
+  } else if (t == 'Q') {
+    return QSO;
+  } else if (t == 'G') {
+    return GAL;
+  } else {
+    throw invalid_argument("Object type not recognized: " + type);
+  }
+}
+
 class SED {
  protected:
   int idAge;  ///< index of the age for this SED object
@@ -221,7 +324,7 @@ class SED {
   };
 
   virtual void writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
-                        vector<flt> allFilters, string magtyp) {};
+                        vector<flt> allFilters, string magtyp) const {};
 
   inline void readSEDBin(const string &fname) {
     ifstream sbinIn;
