@@ -1516,13 +1516,13 @@ vector<double> SED::integrateSED(const flt &filter) {
 
   double r0 = 0, r1 = 0, r2 = 0, r3 = 0, r4 = 0, r5 = 0;
   for (size_t i = 0; i < x.size() - 1; i++) {
-    // Lambda mean
+    // lambda mean
     double lmean = (x[i] + x[i + 1]) / 2;
-    //  trans mean
+    // trans mean
     double tmean = (newflt[i] + newflt[i + 1]) / 2;
     // flux mean
     double fmean = (newsed[i] + newsed[i + 1]) / 2;
-    //  delta lambda
+    // delta lambda
     double dlbd = (x[i + 1] - x[i]);
     double tmp = tmean * dlbd;
     // integral T dlambda
