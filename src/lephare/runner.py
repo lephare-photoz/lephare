@@ -156,6 +156,8 @@ class Runner:
                 self.verbose = args.verbose
                 keymap[key] = keyword(key, "YES") if self.verbose else keyword(key, "NO")
                 continue
+            if key == "VERBOSE":
+                self.verbose = bool(keymap["VERBOSE"].value == "YES")
             try:
                 keymap[key] = keyword(key, getattr(args, key))
             except:  # noqa: E722

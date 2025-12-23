@@ -29,6 +29,7 @@ config_keys = {
     "EM_LINES": "[NO/EMP_UV/EMP_SFR/PHYS] choice of prescription for emission line computation",
     "EM_DISPERSION": "rescaling values for the emission lines",
     "ADD_DUSTEM": "add the dust emission in templates when missing",
+    "VERBOSE": "VERBOSE in capital letter for the .para",
 }
 
 
