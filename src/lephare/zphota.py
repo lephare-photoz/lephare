@@ -12,7 +12,7 @@ __all__ = [
 ]
 
 config_keys = {
-    "verbose": "increase onscreen verbosity",
+    "VERBOSE": "increase onscreen verbosity",
     "CAT_IN": "input catalog",
     "INP_TYPE": "F if Fluxes, M if magnitudes",
     "CAT_MAG": "AB or VEGA magnitude system of the input catalog (default AB)",
@@ -84,7 +84,6 @@ config_keys = {
     "LIMITS_MAPP_CUT": "Used to compute z_max. Apparent mag selection used in each redshift bin.\
     Need 1 or N values.",
     "CHI2_OUT": "Flag to output the chi2 value of each template (one file per source)",
-    "VERBOSE": "VERBOSE in capital letter for the .para",
 }
 
 nonestring = "NONE"
@@ -92,7 +91,7 @@ nonestring = "NONE"
 
 class Zphota(Runner):
     """The specific arguments to the Zphota class are
-    verbose:
+    VERBOSE:
            add verbosity
     CAT_IN:
            input catalog
@@ -215,9 +214,6 @@ Need 1 or N values.
 Need 1 or N values
     CHI2_OUT
             Flag to output the chi2 value of each template (one file per source)
-    VERBOSE:
-           add verbosity, compatible with the old version
-
     """
 
     def update_help(self):

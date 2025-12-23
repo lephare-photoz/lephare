@@ -81,7 +81,7 @@ def prepare(config, star_config=_DEFAULT, gal_config=_DEFAULT, qso_config=_DEFAU
         write_yaml_config(updated_config, sed_output)
         # Run mag_gal
         maglib = lp.MagGal(config_keymap=updated_config)
-        maglib.run(typ=object_type, verbose=False)
+        maglib.run(typ=object_type, VERBOSE="NO")
         write_yaml_config(updated_config, mag_output)
 
 

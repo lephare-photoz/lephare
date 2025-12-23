@@ -11,7 +11,7 @@ __all__ = [
 # List of keywords associated to setolib
 config_keys = {
     "typ": "define what kind of objects these SED belong to : GAL, QSO, or STAR",
-    "verbose": "increase onscreen verbosity",
+    "VERBOSE": "increase onscreen verbosity",
     "GAL_SED": "file listing the galaxy SEDs to be used",
     "GAL_FSCALE": "arbitrary Flux scale for galaxy templates",
     "GAL_LIB": "name of the output binary SED file for the galaxies (relative to $LEPHAREWORK/lib_bin/)",
@@ -32,7 +32,7 @@ class Sedtolib(Runner):
 
     typ:
            define what kind of objects these SED belong to : GAL, QSO, or STAR
-    verbose:
+    VERBOSE:
            increase onscreen verbosity
     GAL_SED:
            file listing the galaxy SEDs to be used
