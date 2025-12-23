@@ -188,22 +188,28 @@ READ THE SED GENERATED WITH PEGASE
 */
 vector<GalSED> readPEGASE(string sedFile, int nummod, vector<double> &ageSel) {
   ifstream ssed;
-  string line;
+  string line, dummy;
   size_t n_ages, n_points, n_lines;
+  double tau = -999.;
 
   // open the SED file
   ssed.open(sedFile.c_str());
   if (!ssed) {
-    throw invalid_argument("Can't open the BC03 file " + sedFile);
+    throw invalid_argument("Can't open the PEGASE2 file " + sedFile);
   }
 
-  while (line.substr(0, 5) != "*****") {
-    ssed >> line;
-    if (line.substr(0, 23) == "Type of star formation:") {
-      char type = line.back();
-      if (type != '3')
-        throw invalid_argument(std::string("type ") + type +
-                               "not yet implemented");
+  while (getline(ssed, line)) {
+    if (line.substr(0, 5) == "*****") break;
+    if (line.rfind("Type of star formation:", 0) == 0) {
+      int type = -1;
+      istringstream iss(line.substr(23));
+      iss >> type;
+      if (type == 2) {
+        ssed >> dummy >> tau;
+        // empty ssed of the rest of the line until `\n`
+        ssed.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        tau *= 1.e6;
+      }
     }
     continue;
   }
@@ -238,7 +244,6 @@ vector<GalSED> readPEGASE(string sedFile, int nummod, vector<double> &ageSel) {
     double ltir1(ancillaries[12]);
     double ltir = log10(ltir0 * ltir1 / Lsol);
     double sfr = ancillaries[13] / 1.e6;
-    double tau = -999.;
 
     GalSED oneSED(sedFile, tau, age, "PEGASE2", nummod, (int)count);
     oneSED.lamb_flux.reserve(n_points);
