@@ -44,7 +44,7 @@ class ext {
   /// add a single element
   void add_element(double lam, double val);
 
-  /*! Helper function to set the sed vector as lambda=x and val = y
+  /*! Helper function to set the ext vector as lambda=x and val = y
    * @param x: ordered vector of lambda value
    * @param y: vector of ext values at each lambda of x
    */

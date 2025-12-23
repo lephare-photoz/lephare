@@ -72,13 +72,40 @@ inline std::tuple<std::vector<double>, std::vector<double>> to_tuple(
   return {p.first, p.second};
 }
 
+/*! Interpolate a curve (x,y) at positions given by a vector
+ * @param x : x-values of the curve to interpolate
+ * @param y : y-values of the curve to interpolate
+ * @param xi : x-value at which to interpolate
+ * @output: the y-value from (x,y) interpolated at xi.
+ * Important : x is expected to be sorted in increasing order.
+ * if xi is outside the range of x, 0 is returned.
+ */
 double interp_linear_point(const std::vector<double>& x,
                            const std::vector<double>& y, double xi);
 
-std::vector<double> interp_linear_vec(const std::vector<double>& x,
-                                      const std::vector<double>& y,
-                                      const std::vector<double>& q);
+/*! Interpolate a curve (x,y) at positions given by a vector
+ * @param x : x-values of the curve to interpolate
+ * @param y : y-values of the curve to interpolate
+ * @param q : x-values at which to interpolate
+ * @output: the vector of y-values frm (x,y) interpolated at q.
+ * Important : x is expected to be sorted in increasing order.
+ */
+inline std::vector<double> interp_linear_vec(const std::vector<double>& x,
+                                             const std::vector<double>& y,
+                                             const std::vector<double>& q) {
+  std::vector<double> out(q.size());
+  // not worth accelerating, due to OMP overhead
+  // #pragma omp parallel for
+  for (long long i = 0; i < (long long)q.size(); ++i)
+    out[i] = interp_linear_point(x, y, q[i]);
+  return out;
+}
 
+/*! Create a regular grid of double
+ * @param lo : start of the grid
+ * @param hi : stop of the grid
+ * @param dx : interval (throw if non strictly positive)
+ */
 std::vector<double> make_regular_grid(double lo, double hi, double dx);
 
 std::vector<double> make_union_grid(const std::vector<double>& x1,

@@ -20,11 +20,6 @@
 
 using namespace std;
 
-// --- interpolation linéaire (x croissant, sans extrapolation) ---
-// on suppose x croissant, ce sont les lambda typiquement
-// y est le vecteur des valeurs correspondantes
-// on determine l'interpolation linéaire en xi
-// retourne 0 si xi est en dehors des x
 double interp_linear_point(const std::vector<double>& x,
                            const std::vector<double>& y, double xi) {
   if (xi < x.front() || xi > x.back()) return 0;
@@ -43,20 +38,6 @@ double interp_linear_point(const std::vector<double>& x,
   return y0 + t * (y1v - y0);
 }
 
-// --- interpolation vectorisée (parallèle OpenMP) ---
-// pareil que interp_linear_point mais avec un vecteur de valeurs cibles
-// xi. OMP est commenté car l'overhead semble trop important
-std::vector<double> interp_linear_vec(const std::vector<double>& x,
-                                      const std::vector<double>& y,
-                                      const std::vector<double>& q) {
-  std::vector<double> out(q.size());
-  // not worth accelerating, due to OMP overhead
-  // #pragma omp parallel for
-  for (long long i = 0; i < (long long)q.size(); ++i)
-    out[i] = interp_linear_point(x, y, q[i]);
-  return out;
-}
-
 // --- création d’une grille régulière ---
 // J'ai défini un code qui généralise l'ancien resample et peut
 // creer une grille uniforme si besoin, plutôt que de rassembler
@@ -66,9 +47,9 @@ std::vector<double> make_regular_grid(double lo, double hi, double dx) {
   if (dx <= 0) throw std::runtime_error("dx must be positive");
   size_t n = static_cast<size_t>((hi - lo) / dx) + 1;
   std::vector<double> grid(n);
-#pragma omp parallel for
+  // #pragma omp parallel for
   for (long long i = 0; i < (long long)n; ++i) grid[i] = lo + i * dx;
-  grid.back() = hi;  // pour assurer une fin exacte
+  grid.back() = hi;  // ensure strict ending at hi
   return grid;
 }
 
@@ -87,17 +68,6 @@ std::vector<double> make_union_grid(const std::vector<double>& x1,
   return {s.begin(), s.end()};
 }
 
-// --- fonction principale unifiée ---
-// dx > 0  → grille régulière
-// dx < 0  → union triée de x1 et x2 dans l’intervalle commun
-// Ca c'est ce qui remplace resample mais j'ai opté pour des inputs
-// plus génériques : (x1, y1) et (x2, y2) sont les deux vecteurs oneElLambda
-// mais dissociées en deux paires de vector<double>
-// De même je retourne l'intersection de x1, et x2 dans x_common, donc
-// je n'ai pas les soucis que tu as de maintenir la même taille d'entrée et
-// et de sortie qu'on a dans SED::resample
-// donc l'output est cette intersection, et les valeurs interpolées
-// correspondantes de y1 et y2
 std::tuple<std::vector<double>, std::vector<double>, std::vector<double>>
 common_interpolate_combined(const std::vector<double>& x1,
                             const std::vector<double>& y1,
@@ -106,19 +76,19 @@ common_interpolate_combined(const std::vector<double>& x1,
   if (x1.size() != y1.size() || x2.size() != y2.size())
     throw std::runtime_error("x/y size mismatch");
 
-  // Déterminer intervalle commun
+  // determine common interval
   double lo = std::max(x1.front(), x2.front());
   double hi = std::min(x1.back(), x2.back());
   if (lo >= hi) return {{}, {}, {}};  // pas de recouvrement
 
-  // Construire x' selon dx
+  // build the grid
   std::vector<double> x_common;
   if (dx > 0)
     x_common = make_regular_grid(lo, hi, dx);
   else
     x_common = make_union_grid(x1, x2, lo, hi);
 
-  // Interpolation parallèle
+  // interpolate
   std::vector<double> y1_interp = interp_linear_vec(x1, y1, x_common);
   std::vector<double> y2_interp = interp_linear_vec(x2, y2, x_common);
 

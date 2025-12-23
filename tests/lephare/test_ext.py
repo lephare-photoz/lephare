@@ -12,3 +12,13 @@ def test_cardelli_ext():
     # addition of the two bracketing 0 values in the Heaviside definition
     # the two current values are 13617.62 and 13699.37
     assert r == pytest.approx(extinction, 100)
+
+
+def test_set_vector():
+    e = lp.ext("", 0)
+    e.set_vector([0, 1], [0, 1])
+    assert len(e.lamb_ext) == 2
+    assert e.lamb_ext[0].lamb == 0
+    assert e.lamb_ext[0].val == 0
+    assert e.lamb_ext[-1].lamb == 1
+    assert e.lamb_ext[-1].val == 1

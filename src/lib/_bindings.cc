@@ -51,6 +51,9 @@ PYBIND11_MODULE(_lephare, mod) {
       .def(py::init<oneElLambda>(), py::arg("elIn"), "copy constructor")
       .def_readwrite("lamb", &oneElLambda::lamb)
       .def_readwrite("val", &oneElLambda::val);
+  mod.def("make_regular_grid", &make_regular_grid);
+  mod.def("make_union_grid", &make_union_grid);
+  mod.def("common_interpolate_combined", &common_interpolate_combined);
   mod.def("restricted_resampling", &restricted_resampling);
   mod.def("concatenate_and_sort", &concatenate_and_sort,
           "concatenate and sort two vector of oneElLambda objects. Sorting is "
