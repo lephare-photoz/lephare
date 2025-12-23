@@ -72,7 +72,7 @@ class MagGal(Runner):
     ADD_DUSTEM:
            add the dust emission in templates when missing
     VERBOSE:
-           add verbosity
+           add verbosity compatible with the old version
     """
 
     def update_help(self):

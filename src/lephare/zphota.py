@@ -84,6 +84,7 @@ config_keys = {
     "LIMITS_MAPP_CUT": "Used to compute z_max. Apparent mag selection used in each redshift bin.\
     Need 1 or N values.",
     "CHI2_OUT": "Flag to output the chi2 value of each template (one file per source)",
+    "VERBOSE": "VERBOSE in capital letter for the .para",
 }
 
 nonestring = "NONE"
@@ -214,6 +215,9 @@ Need 1 or N values.
 Need 1 or N values
     CHI2_OUT
             Flag to output the chi2 value of each template (one file per source)
+    VERBOSE:
+           add verbosity, compatible with the old version
+
     """
 
     def update_help(self):
