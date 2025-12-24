@@ -610,7 +610,7 @@ class PlotUtils:
 
         # label of the figure
         f.text(0.5, 0.04, "$z_{spec}$", ha="center", fontsize=15)
-        f.text(0.04, 0.5, r"$z_{phot}\; median\; PDF(z)$", va="center", rotation="vertical", fontsize=15)
+        f.text(0.04, 0.5, r"$z_{phot}\; minimum\; \chi^2$", va="center", rotation="vertical", fontsize=15)
 
         # Loop over the magnitude bins
         for rm in range(len(self.range_mag) - 1):
