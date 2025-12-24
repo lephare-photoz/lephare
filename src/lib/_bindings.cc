@@ -263,6 +263,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def(py::init<const string, double, double, string, int, int>(),
            py::arg("name"), py::arg("tau"), py::arg("age"), py::arg("format"),
            py::arg("nummod"), py::arg("idAge"))
+      .def_readonly("tau", &GalSED::tau)
       .def_readonly("d4000", &GalSED::d4000)
       .def_readonly("zmet", &GalSED::zmet)
       .def("compute_luminosities", &GalSED::compute_luminosities)
@@ -282,6 +283,7 @@ PYBIND11_MODULE(_lephare, mod) {
   applySEDLibTemplate<QSOSED>(mod, "QSOSEDLib");
   applySEDLibTemplate<GalSED>(mod, "GalSEDLib");
   mod.def("readBC03", &readBC03);
+  mod.def("readPEGASE", &readPEGASE);
 
   /******** CLASS MAG *********/
 #define MAGDEFS(c, n)                                      \
