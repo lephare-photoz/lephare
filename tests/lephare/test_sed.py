@@ -11,6 +11,62 @@ TESTDIR = os.path.abspath(os.path.dirname(__file__))
 TESTDATADIR = os.path.join(TESTDIR, "../data")
 
 
+def test_apply_ext():
+    onext = lp.ext("", 0)
+    x1 = np.linspace(0, 50, 20)
+    y1 = np.ones_like(x1) / 0.4
+    onext.set_vector(x1, y1)
+
+    sed = SED()
+    x2 = np.linspace(10, 20, 10)
+    y2 = x2
+
+    sed.set_vector(x2, y2)
+    sed.apply_extinction(1.0, onext)
+    res1 = sed.lamb_flux
+    print([el.lamb for el in res1])
+    res1y = [el.val for el in res1]
+    print(res1y)
+    assert np.allclose(res1y, np.array(y2) / 10.0)
+
+
+def test_generate_lines():
+    sed = lp.GalSED("", 0)
+    mnuv_int = -3
+    nuvr = 3
+    scalefac = 1
+    sed.generateEmEmpUV(mnuv_int, nuvr)
+    if nuvr < 4:
+        scalefac = 10 ** (-0.4 * mnuv_int - 6.224) / 2.85
+    vals = [ell.val for ell in sed.fac_line]
+    assert np.allclose(np.array(vals), scalefac * np.array(lp._empirical_ratio))
+    sfr = 10**50.0
+    sed.generateEmEmpSFR(sfr, nuvr)
+    if nuvr < 4:
+        scalefac = 10 ** (np.log10(sfr) + 41.27 - np.log10(4 * np.pi * 100 * 3.08568**2) - 36) / 2.85
+    vals = [ell.val for ell in sed.fac_line]
+    print(vals)
+    print(scalefac * np.array(lp._empirical_ratio2))
+    assert np.allclose(np.array(vals), scalefac * np.array(lp._empirical_ratio2))
+
+
+# def test_apply_ext_lines():
+#     onext = lp.ext("", 0)
+#     x1 = np.linspace(1000, 17000, 20)
+#     y1 = np.ones_like(x1) / 0.4
+#     onext.set_vector(x1, y1)
+
+#     sed = SED()
+#     x2 = np.linspace(10, 20, 10)
+#     y2 = x2
+#     sed.set_vector(x2, y2)
+#     sed.fac_line = lp._ga_total
+
+#     sed.apply_extinction_to_lines(.1, onext)
+#     res1 = sed.fac_line
+#     assert np.allclose(res1, np.array(lp._ga_total) / 10.0)
+
+
 def test_string_to_object():
     for t in ["s", "S", "sOap", "STAR"]:
         a = lp.SED.string_to_object(t)
@@ -84,7 +140,6 @@ def test_emplace_back():
     assert sed.size() == 1
     assert sed.lamb_flux[0].lamb == 100
     assert sed.lamb_flux[0].val == 1
-    assert sed.lamb_flux[0].ori == 1
 
 
 def test_set_vector():
@@ -97,7 +152,6 @@ def test_set_vector():
     assert len(x) == sed.size()
     for el in sed.lamb_flux:
         assert el.val == 1
-        assert el.ori == 1
     # test clearing
     sed.set_vector(x, x)
     assert len(x) == sed.size()
@@ -204,66 +258,6 @@ def test_sedproperties():
     assert np.allclose(np.array(result), np.array(true_res), 1.1e-2)
 
 
-def test_resample():
-    x1 = np.linspace(0, 10, 11)
-    y1 = np.ones_like(x1)
-    x2 = x1 + 0.5
-    y2 = np.zeros_like(x2)
-    z1 = []
-    z2 = []
-    for i in range(10):
-        z1.append(lp.oneElLambda(x1[i], y1[i], 0))
-        z2.append(lp.oneElLambda(x2[i], y2[i], 1))
-    z = lp.concatenate_and_sort(z1, z2)
-    print("z:")
-    print([e.lamb for e in z])
-    print([e.val for e in z])
-    print([e.ori for e in z])
-    # resample z1 at the position of z2
-    res = lp.SED.resample(z, 0, 0, 10)
-    print("res 0:")
-    print([e.lamb for e in res])
-    print([e.val for e in res])
-    print([e.ori for e in res])
-    res2 = SED.resample(z, 1, 0, 10)
-    print("res 1:")
-    print([e.lamb for e in res2])
-    print([e.val for e in res2])
-    print([e.ori for e in res2])
-    for e in res[:-1]:
-        assert e.ori == 0
-        assert e.val == 1
-    # resample z2 at the position of z1
-    for e in res2[1:]:
-        assert e.ori == 1
-        assert e.val == 0
-
-
-def test_resample2():
-    v = np.array(
-        [lp.oneElLambda(1, 1, 1), lp.oneElLambda(2, 0, 0), lp.oneElLambda(3, 0, 0), lp.oneElLambda(4, 1, 1)]
-    )
-
-    res = lp.SED.resample(v, 1, 1, 5)
-    print([e.lamb for e in res])
-    print([e.val for e in res])
-    print([e.ori for e in res])
-    for e in res:
-        assert e.val == 1
-        assert e.ori == 1
-
-    res = lp.SED.resample(v, 0, 1, 5)
-    print([e.lamb for e in res])
-    print([e.val for e in res])
-    print([e.ori for e in res])
-
-    for e in res[1:-1]:
-        assert e.val == 0
-        assert e.ori == 0
-    for e in (res[0], res[-1]):
-        assert e.ori == -99
-
-
 def test_calc_ph():
     sed = GalSED("", 0)
     hc = 12398.42
@@ -277,3 +271,51 @@ def test_calc_ph():
     for i, e in enumerate([54.42, 24.59, 13.60, hc / 1108.7]):
         print(sed.qi[i])
         assert sed.qi[i] == pytest.approx(0.5 * (hc / e) ** 2, 1.0e-3)
+
+
+def test_sumspectra():
+    sed1 = GalSED("toto", 10)
+    sed1.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
+    x1, y1 = sed1.data()
+    sed2 = GalSED("toto", 11)
+    sed1.sumSpectra(sed2, 0)  # case of empty additional sed
+    for xx1, yy1, o1 in zip(x1, y1, sed1.lamb_flux):
+        assert o1.lamb == xx1
+        assert o1.val == yy1
+    sed2.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
+    sed1.sumSpectra(sed2, 0)  # case of nul rescale factor
+    for xx1, yy1, o1 in zip(x1, y1, sed1.lamb_flux):
+        assert o1.lamb == xx1
+        assert o1.val == yy1
+
+    # easy case : sum the same SED with a rescal factor of 2
+    # here in practice there is no interpolation and so the
+    # the input and output have the same size
+    sed1 = GalSED("toto", 10)
+    sed1.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
+    sed2 = GalSED("toto", 11)
+    sed2.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
+    sed1.sumSpectra(sed2, 2)
+    x2, y2 = sed2.data()
+    x1, y1 = sed1.data()
+    print(len(x1), len(x2))
+    assert np.allclose(np.array(y1), 3 * np.array(y2))
+
+    # harder case : different SEDs
+    sed1 = GalSED("toto", 10)
+    sed1.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
+    sed2 = GalSED("toto", 11)
+    sed2.read(os.path.join(TESTDATADIR, "sed/GAL/COSMOS_SED/Ell1_A_0.sed"))
+    x2, y2 = sed2.data()
+    x1, y1 = sed1.data()
+    sed1.sumSpectra(sed2, 1)
+    x3, y3 = sed1.data()
+
+    def f1(x):
+        return np.interp(x, x1, y1, 0, 0)
+
+    def f2(x):
+        return np.interp(x, x2, y2, 0, 0)
+
+    newy3 = f1(x3) + f2(x3)
+    assert np.allclose(newy3, y3)

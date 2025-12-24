@@ -55,6 +55,21 @@ int bdincl(int n, long cont, int max);
 vector<size_t> indexes_in_vec(const double &value, const vector<double> &vec,
                               const float &precision);
 
+/*! For a curve defined by vectors (x,y), return the values interpolated
+ * at points z
+ * @param x : sorted x vector of the curve
+ * @param y : y vector of the curve
+ * @param z : sorted vector of values for which to get the interpolated values
+ * from (x,y) curve, if interpolation is possible. Else, return d
+ * @param d : default value in case of extrapolation
+ * This implementation is single pass : O(n + m) time, where n = x.size() and m
+ * = z.size(), instead of O(m*log(n)), owing to the assumption that x and z are
+ * sorted.
+ */
+vector<double> fast_interpolate(const std::vector<double> &x,
+                                const std::vector<double> &y,
+                                const std::vector<double> &z, double d);
+
 inline string bool2string(const bool &b) {
   string sb;
   b ? sb = "YES" : sb = "NO";

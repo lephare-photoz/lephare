@@ -106,11 +106,11 @@ vector<GalSED> readBC03(string sedFile, int nummod, vector<double> &ageSel) {
       ssed >> dh;
       // convolve the flux by Lsun/(4pi*10pc^2)
       dh = dh * convol;
-      oneElLambda litOne(w[k], dh, 1);
+      oneElLambda litOne(w[k], dh);
       // fill the lambda/trans values of the object SED
       (oneSED.lamb_flux).push_back(litOne);
     }
-    oneElLambda litOne(10000000., 0., 1);
+    oneElLambda litOne(10000000., 0.);
     (oneSED.lamb_flux).push_back(litOne);
     // Number of values of ?? and read them
     ssed >> ix;

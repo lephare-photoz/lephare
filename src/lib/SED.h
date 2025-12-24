@@ -157,13 +157,13 @@ class SED {
   ///\brief Read sedFile assumed to be ASCII and build the #lamb_flux vector of
   /// oneElLambda elements.
   ///
-  /// Negative flux values are set to 0, oneElLambda::ori=1 to indicate that it
-  /// is a SED. The #lamb_flux vector is filled iteratively with each line of
+  /// Negative flux values are set to 0. The #lamb_flux vector is
+  /// filled iteratively with each line of
   /// the file, and is finally sorted by ascending lambda. More complex input
   /// types are treated in inherited class methods.
   void read(const string &sedFile);
   void warning_integrateSED(const vector<flt> &filters, bool verbose = false);
-  vector<double> integrateSED(const flt &filter);
+
   /*! integrate the SED between bounds
    * @param lmin : lower lambda bound
    * @param lmax : lower lambda bound
@@ -173,22 +173,7 @@ class SED {
    */
   double integrate(const double lmin, const double lmax);
 
-  /*!
-   * resample the vector
-   *
-   * @param lamb_all:  all elements concatenated (filter+SED)
-   * @param origin:  indicate which of the two concatenated vector is to be
-   returned interpolated
-   * @param lmin: min value of lambda to consider in lamb_all
-   * @param lmax: max value of lambda to consider in lamb_all
-   *
-   * @return : the vector corresponding to origin, with interpolation at the
-   * position of the other vector in lamb_all. If interpolation fails, the
-   * attribute `val` and `ori` of the oneElLambda element are set to -99
-   !*/
-  static vector<oneElLambda> resample(vector<oneElLambda> &lamb_all,
-                                      const int origin, const double lmin,
-                                      const double lmax);
+  vector<double> integrateSED(const flt &filter);
 
   /*! \brief Generate a calibration SED based on the argument calib
    *
@@ -317,13 +302,14 @@ class SED {
    * \param ebv value of E(B-V)
    * \param obj instance of class ext
    */
-  void applyExt(const double ebv, const ext &obj);
+  void apply_extinction(const double ebv, const ext &obj);
 
   /*! Apply dust extinction to the emission lines (stored in `fac_line`)
    * Only for galaxies and QSO
+   * \param ebv value of E(B-V)
    * \param obj instance of class `ext`
    */
-  void applyExtLines(const ext &obj);
+  void apply_extinction_to_lines(double ebv, const ext &obj);
 
   /*! Apply extinction due to intergalactic medium (only for GAL and QSO)
    * \param opaAll Vector of opacities to compute extinction
@@ -334,7 +320,7 @@ class SED {
   /// Helper function to append the oneElLambda(lambda, value) object to the sed
   /// vector
   inline void emplace_back(const double lambda, const double value) {
-    lamb_flux.emplace_back(lambda, value, 1);
+    lamb_flux.emplace_back(lambda, value);
   }
 
   /*! Helper function to set the sed vector as lambda=x and val = y
@@ -394,7 +380,7 @@ class GalSED : public SED {
    *
    */
   void compute_luminosities();
-  vector<double> add_neb_cont();
+  vector<double> add_neb_cont(double);
   GalSED generateEmSED(const string &emtype);
   void generateEmEmpUV(double MNUV_int, double NUVR);
   void generateEmEmpSFR(double MNUV_int, double NUVR);
@@ -411,14 +397,15 @@ class GalSED : public SED {
    * Compute the number flux of photons able to ionize HeII, HeI, H, and H2
    * For a given SED, this amounts to compute the integral
    * \f$\int_0^{w_i} SED(\lambda)\cdot \frac{\lambda}{hc}\,d\lambda\quad,\f$
-   * where \f$w_i\f$=54.42, 24.52, 13.60, and 1108.7 A for HeII, HeI, H, and H2
-   respectively,
+   * where \f$w_i\f$=hc/54.42, hc/24.52, hc/13.60, and 1108.7 A for HeII, HeI,
+   H, and H2 respectively,
    * and where \f$hc\f$ is in ergs.A. This normalization assumes that the SED
    are provided in args/cm2/s/A.
    * In practice the integral is approximated by :
    \f$\sum_{\lambda_{min}}^{w_k}\frac{SED_{j-1}+SED_j}{2}\cdot(\lambda_j-\lambda_{j-1})\cdot\frac{\lambda_j}{hc}\f$.
    *
-   * Results are stored in the q_i array member of size 4 of the SED instance.
+   * Results are stored in the \f$q_i$\f array member of size 4 of the SED
+   instance.
    */
   void calc_ph();
 

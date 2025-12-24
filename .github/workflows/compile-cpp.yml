@@ -3,9 +3,9 @@ name: C/C++ CI
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "rc1.0.0" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "rc1.0.0" ]
 
 jobs:
   build:
@@ -13,7 +13,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy: 
       matrix:
-        os: [ubuntu-22.04, macos-13, macos-14]
+        os: [ubuntu-22.04, ubuntu-24.04, macos-14, macos-15-intel, macos-latest]
 
     steps:
     - uses: actions/checkout@v5

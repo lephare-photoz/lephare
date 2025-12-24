@@ -14,7 +14,7 @@ __all__ = [
 ]
 
 config_keys = {
-    "verbose": "increase onscreen verbosity",
+    "VERBOSE": "increase onscreen verbosity",
     "FILTER_FILE": "path to filter file on which to compute extinction,\
     output of the `filter` execution, to be found in $LEPHAREWORK/filt",
     "EXT_CURVE": "extinction law to use, to be searched in $LEPHAREDIR/ext if relative",
@@ -27,7 +27,7 @@ class FiltExt(Runner):
     """
     The specific arguments to the Filter class are
 
-    verbose
+    VERBOSE
         increase onscreen verbosity
     FILTER_FILE
         Path to filter file on which to compute extinction, output of the

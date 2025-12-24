@@ -218,8 +218,8 @@ vector<opa> Mag::read_opa() {
   // In oder to fill the two last elements around Lyman alpha
   // Put 1 for the last element
   // Put the last value of the opa below 1215.67 just before
-  oneElLambda beflastOpa(1215.66, 1., 3);
-  oneElLambda lastOpa(1215.67, 1., 3);
+  oneElLambda beflastOpa(1215.66, 1.);
+  oneElLambda lastOpa(1215.67, 1.);
 
   ifstream stream = Mag::open_opa_files();
   vector<opa> result;
@@ -525,7 +525,7 @@ vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
               double LbeforeExt = oneSEDInt.trapzd();
 
               // product of the SED with the extinction law
-              oneSEDInt.applyExt(ebv[j], extAll[i]);
+              oneSEDInt.apply_extinction(ebv[j], extAll[i]);
 
               // Difference between the integrated flux with and without
               // extinction (without is computed just above) flux integrate of
@@ -560,12 +560,11 @@ vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
                 // change
                 GalSED oneEmInt(oneEm);
                 oneEmInt.ebv = ebv[j];
-                // set the value of fracEm
-                oneEmInt.fracEm = fracEm[l];
                 oneEmInt.red = gridz[k];
                 // For the emission lines, use only the MW. Change fac_line
-                oneEmInt.applyExtLines(extAll[nextlaw]);
+                oneEmInt.apply_extinction_to_lines(ebv[j], extAll[nextlaw]);
                 // rescale the lines as a free parameter
+                oneEmInt.fracEm = fracEm[l];
                 oneEmInt.rescaleEmLines();
                 /*
                 // Decide to not applied.
@@ -794,7 +793,7 @@ vector<QSOSED> QSOMag::make_maglib(const QSOSED &oneSED) {
           oneSEDInt.warning_integrateSED(allFlt, verbose);
 
           // product of the SED with the extinction law
-          oneSEDInt.applyExt(ebv[j], extAll[i]);
+          oneSEDInt.apply_extinction(ebv[j], extAll[i]);
 
           // Opacity applied in rest-frame, depending on the redshift of the
           // source

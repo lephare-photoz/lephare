@@ -65,7 +65,7 @@ def test_filter_with_kwargs(test_data_dir, set_env_vars):
     """Simple test to ensure that we can create an instance of a Filter object
     and that we can pass kwargs when instantiating the object."""
     config_file_path = os.path.join(test_data_dir, "examples/COSMOS.para")
-    input_args = {"verbose": True, "TRANS_TYPE": 42}
+    input_args = {"VERBOSE": "YES", "TRANS_TYPE": 42}
     filter = Filter(config_file=config_file_path)
     filter.run(**input_args)
     assert len(filter.keymap)
