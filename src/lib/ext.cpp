@@ -108,27 +108,6 @@ double compute_filter_extinction(const flt &oneFlt, const ext &oneExt) {
   return (aint /= fint);
 }
 
-// Function of the basis class which read all the filters
-vector<flt> read_flt(ifstream &sfiltIn) {
-  vector<flt> allFlt;
-  string bid;
-  int imag;
-  // read the number of filter
-  sfiltIn >> bid >> imag;
-
-  // Loop over each filter
-  for (int k = 0; k < imag; k++) {
-    // Generate one object "flt" and read it
-    flt oneFilt(k, sfiltIn, 0, 0);
-    // Compute fcorr, useful for FIR filters
-    oneFilt.fcorrec();
-    // store all filters in a vector
-    allFlt.push_back(oneFilt);
-  }
-
-  return allFlt;
-}
-
 // compute galactic extinction in the filter based on Cardelli et al., 1989, ApJ
 // 345
 double cardelli_ext(flt &oneFlt) {

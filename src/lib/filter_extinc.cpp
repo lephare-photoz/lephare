@@ -96,14 +96,7 @@ int main(int argc, char *argv[]) {
 
   // The input filter file
   string fltFile = lepharework + "/filt/" + filters;
-  ifstream sfiltIn;
-  sfiltIn.open(fltFile.c_str());
-  // Check if file is opened
-  if (!sfiltIn) {
-    throw invalid_argument("Can't open file " + fltFile);
-  }
-  vector<flt> allFlt;
-  allFlt = read_flt(sfiltIn);
+  vector<flt> allFlt = read_filters_from_file(fltFile);
 
   // check Rv to be applied
   double rv = 3.1;  // Use by default Cardelli

@@ -107,7 +107,6 @@ PYBIND11_MODULE(_lephare, mod) {
   mod.def("cardelli_law", &cardelli_law,
           "compute albd/av at a given lambda (A) for the Cardelli law",
           py::arg("lb"));
-  mod.def("read_flt", &read_flt, py::arg("sfiltIn"));
 
   /******** CLASS KEYWORD *********/
   py::class_<keyword>(mod, "keyword")
@@ -169,6 +168,7 @@ PYBIND11_MODULE(_lephare, mod) {
         }
         return result;
       });
+  mod.def("read_filters_from_file", &read_filters_from_file);
   mod.def("write_output_filter", &write_output_filter);
   mod.def("read_doc_filters", &read_doc_filters);
 
@@ -297,7 +297,6 @@ PYBIND11_MODULE(_lephare, mod) {
        .def("read_ext", &c::read_ext)                      \
        .def("read_opa", &c::read_opa)                      \
        .def("read_B12", &c::read_B12)                      \
-       .def("read_flt", &c::read_flt)                      \
        .def("def_zgrid", &c::def_zgrid)                    \
        .def("set_zgrid", &c::set_zgrid)                    \
        .def("read_SED", &c::read_SED)                      \
