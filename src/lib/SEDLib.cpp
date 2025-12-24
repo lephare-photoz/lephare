@@ -250,7 +250,7 @@ vector<GalSED> readPEGASE(string sedFile, int nummod, vector<double> &ageSel) {
     double val;
     for (size_t k = 0; k < n_points; k++) {
       ssed >> val;
-      oneSED.lamb_flux.emplace_back(lambdas[k], val * fluxconv, 1);
+      oneSED.lamb_flux.emplace_back(lambdas[k], val * fluxconv);
     }
 
     for (size_t k = 0; k < n_lines; k++) {
