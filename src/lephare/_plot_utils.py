@@ -289,14 +289,12 @@ class PlotUtils:
             The output PDF filename (default "all_photoz_plots.pdf").
         **kwargs : dict, optional
             Keyword arguments to pass to the plotting methods. Common keys include:
-            - bins : int
-                Number of bins for histograms.
-            - show_pit : bool
-                Whether to include PIT histogram in applicable plots.
-            - show_qq : bool
-                Whether to include QQ plots in applicable methods.
-            - savefig : bool
-                Whether to save individual plots.
+        
+            - bins : int Number of bins for histograms.
+            - show_pit : bool Whether to include PIT histogram in applicable plots.
+            - show_qq : bool Whether to include QQ plots in applicable methods.
+            - savefig : bool Whether to save individual plots.
+        
             Any method that does not accept a particular key will ignore it.
         """
         # Get all callable public methods
@@ -357,14 +355,12 @@ class PlotUtils:
             The output PDF filename (default "all_phys_plots.pdf").
         **kwargs : dict, optional
             Keyword arguments to pass to the plotting methods. Common keys include:
-            - bins : int
-                Number of bins for histograms.
-            - show_pit : bool
-                Whether to include PIT histogram in applicable plots.
-            - show_qq : bool
-                Whether to include QQ plots in applicable methods.
-            - savefig : bool
-                Whether to save individual plots.
+        
+            - bins : int Number of bins for histograms.
+            - show_pit : bool Whether to include PIT histogram in applicable plots.
+            - show_qq : bool Whether to include QQ plots in applicable methods.
+            - savefig : bool Whether to save individual plots.
+        
             Any method that does not accept a particular key will ignore it.
         """
         # Get all callable public methods
@@ -1902,15 +1898,12 @@ class PlotUtils:
 
         Returns
         -------
-        str
-            Path to the saved figure if `savefig=True`; otherwise an empty string.
+        Path to the saved figure if `savefig=True`; otherwise an empty string: str
 
         Notes
         -----
-        - PIT (Probability Integral Transform) values should be uniformly
-        distributed if the PDFs are well-calibrated.
-        - QQ plot compares the quantiles of the PIT distribution against a
-        uniform distribution to visually assess calibration.
+        - PIT (Probability Integral Transform) values should be uniformly distributed if the PDFs are well-calibrated.
+        - QQ plot compares the quantiles of the PIT distribution against a uniform distribution to visually assess calibration.
         """
 
         if pdfs is None:
@@ -2320,10 +2313,8 @@ class PlotUtils:
         Notes
         -----
         - Only sources within the defined redshift and magnitude ranges are included.
-        - The plot can reveal populations where the PDF and best-fit solutions diverge,
-          such as multi-peaked PDFs or poor fits.
-        - Strong deviations from the 1:1 line indicate inconsistency between the
-          χ²-based and PDF-based estimates.
+        - The plot can reveal populations where the PDF and best-fit solutions diverge, such as multi-peaked PDFs or poor fits.
+        - Strong deviations from the 1:1 line indicate inconsistency between the χ²-based and PDF-based estimates.
 
         Examples
         --------
@@ -2391,10 +2382,8 @@ class PlotUtils:
         Notes
         -----
         - Only sources within the defined redshift and magnitude ranges are included.
-        - The plot can reveal populations where the PDF and best-fit solutions diverge,
-          such as multi-peaked PDFs or poor fits.
-        - Strong deviations from the 1:1 line indicate inconsistency between the
-          χ²-based and PDF-based estimates.
+        - The plot can reveal populations where the PDF and best-fit solutions diverge, such as multi-peaked PDFs or poor fits.
+        - Strong deviations from the 1:1 line indicate inconsistency between the χ²-based and PDF-based estimates.
 
         Examples
         --------
@@ -2449,17 +2438,14 @@ class PlotUtils:
         """
         Plot stellar mass versus redshift for the sample.
 
-        This diagnostic shows the relation between stellar masses
-        and redshift, providing insight into mass evolution, selection effects, and completeness
-        limits of the survey.
+        This diagnostic shows the relation between stellar masses and redshift, providing insight into mass evolution, selection effects, and completeness limits of the survey.
 
         Notes
         -----
         - Uses the stellar mass
         - Only objects within the redshift and magnitude selection ranges are included.
         - The figure can be divided into subpanels based on magnitude or redshift bins.
-        - Helps identify trends such as brightening or dimming with redshift
-          and the distribution of galaxies in the mass-redshift plane.
+        - Helps identify trends such as brightening or dimming with redshift and the distribution of galaxies in the mass-redshift plane.
 
         Examples
         --------
@@ -2503,8 +2489,7 @@ class PlotUtils:
         - Uses the SFR
         - Only objects within the redshift and magnitude selection ranges are included.
         - The figure can be divided into subpanels based on magnitude or redshift bins.
-        - Helps identify trends such as brightening or dimming with redshift
-          and the distribution of galaxies in the mass-redshift plane.
+        - Helps identify trends such as brightening or dimming with redshift and the distribution of galaxies in the mass-redshift plane.
 
         Examples
         --------

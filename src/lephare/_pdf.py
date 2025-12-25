@@ -104,28 +104,23 @@ class PDF:  # noqa
         - Bit 4 (value 16): Extreme error (above `max(xaxis) / 2.5`)
 
         Args:
-        estimate (float): Central estimate or mean value used for statistics.
-        nb_peak_thresh (int, optional): Maximum acceptable number of peaks.
-            Defaults to 1.
-        height_thresh (float, optional): Threshold for peak detection height.
-            Defaults to 0.5.
-        tail_thresh (float, optional): Threshold for acceptable tail mass.
-            Defaults to 0.2.
-        peak_ratio_thresh (float, optional): Threshold for acceptable peak ratio.
-            Defaults to 0.25.
-        error_thresh (float, optional): Threshold for acceptable variance.
-            Defaults to 0.2.
-
-        Returns:
-        tuple:
-            A tuple containing:
-            - **int**: Quality flag score (0–15)
-            - **float**: Estimate value
-            - **float**: Error (variance)
-            - **float**: Peak ratio
-            - **float**: Tail mass
-            - **int**: Number of modes (peaks)
-            - **float**: Approximate Gaussian sigma
+        
+        - estimate (float): Central estimate or mean value used for statistics.
+        - nb_peak_thresh (int, optional): Maximum acceptable number of peaks. Defaults to 1.
+        - height_thresh (float, optional): Threshold for peak detection height. Defaults to 0.5.
+        - tail_thresh (float, optional): Threshold for acceptable tail mass. Defaults to 0.2.
+        - peak_ratio_thresh (float, optional): Threshold for acceptable peak ratio. Defaults to 0.25.
+        - error_thresh (float, optional): Threshold for acceptable variance. Defaults to 0.2.
+        
+        Returns a tuple containing:
+        
+        - **int**: Quality flag score (0–15)
+        - **float**: Estimate value
+        - **float**: Error (variance)
+        - **float**: Peak ratio
+        - **float**: Tail mass
+        - **int**: Number of modes (peaks)
+        - **float**: Approximate Gaussian sigma
 
         Notes:
         - A higher score indicates a worse fit or less reliable PDF.
