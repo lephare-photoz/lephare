@@ -108,12 +108,12 @@ class flt {
     auto lambdas = make_regular_grid(lmin, lmax, dlamb);
     lamb_trans.reserve(lambdas.size());
     // First element at T=0
-    //lamb_trans.emplace_back(lmin - 1, 0);
+    // lamb_trans.emplace_back(lmin - 1, 0);
     for (auto lamb : lambdas) {
       lamb_trans.emplace_back(lamb, 1);
     }
     // Last element at T=0
-    //lamb_trans.emplace_back(lmax + 1, 0);
+    // lamb_trans.emplace_back(lmax + 1, 0);
   }
 
   /* MP: erase all entries in lamb_trans */
