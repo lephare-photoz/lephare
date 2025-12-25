@@ -196,6 +196,14 @@ class flt {
   void compute_all();
 };
 
+/*! read the filter curve and build the corresponding vectors stored in
+ * attribute allFlt
+ * @param filter_file: file with all the considered filters, as produced by
+ * the filter executable/runner.
+ * @return the vector of flt objects recorded in the input ascii files.
+ */
+vector<flt> read_filters_from_file(const string &);
+
 void write_output_filter(string &filtfile, string &filtdoc, vector<flt> vecFlt);
 vector<flt> read_doc_filters(const string filtFile);
 

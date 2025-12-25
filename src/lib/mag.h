@@ -64,9 +64,6 @@ class Mag {
   /// read the IGM opacities into attribute opaAll (vector of vectors of type
   /// opa)
   static vector<opa> read_opa();
-  /// read the filter curve and build the corresponding vectors stored in
-  /// attribute allFlt
-  static vector<flt> read_flt(const string &);
 
   // Read the long wavelength Bethermin+2012 templates
   // to add the dust emission to the BC03 templates

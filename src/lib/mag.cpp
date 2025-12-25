@@ -40,7 +40,7 @@ Mag::Mag(keymap &key_analysed) {
   filtFile = ((key_analysed["FILTER_FILE"]).split_string("filters", 1))[0];
   // Full path to the input filter file
   string fltFile = lepharework + "/filt/" + filtFile + ".dat";
-  allFlt = read_flt(fltFile);
+  allFlt = read_filters_from_file(fltFile);
 
   // mag type AB/VEGA
   magtyp = ((key_analysed["MAGTYPE"]).split_string("AB", 1))[0];
@@ -243,36 +243,6 @@ vector<opa> Mag::read_opa() {
     result.push_back(oneOpa);
   }
   return result;
-}
-
-// Function of the basis class which read all the filters
-vector<flt> Mag::read_flt(const string &inputfile) {
-  vector<flt> flts;
-
-  ifstream sfiltIn;
-  sfiltIn.open(inputfile.c_str());
-  // Check if file is opened
-  if (!sfiltIn) {
-    throw invalid_argument("Can't open file compiling all filters in " +
-                           inputfile);
-  }
-
-  string dummy;
-  int imag;
-  // read the number of filter
-  sfiltIn >> dummy >> imag;
-
-  // Loop over each filter
-  for (int k = 0; k < imag; k++) {
-    // Generate one object "flt" and read it
-    flt oneFilt(k, sfiltIn, 0, 0);
-    // store all filters in a vector
-    flts.push_back(oneFilt);
-  }
-
-  sfiltIn.close();
-
-  return flts;
 }
 
 // Read the long wavelength Bethermin+2012 templates to add the dust emission to

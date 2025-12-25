@@ -45,3 +45,19 @@ def test_fast_interpolate():
     print(z)
     z2 = lp.fast_interpolate(x, y, z, 0)
     assert np.allclose(z2, z)
+
+
+def test_log10pow10():
+    x = np.random.random(10000)
+    pf = lp.POW10D_FASTV(x * 10)
+    ps = lp.POW10D_FASTV(x * 10)
+    assert np.allclose(ps, pf)
+    lf = lp.LOG10D_FASTV(x * 10)
+    ls = lp.LOG10D_FASTV(x * 10)
+    assert np.allclose(ls, lf)
+
+
+def test_mag2flux():
+    x = np.random.random() * 24
+    zp = np.random.random() * 20
+    assert lp.mag2flux(x, zp) == 10 ** (-0.4 * (x + 48.6 - zp))

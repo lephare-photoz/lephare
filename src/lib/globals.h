@@ -79,8 +79,28 @@ inline string bool2string(const bool &b) {
 inline bool CHECK_CONTEXT_BIT(unsigned long context, unsigned int n) {
   return std::bitset<MAX_CONTEXT>(context).test(n);
 }
-inline double POW10D(double x) { return exp(2.302585092994046 * x); }
-inline double POW10DSLOW(double x) { return pow(10.0, x); }
+inline double POW10D_FAST(double x) { return exp(2.302585092994046 * x); }
+inline double POW10D_SLOW(double x) { return pow(10.0, x); }
+
+// Marginal improvement in speed
+// In [3]: %timeit lp.POW10D_FASTV(np.random.random(100000000))
+// 6.38 s ± 24.7 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+//
+// In [4]: %timeit lp.POW10DSLOW_FASTV(np.random.random(100000000))
+// 6.94 s ± 15.8 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+
+inline vector<double> POW10D_FASTV(vector<double> x) {
+  vector<double> res;
+  res.reserve(x.size());
+  for (auto xx : x) res.push_back(POW10D_FAST(xx));
+  return res;
+}
+inline vector<double> POW10D_SLOWV(vector<double> x) {
+  vector<double> res;
+  res.reserve(x.size());
+  for (auto xx : x) res.push_back(POW10D_SLOW(xx));
+  return res;
+}
 // This is a fast approximation to log2()
 // Y = C[0]*F*F*F + C[1]*F*F + C[2]*F + C[3] + E;
 inline double log2f_approx(double X) {
@@ -97,11 +117,34 @@ inline double log2f_approx(double X) {
   Y += E;
   return (Y);
 }
-#define LOG10D LOG10D_SLOW
+
 inline double LOG10D_SLOW(double x) { return log10(x); }
 inline double LOG10D_FAST(double x) {
   return log2f_approx(x) * 0.3010299956639812f;
 }
+
+// Same : marginal; ~0.5s for 10M evaluations
+// In [6]: %timeit lp.LOG10D_SLOWV(np.random.random(100000000))
+// 6.67 s ± 3.43 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+//
+// In [7]: %timeit lp.LOG10D_FASTV(np.random.random(100000000))
+// 6.2 s ± 21.5 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+inline vector<double> LOG10D_SLOWV(vector<double> x) {
+  vector<double> res;
+  res.reserve(x.size());
+  for (auto xx : x) res.push_back(LOG10D_SLOW(xx));
+  return res;
+}
+inline vector<double> LOG10D_FASTV(vector<double> x) {
+  vector<double> res;
+  res.reserve(x.size());
+  for (auto xx : x) res.push_back(LOG10D_SLOW(xx));
+  return res;
+}
+
+#define POW10D POW10D_SLOW
+#define LOG10D LOG10D_SLOW
+
 inline double mag2flux(double x, double zp = 0.0) {
   return POW10D(-0.4 * (x + 48.6 - zp));
 }

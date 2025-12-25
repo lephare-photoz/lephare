@@ -5,7 +5,7 @@ import numpy as np
 
 import lephare as lp
 
-from ._lephare import GalMag, compute_filter_extinction, ext
+from ._lephare import compute_filter_extinction, ext
 from .runner import Runner
 
 __all__ = [
@@ -119,7 +119,7 @@ def calculate_extinction_values(filters, atmec, galec, verbose=False):
     Returns
     =======
 
-    all_filters : list of lephare.GalMag
+    all_filters : list of lephare.flt
         The list of filter objects
     aint : np.array
         Atmospheric extinction in each filter (mag/airmass)
@@ -128,7 +128,7 @@ def calculate_extinction_values(filters, atmec, galec, verbose=False):
     albd : np.array
         Galactic extinction in each filter A(lbd)/E(B-V)
     """
-    all_filters = GalMag.read_flt(filters)
+    all_filters = lp.read_filters_from_file(filters)
     if atmec == "NONE":
         aint = np.full(len(all_filters), 99.0).tolist()
     else:

@@ -107,7 +107,6 @@ PYBIND11_MODULE(_lephare, mod) {
   mod.def("cardelli_law", &cardelli_law,
           "compute albd/av at a given lambda (A) for the Cardelli law",
           py::arg("lb"));
-  mod.def("read_flt", &read_flt, py::arg("sfiltIn"));
 
   /******** CLASS KEYWORD *********/
   py::class_<keyword>(mod, "keyword")
@@ -169,6 +168,7 @@ PYBIND11_MODULE(_lephare, mod) {
         }
         return result;
       });
+  mod.def("read_filters_from_file", &read_filters_from_file);
   mod.def("write_output_filter", &write_output_filter);
   mod.def("read_doc_filters", &read_doc_filters);
 
@@ -297,7 +297,6 @@ PYBIND11_MODULE(_lephare, mod) {
        .def("read_ext", &c::read_ext)                      \
        .def("read_opa", &c::read_opa)                      \
        .def("read_B12", &c::read_B12)                      \
-       .def("read_flt", &c::read_flt)                      \
        .def("def_zgrid", &c::def_zgrid)                    \
        .def("set_zgrid", &c::set_zgrid)                    \
        .def("read_SED", &c::read_SED)                      \
@@ -320,9 +319,15 @@ PYBIND11_MODULE(_lephare, mod) {
   mod.def("blackbody", &blackbody);
   mod.def("CHECK_CONTEXT_BIT", &CHECK_CONTEXT_BIT);
   mod.def("POW10D", &POW10D);
-  mod.def("POW10DSLOW", &POW10DSLOW);
+  mod.def("LOG10D", &LOG10D);
+  mod.def("POW10D_SLOW", &POW10D_SLOW);
+  mod.def("POW10D_FAST", &POW10D_FAST);
+  mod.def("POW10D_FASTV", &POW10D_FASTV);
+  mod.def("POW10D_SLOWV", &POW10D_SLOWV);
   mod.def("LOG10D_SLOW", &LOG10D_SLOW);
   mod.def("LOG10D_FAST", &LOG10D_FAST);
+  mod.def("LOG10D_SLOWV", &LOG10D_SLOWV);
+  mod.def("LOG10D_FASTV", &LOG10D_FASTV);
   mod.def("mag2flux", &mag2flux);
   mod.def("flux2mag", &flux2mag);
   mod.def("indexes_in_vec", &indexes_in_vec);

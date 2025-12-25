@@ -62,6 +62,5 @@ class ext {
 double compute_filter_extinction(const flt &filter, const ext &extinction);
 double cardelli_ext(flt &oneFlt);
 double cardelli_law(double lb);
-vector<flt> read_flt(ifstream &sfiltIn);
 
 #endif
