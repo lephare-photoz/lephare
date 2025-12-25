@@ -11,7 +11,7 @@ def test_cardelli_ext():
     # the bad resolution is entirely due to the
     # addition of the two bracketing 0 values in the Heaviside definition
     # the two current values are 13617.62 and 13699.37
-    assert r == pytest.approx(extinction, 100)
+    assert r == pytest.approx(extinction, 1.e-5)
 
 
 def test_basics():

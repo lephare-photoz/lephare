@@ -200,7 +200,7 @@ double flt::lambdaMean() {
 */
 double flt::width() {
   if (name == "Heavy") {
-    return lmax() - lmin() - 2;
+    return lmax() - lmin();
   }
 
   // Width defined when the transmission is above 0.5*maximum transmission

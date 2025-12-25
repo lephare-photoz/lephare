@@ -19,9 +19,9 @@ def filter_file(test_data_dir):
 
 def test_flt_class(filter_file):
     tophat = flt(100.0, 200.0, 50)
-    assert tophat.name == ""
-    # this is wrong but an effect of improper C++ code
-    assert tophat.width() == 101.0
+    assert tophat.name == "Heavy"
+    print(tophat.lmin(), tophat.lmax())
+    assert tophat.width() == 100.0
     #
     f = flt(-1, filter_file, trans=1, calib=1)
     assert f.width() == pytest.approx(241.9479, 1.0e-4)
@@ -80,4 +80,4 @@ def test_flt_plot_filter_curve():
     tophat.plot_filter_curve(normed=True)
 
     # this is assertion doesn't mean anything, just here to assert _something_.
-    assert tophat.name == ""
+    assert tophat.name == "Heavy"

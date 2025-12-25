@@ -98,23 +98,22 @@ class flt {
   /// @param lmax upper bound of the Heaviside function
   /// @param nsteps number of steps in \f$\lambda\f$ from lmin to lmax
   flt(const double lmin, const double lmax, const int nsteps) : flt() {
+    name = "Heavy";
     id = 0;
     transtyp = 0;
     calibtyp = 0;
     // Generate a heavyside filter. Transmission at 1. Not renormalized.
     // Delta lambda
     double dlamb = (lmax - lmin) / double(nsteps);
+    auto lambdas = make_regular_grid(lmin, lmax, dlamb);
+    lamb_trans.reserve(lambdas.size());
     // First element at T=0
-    oneElLambda litBeg(lmin - 1, 0);
-    lamb_trans.push_back(litBeg);
-    for (int k = 0; k <= nsteps; k++) {
-      double lamb = lmin + double(k) * dlamb;
-      oneElLambda litOne(lamb, 1);
-      lamb_trans.push_back(litOne);
+    //lamb_trans.emplace_back(lmin - 1, 0);
+    for (auto lamb : lambdas) {
+      lamb_trans.emplace_back(lamb, 1);
     }
     // Last element at T=0
-    oneElLambda litFin(lmax + 1, 0);
-    lamb_trans.push_back(litFin);
+    //lamb_trans.emplace_back(lmax + 1, 0);
   }
 
   /* MP: erase all entries in lamb_trans */
