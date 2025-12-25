@@ -9,9 +9,10 @@
 
 #include <algorithm>  // sort
 #include <cmath>      // for the log
-#include <fstream>    // print output file
-#include <iomanip>    // std::setprecision
-#include <iostream>   // print standard file
+#include <filesystem>
+#include <fstream>   // print output file
+#include <iomanip>   // std::setprecision
+#include <iostream>  // print standard file
 #include <sstream>
 #include <string>
 #include <vector>
@@ -560,22 +561,26 @@ vector<flt> read_doc_filters(const string filtFile) {
   string line;
 
   // Open the documentation of the filter file
-  string fltdoc = lepharework + "/filt/" + filtFile + ".doc";
-
+  string fltdoc = filtFile;
+  if (std::filesystem::path(filtFile).is_relative()) {
+    fltdoc = lepharework + "/filt/" + filtFile + ".doc";
+  }
+  string fltfile = fltdoc;
+  size_t dot = fltfile.rfind('.');
+  fltfile.replace(dot, std::string::npos, ".dat");
   // Create a stream with the doc file
   ifstream stfltdoc;
   stfltdoc.open(fltdoc.c_str());
-  // Check that the file exist.
-  bool Fexist = stfltdoc.good();
   // Check that the file exist. Stop if not the case
-  if (!(Fexist)) {
-    throw invalid_argument(
-        "Filter documentation does not exist in LEPHAREWORK/filt/" + filtFile);
+  if (!stfltdoc.good()) {
+    throw invalid_argument("Filter documentation does not exist: " + fltdoc);
   }
   // Open the filter file
-  string fltfile = lepharework + "/filt/" + filtFile + ".dat";
   ifstream sfltIn;
   sfltIn.open(fltfile.c_str());
+  if (!sfltIn.good()) {
+    throw invalid_argument("Filter file does not exist: " + fltfile);
+  }
 
   // Read each line of the doc file
   while (getline(stfltdoc, line)) {
