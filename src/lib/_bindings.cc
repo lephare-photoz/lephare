@@ -319,9 +319,15 @@ PYBIND11_MODULE(_lephare, mod) {
   mod.def("blackbody", &blackbody);
   mod.def("CHECK_CONTEXT_BIT", &CHECK_CONTEXT_BIT);
   mod.def("POW10D", &POW10D);
-  mod.def("POW10DSLOW", &POW10DSLOW);
+  mod.def("LOG10D", &LOG10D);
+  mod.def("POW10D_SLOW", &POW10D_SLOW);
+  mod.def("POW10D_FAST", &POW10D_FAST);
+  mod.def("POW10D_FASTV", &POW10D_FASTV);
+  mod.def("POW10D_SLOWV", &POW10D_SLOWV);
   mod.def("LOG10D_SLOW", &LOG10D_SLOW);
   mod.def("LOG10D_FAST", &LOG10D_FAST);
+  mod.def("LOG10D_SLOWV", &LOG10D_SLOWV);
+  mod.def("LOG10D_FASTV", &LOG10D_FASTV);
   mod.def("mag2flux", &mag2flux);
   mod.def("flux2mag", &flux2mag);
   mod.def("indexes_in_vec", &indexes_in_vec);
