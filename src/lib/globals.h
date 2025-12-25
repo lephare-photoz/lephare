@@ -83,22 +83,22 @@ inline double POW10D_FAST(double x) { return exp(2.302585092994046 * x); }
 inline double POW10D_SLOW(double x) { return pow(10.0, x); }
 
 // Marginal improvement in speed
-// In [3]: %timeit lp.POW10DV(np.random.random(100000000))
+// In [3]: %timeit lp.POW10D_FASTV(np.random.random(100000000))
 // 6.38 s ± 24.7 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
 //
-// In [4]: %timeit lp.POW10DSLOWV(np.random.random(100000000))
+// In [4]: %timeit lp.POW10DSLOW_FASTV(np.random.random(100000000))
 // 6.94 s ± 15.8 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
 
 inline vector<double> POW10D_FASTV(vector<double> x) {
   vector<double> res;
   res.reserve(x.size());
-  for (auto xx : x) res.push_back(exp(2.302585092994046 * xx));
+  for (auto xx : x) res.push_back(POW10D_FAST(xx));
   return res;
 }
 inline vector<double> POW10D_SLOWV(vector<double> x) {
   vector<double> res;
   res.reserve(x.size());
-  for (auto xx : x) res.push_back(pow(10.0, xx));
+  for (auto xx : x) res.push_back(POW10D_SLOW(xx));
   return res;
 }
 // This is a fast approximation to log2()
@@ -132,13 +132,13 @@ inline double LOG10D_FAST(double x) {
 inline vector<double> LOG10D_SLOWV(vector<double> x) {
   vector<double> res;
   res.reserve(x.size());
-  for (auto xx : x) res.push_back(log10(xx));
+  for (auto xx : x) res.push_back(LOG10D_SLOW(xx));
   return res;
 }
 inline vector<double> LOG10D_FASTV(vector<double> x) {
   vector<double> res;
   res.reserve(x.size());
-  for (auto xx : x) res.push_back(log2f_approx(xx) * 0.3010299956639812f);
+  for (auto xx : x) res.push_back(LOG10D_SLOW(xx));
   return res;
 }
 
