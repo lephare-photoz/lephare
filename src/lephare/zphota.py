@@ -91,7 +91,7 @@ nonestring = "NONE"
 
 class Zphota(Runner):
     """The specific arguments to the Zphota class are
-    
+
     VERBOSE:
            add verbosity
     CAT_IN:

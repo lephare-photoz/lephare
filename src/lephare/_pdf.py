@@ -103,17 +103,23 @@ class PDF:  # noqa
         - Bit 3 (value 8): Multiple peaks (more than `nb_peak_thresh`)
         - Bit 4 (value 16): Extreme error (above `max(xaxis) / 2.5`)
 
-        Args:
-        
-        - estimate (float): Central estimate or mean value used for statistics.
-        - nb_peak_thresh (int, optional): Maximum acceptable number of peaks. Defaults to 1.
-        - height_thresh (float, optional): Threshold for peak detection height. Defaults to 0.5.
-        - tail_thresh (float, optional): Threshold for acceptable tail mass. Defaults to 0.2.
-        - peak_ratio_thresh (float, optional): Threshold for acceptable peak ratio. Defaults to 0.25.
-        - error_thresh (float, optional): Threshold for acceptable variance. Defaults to 0.2.
-        
+        Parameters
+        ----------
+        estimate : float
+            Central estimate or mean value used for statistics.
+        nb_peak_thresh : int, optional
+            Maximum acceptable number of peaks. Defaults to 1.
+        height_thresh : float, optional
+            Threshold for peak detection height. Defaults to 0.5.
+        tail_thresh : float, optional
+            Threshold for acceptable tail mass. Defaults to 0.2.
+        peak_ratio_thresh : float, optional
+            Threshold for acceptable peak ratio. Defaults to 0.25.
+        error_thresh :float, optional
+            Threshold for acceptable variance. Defaults to 0.2.
+
         Returns a tuple containing:
-        
+
         - **int**: Quality flag score (0–15)
         - **float**: Estimate value
         - **float**: Error (variance)
