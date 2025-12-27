@@ -36,7 +36,8 @@ void onesource::readsource(const string &identifier, const vector<double> vals,
   spec = identifier;
   // LCOV_EXCL_START
   if (ab.size() != sab.size()) {
-    throw invalid_argument("vals and err_vals do not have the same dimension");
+    throw invalid_argument(
+        "vals and err_vals do not have the same dimension");  // LCOV_EXCL_LINE
   }
   // LCOV_EXCL_STOP
   ab = vals;

@@ -1,9 +1,15 @@
 import os
 
-from lephare import GalMag
+from lephare import GalMag, QSOMag, StarMag
 
 TESTDIR = os.path.abspath(os.path.dirname(__file__))
 TESTDATADIR = os.path.join(TESTDIR, "../data")
+
+
+def test_basic():
+    # empty constructors
+    mag = StarMag()
+    mag = QSOMag()
 
 
 def test_readb12():
