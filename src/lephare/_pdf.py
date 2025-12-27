@@ -41,12 +41,12 @@ class PDF:  # noqa
         var = trapezoid((np.array(self.xaxis) - estimate) ** 2 * self.vPDF, self.xaxis)
         return np.sqrt(var)
 
-    def approximate_gaussian(self, estimate):
+    def approximate_gaussian(self, estimate, n_window=1):
         def gauss(z, a, mu, sigma):
             return a * np.exp(-((z - mu) ** 2) / (2 * sigma**2))
 
         error = self.variance(estimate)
-        mask = (self.xaxis >= estimate - error) & (self.xaxis <= estimate + error)
+        mask = (self.xaxis >= estimate - n_window * error) & (self.xaxis <= estimate + n_window * error)
         z_local = self.xaxis
         pdz_local = np.where(mask, self.vPDF, 0.0)
 
@@ -71,7 +71,7 @@ class PDF:  # noqa
     def tail_mass(self, estimate, n_window=2, good_sigma=0.01):
         """
         Compute the total probability mass in the tails,
-        outside a window around z_best.
+        outside a window around estimate.
         """
         window = self.approximate_gaussian(estimate)
         bound = n_window * window
