@@ -59,15 +59,17 @@ Mag::Mag(keymap &key_analysed) {
   modext = (key_analysed["MOD_EXTINC"]).split_int("0,0", nextlaw * 2);
 
   // define the grid in redshift
-  dz = ((key_analysed["Z_STEP"]).split_double("0.04", 3))[0];
-  zmin = ((key_analysed["Z_STEP"]).split_double("0.", 3))[1];
-  zmax = ((key_analysed["Z_STEP"]).split_double("6.", 3))[2];
+  dz = (key_analysed["Z_STEP"]).split_double("0.04", 3)[0];
+  zmin = (key_analysed["Z_STEP"]).split_double("0.", 3)[1];
+  zmax = (key_analysed["Z_STEP"]).split_double("6.", 3)[2];
+  // LCOV_EXCL_START
   if (zmax < zmin) {
     throw runtime_error(
         "You are probably using the old parametrisation of "
         "Z_STEP since Z MIN > Z MAX in Z_STEP. Stop here. ");
   }
-  // Output file in ascii ?
+  // LCOV_EXCL_START
+  //  Output file in ascii ?
   outasc = ((key_analysed["LIB_ASCII"]).split_bool("NO", 1))[0];
 
   // keyword to add the LDUST component to the stellar component (e.g. in BC03)

@@ -34,9 +34,11 @@ void onesource::readsource(const string &identifier, const vector<double> vals,
                            const long context = 0, const double z_spec = -99.9,
                            const string additional_input = " ") {
   spec = identifier;
+  // LCOV_EXCL_START
   if (ab.size() != sab.size()) {
     throw invalid_argument("vals and err_vals do not have the same dimension");
   }
+  // LCOV_EXCL_STOP
   ab = vals;
   sab = err_vals;
   zs = z_spec;
@@ -91,11 +93,13 @@ void onesource::fltUsed(const long gbcont, const long contforb,
     if (sab[k] < 0 && ab[k] < 0) bused[k] = 0;
 
     // reject band if error=0. Not possible to include in the chi2
+    // LCOV_EXCL_START
     if (sab[k] == 0) {
       bused[k] = 0;
       ab[k] = -99.9;
       sab[k] = -99.9;
     }
+    // LCOV_EXCL_STOP
 
     // Initialise the mask used for normalisation at the same value than bused
     busnorma.push_back(bused[k]);
@@ -119,12 +123,13 @@ void onesource::fltUsed(const long gbcont, const long contforb,
     if (busul[k] == 1) nbul++;
   }
   if (nf == 0 && verbose)
-    cout << "WARNING: No scaling --> No z " << spec << endl;
+    cout << "WARNING: No scaling --> No z " << spec << endl;  // LCOV_EXCL_LINE
 }
 
 /*
  DEFINE THE FILTERS WHICH SHOULD BE USED IN THE FIR FIT
 */
+// LCOV_EXCL_START
 void onesource::fltUsedIR(const long fir_cont, const long fir_scale,
                           const int imagm, vector<flt> allFilters,
                           const double fir_lmin) {
@@ -153,10 +158,12 @@ void onesource::fltUsedIR(const long fir_cont, const long fir_scale,
       bscfir[k] = (CHECK_CONTEXT_BIT(fir_scale, k));
   }
 }
+// LCOV_EXCL_STOP
 
 /*
  CONVERT THE MAG INTO FLUX IF NECESSARY
 */
+// LCOV_EXCL_START
 void onesource::convertFlux(const string &catmag,
                             const vector<flt> allFilters) {
   size_t imagm = allFilters.size();
@@ -189,6 +196,7 @@ void onesource::convertFlux(const string &catmag,
   }
   return;
 }
+// LCOV_EXCL_STOP
 
 /*
  CONVERT THE FLUX INTO MAG

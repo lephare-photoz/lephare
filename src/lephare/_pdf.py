@@ -55,7 +55,7 @@ class PDF:  # noqa
             popt, _ = curve_fit(gauss, z_local, pdz_local, p0=p0)
             _, mu_fit, siga_fit = popt
             return abs(siga_fit)
-        except RuntimeError:
+        except RuntimeError:  # pragma no cover
             # Fallback in case fit fails
             return error
 

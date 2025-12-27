@@ -1,4 +1,4 @@
-// LCOV_EXCL_FILE
+// LCOV_EXCL_START
 /*
 
   27/11/14
@@ -315,3 +315,4 @@ vector<bool> closeAge(vector<double> ageSel, vector<double> age) {
 
   return outAge;
 }
+// LCOV_EXCL_STOP

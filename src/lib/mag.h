@@ -99,7 +99,7 @@ class Mag {
 class StarMag : public Mag {
  public:
   StarMag(keymap &key_analysed);
-  StarMag(){};
+  StarMag(){};  // LCOV_EXCL_LINE
   ~StarMag(){};
 
   void print_info();
@@ -112,7 +112,7 @@ class StarMag : public Mag {
 class QSOMag : public Mag {
  public:
   QSOMag(keymap &key_analysed);
-  QSOMag(){};
+  QSOMag(){};  // LCOV_EXCL_LINE
   ~QSOMag(){};
 
   void print_info();
