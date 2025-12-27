@@ -103,7 +103,8 @@ inline vector<double> POW10D_SLOWV(vector<double> x) {
 }
 // This is a fast approximation to log2()
 // Y = C[0]*F*F*F + C[1]*F*F + C[2]*F + C[3] + E;
-inline double log2f_approx(double X) {  // LCOV_EXCL_LINE
+// LCOV_EXCL_START
+inline double log2f_approx(double X) {
   double Y, F;
   int E;
   F = frexp(fabs(X), &E);
@@ -117,6 +118,7 @@ inline double log2f_approx(double X) {  // LCOV_EXCL_LINE
   Y += E;
   return (Y);
 }
+// LCOV_EXCL_STOP
 
 inline double LOG10D_SLOW(double x) { return log10(x); }
 inline double LOG10D_FAST(double x) {

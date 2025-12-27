@@ -67,10 +67,10 @@ class PhotoZ:  # noqa: F811
             # use the last src object to get the x-axis values
             t.meta[typ] = " ".join(str(e) for e in pdf.xaxis)
 
-        if filename is not None:
+        if filename is not None:  # pragma no cover
             self.save_table(t, filename)
         return t
 
-    def save_table(self, table, filename, fmt="fits", overwrite=True):
+    def save_table(self, table, filename, fmt="fits", overwrite=True):  # pragma no cover
         if fmt == "fits":
             table.write(filename, "fits", overwrite)

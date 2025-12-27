@@ -8,7 +8,7 @@ __all__ = [
 
 @continueClass
 class onesource:  # noqa
-    def compute_quality_flag(self):
+    def compute_quality_flag(self):  # pragma no cover
         """
         Compute and return the quality flag for the current PDF and center.
 

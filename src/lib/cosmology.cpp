@@ -44,7 +44,8 @@ double cosmo::distMet(double z) const {
   double dmet, ao;
 
   // case without the cosmological constant
-  if (l0 == 0) {  // LCOV_EXCL_LINE
+  if (l0 == 0) {
+    // LCOV_EXCL_START
     //  ao = c/(h0*sqrt(ABS(1-omt)))
     //  in fact we use x = ao * x(z) with x(z) from eq 8 of
     //  Moscardini et al.  So we don't need to compute ao
@@ -56,7 +57,7 @@ double cosmo::distMet(double z) const {
       ao = 1.;
       dmet = ckms * z * (1. + z / 2.) / (h0 * (1 + z));
     }
-
+    // LCOV_EXCL_STOP
   } else if (om0 < 1 && l0 != 0) {
     ao = 1.;
     double sum = 0.;
@@ -69,7 +70,7 @@ double cosmo::distMet(double z) const {
     }
     dmet = ckms / (h0 * ao) * sum;
 
-  } else {  // LCOV_EXCL_LINE
+  } else {
     throw runtime_error("Cosmology not included : h0=" + to_string(h0) +
                         " Om0=" + to_string(om0) + " l0=" + to_string(l0));
   }
