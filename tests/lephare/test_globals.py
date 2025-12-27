@@ -15,6 +15,7 @@ def test_globals_first_char():
 
 def test_globals_blackbody():
     assert np.isclose(blackbody(10000, 500), 1.018807e-26)
+    assert np.isclose(blackbody(10000000, 5000000), 1.112055e-28)
 
 
 def test_indexes_in_vec():
@@ -50,10 +51,10 @@ def test_fast_interpolate():
 def test_log10pow10():
     x = np.random.random(10000)
     pf = lp.POW10D_FASTV(x * 10)
-    ps = lp.POW10D_FASTV(x * 10)
+    ps = lp.POW10D_SLOWV(x * 10)
     assert np.allclose(ps, pf)
     lf = lp.LOG10D_FASTV(x * 10)
-    ls = lp.LOG10D_FASTV(x * 10)
+    ls = lp.LOG10D_SLOWV(x * 10)
     assert np.allclose(ls, lf)
 
 
