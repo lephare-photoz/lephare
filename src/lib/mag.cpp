@@ -68,7 +68,7 @@ Mag::Mag(keymap &key_analysed) {
         "You are probably using the old parametrisation of "
         "Z_STEP since Z MIN > Z MAX in Z_STEP. Stop here. ");
   }
-  // LCOV_EXCL_START
+  // LCOV_EXCL_STOP
   //  Output file in ascii ?
   outasc = ((key_analysed["LIB_ASCII"]).split_bool("NO", 1))[0];
 
