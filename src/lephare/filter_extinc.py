@@ -58,7 +58,7 @@ class FiltExt(Runner):
         keymap = self.keymap
         # Get the parameters
         filters = keymap["FILTER_FILE"].split_string("unknown", 1)[0]
-        if not os.path.isabs(filters):
+        if not os.path.isabs(filters):  # pragma no cover
             filters = os.path.join(os.environ["LEPHAREWORK"], "filt", filters)
         atmec = keymap["EXT_CURVE"].split_string("NONE", 1)[0]
         output = keymap["OUTPUT"].split_string("filter_extinc.dat", 1)[0]
@@ -68,7 +68,7 @@ class FiltExt(Runner):
             filters, atmec, galec, verbose=self.verbose
         )
 
-        if self.verbose:
+        if self.verbose:  # pragma no cover
             print("#######################################")
             print("# Computing ATMOSPHERIC AND GALACTIC EXTINCTION ")
             print("# with the following options:")

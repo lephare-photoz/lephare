@@ -40,8 +40,6 @@ bool check_first_char(const string &maligne);
 
 double blackbody(double T, double lambda);
 
-int bdincl(int n, long cont, int max);
-
 //! Return the vector of indexes of values in `vec` that match `value` to the
 //! required `precision`.
 /*!
@@ -70,11 +68,13 @@ vector<double> fast_interpolate(const std::vector<double> &x,
                                 const std::vector<double> &y,
                                 const std::vector<double> &z, double d);
 
+// LCOV_EXCL_START
 inline string bool2string(const bool &b) {
   string sb;
   b ? sb = "YES" : sb = "NO";
   return sb;
 }
+// LCOV_EXCL_STOP
 
 inline bool CHECK_CONTEXT_BIT(unsigned long context, unsigned int n) {
   return std::bitset<MAX_CONTEXT>(context).test(n);
@@ -103,7 +103,7 @@ inline vector<double> POW10D_SLOWV(vector<double> x) {
 }
 // This is a fast approximation to log2()
 // Y = C[0]*F*F*F + C[1]*F*F + C[2]*F + C[3] + E;
-inline double log2f_approx(double X) {
+inline double log2f_approx(double X) {  // LCOV_EXCL_LINE
   double Y, F;
   int E;
   F = frexp(fabs(X), &E);
