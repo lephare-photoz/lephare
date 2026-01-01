@@ -149,19 +149,6 @@ if(DEFINED ENV{INCLUDE_COVERAGE} AND DEFINED ENV{SANITIZE_ADDRESS})
 endif()
 
 # ------------------------------------------------------------------------------
-# Core library
-# ------------------------------------------------------------------------------
-add_library(lepharelib STATIC ${SOURCES})
-
-# ------------------------------------------------------------------------------
-# OpenMP (always attempted, no gating)
-# ------------------------------------------------------------------------------
-find_package(OpenMP)
-if(OpenMP_CXX_FOUND)
-  target_link_libraries(lepharelib PUBLIC OpenMP::OpenMP_CXX)
-endif()
-
-# ------------------------------------------------------------------------------
 # Python extension module
 # ------------------------------------------------------------------------------
 add_subdirectory(extern/pybind11)
