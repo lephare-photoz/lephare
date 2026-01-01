@@ -16,7 +16,7 @@ def test_cardelli_ext():
 
 def test_basics():
     e = lp.ext("", 0)
-    # set_vector with inmatched size
+    # set_vector with unmatched size
     with pytest.raises(RuntimeError):
         e.set_vector([0, 1, 2], [0, 2])
     # basic set_vector unit testing
