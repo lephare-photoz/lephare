@@ -304,7 +304,7 @@ void SEDLib<T>::read_age(string ageFich) {
         stringstream ss(lit);
         ss >> dage;
 
-        // fill the age vector in Gyr.
+        // fill the age vector, converting to yr.
         ageSel.push_back(dage * 1.e9);
       }
     }

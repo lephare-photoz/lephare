@@ -48,7 +48,7 @@ vector<GalSED> readBC03(string sedFile, int nummod, vector<double> &ageSel) {
     throw invalid_argument("Can't open the BC03 file " + sedFile);
   }
 
-  // Number of ages and read the ages
+  // Number of ages and read the ages, these are in yr in BC03
   ssed >> nages;
   for (int k = 0; k < nages; k++) {
     ssed >> dage;
@@ -235,7 +235,8 @@ vector<GalSED> readPEGASE(string sedFile, int nummod, vector<double> &ageSel) {
     for (double &v : ancillaries) {
       ssed >> v;
     }
-
+    
+    //PEGASE provides age in Myr, converts to yr in LePHARE
     double age(ancillaries[0] * 1.e6);
     bool useAge = ageSel.empty() ? true : closeAge(ageSel, {age}).front();
 
