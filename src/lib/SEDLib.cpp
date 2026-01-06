@@ -238,7 +238,6 @@ vector<GalSED> readPEGASE(string sedFile, int nummod, vector<double> &ageSel) {
 
     double age(ancillaries[0] * 1.e6);
     bool useAge = ageSel.empty() ? true : closeAge(ageSel, {age}).front();
-
     double mass(ancillaries[2]);
     double zmet(ancillaries[7]);
     double ltir0(ancillaries[10]);
@@ -302,7 +301,7 @@ vector<bool> closeAge(vector<double> ageSel, vector<double> age) {
       // difference between selection and SED ages
       diff = abs(*itj - *iti);
       // keep the one which minimize the difference
-      if (diff < dage && diff < 2.e9 && *itj >= agemin &&
+      if (diff < dage && diff < 1.e-5 && *itj >= agemin &&
           (*itj <= agemax || agemax <= 0)) {
         dage = diff;
         kmin = k;
@@ -310,7 +309,7 @@ vector<bool> closeAge(vector<double> ageSel, vector<double> age) {
       k++;
     }
     // The age which minimizes the difference can be used
-    if (kmin > 0) outAge[kmin] = true;
+    if (kmin >= 0) outAge[kmin] = true;
   }
 
   return outAge;
