@@ -16,7 +16,7 @@ config_keys = {
     "GAL_FSCALE": "arbitrary Flux scale for galaxy templates",
     "GAL_LIB": "name of the output binary SED file for the galaxies (relative to $LEPHAREWORK/lib_bin/)",
     "SEL_AGE": "file listing the different galaxy ages (in Gyr) to consider",
-    "AGE_RANGE": "minimal and maximal age in giga-year to consider",
+    "AGE_RANGE": "minimal and maximal age (in yr) to consider",
     "QSO_SED": "same for QSO/AGN templates",
     "QSO_FSCALE": "same for QSO/AGN templates",
     "QSO_LIB": "same for QSO/AGN templates",
@@ -41,9 +41,9 @@ class Sedtolib(Runner):
     GAL_LIB:
            name of the output binary SED file for the galaxies (relative to $ZPHOTWORK/lib_bin/)
     SEL_AGE:
-           file listing the different galaxy ages to consider
+           file listing the different galaxy ages to consider (in Gyr)
     AGE_RANGE:
-           minimal and maximal age in year to consider
+           minimal and maximal age (in yr) to consider
     QSO_SED, QSO_FSCALE, QSO_LIB, STAR_SED, STAR_LIB, STAR_FSCALE :
            same for QSO/AGN and STAR SED types
     """
