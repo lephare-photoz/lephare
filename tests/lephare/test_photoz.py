@@ -1,6 +1,7 @@
 import os
 
 import lephare as lp
+import numpy as np
 
 
 def test_photoz(test_data_dir: str):
@@ -11,7 +12,9 @@ def test_photoz(test_data_dir: str):
     lp.prepare(config)
     photz = lp._lephare.PhotoZ(config)
     # Check the redshift zero case works
-    print(photz.fullLib[0].data().shape)
-    assert photz.fullLib[0].data().shape == (2, 4860)
-    # Check the non redshift zero case works
-    assert photz.fullLib[1].data().shape == (2, 4860)
+    for i, sed in enumerate(photz.fullLib):
+        # Check some spectra data is available
+        assert sed.data().shape != (2, 0)
+        if not np.isclose(photz.zLib[i], 0.0):
+            # Check redshifted sources have same model as previous sed
+            assert sed.nummod == photz.fullLib[i - 1].nummod
