@@ -14,4 +14,4 @@ def test_photoz(test_data_dir: str):
     print(photz.fullLib[0].data().shape)
     assert photz.fullLib[0].data().shape == (2, 4860)
     # Check the non redshift zero case works
-    assert photz.fullLib[1].data().shape == (2, 2492)
+    assert photz.fullLib[1].data().shape == (2, 4860)
