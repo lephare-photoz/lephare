@@ -20,10 +20,10 @@ namespace py = pybind11;
 #include "photoz_lib.h"
 
 template <typename x, typename modT>
-void applySEDLibTemplate(modT &m, std::string name) {
+void applySEDLibTemplate(modT& m, std::string name) {
   py::class_<SEDLib<x>>(m, name.c_str())
       .def(py::init<string, string>(), py::arg("config"), py::arg("typ"))
-      .def(py::init<keymap &, string, string>(), py::arg("key_analysed"),
+      .def(py::init<keymap&, string, string>(), py::arg("key_analysed"),
            py::arg("config"), py::arg("typ"))
       .def("print_info", &SEDLib<x>::print_info)
       .def("read_model_list", &SEDLib<x>::read_model_list)
@@ -113,14 +113,14 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("split_long", &keyword::split_long)
       .def("split_double", &keyword::split_double)
       .def("split_bool", &keyword::split_bool)
-      .def("__repr__", [](const keyword &a) {
+      .def("__repr__", [](const keyword& a) {
         return "(" + a.name + ", " + a.value + ")";
       });
 
   mod.def("read_command", [](std::vector<std::string> args) {
-    std::vector<char *> cstrs;
+    std::vector<char*> cstrs;
     cstrs.reserve(args.size());
-    for (auto &s : args) cstrs.push_back(const_cast<char *>(s.c_str()));
+    for (auto& s : args) cstrs.push_back(const_cast<char*>(s.c_str()));
     return read_command(cstrs.size(), cstrs.data());
   });
   mod.def("read_config", &read_config);
@@ -132,9 +132,9 @@ PYBIND11_MODULE(_lephare, mod) {
       .def(py::init<double, double, int>(), py::arg("lmin"), py::arg("lmax"),
            py::arg("nstep"),
            "Top hat filter from lmin to lmax with nstep points")
-      .def("read", static_cast<void (flt::*)(const string &)>(&flt::read),
+      .def("read", static_cast<void (flt::*)(const string&)>(&flt::read),
            "Read filter info from file")
-      .def("read", static_cast<void (flt::*)(ifstream &)>(&flt::read),
+      .def("read", static_cast<void (flt::*)(ifstream&)>(&flt::read),
            "Read filter info from stream")
       .def("lambdaMean", &flt::lambdaMean)
       .def("lambdaEff", &flt::lambdaEff)
@@ -146,12 +146,12 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("lmean", &flt::lmean)
       .def_readonly("dwidth", &flt::dwidth)
       .def_readwrite("lamb_trans", &flt::lamb_trans)
-      .def("data", [](const flt &f) {
+      .def("data", [](const flt& f) {
         int N = f.lamb_trans.size();
         // Create a 2D array with shape (2, N) (transposed)
         py::array_t<double> result({2, N});
         py::buffer_info buf = result.request();
-        double *ptr = static_cast<double *>(buf.ptr);
+        double* ptr = static_cast<double*>(buf.ptr);
         for (size_t i = 0; i < N; i++) {
           ptr[i] = f.lamb_trans[i].lamb;     // First row
           ptr[N + i] = f.lamb_trans[i].val;  // Second row
@@ -191,16 +191,16 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("emplace_back", &SED::emplace_back)
       .def("set_vector", &SED::set_vector)
       .def("readSEDBin",
-           static_cast<void (SED::*)(const string &)>(&SED::readSEDBin))
+           static_cast<void (SED::*)(const string&)>(&SED::readSEDBin))
       .def("writeSED",
-           static_cast<void (SED::*)(const string &, const string &,
-                                     const string &)>(&SED::writeSED))
-      .def("data", [](const SED &f) {
+           static_cast<void (SED::*)(const string&, const string&,
+                                     const string&)>(&SED::writeSED))
+      .def("data", [](const SED& f) {
         int N = f.lamb_flux.size();
         // Create a 2D array with shape (2, N) (transposed)
         py::array_t<double> result({2, N});
         py::buffer_info buf = result.request();
-        double *ptr = static_cast<double *>(buf.ptr);
+        double* ptr = static_cast<double*>(buf.ptr);
         for (size_t i = 0; i < N; i++) {
           ptr[i] = f.lamb_flux[i].lamb;     // First row
           ptr[N + i] = f.lamb_flux[i].val;  // Second row
@@ -209,20 +209,20 @@ PYBIND11_MODULE(_lephare, mod) {
       });
 
   py::class_<StarSED, SED>(mod, "StarSED")
-      .def(py::init<const SED &>())
-      .def(py::init<const StarSED &>())
+      .def(py::init<const SED&>())
+      .def(py::init<const StarSED&>())
       .def(py::init<const string, int>(), py::arg("name"),
            py::arg("nummod") = 0);
 
   py::class_<QSOSED, SED>(mod, "QSOSED")
-      .def(py::init<const SED &>())
-      .def(py::init<const QSOSED &>())
+      .def(py::init<const SED&>())
+      .def(py::init<const QSOSED&>())
       .def(py::init<const string, int>(), py::arg("name"),
            py::arg("nummod") = 0);
 
   py::class_<GalSED, SED>(mod, "GalSED")
-      .def(py::init<const SED &>())
-      .def(py::init<const GalSED &>())
+      .def(py::init<const SED&>())
+      .def(py::init<const GalSED&>())
       .def(py::init<const string, int>(), py::arg("name"),
            py::arg("nummod") = 0)
       .def(py::init<const string, double, double, string, int, string, int>(),
@@ -246,23 +246,23 @@ PYBIND11_MODULE(_lephare, mod) {
   applySEDLibTemplate<GalSED>(mod, "GalSEDLib");
 
   /******** CLASS MAG *********/
-#define MAGDEFS(c, n)                                      \
-  (py::class_<c>(mod, n)                                   \
-       .def(py::init<keymap &>(), py::arg("key_analysed")) \
-       .def(py::init<>())                                  \
-       .def("open_files", &c::open_files)                  \
-       .def("close_files", &c::close_files)                \
-       .def("open_opa_files", &c::open_opa_files)          \
-       .def("print_info", &c::print_info)                  \
-       .def("read_ext", &c::read_ext)                      \
-       .def("read_opa", &c::read_opa)                      \
-       .def("read_B12", &c::read_B12)                      \
-       .def("read_flt", &c::read_flt)                      \
-       .def("def_zgrid", &c::def_zgrid)                    \
-       .def("set_zgrid", &c::set_zgrid)                    \
-       .def("read_SED", &c::read_SED)                      \
-       .def("write_doc", &c::write_doc)                    \
-       .def("make_maglib", &c::make_maglib)                \
+#define MAGDEFS(c, n)                                     \
+  (py::class_<c>(mod, n)                                  \
+       .def(py::init<keymap&>(), py::arg("key_analysed")) \
+       .def(py::init<>())                                 \
+       .def("open_files", &c::open_files)                 \
+       .def("close_files", &c::close_files)               \
+       .def("open_opa_files", &c::open_opa_files)         \
+       .def("print_info", &c::print_info)                 \
+       .def("read_ext", &c::read_ext)                     \
+       .def("read_opa", &c::read_opa)                     \
+       .def("read_B12", &c::read_B12)                     \
+       .def("read_flt", &c::read_flt)                     \
+       .def("def_zgrid", &c::def_zgrid)                   \
+       .def("set_zgrid", &c::set_zgrid)                   \
+       .def("read_SED", &c::read_SED)                     \
+       .def("write_doc", &c::write_doc)                   \
+       .def("make_maglib", &c::make_maglib)               \
        .def("write_mag", &c::write_mag))
   MAGDEFS(StarMag, "StarMag");
   MAGDEFS(QSOMag, "QSOMag");
@@ -301,18 +301,141 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("outpara", &PhotoZ::outpara)
       .def_readonly("pdftype", &PhotoZ::pdftype)
       .def_readwrite("outputHeader", &PhotoZ::outputHeader)
-      .def(py::init<keymap &>())
+      .def(py::init<keymap&>())
       .def("read_autoadapt_sources", &PhotoZ::read_autoadapt_sources)
       .def("read_photoz_sources", &PhotoZ::read_photoz_sources)
-      .def("prep_data", static_cast<void (PhotoZ::*)(vector<onesource *>)>(
+      .def("prep_data", static_cast<void (PhotoZ::*)(vector<onesource*>)>(
                             &PhotoZ::prep_data))
       .def("prep_data",
-           static_cast<void (PhotoZ::*)(onesource *)>(&PhotoZ::prep_data))
+           static_cast<void (PhotoZ::*)(onesource*)>(&PhotoZ::prep_data))
       .def("run_autoadapt", &PhotoZ::run_autoadapt)
       .def("run_photoz", &PhotoZ::run_photoz)
       .def("write_outputs", &PhotoZ::write_outputs)
       .def("validLib", &PhotoZ::validLib)
-      .def("compute_offsets", &PhotoZ::compute_offsets);
+      .def("compute_offsets", &PhotoZ::compute_offsets)
+
+      // Diagnostic: check which SEDs have data
+      .def("diagnose_library",
+           [](const PhotoZ& pz) {
+             py::dict info;
+             int total = pz.fullLib.size();
+             int with_data = 0;
+             int without_data = 0;
+             py::list indices_with_data;
+             py::list indices_without_data;
+
+             for (size_t i = 0; i < pz.fullLib.size(); i++) {
+               if (pz.fullLib[i]->lamb_flux.size() > 0) {
+                 with_data++;
+                 if (indices_with_data.size() < 10) {  // First 10
+                   indices_with_data.append(i);
+                 }
+               } else {
+                 without_data++;
+                 if (indices_without_data.size() < 10) {  // First 10
+                   indices_without_data.append(i);
+                 }
+               }
+             }
+
+             info["total_seds"] = total;
+             info["with_data"] = with_data;
+             info["without_data"] = without_data;
+             info["first_10_with_data"] = indices_with_data;
+             info["first_10_without_data"] = indices_without_data;
+
+             return info;
+           })
+
+      // Get SED data using index_z0 to find the base template
+      .def(
+          "get_sed_data_with_z0_lookup",
+          [](const PhotoZ& pz, int index) {
+            if (index < 0 || index >= pz.fullLib.size()) {
+              throw std::out_of_range("Index out of range");
+            }
+
+            const SED* sed = pz.fullLib[index];
+
+            // If this SED has data, use it directly
+            if (sed->lamb_flux.size() > 0) {
+              size_t N = sed->lamb_flux.size();
+              py::array_t<double> data(std::vector<size_t>{2, N});
+              auto buf = data.request();
+              double* ptr = static_cast<double*>(buf.ptr);
+
+              for (size_t i = 0; i < N; i++) {
+                ptr[i] = sed->lamb_flux[i].lamb;
+                ptr[N + i] = sed->lamb_flux[i].val;
+              }
+
+              return data;
+            }
+
+            // Otherwise, try to use index_z0 to find the base template
+            if (sed->index_z0 >= 0 && sed->index_z0 < pz.fullLib.size()) {
+              const SED* base_sed = pz.fullLib[sed->index_z0];
+
+              if (base_sed->lamb_flux.size() > 0) {
+                size_t N = base_sed->lamb_flux.size();
+                py::array_t<double> data(std::vector<size_t>{2, N});
+                auto buf = data.request();
+                double* ptr = static_cast<double*>(buf.ptr);
+
+                for (size_t i = 0; i < N; i++) {
+                  ptr[i] = base_sed->lamb_flux[i].lamb;
+                  ptr[N + i] = base_sed->lamb_flux[i].val;
+                }
+
+                return data;
+              }
+            }
+
+            // Return empty array if neither works
+            return py::array_t<double>(std::vector<size_t>{2, 0});
+          },
+          py::arg("index"))
+
+      // Get all library data, using index_z0 lookup when needed
+      .def("get_full_sed_library", [](const PhotoZ& pz) {
+        py::list sed_list;
+
+        for (size_t idx = 0; idx < pz.fullLib.size(); idx++) {
+          const SED* sed = pz.fullLib[idx];
+          const SED* data_sed = sed;
+
+          // If this SED doesn't have data, try the z0 reference
+          if (sed->lamb_flux.size() == 0 && sed->index_z0 >= 0 &&
+              sed->index_z0 < pz.fullLib.size()) {
+            data_sed = pz.fullLib[sed->index_z0];
+          }
+
+          size_t N = data_sed->lamb_flux.size();
+
+          if (N > 0) {
+            py::array_t<double> data(std::vector<size_t>{2, N});
+            auto buf = data.request();
+            double* ptr = static_cast<double*>(buf.ptr);
+
+            for (size_t i = 0; i < N; i++) {
+              ptr[i] = data_sed->lamb_flux[i].lamb;
+              ptr[N + i] = data_sed->lamb_flux[i].val;
+            }
+
+            py::dict sed_info;
+            sed_info["data"] = data;
+            sed_info["name"] = sed->name;
+            sed_info["nummod"] = sed->nummod;
+            sed_info["index"] = idx;
+            sed_info["index_z0"] = sed->index_z0;
+            sed_info["used_z0_reference"] = (sed != data_sed);
+
+            sed_list.append(sed_info);
+          }
+        }
+
+        return sed_list;
+      });
   // mod.def("read_lib", [](const string& libName, int ind, vector<int> emMod,
   // int babs) { 			vector<SED*> libFull;
   // int nummodpre[3]; 			string filtname;
@@ -344,7 +467,7 @@ PYBIND11_MODULE(_lephare, mod) {
       //    .def("readsource", &onesource::readsource)
       .def("readsource",
            static_cast<void (onesource::*)(
-               const string &, const vector<double>, const vector<double>,
+               const string&, const vector<double>, const vector<double>,
                const long, const double, const string)>(&onesource::readsource))
       .def("set_verbosity", &onesource::set_verbosity)
       .def("get_verbosity", &onesource::get_verbosity)
