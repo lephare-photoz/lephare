@@ -149,7 +149,7 @@ jobs:
 
     steps:
       - name: Download distribution files
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           # unpacks all CIBW artifacts into dist/
           pattern: cibw-*
