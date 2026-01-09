@@ -262,6 +262,24 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   emMod.push_back(((key_analysed["ADD_EMLINES"]).split_int("-9999", 2))[0]);
   emMod.push_back(((key_analysed["ADD_EMLINES"]).split_int("-9999", 2))[1]);
 
+  // RF_COLORS compute 2 rest-frame colors and associated errorbars
+  vector<int> fltColRF = (key_analysed["RF_COLORS"]).split_int("-1", 4);
+  // Need to substract one because the convention in the .para file start at 1,
+  // but 0 in the code
+  if (fltColRF.size() > 1) {
+    for (int k = 0; k < 4; k++) fltColRF[k]--;
+  }
+  // M_REF compute the absolute magnitudes and associated errorbars
+  int fltREF = (key_analysed["M_REF"]).split_int("0", -1)[0];
+  // Need to substract one because the convention in the .para file start at 1,
+  // but 0 in the code
+  if (fltREF >= 0) {
+    fltREF--;
+  }
+  // Decide if the uncertainties on the rest-frame colors should be analysed
+  colAnalysis = ((fltColRF[0] >= 0) && (fltColRF[1] >= 0) &&
+                 (fltColRF[2] >= 0) && (fltColRF[3] >= 0) && (fltREF >= 0));
+
   /*
     INFO PARAMETERS ON SCREEN AND DOC
   */
@@ -403,15 +421,29 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   /* Create a 2D array with the predicted flux,
   and a light structure of SED
   Done to improve the performance in the fit*/
-  // lightLib.clear_sed();
   flux.resize(fullLib.size(), vector<double>(imagm, 0.));
   zLib.resize(fullLib.size(), -99.);
   fluxIR.resize(fullLibIR.size(), vector<double>(imagm, 0.));
   zLibIR.resize(fullLibIR.size(), -99.);
   cout << "Start light fill" << endl;
+  int index_z0;
+  double colRF1, colRF2, magRFref;
+  vector<double> colRF(3);
   for (size_t i = 0; i < fullLib.size(); i++) {
-    // Add the SED ti lightlib
-    lightLib.push_sed(fullLib[i]);
+    // Add rest-frame colors to the light library
+    if (colAnalysis) {
+      index_z0 = fullLib[i]->index_z0;
+      colRF1 = fullLib[index_z0]->mag[fltColRF[0]] -
+               fullLib[index_z0]->mag[fltColRF[1]];
+      colRF2 = fullLib[index_z0]->mag[fltColRF[1]] -
+               fullLib[index_z0]->mag[fltColRF[2]];
+      magRFref = fullLib[index_z0]->mag[fltREF];
+      colRF = {colRF1, colRF2, magRFref};
+    } else {
+      colRF = {INVALID_MAG, INVALID_MAG, INVALID_MAG};
+    }
+    // Add the the SED to the light library
+    lightLib.push_sed(fullLib[i], colRF);
   }
 // Convert the magnitude library in flux
 #ifdef _OPENMP
@@ -1504,20 +1536,6 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
   // DZ_WIN minimal delta z window to search - 0.25 by default
   double dz_win = ((keys["DZ_WIN"]).split_double("0.25", 1))[0];
 
-  // RF_COLORS compute 2 rest-frame colors and associated errorbars
-  vector<int> fltColRF = (keys["RF_COLORS"]).split_int("-1", 4);
-  // Need to substract one because the convention in the .para file start at 1,
-  // but 0 in the code
-  if (fltColRF.size() > 1) {
-    for (int k = 0; k < 4; k++) fltColRF[k]--;
-  }
-  // M_REF compute the absolute magnitudes and associated errorbars
-  int fltREF = ((keys["M_REF"]).split_int("0", -1))[0];
-  // Need to substract one because the convention in the .para file start at 1,
-  // but 0 in the code
-  if (fltREF >= 0) {
-    fltREF--;
-  }
   // LIMITS_ZBIN Compute the z_max and M_faint in several bins of redshift. Give
   // the z bin.
   vector<double> limits_zbin =
@@ -1622,16 +1640,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
     oneObj->rm_discrepant(lightLib, flux, valid, funz0, bp, thresholdChi2);
     // Generate the marginalized PDF (z+physical parameters) from the chi2
     // stored in each SED
-#ifdef _OPENMP
-#pragma omp parallel for schedule(static)
-#endif
-    // Fill dm and chi2 back in lightlib
-    for (size_t i = 0; i < fullLib.size(); i++) {
-      fullLib[i]->dm = lightLib.dm[i];
-      fullLib[i]->chi2 = lightLib.chi2[i];
-    }
-
-    oneObj->generatePDF(fullLib, valid, fltColRF, fltREF, zfix);
+    oneObj->generatePDF(lightLib, valid, colAnalysis, zfix);
     // Interpolation of Z_BEST and ZQ_BEST (zmin) via Chi2 curves, put z-spec if
     // ZFIX YES  (only gal for the moment)
     if (zfix || zintp) oneObj->interp(zfix, zintp, lcdm);
@@ -1640,7 +1649,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
     // Uncertainties from the bayesian method, centered on the median
     oneObj->uncertaintiesBay();
     // find a second peak in the PDZ
-    oneObj->secondpeak(fullLib, dz_win, min_thres);
+    oneObj->secondpeak(lightLib, dz_win, min_thres);
     // find the mode of the marginalized PDF and associated uncertainties,
     // centered on the mode
     oneObj->mode();
@@ -1692,7 +1701,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
     oneObj->compute_best_fit_physical_quantities(fullLib);
 
     // write out chisquare values for all templates
-    if (outchi) oneObj->writeFullChi(fullLib);
+    if (outchi) oneObj->writeFullChi(lightLib);
 
   }  // end loop over list of onesources
   return;

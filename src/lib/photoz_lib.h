@@ -33,8 +33,10 @@ class PhotoZ {
                 /// result
       zfix,     /// Whether or not to run with a fixed redshift, typically the
                 /// true/spectro z
-      methz;    /// If true, set z to the MEDIAN solution rather than the BEST
+      methz,    /// If true, set z to the MEDIAN solution rather than the BEST
                 /// solution, when computing physical parameters.
+      colAnalysis;  /// if true, measure the PDF to get unceratinties
+                    /// associated to the rest-frame colors.
 
   string cat, typm, catmag, cattyp, zmulti, outf, outsp, outpdz, outpdm;
   vector<double> shifts0, min_err, fac_err, int_pdz, zbmin, zbmax;
