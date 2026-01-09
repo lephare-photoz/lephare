@@ -152,15 +152,13 @@ class Runner:
         # copy the args keywords back into the keymap,
         # setting value to "" for verbose, timer and the like
         for key in self.config_keys:
-            if key == "verbose":
-                self.verbose = args.verbose
-                keymap[key] = keyword(key, "YES") if self.verbose else keyword(key, "NO")
-                continue
             try:
                 keymap[key] = keyword(key, getattr(args, key))
             except:  # noqa: E722
                 if key not in keymap:
                     keymap[key] = keyword(key, "")
+            if "VERBOSE" in keymap:
+                self.verbose = bool(keymap["VERBOSE"].value.upper() == "YES")
 
         self.keymap = keymap
         return args
@@ -168,26 +166,16 @@ class Runner:
     def run(self, **kwargs):
         if self.timer:
             self.start = time.time()
-
         # update keymap and verbosity based on call arguments
         # this is only when the code is called from python session
-        v = kwargs.pop("verbose", self.verbose)
-        if v.__class__ is bool:
-            self.verbose = v
-            self.keymap["VERBOSE"] = keyword("VERBOSE", "YES") if v else keyword("VERBOSE", "NO")
-        if v.__class__ is str:
-            if v.upper() == "YES":
-                self.keymap["VERBOSE"] = keyword("VERBOSE", "YES")
-                self.verbose = True
-            elif v.upper() == "NO":
-                self.keymap["VERBOSE"] = keyword("VERBOSE", "NO")
-                self.verbose = False
-            else:
-                raise RuntimeError("verbose is to be set to False/True or YES/yes//NO/no")
+        if "VERBOSE" in kwargs:
+            val = kwargs.pop("VERBOSE")
+            self.verbose = bool(val.upper() == "YES")
 
         if "typ" in kwargs:
             self.typ = kwargs.pop("typ", self.typ)
             self.typ = self.typ.upper()
+
         for k, v in kwargs.items():
             if k.upper() in self.keymap:
                 self.keymap[k.upper()] = keyword(k.upper(), str(v))
@@ -202,8 +190,6 @@ class Runner:
         for k, v in self.config_keys.items():
             if k == "typ":
                 self.parser.add_argument("-t", "--typ", type=str, default="", help=v, required=True)
-            elif k == "verbose":
-                self.parser.add_argument("--verbose", help="increase onscreen verbosity", action="store_true")
             else:
                 self.parser.add_argument("--%s" % k, type=str, metavar="", help=v)
 

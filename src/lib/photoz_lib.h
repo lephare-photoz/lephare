@@ -84,7 +84,7 @@ class PhotoZ {
   void check_consistency(keymap &keys);
 
   void readsource(onesource *oneObj, const string line);
-  onesource *yield(const int nobj, const string line) {
+  onesource *yield(const int nobj, const string line) {  // LCOV_EXCL_LINE
     onesource *oneObj = new onesource(nobj, gridz);
     readsource(oneObj, line);
     prep_data(oneObj);

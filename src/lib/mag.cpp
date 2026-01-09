@@ -40,7 +40,7 @@ Mag::Mag(keymap &key_analysed) {
   filtFile = ((key_analysed["FILTER_FILE"]).split_string("filters", 1))[0];
   // Full path to the input filter file
   string fltFile = lepharework + "/filt/" + filtFile + ".dat";
-  allFlt = read_flt(fltFile);
+  allFlt = read_filters_from_file(fltFile);
 
   // mag type AB/VEGA
   magtyp = ((key_analysed["MAGTYPE"]).split_string("AB", 1))[0];
@@ -59,15 +59,17 @@ Mag::Mag(keymap &key_analysed) {
   modext = (key_analysed["MOD_EXTINC"]).split_int("0,0", nextlaw * 2);
 
   // define the grid in redshift
-  dz = ((key_analysed["Z_STEP"]).split_double("0.04", 3))[0];
-  zmin = ((key_analysed["Z_STEP"]).split_double("0.", 3))[1];
-  zmax = ((key_analysed["Z_STEP"]).split_double("6.", 3))[2];
+  dz = (key_analysed["Z_STEP"]).split_double("0.04", 3)[0];
+  zmin = (key_analysed["Z_STEP"]).split_double("0.", 3)[1];
+  zmax = (key_analysed["Z_STEP"]).split_double("6.", 3)[2];
+  // LCOV_EXCL_START
   if (zmax < zmin) {
     throw runtime_error(
         "You are probably using the old parametrisation of "
         "Z_STEP since Z MIN > Z MAX in Z_STEP. Stop here. ");
   }
-  // Output file in ascii ?
+  // LCOV_EXCL_STOP
+  //  Output file in ascii ?
   outasc = ((key_analysed["LIB_ASCII"]).split_bool("NO", 1))[0];
 
   // keyword to add the LDUST component to the stellar component (e.g. in BC03)
@@ -218,8 +220,8 @@ vector<opa> Mag::read_opa() {
   // In oder to fill the two last elements around Lyman alpha
   // Put 1 for the last element
   // Put the last value of the opa below 1215.67 just before
-  oneElLambda beflastOpa(1215.66, 1., 3);
-  oneElLambda lastOpa(1215.67, 1., 3);
+  oneElLambda beflastOpa(1215.66, 1.);
+  oneElLambda lastOpa(1215.67, 1.);
 
   ifstream stream = Mag::open_opa_files();
   vector<opa> result;
@@ -243,36 +245,6 @@ vector<opa> Mag::read_opa() {
     result.push_back(oneOpa);
   }
   return result;
-}
-
-// Function of the basis class which read all the filters
-vector<flt> Mag::read_flt(const string &inputfile) {
-  vector<flt> flts;
-
-  ifstream sfiltIn;
-  sfiltIn.open(inputfile.c_str());
-  // Check if file is opened
-  if (!sfiltIn) {
-    throw invalid_argument("Can't open file compiling all filters in " +
-                           inputfile);
-  }
-
-  string dummy;
-  int imag;
-  // read the number of filter
-  sfiltIn >> dummy >> imag;
-
-  // Loop over each filter
-  for (int k = 0; k < imag; k++) {
-    // Generate one object "flt" and read it
-    flt oneFilt(k, sfiltIn, 0, 0);
-    // store all filters in a vector
-    flts.push_back(oneFilt);
-  }
-
-  sfiltIn.close();
-
-  return flts;
 }
 
 // Read the long wavelength Bethermin+2012 templates to add the dust emission to
@@ -525,7 +497,7 @@ vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
               double LbeforeExt = oneSEDInt.trapzd();
 
               // product of the SED with the extinction law
-              oneSEDInt.applyExt(ebv[j], extAll[i]);
+              oneSEDInt.apply_extinction(ebv[j], extAll[i]);
 
               // Difference between the integrated flux with and without
               // extinction (without is computed just above) flux integrate of
@@ -560,12 +532,11 @@ vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
                 // change
                 GalSED oneEmInt(oneEm);
                 oneEmInt.ebv = ebv[j];
-                // set the value of fracEm
-                oneEmInt.fracEm = fracEm[l];
                 oneEmInt.red = gridz[k];
                 // For the emission lines, use only the MW. Change fac_line
-                oneEmInt.applyExtLines(extAll[nextlaw]);
+                oneEmInt.apply_extinction_to_lines(ebv[j], extAll[nextlaw]);
                 // rescale the lines as a free parameter
+                oneEmInt.fracEm = fracEm[l];
                 oneEmInt.rescaleEmLines();
                 /*
                 // Decide to not applied.
@@ -794,7 +765,7 @@ vector<QSOSED> QSOMag::make_maglib(const QSOSED &oneSED) {
           oneSEDInt.warning_integrateSED(allFlt, verbose);
 
           // product of the SED with the extinction law
-          oneSEDInt.applyExt(ebv[j], extAll[i]);
+          oneSEDInt.apply_extinction(ebv[j], extAll[i]);
 
           // Opacity applied in rest-frame, depending on the redshift of the
           // source

@@ -9,7 +9,7 @@ __all__ = [
 ]
 
 config_keys = {
-    "verbose": "increase onscreen verbosity",
+    "VERBOSE": "increase onscreen verbosity",
     "FILTER_REP": "path to repository where filter files are searched",
     "FILTER_LIST": "list of filter files, to be searched in FILTER_REP if relative",
     "TRANS_TYPE": "Transmission curve type: 0[def] for energy, 1 for photon nb",
@@ -24,7 +24,7 @@ class Filter(Runner):
     """
     The specific arguments to the Filter class are
 
-    verbose
+    VERBOSE
                 increase onscreen verbosity
     FILTER_REP
                 path to repository where filter files are searched

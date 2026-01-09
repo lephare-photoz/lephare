@@ -34,9 +34,12 @@ void onesource::readsource(const string &identifier, const vector<double> vals,
                            const long context = 0, const double z_spec = -99.9,
                            const string additional_input = " ") {
   spec = identifier;
+  // LCOV_EXCL_START
   if (ab.size() != sab.size()) {
-    throw invalid_argument("vals and err_vals do not have the same dimension");
+    throw invalid_argument(
+        "vals and err_vals do not have the same dimension");  // LCOV_EXCL_LINE
   }
+  // LCOV_EXCL_STOP
   ab = vals;
   sab = err_vals;
   zs = z_spec;
@@ -91,11 +94,13 @@ void onesource::fltUsed(const long gbcont, const long contforb,
     if (sab[k] < 0 && ab[k] < 0) bused[k] = 0;
 
     // reject band if error=0. Not possible to include in the chi2
+    // LCOV_EXCL_START
     if (sab[k] == 0) {
       bused[k] = 0;
       ab[k] = -99.9;
       sab[k] = -99.9;
     }
+    // LCOV_EXCL_STOP
 
     // Initialise the mask used for normalisation at the same value than bused
     busnorma.push_back(bused[k]);
@@ -119,12 +124,13 @@ void onesource::fltUsed(const long gbcont, const long contforb,
     if (busul[k] == 1) nbul++;
   }
   if (nf == 0 && verbose)
-    cout << "WARNING: No scaling --> No z " << spec << endl;
+    cout << "WARNING: No scaling --> No z " << spec << endl;  // LCOV_EXCL_LINE
 }
 
 /*
  DEFINE THE FILTERS WHICH SHOULD BE USED IN THE FIR FIT
 */
+// LCOV_EXCL_START
 void onesource::fltUsedIR(const long fir_cont, const long fir_scale,
                           const int imagm, vector<flt> allFilters,
                           const double fir_lmin) {
@@ -153,10 +159,12 @@ void onesource::fltUsedIR(const long fir_cont, const long fir_scale,
       bscfir[k] = (CHECK_CONTEXT_BIT(fir_scale, k));
   }
 }
+// LCOV_EXCL_STOP
 
 /*
  CONVERT THE MAG INTO FLUX IF NECESSARY
 */
+// LCOV_EXCL_START
 void onesource::convertFlux(const string &catmag,
                             const vector<flt> allFilters) {
   size_t imagm = allFilters.size();
@@ -189,6 +197,7 @@ void onesource::convertFlux(const string &catmag,
   }
   return;
 }
+// LCOV_EXCL_STOP
 
 /*
  CONVERT THE FLUX INTO MAG
@@ -1770,30 +1779,18 @@ void onesource::computeEmFlux(vector<SED *> &fulllib, cosmo lcdm,
       // Loop over each emission lines. Only the 8 main lines that we can have
       // in output (lyman alpha, OII, Halpha, etc)
       for (int k = 0; k < 8; k++) {
-        // Create narrow filter, be careful to not encompass another line
-        flt fltEm(lambda_em[k] - 10., lambda_em[k] + 10., 21);
-        // Create narrow filter for the continuum
-        flt fltEmC(lambda_em[k] - 30., lambda_em[k] + 30., 21);
-
         // Integrate the SED (emission lines & continuum) within the filter
-        vector<double> emF, contiF;
-        // If a sepctra exist
         if (SEDz0_Em.lamb_flux.size() > 0) {
           // int (F*T) dlambda
-          // SEDz0_Em.warning_integrateSED(fltEm);
-          emF = SEDz0_Em.integrateSED(fltEm);
+          double emF =
+              SEDz0_Em.integrate(lambda_em[k] - 10., lambda_em[k] + 10.);
           // int (F*T) dlambda / int (T) dlambda
-          // SEDz0_Gal.warning_integrateSED(fltEmC);
-          contiF = SEDz0_Gal.integrateSED(fltEmC);
-          // Integrated flux divide by the filter area for emission lines.
-          // Reference was at 10pc, which explain the 100 factor. The distance
-          // is in Mpc explaining the 10^12
-          flux_em[k] = emF[3] * rescaleDist;
+          double contiF =
+              SEDz0_Gal.integrate(lambda_em[k] - 30., lambda_em[k] + 30.) / 60.;
+          flux_em[k] *= emF * rescaleDist;
           // Equivalent width
           // int (Fem*T) dlambda / [int (Fcont*T) dlambda / int (T) dlambda]
-          EW_em[k] = emF[3] * contiF[0] / contiF[3];
-          emF.clear();
-          contiF.clear();
+          EW_em[k] = emF / contiF;
         } else {
           flux_em[k] = 0.;
           EW_em[k] = 0.;

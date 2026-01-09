@@ -9,9 +9,10 @@
 
 #include <algorithm>  // sort
 #include <cmath>      // for the log
-#include <fstream>    // print output file
-#include <iomanip>    // std::setprecision
-#include <iostream>   // print standard file
+#include <filesystem>
+#include <fstream>   // print output file
+#include <iomanip>   // std::setprecision
+#include <iostream>  // print standard file
 #include <sstream>
 #include <string>
 #include <vector>
@@ -49,7 +50,7 @@ void flt::read(const string &fltFile) {
       ss >> l;  // 1 col: lambda
       ss >> v;  // 2 column: transmission
       // origin at 0 to indicate that this element refers to a filter
-      lamb_trans.emplace_back(l, v, 0);
+      lamb_trans.emplace_back(l, v);
     }
   }
 
@@ -94,7 +95,7 @@ void flt::read(ifstream &sfiltIn) {
       sfiltIn >> l;    // 1 col: lambda
       sfiltIn >> v;    // 2 column: transmission
       sfiltIn >> bid;  // consume comment string in file
-      lamb_trans.emplace_back(l, v, 0);
+      lamb_trans.emplace_back(l, v);
     }
   }
 
@@ -126,10 +127,10 @@ void flt::clean() {
 
   // Add 0 value at the two extreme ends of the filter, 10 Angtrom below and
   // above
-  oneElLambda addFirstEl((*lamb_trans.begin()).lamb - 10, 0, 0);
-  lamb_trans.emplace(lamb_trans.begin(), lamb_trans.front().lamb - 10, 0, 0);
-  oneElLambda addLastEl((*(lamb_trans.end() - 1)).lamb + 10, 0, 0);
-  lamb_trans.emplace(lamb_trans.end(), lamb_trans.back().lamb + 10, 0, 0);
+  oneElLambda addFirstEl((*lamb_trans.begin()).lamb - 10, 0);
+  lamb_trans.emplace(lamb_trans.begin(), lamb_trans.front().lamb - 10, 0);
+  oneElLambda addLastEl((*(lamb_trans.end() - 1)).lamb + 10, 0);
+  lamb_trans.emplace(lamb_trans.end(), lamb_trans.back().lamb + 10, 0);
 
   return;
 }
@@ -199,7 +200,7 @@ double flt::lambdaMean() {
 */
 double flt::width() {
   if (name == "Heavy") {
-    return lmax() - lmin() - 2;
+    return lmax() - lmin();
   }
 
   // Width defined when the transmission is above 0.5*maximum transmission
@@ -260,7 +261,8 @@ double flt::lambdaEff() {
   vegSED.read(vegaFile);
   // integrate the vega spectrum over the filter considered in this instance of
   // the object Various information on the integral is stored within magVeg
-  vector<double> magVeg = vegSED.integrateSED(*this);
+  vector<double> magVeg;
+  magVeg = vegSED.integrateSED(*this);
 
   // int (Fvega T lambda) dLambda /  int (Fvega T) dLambda
   if (magVeg[4] > 0) leff = magVeg[4] / magVeg[3];
@@ -278,7 +280,8 @@ double flt::abcorr() {
   vegSED.read(vegaFile);
   // integrate the vega spectrum over the filter considered in this instance of
   // the object Various information on the integral is stored within magVeg
-  vector<double> magVeg = vegSED.integrateSED(*this);
+  vector<double> magVeg;
+  magVeg = vegSED.integrateSED(*this);
 
   // int (Fvega T) dLambda /  int ( T*c/lambda^2) dLambda
   if (magVeg[3] > 0) ab = -2.5 * log10(magVeg[3] / magVeg[1]) - 48.6;
@@ -324,7 +327,8 @@ double flt::vega() {
   SED vegSED("Vega");
   string vegaFile = lepharedir + "/vega/VegaLCB.sed";
   vegSED.read(vegaFile);
-  vector<double> magVeg = vegSED.integrateSED(*this);
+  vector<double> magVeg;
+  magVeg = vegSED.integrateSED(*this);
 
   // int (Fvega T) dLambda /  int ( T) dLambda
   if (magVeg[3] > 0) veg = 2.5 * log10(magVeg[3] / magVeg[0]);
@@ -340,7 +344,8 @@ double flt::magsun() {
   SED sunSED("Sun");
   string sunFile = lepharedir + "/vega/SunLCB.sed";
   sunSED.read(sunFile);
-  vector<double> magSun = sunSED.integrateSED(*this);
+  vector<double> magSun;
+  magSun = sunSED.integrateSED(*this);
 
   /*
   mo-Mo= 5log D -5 , with D=1U.A. expressed in pc :  mo-Mo= -31.572
@@ -428,8 +433,9 @@ double flt::lambdaEff2() {
   // change the calibration SED
   if (calibtyp == 4 || calibtyp == 5)
     calibSED.generateCalib(lmin() - 10, lmax() + 10, 1000, 1);
+  vector<double> magCalib;
+  magCalib = calibSED.integrateSED(*this);
 
-  vector<double> magCalib = calibSED.integrateSED(*this);
   // int (Fcalib T lambda) dLambda /  int ( Fcalib T ) dLambda
   double leff2 = magCalib[4] / magCalib[3];
 
@@ -555,22 +561,26 @@ vector<flt> read_doc_filters(const string filtFile) {
   string line;
 
   // Open the documentation of the filter file
-  string fltdoc = lepharework + "/filt/" + filtFile + ".doc";
-
+  string fltdoc = filtFile;
+  if (std::filesystem::path(filtFile).is_relative()) {
+    fltdoc = lepharework + "/filt/" + filtFile + ".doc";
+  }
+  string fltfile = fltdoc;
+  size_t dot = fltfile.rfind('.');
+  fltfile.replace(dot, std::string::npos, ".dat");
   // Create a stream with the doc file
   ifstream stfltdoc;
   stfltdoc.open(fltdoc.c_str());
-  // Check that the file exist.
-  bool Fexist = stfltdoc.good();
   // Check that the file exist. Stop if not the case
-  if (!(Fexist)) {
-    throw invalid_argument(
-        "Filter documentation does not exist in LEPHAREWORK/filt/" + filtFile);
+  if (!stfltdoc.good()) {
+    throw invalid_argument("Filter documentation does not exist: " + fltdoc);
   }
   // Open the filter file
-  string fltfile = lepharework + "/filt/" + filtFile + ".dat";
   ifstream sfltIn;
   sfltIn.open(fltfile.c_str());
+  if (!sfltIn.good()) {
+    throw invalid_argument("Filter file does not exist: " + fltfile);
+  }
 
   // Read each line of the doc file
   while (getline(stfltdoc, line)) {
@@ -590,7 +600,7 @@ vector<flt> read_doc_filters(const string filtFile) {
           nbLines;
 
       // store all filters in one vector
-      oneFilt.lamb_trans.resize(nbLines, oneElLambda(-999, -999, -999));
+      oneFilt.lamb_trans.resize(nbLines, oneElLambda(-999, -999));
       allFilt.push_back(oneFilt);
     }
   }
@@ -639,4 +649,34 @@ void flt::compute_all() {
   fcorrec();
   // Compute the AB correction
   abcorr();
+}
+
+// Function of the basis class which read all the filters
+vector<flt> read_filters_from_file(const string &inputfile) {
+  vector<flt> flts;
+
+  ifstream sfiltIn;
+  sfiltIn.open(inputfile.c_str());
+  // Check if file is opened
+  if (!sfiltIn) {
+    throw invalid_argument("Can't open file compiling all filters in " +
+                           inputfile);
+  }
+
+  string dummy;
+  int imag;
+  // read the number of filter
+  sfiltIn >> dummy >> imag;
+
+  // Loop over each filter
+  for (int k = 0; k < imag; k++) {
+    // Generate one object "flt" and read it
+    flt oneFilt(k, sfiltIn, 0, 0);
+    // store all filters in a vector
+    flts.push_back(oneFilt);
+  }
+
+  sfiltIn.close();
+
+  return flts;
 }

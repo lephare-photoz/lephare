@@ -17,6 +17,8 @@ def test_cosmology_zgrid():
     zmin = 0.000
     zmax = 1
     dz = 0.1
+    with pytest.raises(ValueError):
+        zgrid(dz, zmax, zmin)
     # test linear grid
     grid = zgrid(dz, zmin, zmax)
     dummy = np.arange(zmin, zmax, dz)

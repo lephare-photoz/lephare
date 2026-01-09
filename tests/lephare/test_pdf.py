@@ -2,6 +2,7 @@ import lephare as lp
 import matplotlib
 import numpy as np
 import pytest
+import scipy as sp
 
 matplotlib.use("Agg")
 
@@ -354,9 +355,22 @@ def test_improve_extremum():
 def test_confidence_interval():
     pdf = lp.PDF(-5, 5, 1001)
     pdf.setYvals(np.array(pdf.xaxis) ** 2, is_chi2=True)
+    assert pdf.get_max() == pytest.approx(0)
+    assert pdf.get_maxid() == 500
     a, b = pdf.confidence_interval(1)
     assert a == pytest.approx(-1)
     assert b == pytest.approx(1)
     a, b = pdf.confidence_interval(2.71)
     assert a == pytest.approx(-np.sqrt(2.71), 1.0e-5)
     assert b == pytest.approx(np.sqrt(2.71), 1.0e-5)
+
+
+def test_quality_flags():
+    pdf = lp.PDF(-5, 5, 10001)
+    pdf.setYvals(sp.stats.norm(loc=0, scale=1).pdf(pdf.xaxis), is_chi2=False)
+    assert pdf.variance(0) == pytest.approx(1.0, 1.0e-5)
+    assert pdf.approximate_gaussian(0, n_window=5) == pytest.approx(1, 1.0e-5)
+    assert pdf.peak_ratio() == pytest.approx(0.250662, 1.0e-3)
+    assert pdf.number_mod() == 1
+    assert pdf.tail_mass(0, n_window=6) == pytest.approx(1.0e-4, 1.0e-2)
+    assert pdf.compute_quality_flag(0)[0] == 3

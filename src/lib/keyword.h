@@ -76,7 +76,7 @@ class keyword {
    * nbItems filled with default_val is returned.
    * If the input is a singleton, the returned array will be of size
    * nbItems filled with the singleton value
-   !*/
+   */
   vector<string> split_string(string default_val, int nbItems);
   /// split into an array of strings, then convert to integer
   vector<int> split_int(string default_val, int nbItems);
