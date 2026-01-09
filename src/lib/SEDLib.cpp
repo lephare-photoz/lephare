@@ -235,8 +235,8 @@ vector<GalSED> readPEGASE(string sedFile, int nummod, vector<double> &ageSel) {
     for (double &v : ancillaries) {
       ssed >> v;
     }
-    
-    //PEGASE provides age in Myr, converts to yr in LePHARE
+
+    // PEGASE provides age in Myr, converts to yr in LePHARE
     double age(ancillaries[0] * 1.e6);
     bool useAge = ageSel.empty() ? true : closeAge(ageSel, {age}).front();
     double mass(ancillaries[2]);

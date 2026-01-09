@@ -12,8 +12,8 @@ LEPHAREDIR = dm.LEPHAREDIR
 
 from ._lephare import *
 
-# import explicitly the internal variables that we
-# need to expose for testing and documentation
+# import explicitly the internal variables and functions
+# that we need to expose for testing and documentation
 from ._lephare import (  # noqa: F401
     _closeAge,
     _emission_lines,
