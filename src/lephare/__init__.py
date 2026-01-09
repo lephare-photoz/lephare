@@ -15,6 +15,7 @@ from ._lephare import *
 # import explicitly the internal variables that we
 # need to expose for testing and documentation
 from ._lephare import (  # noqa: F401
+    _closeAge,
     _emission_lines,
     _empirical_ratio,
     _empirical_ratio2,
@@ -23,6 +24,7 @@ from ._lephare import (  # noqa: F401
     _ga_HeI_val,
     _ga_lamb,
     _ga_total,
+    _read_ages_from_file,
 )
 from ._version import *
 
