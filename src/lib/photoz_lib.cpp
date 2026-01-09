@@ -400,12 +400,19 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
     allFiltersAdd = read_doc_filters(filtNameAdd);
   }
 
-  /* Create a 2D array with the predicted flux.
+  /* Create a 2D array with the predicted flux,
+  and a light structure of SED
   Done to improve the performance in the fit*/
+  // lightLib.clear_sed();
   flux.resize(fullLib.size(), vector<double>(imagm, 0.));
   zLib.resize(fullLib.size(), -99.);
   fluxIR.resize(fullLibIR.size(), vector<double>(imagm, 0.));
   zLibIR.resize(fullLibIR.size(), -99.);
+  cout << "Start light fill" << endl;
+  for (size_t i = 0; i < fullLib.size(); i++) {
+    // Add the SED ti lightlib
+    lightLib.push_sed(fullLib[i]);
+  }
 // Convert the magnitude library in flux
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
@@ -420,6 +427,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
     zLib[i] = fullLib[i]->red;
   }
 #ifdef _OPENMP
+  cout << "End light fill" << endl;
 #pragma omp parallel for schedule(static)
 #endif
   for (size_t i = 0; i < fullLibIR.size(); i++) {
@@ -1039,7 +1047,7 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource *> adaptSources) {
         // Fit the source at the spec-z value, using only the template with
         // compatible redshift to zs.
         auto valid = validLib(oneObj->zs);
-        oneObj->fit(fullLib, flux, valid, funz0, bp);
+        oneObj->fit(lightLib, flux, valid, funz0, bp);
 
         // Interpolation of the predicted magnitudes, scaling at zs, checking
         // first that the fit was sucessfull
@@ -1608,12 +1616,20 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
       iota(valid.begin(), valid.end(), 0);
     }
     // Core of the program: compute the chi2
-    oneObj->fit(fullLib, flux, valid, funz0, bp);
+    oneObj->fit(lightLib, flux, valid, funz0, bp);
     // Try to remove some bands to improve the chi2, only as long as the chi2 is
     // above a threshold
-    oneObj->rm_discrepant(fullLib, flux, valid, funz0, bp, thresholdChi2);
+    oneObj->rm_discrepant(lightLib, flux, valid, funz0, bp, thresholdChi2);
     // Generate the marginalized PDF (z+physical parameters) from the chi2
     // stored in each SED
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    // Fill dm and chi2 back in lightlib
+    for (size_t i = 0; i < fullLib.size(); i++) {
+      fullLib[i]->dm = lightLib.dm[i];
+      fullLib[i]->chi2 = lightLib.chi2[i];
+    }
 
     oneObj->generatePDF(fullLib, valid, fltColRF, fltREF, zfix);
     // Interpolation of Z_BEST and ZQ_BEST (zmin) via Chi2 curves, put z-spec if
@@ -1640,7 +1656,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
       // Select the index of the templates that have a redshift closest to zgmed
       // We only work on GAL solutions here
       auto valid = validLib(oneObj->zgmed[0]);
-      oneObj->fit(fullLib, flux, valid, funz0, bp);
+      oneObj->fit(lightLib, flux, valid, funz0, bp);
     } else {
       oneObj->consiz = oneObj->zmin[0];
     }

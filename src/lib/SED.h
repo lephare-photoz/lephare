@@ -457,4 +457,44 @@ class StarSED : public SED {
   void readMagBin(ifstream &ins);
 };
 
+/*! \brief Structure with a light SED vector
+ *
+ * This structure is a light version of the class SED.
+ * It propose a light version to be used in fit
+ */
+struct SEDlight {
+  vector<object_type> nlib;
+  vector<int> index, nummod;
+  vector<double> red, chi2, dm, luv, lopt, lnir, mag0;
+
+  void clear_sed() {
+    nlib.clear();
+    index.clear();
+    nummod.clear();
+    red.clear();
+    chi2.clear();
+    dm.clear();
+    luv.clear();
+    lopt.clear();
+    lnir.clear();
+    mag0.clear();
+  }
+
+  void push_sed(SED const *src) {
+    if (src == nullptr) {
+      throw std::invalid_argument("Le pointeur SED ne peut pas être nul.");
+    }
+    nlib.push_back(src->nlib);
+    index.push_back(src->index);
+    nummod.push_back(src->nummod);
+    red.push_back(src->red);
+    chi2.push_back(src->chi2);
+    dm.push_back(src->dm);
+    luv.push_back(src->luv);
+    lopt.push_back(src->lopt);
+    lnir.push_back(src->lnir);
+    mag0.push_back(src->mag0);
+  }
+};
+
 #endif

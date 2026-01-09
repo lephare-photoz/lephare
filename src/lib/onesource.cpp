@@ -343,7 +343,7 @@ void onesource::rescale_flux_errors(const vector<double> min_err,
 /*
  Principal function of the code with the fitting procedure
  */
-void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
+void onesource::fit(SEDlight &lightLib, const vector<vector<double>> &flux,
                     const vector<size_t> &va, const double &funz0,
                     const array<int, 2> &bp) {
   int number_threads = 1, thread_id = 0;
@@ -384,7 +384,7 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
 
 #ifdef _OPENMP
   // double start = omp_get_wtime();
-#pragma omp parallel shared(fulllib)                                    \
+#pragma omp parallel shared(lightLib)                                   \
     firstprivate(s2n, invsab, invsabSq, abinvsabSq, imagm, nbul, busul, \
                      priorLib, number_threads, thread_id)
   {
@@ -427,17 +427,14 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
 
       // Model rejection based on prior
       // Abs mag rejection
-      double reds;
-      int libtype;
-      SED *sed = fulllib[i];
-      reds = sed->red;
-      libtype = sed->nlib;
+      double reds = lightLib.red[i];
+      int libtype = lightLib.nlib[i];
       // Abs Magnitude from model @ z=0 for rejection for galaxies and AGN
       if ((mabsGALprior && libtype == 0) || (mabsAGNprior && libtype == 1)) {
         // predicted magnitudes within the babs filter renormalized by the
         // scaling
         double abs_mag;
-        abs_mag = sed->mag0 - 2.5 * log10(dmloc);
+        abs_mag = lightLib.mag0[i] - 2.5 * log10(dmloc);
         // specific case when the redshift is 0
         if (reds < 1.e-10) abs_mag = abs_mag - funz0;
         // Galaxy rejection
@@ -449,22 +446,22 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
       }
       // Prior N(z)
       if (bp[0] >= 0 && libtype == 0) {
-        double pweight = nzprior(sed->luv, sed->lnir, reds, bp);
+        double pweight = nzprior(lightLib.luv[i], lightLib.lnir[i], reds, bp);
         chi2loc = chi2loc - 2. * log(pweight);
       }
 
       // keep track of the minimum chi2 for each object type, over the threads
       if (chi2loc < HIGH_CHI2) {
-        object_type type = sed->get_object_type();
+        object_type type = lightLib.nlib[i];
         if (chi2_vals[thread_id][type] > chi2loc) {
           chi2_vals[thread_id][type] = chi2loc;
-          chi2_idx[thread_id][type] = sed->index;
+          chi2_idx[thread_id][type] = lightLib.index[i];
         }
       }
 
       // Write the chi2
-      sed->chi2 = chi2loc;
-      sed->dm = dmloc;
+      lightLib.chi2[i] = chi2loc;
+      lightLib.dm[i] = dmloc;
     }
 
 #ifdef _OPENMP
@@ -489,9 +486,9 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
   // Store the minimum redshift, dm, model for each type
   for (int k = 0; k < 3; k++) {
     if (indmin[k] >= 0) {
-      zmin[k] = fulllib[indmin[k]]->red;
-      dmmin[k] = fulllib[indmin[k]]->dm;
-      imasmin[k] = fulllib[indmin[k]]->nummod;
+      zmin[k] = lightLib.red[indmin[k]];
+      dmmin[k] = lightLib.dm[indmin[k]];
+      imasmin[k] = lightLib.nummod[indmin[k]];
     }
   }
 
@@ -624,7 +621,7 @@ double onesource::nzprior(const double luv, const double lnir,
  Test if some bands can be removed to improve the chi2, as long as the chi2
  remains above a threshold Done over all libraries
 */
-void onesource::rm_discrepant(vector<SED *> &fulllib,
+void onesource::rm_discrepant(SEDlight &lightLib,
                               const vector<vector<double>> &flux,
                               const vector<size_t> &va, const double funz0,
                               const array<int, 2> bp, double thresholdChi2) {
@@ -645,7 +642,7 @@ void onesource::rm_discrepant(vector<SED *> &fulllib,
       if (busnorma[k] == 1) {
         // Turn the filt off and redo the fit
         busnorma[k] = 0;
-        this->fit(fulllib, flux, va, funz0, bp);
+        this->fit(lightLib, flux, va, funz0, bp);
         newmin = min({chimin[0], chimin[1], chimin[2]});
         // if the chi2 has been improved, keep the best chi2, and keep the
         // disable band index
@@ -659,7 +656,7 @@ void onesource::rm_discrepant(vector<SED *> &fulllib,
     if (flDis >= 0) {
       // redo the fit without the disable band
       busnorma[flDis] = 0;
-      this->fit(fulllib, flux, va, funz0, bp);
+      this->fit(lightLib, flux, va, funz0, bp);
       newmin = min({chimin[0], chimin[1], chimin[2]});
       // One band has been removed in the fit
       nbused--;

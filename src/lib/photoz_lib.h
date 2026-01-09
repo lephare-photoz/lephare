@@ -49,7 +49,8 @@ class PhotoZ {
  public:
   vector<vector<double>> flux, fluxIR;
   vector<double> zLib, zLibIR;
-  vector<SED *> fullLib, fullLibIR, lightLib;
+  vector<SED *> fullLib, fullLibIR;
+  SEDlight lightLib;
   vector<flt> allFilters;
   vector<double> gridz;
   vector<string> outkeywords, pdftype;
@@ -62,10 +63,9 @@ class PhotoZ {
   virtual ~PhotoZ() {
     for (auto &sed : fullLib) delete sed;
     for (auto &sed : fullLibIR) delete sed;
-    for (auto &sed : lightLib) delete sed;
     fullLib.clear();
     fullLibIR.clear();
-    lightLib.clear();
+    // lightLib.clear_sed();
   }
 
   vector<double> compute_offsets(vector<onesource *>);
