@@ -282,6 +282,8 @@ PYBIND11_MODULE(_lephare, mod) {
   applySEDLibTemplate<StarSED>(mod, "StarSEDLib");
   applySEDLibTemplate<QSOSED>(mod, "QSOSEDLib");
   applySEDLibTemplate<GalSED>(mod, "GalSEDLib");
+  mod.def("_read_ages_from_file", &read_ages_from_file);
+  mod.def("_closeAge", &closeAge);
   mod.def("readBC03", &readBC03);
   mod.def("readPEGASE", &readPEGASE);
 

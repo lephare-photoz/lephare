@@ -15,7 +15,85 @@
 
 vector<GalSED> readBC03(string sedFile, int nummod, vector<double> &ageSel);
 vector<GalSED> readPEGASE(string sedFile, int nummod, vector<double> &ageSel);
+
+/*!
+ * @brief Identifies which ages in a library match a set of target selection
+ * ages.
+ * * This function creates a boolean mask for a vector of ages. If no specific
+ * target ages are provided (only the bounds), all ages are selected. Otherwise,
+ * it finds the closest match in the library for each target age, provided
+ * the match is within a tolerance (1e-5) and falls within the specified
+ * [agemin, agemax] range.
+ * * @param ageSel A vector where:
+ * - ageSel[0] is the minimum allowed age (agemin).
+ * - ageSel[1] is the maximum allowed age (agemax).
+ * - ageSel[2...n] are the specific target ages to select.
+ * @param age    The library of available ages to be filtered.
+ * * @return std::vector<bool> A mask of the same size as the 'age' parameter.
+ * True if the age is selected, False otherwise.
+ * * @note If agemax <= 0, the upper bound check is ignored.
+ * @note The matching tolerance is strictly hardcoded at 1e-5.
+ */
 vector<bool> closeAge(vector<double> ageSel, vector<double> age);
+
+/*!
+ * @brief Reads galaxy ages from a file and returns them in a vector.
+ *
+ * This function creates a vector where the first two elements are agemin and
+ * agemax. If a valid filename is provided, it parses the file line-by-line,
+ * skipping comments (lines starting with #), and converts the values from Gyr
+ * to years.
+ *
+ * @param filename Name of the file to read. Use "none" to skip file reading.
+ * @param agemin   Minimum age boundary (stored at index 0).
+ * @param agemax   Maximum age boundary (stored at index 1).
+ *
+ * @return std::vector<double> A vector containing [agemin, agemax, age1*1e9,
+ * age2*1e9, ...].
+ *
+ * @note Ages in the file are assumed to be in Gyr and are converted to years.
+ * @warning If the file cannot be opened, an error is printed to cerr but the
+ * function returns the vector containing only agemin and agemax.
+ */
+vector<double> read_ages_from_file(string filename, double agemin,
+                                   double agemax) {
+  ifstream sage;
+  double dage;
+  string lit;
+
+  // Put agemin and agemax in the two first elements of ageSel
+  vector<double> ages;
+  ages.push_back(agemin);
+  ages.push_back(agemax);
+
+  // If the file with the ages exists
+  if (filename != "none") {
+    // Take the stream line by line
+    sage.open(filename.c_str());
+    // Check if file has opened properly
+    if (!sage) {
+      cerr << "Can't open file with the ages to be selected " << filename
+           << endl;
+      cerr << "No selection by age. " << endl;
+      // throw "Failing opening ",filename.c_str();
+    }
+
+    while (getline(sage, lit)) {
+      // If the first character of the line is not #
+      if (check_first_char(lit)) {
+        // put the line into the stream ss again
+        stringstream ss(lit);
+        ss >> dage;
+
+        // fill the age vector, converting to yr.
+        ages.push_back(dage * 1.e9);
+      }
+    }
+
+    sage.close();
+  }
+  return ages;
+}
 
 /*!
  * \brief class for a general SED (Star, QSO, or Galaxy) library
@@ -80,10 +158,6 @@ class SEDLib {
    * @param type type of the SED S|Q|G for star|qso|galaxy; see SED
    !*/
   virtual void readSED(string sedFile, string sedFormat, int nummod);
-
-  /// For GAL, read the file with the selected galaxy ages, provided as kw
-  /// SEL_AGE
-  void read_age(string ageFich);
 };
 
 template <class T>
@@ -111,21 +185,28 @@ SEDLib<T>::SEDLib(keymap &key_analysed, string config, string t)
   modList = ((key_analysed[typ + "_SED"]).split_string("SED.list", 1))[0];
   libOut = ((key_analysed[typ + "_LIB"]).split_string("SED.bin", 1))[0];
   fscale = ((key_analysed[typ + "_FSCALE"]).split_double("1", 1))[0];
-  if (typ == "GAL") {
-    ageFile = ((key_analysed["SEL_AGE"]).split_string("none", 1))[0];
-    // Range of ages to be considered for galaxies
-    agemin = ((key_analysed["AGE_RANGE"])
-                  .split_double(to_string(INVALID_PHYS), 2))[0];
-    agemax = ((key_analysed["AGE_RANGE"])
-                  .split_double(to_string(INVALID_PHYS), 2))[1];
-  }
+
+  open_output_files();
+}
+
+template <>
+SEDLib<GalSED>::SEDLib(keymap &key_analysed, string config, string t)
+    : SEDLib(config, t) {
+  path = "/sed/" + typ + "/";
+  modList = ((key_analysed[typ + "_SED"]).split_string("SED.list", 1))[0];
+  libOut = ((key_analysed[typ + "_LIB"]).split_string("SED.bin", 1))[0];
+  fscale = ((key_analysed[typ + "_FSCALE"]).split_double("1", 1))[0];
 
   open_output_files();
 
-  // if (typ=="GAL" && ageFile!="none"){
-  if (typ == "GAL") {
-    read_age(ageFile);
-  }
+  ageFile = ((key_analysed["SEL_AGE"]).split_string("none", 1))[0];
+  // Range of ages to be considered for galaxies
+  agemin =
+      ((key_analysed["AGE_RANGE"]).split_double(to_string(INVALID_PHYS), 2))[0];
+  agemax =
+      ((key_analysed["AGE_RANGE"]).split_double(to_string(INVALID_PHYS), 2))[1];
+
+  ageSel = read_ages_from_file(ageFile, agemin, agemax);
 }
 
 template <class T>
@@ -269,48 +350,6 @@ void SEDLib<T>::read_model_list() {
   cout << "Number of SED in the list " << nbSED << endl;
   // Write the documentation
   sdocOut << "NUMBER_SED " << nbSED << endl;
-}
-
-/*
- * reads the age of the Galaxy, only for type GAL
- */
-template <class T>
-void SEDLib<T>::read_age(string ageFich) {
-  ifstream sage;
-  double dage;
-  string lit;
-
-  // Put agemin and agemax in the two first elements of ageSel
-  ageSel.clear();
-  ageSel.push_back(agemin);
-  ageSel.push_back(agemax);
-
-  // If the file with the ages exists
-  if (ageFich != "none") {
-    // Take the stream line by line
-    sage.open(ageFile.c_str());
-    // Check if file has opened properly
-    if (!sage) {
-      cerr << "Can't open file with the ages to be selected " << ageFile
-           << endl;
-      cerr << "No selection by age. " << endl;
-      // throw "Failing opening ",ageFile.c_str();
-    }
-
-    while (getline(sage, lit)) {
-      // If the first character of the line is not #
-      if (check_first_char(lit)) {
-        // put the line into the stream ss again
-        stringstream ss(lit);
-        ss >> dage;
-
-        // fill the age vector in Gyr.
-        ageSel.push_back(dage * 1.e9);
-      }
-    }
-
-    sage.close();
-  }
 }
 
 template <>
