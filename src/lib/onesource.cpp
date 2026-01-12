@@ -808,35 +808,35 @@ void onesource::generatePDF(SEDlight &lightLib, const vector<size_t> &va,
   // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] / 5:["AGE"] /
   // 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] / 10:["MIN_ZQ"] /
   // 11:["BAY_ZG"] / 12:["BAY_ZQ"]
-  vector<double> PDFzloc(pdfmap[11].size());
-  for (size_t i = 0; i < pdfmap[11].size(); ++i) PDFzloc[i] = 0.0;
+  vector<double> PDFzloc(pdfmap[11].size(), 0.0);
+  // for (size_t i = 0; i < pdfmap[11].size(); ++i) PDFzloc[i] = 0.0;
 
-  vector<double> PDFzqloc(pdfmap[12].size());
-  for (size_t i = 0; i < pdfmap[12].size(); ++i) PDFzqloc[i] = 0.0;
+  vector<double> PDFzqloc(pdfmap[12].size(), 0.0);
+  // for (size_t i = 0; i < pdfmap[12].size(); ++i) PDFzqloc[i] = 0.0;
 
-  vector<double> PDFmassloc(pdfmap[0].size());
-  for (size_t i = 0; i < pdfmap[0].size(); ++i) PDFmassloc[i] = 0.0;
+  vector<double> PDFmassloc(pdfmap[0].size(), 0.0);
+  // for (size_t i = 0; i < pdfmap[0].size(); ++i) PDFmassloc[i] = 0.0;
 
-  vector<double> PDFSFRloc(pdfmap[1].size());
-  for (size_t i = 0; i < pdfmap[1].size(); ++i) PDFSFRloc[i] = 0.0;
+  vector<double> PDFSFRloc(pdfmap[1].size(), 0.0);
+  // for (size_t i = 0; i < pdfmap[1].size(); ++i) PDFSFRloc[i] = 0.0;
 
-  vector<double> PDFsSFRloc(pdfmap[2].size());
-  for (size_t i = 0; i < pdfmap[2].size(); ++i) PDFsSFRloc[i] = 0.0;
+  vector<double> PDFsSFRloc(pdfmap[2].size(), 0.0);
+  // for (size_t i = 0; i < pdfmap[2].size(); ++i) PDFsSFRloc[i] = 0.0;
 
-  vector<double> PDFAgeloc(pdfmap[5].size());
-  for (size_t i = 0; i < pdfmap[5].size(); ++i) PDFAgeloc[i] = 0.0;
+  vector<double> PDFAgeloc(pdfmap[5].size(), 0.0);
+  // for (size_t i = 0; i < pdfmap[5].size(); ++i) PDFAgeloc[i] = 0.0;
 
-  vector<double> PDFLdustloc(pdfmap[3].size());
-  for (size_t i = 0; i < pdfmap[3].size(); ++i) PDFLdustloc[i] = 0.0;
+  vector<double> PDFLdustloc(pdfmap[3].size(), 0.0);
+  // for (size_t i = 0; i < pdfmap[3].size(); ++i) PDFLdustloc[i] = 0.0;
 
-  vector<double> PDFcol1loc(pdfmap[6].size());
-  for (size_t i = 0; i < pdfmap[6].size(); ++i) PDFcol1loc[i] = 0.0;
+  vector<double> PDFcol1loc(pdfmap[6].size(), 0.0);
+  // for (size_t i = 0; i < pdfmap[6].size(); ++i) PDFcol1loc[i] = 0.0;
 
-  vector<double> PDFcol2loc(pdfmap[7].size());
-  for (size_t i = 0; i < pdfmap[7].size(); ++i) PDFcol2loc[i] = 0.0;
+  vector<double> PDFcol2loc(pdfmap[7].size(), 0.0);
+  // for (size_t i = 0; i < pdfmap[7].size(); ++i) PDFcol2loc[i] = 0.0;
 
-  vector<double> PDFmrefloc(pdfmap[8].size());
-  for (size_t i = 0; i < pdfmap[8].size(); ++i) PDFmrefloc[i] = 0.0;
+  vector<double> PDFmrefloc(pdfmap[8].size(), 0.0);
+  // for (size_t i = 0; i < pdfmap[8].size(); ++i) PDFmrefloc[i] = 0.0;
 
   // Prepare direct references for all variables stored inside slow containers
   auto &pdfmass = pdfmap[0];
@@ -894,31 +894,31 @@ void onesource::generatePDF(SEDlight &lightLib, const vector<size_t> &va,
 
           // If able to determine a normalisation and get a the mass (assume
           // that the other are feasible in this case)
-          double dmloc = lightLib.dm[il];
-          double massloc = lightLib.mass[il];
-          if (dmloc > 0 && massloc > 0) {
+          double lgdmloc = LOG10D(lightLib.dm[il]);
+          double lgmassloc = lightLib.lgmass[il];
+          if (lgdmloc > -100 && lgmassloc > -100) {
             // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] /
             // 5:["AGE"] / 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] /
             // 10:["MIN_ZQ"] / 11:["BAY_ZG"] / 12:["BAY_ZQ"] stellar mass PDF of
             // galaxies
-            pos = pdfmass.index(LOG10D(dmloc * massloc));
+            pos = pdfmass.index(lgdmloc + lgmassloc);
             PDFmassloc[pos] += prob;
 
             // SFR PDF of galaxies
-            pos = pdfsfr.index(LOG10D(lightLib.sfr[il] * dmloc));
+            pos = pdfsfr.index(lightLib.lgsfr[il] + lgdmloc);
             PDFSFRloc[pos] += prob;
 
             // sSFR PDF of galaxies
-            pos = pdfssfr.index(LOG10D(lightLib.ssfr[il]));
+            pos = pdfssfr.index(lightLib.lgssfr[il]);
             PDFsSFRloc[pos] += prob;
 
             // Age PDF of galaxies
-            pos = pdfage.index(LOG10D(lightLib.age[il]));
+            pos = pdfage.index(lightLib.lgage[il]);
             PDFAgeloc[pos] += prob;
 
             // Ldust PDF of galaxies, ltir already in log
             if (lightLib.ltir[il] >= 0) {
-              pos = pdfldust.index(lightLib.ltir[il] + log10(dmloc));
+              pos = pdfldust.index(lightLib.ltir[il] + lgdmloc);
               PDFLdustloc[pos] += prob;
             }
           }
@@ -936,7 +936,7 @@ void onesource::generatePDF(SEDlight &lightLib, const vector<size_t> &va,
             PDFcol2loc[pos] += prob;
 
             // Reference absolute magnitude
-            pos = pdfmref.index(lightLib.colRF[il][2] - 2.5 * log10(dmloc));
+            pos = pdfmref.index(lightLib.colRF[il][2] - 2.5 * lgdmloc);
             PDFmrefloc[pos] += prob;
           }
 
@@ -1670,7 +1670,7 @@ void onesource::secondpeak(SEDlight &lightLib, const double dz_win,
       zsecScale = lightLib.dm[idx];
       zsecProb = pdfmap[9].secondP[1];
       zsecMod = lightLib.nummod[idx];
-      zsecAge = lightLib.age[idx];
+      zsecAge = lightLib.lgage[idx];
       indminSec = idx;
     }
   }
@@ -2227,28 +2227,28 @@ void onesource::writeFullChi(const SEDlight &lightLib) {
   // Loop over all SEDs from the library
   for (size_t k = 0; k < (lightLib.red).size(); k++) {
     // Normalisation
-    sca = lightLib.dm[k];
+    sca = log10(lightLib.dm[k]);
     // Write
     stochi << lightLib.nlib[k] << " ";
     stochi << lightLib.red[k] << " ";
     stochi << lightLib.nummod[k] << " ";
-    stochi << lightLib.age[k] << " ";
+    stochi << lightLib.lgage[k] << " ";
     stochi << lightLib.extlawId[k] << " ";
     stochi << lightLib.ebv[k] << " ";
     // Check that the scaling and mass defined
-    if ((lightLib.mass[k] > 0) && sca > 0) {
-      stochi << lightLib.ltir[k] + log10(sca) << " ";
+    if ((lightLib.lgmass[k] > -100) && sca > -100) {
+      stochi << lightLib.ltir[k] + sca << " ";
       stochi << lightLib.luv[k] + log10(3.e18 * 400 / pow(2300, 2)) -
-                    log10(Lsol) + log10(sca)
+                    log10(Lsol) + sca
              << " ";
       stochi << lightLib.lopt[k] + log10(3.e18 * 1000 / pow(6000, 2)) -
-                    log10(Lsol) + log10(sca)
+                    log10(Lsol) + sca
              << " ";
       stochi << lightLib.lnir[k] + log10(3.e18 * 2000 / pow(22000, 2)) -
-                    log10(Lsol) + log10(sca)
+                    log10(Lsol) + sca
              << " ";
-      stochi << log10(lightLib.mass[k] * sca) << " ";
-      stochi << log10(lightLib.sfr[k] * sca) << " ";
+      stochi << lightLib.lgmass[k] + sca << " ";
+      stochi << lightLib.lgsfr[k] + sca << " ";
     } else {
       stochi << " -99 -99 -99 -99 -99 -99 ";
     }

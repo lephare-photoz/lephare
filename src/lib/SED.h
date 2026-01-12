@@ -466,7 +466,7 @@ struct SEDlight {
   vector<object_type> nlib;
   vector<int> index, nummod, extlawId, index_z0;
   vector<double> red, chi2, dm, luv, lopt, lnir, mag0;
-  vector<double> ebv, age, mass, sfr, ssfr, ltir;
+  vector<double> ebv, lgage, lgmass, lgsfr, lgssfr, ltir;
   vector<vector<double>> colRF;
 
   void clear_sed() {
@@ -483,10 +483,10 @@ struct SEDlight {
     ebv.clear();
     extlawId.clear();
     index_z0.clear();
-    age.clear();
-    mass.clear();
-    sfr.clear();
-    ssfr.clear();
+    lgage.clear();
+    lgmass.clear();
+    lgsfr.clear();
+    lgssfr.clear();
     ltir.clear();
     colRF.clear();
   }
@@ -509,10 +509,10 @@ struct SEDlight {
     ebv.push_back(src->ebv);
     extlawId.push_back(src->extlawId);
     index_z0.push_back(src->index_z0);
-    age.push_back(src->age);
-    mass.push_back(src->mass);
-    sfr.push_back(src->sfr);
-    ssfr.push_back(src->ssfr);
+    lgage.push_back(LOG10D(src->age));
+    lgmass.push_back(LOG10D(src->mass));
+    lgsfr.push_back(LOG10D(src->sfr));
+    lgssfr.push_back(LOG10D(src->ssfr));
     colRF.push_back(colRFin);
   }
 };
