@@ -169,7 +169,7 @@ PYBIND11_MODULE(_lephare, mod) {
            py::arg("name"), py::arg("tau"), py::arg("age"), py::arg("nummod"),
            py::arg("type"), py::arg("idAge"))
       .def(py::init<const SED>())
-      .def_readonly("lamb_flux", &SED::lamb_flux)
+      .def_readwrite("lamb_flux", &SED::lamb_flux)
       .def_readonly("extlawId", &SED::extlawId)
       .def_readonly("ebv", &SED::ebv)
       .def_readonly("name", &SED::name)
@@ -190,6 +190,11 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("compute_fluxes", &SED::compute_fluxes)
       .def("emplace_back", &SED::emplace_back)
       .def("set_vector", &SED::set_vector)
+      .def("redshift", &SED::redshift)
+      .def("applyExt", &SED::applyExt)
+      .def("applyExtLines", &SED::applyExtLines)
+      .def("applyOpa", &SED::applyOpa)
+      .def("get_data_vector", &SED::get_data_vector)
       .def("readSEDBin",
            static_cast<void (SED::*)(const string&)>(&SED::readSEDBin))
       .def("writeSED",
@@ -263,7 +268,10 @@ PYBIND11_MODULE(_lephare, mod) {
        .def("read_SED", &c::read_SED)                     \
        .def("write_doc", &c::write_doc)                   \
        .def("make_maglib", &c::make_maglib)               \
-       .def("write_mag", &c::write_mag))
+       .def("write_mag", &c::write_mag)                   \
+       .def_readonly("extAll", &c::extAll)                \
+       .def_readonly("opaAll", &c::opaAll)                \
+       .def_readonly("allFlt", &c::allFlt))
   MAGDEFS(StarMag, "StarMag");
   MAGDEFS(QSOMag, "QSOMag");
   MAGDEFS(GalMag, "GalMag");
