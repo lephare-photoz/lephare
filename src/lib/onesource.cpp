@@ -809,34 +809,15 @@ void onesource::generatePDF(SEDlight &lightLib, const vector<size_t> &va,
   // 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] / 10:["MIN_ZQ"] /
   // 11:["BAY_ZG"] / 12:["BAY_ZQ"]
   vector<double> PDFzloc(pdfmap[11].size(), 0.0);
-  // for (size_t i = 0; i < pdfmap[11].size(); ++i) PDFzloc[i] = 0.0;
-
   vector<double> PDFzqloc(pdfmap[12].size(), 0.0);
-  // for (size_t i = 0; i < pdfmap[12].size(); ++i) PDFzqloc[i] = 0.0;
-
   vector<double> PDFmassloc(pdfmap[0].size(), 0.0);
-  // for (size_t i = 0; i < pdfmap[0].size(); ++i) PDFmassloc[i] = 0.0;
-
   vector<double> PDFSFRloc(pdfmap[1].size(), 0.0);
-  // for (size_t i = 0; i < pdfmap[1].size(); ++i) PDFSFRloc[i] = 0.0;
-
   vector<double> PDFsSFRloc(pdfmap[2].size(), 0.0);
-  // for (size_t i = 0; i < pdfmap[2].size(); ++i) PDFsSFRloc[i] = 0.0;
-
   vector<double> PDFAgeloc(pdfmap[5].size(), 0.0);
-  // for (size_t i = 0; i < pdfmap[5].size(); ++i) PDFAgeloc[i] = 0.0;
-
   vector<double> PDFLdustloc(pdfmap[3].size(), 0.0);
-  // for (size_t i = 0; i < pdfmap[3].size(); ++i) PDFLdustloc[i] = 0.0;
-
   vector<double> PDFcol1loc(pdfmap[6].size(), 0.0);
-  // for (size_t i = 0; i < pdfmap[6].size(); ++i) PDFcol1loc[i] = 0.0;
-
   vector<double> PDFcol2loc(pdfmap[7].size(), 0.0);
-  // for (size_t i = 0; i < pdfmap[7].size(); ++i) PDFcol2loc[i] = 0.0;
-
   vector<double> PDFmrefloc(pdfmap[8].size(), 0.0);
-  // for (size_t i = 0; i < pdfmap[8].size(); ++i) PDFmrefloc[i] = 0.0;
 
   // Prepare direct references for all variables stored inside slow containers
   auto &pdfmass = pdfmap[0];

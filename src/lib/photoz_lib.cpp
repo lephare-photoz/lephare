@@ -425,7 +425,6 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   zLib.resize(fullLib.size(), -99.);
   fluxIR.resize(fullLibIR.size(), vector<double>(imagm, 0.));
   zLibIR.resize(fullLibIR.size(), -99.);
-  cout << "Start light fill" << endl;
   int index_z0;
   double colRF1, colRF2, magRFref;
   vector<double> colRF(3);
@@ -459,7 +458,6 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
     zLib[i] = fullLib[i]->red;
   }
 #ifdef _OPENMP
-  cout << "End light fill" << endl;
 #pragma omp parallel for schedule(static)
 #endif
   for (size_t i = 0; i < fullLibIR.size(); i++) {
