@@ -54,22 +54,19 @@ class oneElLambda {
 };
 
 typedef vector<oneElLambda> oneElVector;
-
-inline pair<vector<double>, vector<double>> to_pairs(
-    const vector<oneElLambda>& v) {
-  vector<double> lambdas;
-  vector<double> vals;
-  for (auto it = v.begin(); it != v.end(); it++) {
-    lambdas.push_back(it->lamb);
-    vals.push_back(it->val);
-  }
-  return make_pair(lambdas, vals);
-}
-
 inline std::tuple<std::vector<double>, std::vector<double>> to_tuple(
     const oneElVector& v) {
-  auto p = to_pairs(v);
-  return {p.first, p.second};
+  std::vector<double> lambdas;
+  std::vector<double> vals;
+  lambdas.reserve(v.size());
+  vals.reserve(v.size());
+
+  for (const auto& el : v) {
+    lambdas.push_back(el.lamb);
+    vals.push_back(el.val);
+  }
+
+  return {std::move(lambdas), std::move(vals)};
 }
 
 /*! Interpolate a curve (x,y) at positions given by a vector
