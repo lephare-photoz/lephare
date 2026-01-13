@@ -279,8 +279,6 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   // Decide if the uncertainties on the rest-frame colors should be analysed
   colAnalysis = ((fltColRF[0] >= 0) && (fltColRF[1] >= 0) &&
                  (fltColRF[2] >= 0) && (fltColRF[3] >= 0) && (fltREF >= 0));
-  cout << " Colors " << fltColRF[0] << " " << fltColRF[1] << " " << fltColRF[2]
-       << " " << fltColRF[3] << endl;
 
   /*
     INFO PARAMETERS ON SCREEN AND DOC
