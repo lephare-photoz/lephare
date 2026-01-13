@@ -137,6 +137,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("read", static_cast<void (flt::*)(ifstream&)>(&flt::read),
            "Read filter info from stream")
       .def("lambdaMean", &flt::lambdaMean)
+      .def("clean", &flt::clean)
       .def("lambdaEff", &flt::lambdaEff)
       .def("magsun", &flt::magsun)
       .def("width", &flt::width)
