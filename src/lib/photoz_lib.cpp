@@ -273,7 +273,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   int fltREF = (key_analysed["M_REF"]).split_int("0", -1)[0];
   // Need to substract one because the convention in the .para file start at 1,
   // but 0 in the code
-  if (fltREF >= 0) {
+  if (fltREF > 0) {
     fltREF--;
   }
   // Decide if the uncertainties on the rest-frame colors should be analysed

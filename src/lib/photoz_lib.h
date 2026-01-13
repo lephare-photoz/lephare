@@ -67,7 +67,6 @@ class PhotoZ {
     for (auto &sed : fullLibIR) delete sed;
     fullLib.clear();
     fullLibIR.clear();
-    // lightLib.clear_sed();
   }
 
   vector<double> compute_offsets(vector<onesource *>);
