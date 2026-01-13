@@ -429,7 +429,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   zLibIR.resize(fullLibIR.size(), -99.);
   int index_z0;
   double colRF1, colRF2, magRFref;
-  vector<double> colRF(3);
+  array<double, 3> colRF;
   for (size_t i = 0; i < fullLib.size(); i++) {
     // Add rest-frame colors to the light library
     if (colAnalysis) {
@@ -444,7 +444,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
       colRF = {INVALID_MAG, INVALID_MAG, INVALID_MAG};
     }
     // Add the the SED to the light library
-    lightLib.push_sed(fullLib[i], colRF);
+    lightLib.push_sed(*fullLib[i], colRF);
   }
 // Convert the magnitude library in flux
 #ifdef _OPENMP

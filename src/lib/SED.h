@@ -467,52 +467,27 @@ struct SEDlight {
   vector<int> index, nummod, extlawId, index_z0;
   vector<double> red, chi2, dm, luv, lopt, lnir, mag0;
   vector<double> ebv, lgage, lgmass, lgsfr, lgssfr, ltir;
-  vector<vector<double>> colRF;
+  vector<array<double, 3>> colRF;
 
-  void clear_sed() {
-    nlib.clear();
-    index.clear();
-    nummod.clear();
-    red.clear();
-    chi2.clear();
-    dm.clear();
-    luv.clear();
-    lopt.clear();
-    lnir.clear();
-    mag0.clear();
-    ebv.clear();
-    extlawId.clear();
-    index_z0.clear();
-    lgage.clear();
-    lgmass.clear();
-    lgsfr.clear();
-    lgssfr.clear();
-    ltir.clear();
-    colRF.clear();
-  }
-
-  void push_sed(SED const *src, vector<double> colRFin) {
-    if (src == nullptr) {
-      throw std::invalid_argument("Le pointeur SED ne peut pas être nul.");
-    }
-    nlib.push_back(src->nlib);
-    index.push_back(src->index);
-    nummod.push_back(src->nummod);
-    red.push_back(src->red);
-    chi2.push_back(src->chi2);
-    dm.push_back(src->dm);
-    luv.push_back(src->luv);
-    lopt.push_back(src->lopt);
-    lnir.push_back(src->lnir);
-    ltir.push_back(src->ltir);
-    mag0.push_back(src->mag0);
-    ebv.push_back(src->ebv);
-    extlawId.push_back(src->extlawId);
-    index_z0.push_back(src->index_z0);
-    lgage.push_back(LOG10D(src->age));
-    lgmass.push_back(LOG10D(src->mass));
-    lgsfr.push_back(LOG10D(src->sfr));
-    lgssfr.push_back(LOG10D(src->ssfr));
+  void push_sed(SED const &src, const array<double, 3> &colRFin) {
+    nlib.push_back(src.nlib);
+    index.push_back(src.index);
+    nummod.push_back(src.nummod);
+    red.push_back(src.red);
+    chi2.push_back(src.chi2);
+    dm.push_back(src.dm);
+    luv.push_back(src.luv);
+    lopt.push_back(src.lopt);
+    lnir.push_back(src.lnir);
+    ltir.push_back(src.ltir);
+    mag0.push_back(src.mag0);
+    ebv.push_back(src.ebv);
+    extlawId.push_back(src.extlawId);
+    index_z0.push_back(src.index_z0);
+    lgage.push_back(LOG10D(src.age));
+    lgmass.push_back(LOG10D(src.mass));
+    lgsfr.push_back(LOG10D(src.sfr));
+    lgssfr.push_back(LOG10D(src.ssfr));
     colRF.push_back(colRFin);
   }
 };
