@@ -243,6 +243,9 @@ PYBIND11_MODULE(_lephare, mod) {
   // other option is getter to ensure that it is readonly:
   // mod.def("ga_HeI_val", [] {return ga_HeI_val;});
 
+  py::class_<SEDlight>(mod, "SEDlight")
+      .def(py::init<>());  // Constructeur par défaut
+
   py::class_<StarSED, SED>(mod, "StarSED")
       .def(py::init<const SED &>())
       .def(py::init<const StarSED &>())
@@ -339,6 +342,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("fluxIR", &PhotoZ::fluxIR)
       .def_readonly("imagm", &PhotoZ::imagm)
       .def_readonly("fullLib", &PhotoZ::fullLib)
+      .def_readonly("lightLib", &PhotoZ::lightLib)
       .def_readonly("zLib", &PhotoZ::zLib)
       .def_readonly("flux", &PhotoZ::flux)
       .def_readonly("fullLibIR", &PhotoZ::fullLibIR)
