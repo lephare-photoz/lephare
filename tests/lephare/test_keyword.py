@@ -18,6 +18,7 @@ def test_keyword_basic():
     assert k.value == "1"
     # test mismatch in size
     assert np.array_equal(k.split_string("0", 2), ["1", "1"])
+    assert np.array_equal(k.split("0", 2, 'str'), ["1", "1"])
     k = keyword("k3", "1,1")
     assert np.array_equal(k.split_string("0", 3), ["0", "0", "0"])
 
@@ -26,6 +27,7 @@ def test_keyword_array():
     k = keyword("k", "1,1")
     assert np.array_equal(k.split_string("0", 2), ["1", "1"])
     assert np.array_equal(k.split_int("0", 2), [1, 1])
+    assert np.array_equal(k.split("0", 2, 'int'), [1, 1])
     assert np.array_equal(k.split_long("0", 2), [1, 1])
     assert np.array_equal(k.split_bool("0", 2), [True, True])
     assert np.array_equal(k.split_double("0", 2), [1.0, 1.0])
