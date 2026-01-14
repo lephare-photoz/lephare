@@ -186,3 +186,22 @@ def test_get_auxiliary_data(test_data_dir: str):
     os.remove(filter_file_path)
     # Check it was deleted
     assert not os.path.exists(filter_file_path)
+    # Check a wildcard and additional files
+    lp.data_retrieval.get_auxiliary_data(
+        keymap=config,
+        additional_files=[
+            "sed/GAL/BC03_CHAB/*.ised_ASCII",
+            "sed/GAL/MAGDIS",
+            "examples/config_svo_filters.yml",
+        ],
+    )
+    # Check some examples
+    for f in [
+        "sed/GAL/BC03_CHAB/bc2003_lr_m42_chab_tau01_dust00.ised_ASCII",
+        "sed/GAL/MAGDIS/sed_z2_U2.dat",
+        "examples/config_svo_filters.yml",
+    ]:
+        file_path = os.path.join(test_dir, "../data", f)
+        assert os.path.exists(file_path)
+        os.remove(file_path)
+        assert not os.path.exists(file_path)

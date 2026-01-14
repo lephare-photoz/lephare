@@ -26,11 +26,6 @@ jobs:
 
           # Linux 64 bit manylinux2014
           - os: ubuntu-22.04
-            python: 39
-            platform_id: manylinux_x86_64
-            manylinux_image: manylinux2014
-            python_version: "3.9"
-          - os: ubuntu-22.04
             python: 310
             platform_id: manylinux_x86_64
             manylinux_image: manylinux2014
@@ -52,32 +47,24 @@ jobs:
             python_version: "3.13"
 
           # MacOS x86_64
-          - os: macos-13
-            python: 39
-            platform_id: macosx_x86_64
-            python_version: "3.9"
-          - os: macos-13
+          - os: macos-15-intel
             python: 310
             platform_id: macosx_x86_64
             python_version: "3.10"
-          - os: macos-13
+          - os: macos-15-intel
             python: 311
             platform_id: macosx_x86_64
             python_version: "3.11"
-          - os: macos-13
+          - os: macos-15-intel
             python: 312
             platform_id: macosx_x86_64
             python_version: "3.12"
-          - os: macos-13
+          - os: macos-15-intel
             python: 313
             platform_id: macosx_x86_64
             python_version: "3.13"
 
           # MacOS arm64
-          - os: macos-14
-            python: 39
-            platform_id: macosx_arm64
-            python_version: "3.9"
           - os: macos-14
             python: 310
             platform_id: macosx_arm64
@@ -97,12 +84,12 @@ jobs:
 
     steps:
       - name: Checkout LePhare
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           submodules: recursive
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.2.1
+        uses: pypa/cibuildwheel@v3.3.0
         env:
           # CIBW_ARCHS_MACOS: auto universal2
           CIBW_BEFORE_ALL_MACOS: brew install llvm libomp
@@ -115,7 +102,7 @@ jobs:
           CIBW_BUILD_VERBOSITY: 3
 
       - name: Upload wheels
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
           path: wheelhouse/*.whl
@@ -124,7 +111,7 @@ jobs:
     name: Make SDist
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 0  # Optional, use if you use setuptools_scm
         submodules: recursive  # Optional, use if you have submodules
@@ -133,7 +120,7 @@ jobs:
       run: pipx run build --sdist
 
     - name: Upload SDist
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: cibw-sdist
         path: dist/*.tar.gz
@@ -149,7 +136,7 @@ jobs:
 
     steps:
       - name: Download distribution files
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           # unpacks all CIBW artifacts into dist/
           pattern: cibw-*
