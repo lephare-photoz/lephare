@@ -189,6 +189,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("rescale", &SED::rescale)
       .def("compute_magnitudes", &SED::compute_magnitudes)
       .def("compute_fluxes", &SED::compute_fluxes)
+      .def("generate_spectra", &SED::generate_spectra)
       .def("emplace_back", &SED::emplace_back)
       .def("set_vector", &SED::set_vector)
       .def("redshift", &SED::redshift)

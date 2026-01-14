@@ -24,10 +24,11 @@ def test_photoz(test_data_dir: str):
 
 def test_reddening():
     # Test the reddening computation function
-    assert hasattr(lp, "get_zero_redshift_id")
+    xtest = np.array([0.1, 0.2, 0.3, 0.4, 0.5])
+    ytest = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+    assert len(lp.multiply_on_grids(xtest, ytest, xtest, ytest, xtest)[0]) == len(xtest)
 
-    assert hasattr(lp, "observe")
-
-    assert hasattr(lp, "multiply_on_grids")
-
+    # The reddening calculator
     assert hasattr(lp, "compute_model_reddening")
+
+    # test impact of ebv on a source fit
