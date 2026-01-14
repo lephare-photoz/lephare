@@ -45,6 +45,7 @@ static const string LEPHAREDIR = "LEPHAREDIR";
 Get the environment variable LEPHAREWORK and LEPHAREDIR
 Stop the code if LEPHAREDIR not defined
 */
+// LCOV_EXCL_START
 void get_lephare_env() {
   char const *temp;
   temp = getenv(LEPHAREDIR.c_str());
@@ -63,6 +64,7 @@ void get_lephare_env() {
     lepharework = lepharedir + "/work";
   }
 }
+// LCOV_EXCL_STOP
 
 /*
 13/12/2013
@@ -85,16 +87,9 @@ bool check_first_char(const string &maligne) {
   return false;
 }
 
-/*
-
-  19/11/14
-  Implementation of the black body function
-
-*/
 double blackbody(double T, double lambda) {
   double hckt = hplanck * c / kboltzmann / T;
   double val;
-
   if ((exp(hckt / lambda) - 1) < 1.e-5) {
     val = 1. / (hckt / lambda) / pow(lambda, 5.);
   } else {
@@ -102,35 +97,6 @@ double blackbody(double T, double lambda) {
   }
 
   return val;
-}
-
-// DEPRECATED FOR CHECK_CONTEXT_BIT
-int bdincl(int n, long cont, int max) {
-  int res = 1;
-  long sum = cont;
-
-  // If the context is positive, otherwise accept the filter
-  if (sum > 0) {
-    // Start from the last filter and go down
-    for (int i = max - 1; i >= n; i--) {
-      // substract the context corresponding to the filter
-      long summ = sum - pow(2, i);
-      if (summ >= 0 &&
-          i > n) {  // The filter is included into the context (summ>0) and the
-                    // considered filter is not reached
-        sum = summ;
-      } else if (i == n) {  // Reached the considered filter
-
-        if (summ >= 0) {  // The sum is still positive -> include the filter
-          res = 1;
-        } else {  // The sum is negative -> do not include the filter
-          res = 0;
-        }
-        break;
-      }
-    }
-  }
-  return res;
 }
 
 vector<size_t> indexes_in_vec(const double &value, const vector<double> &vec,
@@ -141,4 +107,32 @@ vector<size_t> indexes_in_vec(const double &value, const vector<double> &vec,
   }
 
   return result;
-}
+}  // LCOV_EXCL_LINE
+
+vector<double> fast_interpolate(const std::vector<double> &x,
+                                const std::vector<double> &y,
+                                const std::vector<double> &z, double d) {
+  std::vector<double> out;
+  out.reserve(z.size());
+
+  std::size_t i = 0;  // pointer in x,y
+
+  // Loop through all target points z[k]
+  for (double zk : z) {
+    // Out of bounds → return d
+    if (zk < x.front() || zk > x.back()) {
+      out.push_back(d);
+      continue;
+    }
+    // Advance i until x[i] <= zk <= x[i+1]
+    while (i + 1 < x.size() && x[i + 1] < zk) {
+      ++i;
+    }
+    // Now interpolate between (x[i], y[i]) and (x[i+1], y[i+1])
+    double x0 = x[i], x1 = x[i + 1];
+    double y0 = y[i], y1 = y[i + 1];
+    double t = (zk - x0) / (x1 - x0);
+    out.push_back(y0 + t * (y1 - y0));
+  }
+  return out;
+}  // LCOV_EXCL_LINE

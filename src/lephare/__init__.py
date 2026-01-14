@@ -55,12 +55,28 @@ dm.configure_directories()  # noqa: F405
 LEPHAREDIR = dm.LEPHAREDIR
 
 from ._lephare import *
+
+# import explicitly the internal variables and functions
+# that we need to expose for testing and documentation
+from ._lephare import (  # noqa: F401
+    _closeAge,
+    _emission_lines,
+    _empirical_ratio,
+    _empirical_ratio2,
+    _ga_2q_val,
+    _ga_H_val,
+    _ga_HeI_val,
+    _ga_lamb,
+    _ga_total,
+    _read_ages_from_file,
+)
 from ._version import *
 
 # make LEPHAREDIR and LEPHAREWORK avaliable to the C++ codes
 get_lephare_env()  # noqa: F405
 
 from ._flt import *
+from ._onesource import *
 from ._pdf import *
 from ._photoz import *
 from ._plot_utils import *

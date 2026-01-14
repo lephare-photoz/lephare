@@ -75,7 +75,8 @@ mag_gal -c $CONFIG_FILE \
     --EM_LINES EMP_UV \
     --EM_DISPERSION 0.5,0.75,1.,1.5,2. \
     --Z_STEP 0.04,0,6 \
-    --LIB_ASCII YES
+    --LIB_ASCII YES \
+    --VERBOSE NO
 
 echo "Running zphota..."
 zphota -c $CONFIG_FILE \
@@ -90,7 +91,8 @@ zphota -c $CONFIG_FILE \
     --PARA_OUT $LEPHAREDIR/examples/output.para \
     --VERBOSE NO \
     --ZFIX NO \
-    --PDZ_OUT $LEPHAREWORK/zphota/
+    --PDZ_OUT $LEPHAREWORK/zphota/ \
+    --VERBOSE NO
 
 echo "Generating figures and specs..."
 python $LEPHAREDIR/examples/figuresLPZ.py $CAT_OUT

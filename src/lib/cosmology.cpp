@@ -45,6 +45,7 @@ double cosmo::distMet(double z) const {
 
   // case without the cosmological constant
   if (l0 == 0) {
+    // LCOV_EXCL_START
     //  ao = c/(h0*sqrt(ABS(1-omt)))
     //  in fact we use x = ao * x(z) with x(z) from eq 8 of
     //  Moscardini et al.  So we don't need to compute ao
@@ -56,7 +57,7 @@ double cosmo::distMet(double z) const {
       ao = 1.;
       dmet = ckms * z * (1. + z / 2.) / (h0 * (1 + z));
     }
-
+    // LCOV_EXCL_STOP
   } else if (om0 < 1 && l0 != 0) {
     ao = 1.;
     double sum = 0.;
@@ -153,7 +154,7 @@ vector<double> zgrid(double dz, double zmin, double &zmax) {
   z.push_back(zmax);
 
   return z;
-}
+}  // LCOV_EXCL_LINE
 
 int indexz(const double red, const vector<double> &gridz) {
   // gridz is assumed to be sorted

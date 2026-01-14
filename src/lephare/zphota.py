@@ -12,7 +12,7 @@ __all__ = [
 ]
 
 config_keys = {
-    "verbose": "increase onscreen verbosity",
+    "VERBOSE": "increase onscreen verbosity",
     "CAT_IN": "input catalog",
     "INP_TYPE": "F if Fluxes, M if magnitudes",
     "CAT_MAG": "AB or VEGA magnitude system of the input catalog (default AB)",
@@ -91,7 +91,8 @@ nonestring = "NONE"
 
 class Zphota(Runner):
     """The specific arguments to the Zphota class are
-    verbose:
+
+    VERBOSE:
            add verbosity
     CAT_IN:
            input catalog

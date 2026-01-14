@@ -7,6 +7,7 @@
 #ifndef SED_H  // check that this keyword has been set already
 #define SED_H  // define the keyword to be checked
 
+#include <array>
 #include <string>
 #include <vector>
 
@@ -78,11 +79,12 @@ class SED {
   int extlawId;  ///< index of the extinction law when dust attenuation has been
                  ///< applied
 
-  double qi[4];  ///< Store the number flux (phot/cm\f$^{-2}\f$s\f$^{-1}\f$) of
-                 ///< ionizing photons for HeII, HeI, H, and H2. See
-                 ///< SED::calc_ph. In practice, qi[2] only is used, and only
-                 ///< for the physical modeling of emission lines
-                 ///< (EM_LINES="PHYS", see GalMag::read_SED)
+  array<double, 4>
+      qi;  ///< Store the unnormalized number flux
+           ///< (phot/cm\f$^{-2}\f$s\f$^{-1}\f$) of ionizing photons for
+           ///< HeII, HeI, H, and H2. See SED::calc_ph. In practice, qi[2]
+           ///< only is used, and only for the physical modeling of
+           ///< emission lines (EM_LINES="PHYS", see GalMag::read_SED)
 
   vector<oneElLambda> fac_line;  ///< oneElLambda vector storing emission lines
 
@@ -120,11 +122,11 @@ class SED {
 
   //! Convert string to object_type
   /*!
-    \param type String starting with either g, q, or s,
-    in either lower or upper case. If it is not the case,
-    throw invalid argument exception.
-
-    \return object_type corresponding to input, if valid.
+   * @param type: string starting with either g, q, or s,
+   * in either lower or upper case. If it is not the case,
+   * throw invalid argument exception.
+   *
+   * @return object_type corresponding to input, if valid.
    */
   inline static object_type string_to_object(const string &type) {
     char t = toupper(type[0]);
@@ -155,31 +157,39 @@ class SED {
   ///\brief Read sedFile assumed to be ASCII and build the #lamb_flux vector of
   /// oneElLambda elements.
   ///
-  /// Negative flux values are set to 0, oneElLambda::ori=1 to indicate that it
-  /// is a SED. The #lamb_flux vector is filled iteratively with each line of
+  /// Negative flux values are set to 0. The #lamb_flux vector is
+  /// filled iteratively with each line of
   /// the file, and is finally sorted by ascending lambda. More complex input
   /// types are treated in inherited class methods.
   void read(const string &sedFile);
   void warning_integrateSED(const vector<flt> &filters, bool verbose = false);
-  vector<double> integrateSED(const flt &filter);
-  static void resample(vector<oneElLambda> &lamb_all,
-                       vector<oneElLambda> &lamb_new, const int origine,
-                       const double lmin, const double lmax);
 
-  ///\brief Generate a calibration SED based on the argument calib
-  ///
-  ///@param lmin start of the lambda vector
-  ///@param lmax end of the lambda vector
-  ///@param Nsteps number of intervals between $lambda values (hence there are
-  /// Nsteps+1 values of \f$\lambda\f$)
-  ///@param calib: parameter FILTER_CALIB passed as argument to define the
-  /// calibration function \f$C(\lambda)\f$
-  /// - calib=0 : \f$C(\lambda)=\lambda^{-2}\f$
-  /// - calib=1 : \f$C(\lambda)=\lambda^{-1}\f$
-  /// - calib=2 : \f$C(\lambda)=\lambda^{-3}\f$
-  /// - calib=3 : \f$C(\lambda)=Blackbody(\lambda, T=10000K)\f$
-  /// - calib=4 : \f$C(\lambda)=Blackbody(\lambda, T=10000K)\f$
-  /// - calib=5 : \f$C(\lambda)=\lambda^{-3}\f$
+  /*! integrate the SED between bounds
+   * @param lmin : lower lambda bound
+   * @param lmax : lower lambda bound
+   * return the integral of the SED spectrum between lmin and lmax, *if*
+   * [lmin,lmax] is inside the definition domain of the SED.
+   * If not, INVALID_VAL is returned
+   */
+  double integrate(const double lmin, const double lmax);
+
+  vector<double> integrateSED(const flt &filter);
+
+  /*! \brief Generate a calibration SED based on the argument calib
+   *
+   * @param lmin start of the lambda vector
+   * @param lmax end of the lambda vector
+   * @param Nsteps number of intervals between $lambda values (hence there are
+   * Nsteps+1 values of \f$\lambda\f$)
+   * @param calib: parameter FILTER_CALIB passed as argument to define the
+   * calibration function \f$C(\lambda)\f$
+   * - calib=0 : \f$C(\lambda)=\lambda^{-2}\f$
+   * - calib=1 : \f$C(\lambda)=\lambda^{-1}\f$
+   * - calib=2 : \f$C(\lambda)=\lambda^{-3}\f$
+   * - calib=3 : \f$C(\lambda)=Blackbody(\lambda, T=10000K)\f$
+   * - calib=4 : \f$C(\lambda)=Blackbody(\lambda, T=10000K)\f$
+   * - calib = 5: \f$C(\lambda) =\lambda ^{ -3 }\f$
+   */
   void generateCalib(double lmin, double lmax, int Nsteps, int calib);
   /// return the size of the internal vector #lamb_flux
   int size() { return lamb_flux.size(); }
@@ -238,37 +248,8 @@ class SED {
   virtual void sumEmLines() {};
   /// for each magnitude \a #mag[k] compute kcorr = mag[k] - mag_z0[k] - distMod
   virtual void kcorrec(const vector<double> &magz0) {};
-  virtual void add_neb_cont() {};  // Add continuum
-  /*!
-   * Compute the number flux of photons able to ionize HeII, HeI, H, and H2
-   * For a given SED, this amounts to compute the integral
-   * \f$\int_0^{w_i} SED(\lambda)\cdot \frac{\lambda}{hc}\,d\lambda\quad,\f$
-   * where \f$w_i\f$=54.42, 24.52, 13.60, and 1108.7 A for HeII, HeI, H, and H2
-   respectively,
-   * and where \f$hc\f$ is in ergs.A. This normalization assumes that the SED
-   are provided in args/cm2/s/A.
-   * In practice the integral is approximated by :
-   \f$\sum_{\lambda_{min}}^{w_k}\frac{SED_{j-1}+SED_j}{2}\cdot(\lambda_j-\lambda_{j-1})\cdot\frac{\lambda_j}{hc}\f$.
-   *
-   * Results are stored in the q_i array member of size 4 of the SED instance.
-   */
-  virtual void calc_ph() {};
 
-  /*! Compute some integrals to be stored in the object
-   * This computes variables SED::luv, SED::lopt, SED::lnir, and SED::ltir
-   * luv, lopt, lnir, are monochromatic equivalent luminosities, for a source
-   * at 10 parsecs. As the SED unit is taken as erg/cm2/s/Hz, the monochromatic
-   * luminosity is obtained by integrating the SED in an interval [lmin, lmax],
-   * divided by (lmax-lmin) and multiplied by \f$4\pi(10pc)^2\f$. Note that
-   * given the units of an SED, it is defined as dF/dnu for F the corresponding
-   * flux. As a result the integral shows a \f$\lambda^2/c\f$ term so that
-   * \f$\frac{dF}{d\nu} = \frac{dF}{d\lambda} \frac{\lambda^2}{c}\f$ can be
-   * integrated in \f$\lambda\f$. For the variables computed here, in order to
-   * speed computation, \f$\lambda^2/c\f$ is evaluated at the center of the
-   * interval and taken out of the integral.
-   *
-   */
-  virtual void SEDproperties() {};
+  virtual void compute_luminosities() {};
 
   /*! Generate spectrum at given redshift, with given normalization, and
    * adding emission lines and extragalactic extinction
@@ -294,7 +275,7 @@ class SED {
    * @param other: the SED to compare to
    * equality of the following attributes are compared:
    * `nummod`, `ebv`, and `age`
-   !*/
+   */
   inline bool is_same_model(const SED &other) {
     return ((*this).nummod == other.nummod && (*this).ebv == other.ebv &&
             (*this).age == other.age);
@@ -321,13 +302,14 @@ class SED {
    * \param ebv value of E(B-V)
    * \param obj instance of class ext
    */
-  void applyExt(const double ebv, const ext &obj);
+  void apply_extinction(const double ebv, const ext &obj);
 
   /*! Apply dust extinction to the emission lines (stored in `fac_line`)
    * Only for galaxies and QSO
+   * \param ebv value of E(B-V)
    * \param obj instance of class `ext`
    */
-  void applyExtLines(const ext &obj);
+  void apply_extinction_to_lines(double ebv, const ext &obj);
 
   /*! Apply extinction due to intergalactic medium (only for GAL and QSO)
    * \param opaAll Vector of opacities to compute extinction
@@ -338,7 +320,7 @@ class SED {
   /// Helper function to append the oneElLambda(lambda, value) object to the sed
   /// vector
   inline void emplace_back(const double lambda, const double value) {
-    lamb_flux.emplace_back(lambda, value, 1);
+    lamb_flux.emplace_back(lambda, value);
   }
 
   /*! Helper function to set the sed vector as lambda=x and val = y
@@ -379,12 +361,26 @@ class GalSED : public SED {
 
   /// Standard constructor
   GalSED(const string nameC, int nummodC = 0);
-  GalSED(const string nameC, double tauC, double ageC, string formatC,
-         int nummodC, string typeC, int idAgeC);
+  GalSED(const string name, double tau, double age, string format, int nummod,
+         int idAge);
   ~GalSED() { flEm.clear(); }
 
-  void SEDproperties();
-  void add_neb_cont();
+  /*! Compute some integrals to be stored in the object
+   * This computes variables SED::luv, SED::lopt, SED::lnir, and SED::ltir
+   * luv, lopt, lnir, are monochromatic equivalent luminosities, for a source
+   * at 10 parsecs. As the SED unit is taken as erg/cm2/s/Hz, the monochromatic
+   * luminosity is obtained by integrating the SED in an interval [lmin, lmax],
+   * divided by (lmax-lmin) and multiplied by \f$4\pi(10pc)^2\f$. Note that
+   * given the units of an SED, it is defined as dF/dnu for F the corresponding
+   * flux. As a result the integral shows a \f$\lambda^2/c\f$ term so that
+   * \f$\frac{dF}{d\nu} = \frac{dF}{d\lambda} \frac{\lambda^2}{c}\f$ can be
+   * integrated in \f$\lambda\f$. For the variables computed here, in order to
+   * speed computation, \f$\lambda^2/c\f$ is evaluated at the center of the
+   * interval and taken out of the integral.
+   *
+   */
+  void compute_luminosities();
+  vector<double> add_neb_cont(double);
   GalSED generateEmSED(const string &emtype);
   void generateEmEmpUV(double MNUV_int, double NUVR);
   void generateEmEmpSFR(double MNUV_int, double NUVR);
@@ -397,6 +393,20 @@ class GalSED : public SED {
   void kcorrec(const vector<double> &magz0);
   void rescaleEmLines();
   void zdepEmLines(int flag);
+  /*!
+   * Compute the number flux of photons able to ionize HeII, HeI, H, and H2
+   * For a given SED, this amounts to compute the integral
+   * \f$\int_0^{w_i} SED(\lambda)\cdot \frac{\lambda}{hc}\,d\lambda\quad,\f$
+   * where \f$w_i\f$=hc/54.42, hc/24.52, hc/13.60, and 1108.7 A for HeII, HeI,
+   H, and H2 respectively,
+   * and where \f$hc\f$ is in ergs.A. This normalization assumes that the SED
+   are provided in args/cm2/s/A.
+   * In practice the integral is approximated by :
+   \f$\sum_{\lambda_{min}}^{w_k}\frac{SED_{j-1}+SED_j}{2}\cdot(\lambda_j-\lambda_{j-1})\cdot\frac{\lambda_j}{hc}\f$.
+   *
+   * Results are stored in the \f$q_i$\f array member of size 4 of the SED
+   instance.
+   */
   void calc_ph();
 
   void writeSED(ofstream &ofs, ofstream &ofsPhys, ofstream &ofsDoc);
@@ -437,7 +447,7 @@ class StarSED : public SED {
   /*! constructor
    * @param name: name given to the SED object
    * @param nummod: identity number given to the SED object
-   !*/
+   */
   StarSED(const string name, int nummod = 0) : SED(name, nummod, "STAR") { ; }
   /// destructor (does nothing)
   ~StarSED() { ; }
