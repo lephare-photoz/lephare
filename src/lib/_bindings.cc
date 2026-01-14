@@ -24,10 +24,10 @@ static_assert(PYBIND11_VERSION_MAJOR >= 2 && PYBIND11_VERSION_MINOR >= 11,
               "pybind11 headers are too old");
 
 template <typename x, typename modT>
-void applySEDLibTemplate(modT &m, std::string name) {
+void applySEDLibTemplate(modT& m, std::string name) {
   py::class_<SEDLib<x>>(m, name.c_str())
       .def(py::init<string, string>(), py::arg("config"), py::arg("typ"))
-      .def(py::init<keymap &, string, string>(), py::arg("key_analysed"),
+      .def(py::init<keymap&, string, string>(), py::arg("key_analysed"),
            py::arg("config"), py::arg("typ"))
       .def("print_info", &SEDLib<x>::print_info)
       .def("read_model_list", &SEDLib<x>::read_model_list)
@@ -38,6 +38,35 @@ void applySEDLibTemplate(modT &m, std::string name) {
 }
 
 PYBIND11_MODULE(_lephare, mod) {
+  /* Top-level module docstring. Docs for individual classes are done in
+   * __init__.py */
+  mod.doc() = R"pbdoc(
+    _lephare: Core C++ bindings for the LePHARE Python interface
+
+    This module is the low-level, compiled part of the LePHARE Python package.
+    It exposes the C++ classes and functions to Python via pybind11. Users
+    generally do not import _lephare directly; instead, use the high-level
+    `lephare` package which wraps _lephare and provides convenience functions
+    and a cleaner Python interface.
+
+    Key features exposed in this module:
+    - Classes: PhotoZ, SED, StarSED, GalSED, QSOSED, flt, cosmo, PDF, onesource
+    - Functions: flux/magnitude conversions, extinction laws, library handling
+    - Constants: HIGH_CHI2, maptype
+
+    Example usage (high-level):
+        import lephare as lp
+        lp.data_retrieval.get_auxiliary_data(clone=True)
+        from astropy.table import Table
+        config = lp.default_cosmos_config.copy()
+        lp.prepare(config)
+        input_table = Table.read(f"{lp.LEPHAREDIR}/examples/COSMOS.in", format='ascii')
+        output, _ = lp.process(config, input_table)
+
+    Documentation:
+        Full LePHARE Python documentation is available at:
+        https://lephare.readthedocs.io/
+    )pbdoc";
   /*object_type enum for python*/
   py::enum_<object_type>(mod, "object_type")
       .value("GAL", object_type::GAL)
@@ -120,14 +149,14 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("split_long", &keyword::split_long)
       .def("split_double", &keyword::split_double)
       .def("split_bool", &keyword::split_bool)
-      .def("__repr__", [](const keyword &a) {
+      .def("__repr__", [](const keyword& a) {
         return "(" + a.name + ", " + a.value + ")";
       });
 
   mod.def("read_command", [](std::vector<std::string> args) {
-    std::vector<char *> cstrs;
+    std::vector<char*> cstrs;
     cstrs.reserve(args.size());
-    for (auto &s : args) cstrs.push_back(const_cast<char *>(s.c_str()));
+    for (auto& s : args) cstrs.push_back(const_cast<char*>(s.c_str()));
     return read_command(cstrs.size(), cstrs.data());
   });
   mod.def("read_config", &read_config);
@@ -139,9 +168,9 @@ PYBIND11_MODULE(_lephare, mod) {
       .def(py::init<double, double, int>(), py::arg("lmin"), py::arg("lmax"),
            py::arg("nstep"),
            "Top hat filter from lmin to lmax with nstep points")
-      .def("read", static_cast<void (flt::*)(const string &)>(&flt::read),
+      .def("read", static_cast<void (flt::*)(const string&)>(&flt::read),
            "Read filter info from file")
-      .def("read", static_cast<void (flt::*)(ifstream &)>(&flt::read),
+      .def("read", static_cast<void (flt::*)(ifstream&)>(&flt::read),
            "Read filter info from stream")
       .def("lambdaMean", &flt::lambdaMean)
       .def("lambdaEff", &flt::lambdaEff)
@@ -156,12 +185,12 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("lmean", &flt::lmean)
       .def_readonly("dwidth", &flt::dwidth)
       .def_readwrite("lamb_trans", &flt::lamb_trans)
-      .def("data", [](const flt &f) {
+      .def("data", [](const flt& f) {
         int N = f.lamb_trans.size();
         // Create a 2D array with shape (2, N) (transposed)
         py::array_t<double> result({2, N});
         py::buffer_info buf = result.request();
-        double *ptr = static_cast<double *>(buf.ptr);
+        double* ptr = static_cast<double*>(buf.ptr);
         for (size_t i = 0; i < N; i++) {
           ptr[i] = f.lamb_trans[i].lamb;     // First row
           ptr[N + i] = f.lamb_trans[i].val;  // Second row
@@ -215,16 +244,16 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("emplace_back", &SED::emplace_back)
       .def("set_vector", &SED::set_vector)
       .def("readSEDBin",
-           static_cast<void (SED::*)(const string &)>(&SED::readSEDBin))
+           static_cast<void (SED::*)(const string&)>(&SED::readSEDBin))
       .def("writeSED",
-           static_cast<void (SED::*)(const string &, const string &,
-                                     const string &)>(&SED::writeSED))
-      .def("data", [](const SED &f) {
+           static_cast<void (SED::*)(const string&, const string&,
+                                     const string&)>(&SED::writeSED))
+      .def("data", [](const SED& f) {
         int N = f.lamb_flux.size();
         // Create a 2D array with shape (2, N) (transposed)
         py::array_t<double> result({2, N});
         py::buffer_info buf = result.request();
-        double *ptr = static_cast<double *>(buf.ptr);
+        double* ptr = static_cast<double*>(buf.ptr);
         for (size_t i = 0; i < N; i++) {
           ptr[i] = f.lamb_flux[i].lamb;     // First row
           ptr[N + i] = f.lamb_flux[i].val;  // Second row
@@ -244,20 +273,20 @@ PYBIND11_MODULE(_lephare, mod) {
   // mod.def("ga_HeI_val", [] {return ga_HeI_val;});
 
   py::class_<StarSED, SED>(mod, "StarSED")
-      .def(py::init<const SED &>())
-      .def(py::init<const StarSED &>())
+      .def(py::init<const SED&>())
+      .def(py::init<const StarSED&>())
       .def(py::init<const string, int>(), py::arg("name"),
            py::arg("nummod") = 0);
 
   py::class_<QSOSED, SED>(mod, "QSOSED")
-      .def(py::init<const SED &>())
-      .def(py::init<const QSOSED &>())
+      .def(py::init<const SED&>())
+      .def(py::init<const QSOSED&>())
       .def(py::init<const string, int>(), py::arg("name"),
            py::arg("nummod") = 0);
 
   py::class_<GalSED, SED>(mod, "GalSED")
-      .def(py::init<const SED &>())
-      .def(py::init<const GalSED &>())
+      .def(py::init<const SED&>())
+      .def(py::init<const GalSED&>())
       .def(py::init<const string, int>(), py::arg("name"),
            py::arg("nummod") = 0)
       .def(py::init<const string, double, double, string, int, int>(),
@@ -288,22 +317,22 @@ PYBIND11_MODULE(_lephare, mod) {
   mod.def("readPEGASE", &readPEGASE);
 
   /******** CLASS MAG *********/
-#define MAGDEFS(c, n)                                      \
-  (py::class_<c>(mod, n)                                   \
-       .def(py::init<keymap &>(), py::arg("key_analysed")) \
-       .def(py::init<>())                                  \
-       .def("open_files", &c::open_files)                  \
-       .def("close_files", &c::close_files)                \
-       .def("open_opa_files", &c::open_opa_files)          \
-       .def("print_info", &c::print_info)                  \
-       .def("read_ext", &c::read_ext)                      \
-       .def("read_opa", &c::read_opa)                      \
-       .def("read_B12", &c::read_B12)                      \
-       .def("def_zgrid", &c::def_zgrid)                    \
-       .def("set_zgrid", &c::set_zgrid)                    \
-       .def("read_SED", &c::read_SED)                      \
-       .def("write_doc", &c::write_doc)                    \
-       .def("make_maglib", &c::make_maglib)                \
+#define MAGDEFS(c, n)                                     \
+  (py::class_<c>(mod, n)                                  \
+       .def(py::init<keymap&>(), py::arg("key_analysed")) \
+       .def(py::init<>())                                 \
+       .def("open_files", &c::open_files)                 \
+       .def("close_files", &c::close_files)               \
+       .def("open_opa_files", &c::open_opa_files)         \
+       .def("print_info", &c::print_info)                 \
+       .def("read_ext", &c::read_ext)                     \
+       .def("read_opa", &c::read_opa)                     \
+       .def("read_B12", &c::read_B12)                     \
+       .def("def_zgrid", &c::def_zgrid)                   \
+       .def("set_zgrid", &c::set_zgrid)                   \
+       .def("read_SED", &c::read_SED)                     \
+       .def("write_doc", &c::write_doc)                   \
+       .def("make_maglib", &c::make_maglib)               \
        .def("write_mag", &c::write_mag))
   MAGDEFS(StarMag, "StarMag");
   MAGDEFS(QSOMag, "QSOMag");
@@ -350,13 +379,13 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("outpara", &PhotoZ::outpara)
       .def_readonly("pdftype", &PhotoZ::pdftype)
       .def_readwrite("outputHeader", &PhotoZ::outputHeader)
-      .def(py::init<keymap &>())
+      .def(py::init<keymap&>())
       .def("read_autoadapt_sources", &PhotoZ::read_autoadapt_sources)
       .def("read_photoz_sources", &PhotoZ::read_photoz_sources)
-      .def("prep_data", static_cast<void (PhotoZ::*)(vector<onesource *>)>(
+      .def("prep_data", static_cast<void (PhotoZ::*)(vector<onesource*>)>(
                             &PhotoZ::prep_data))
       .def("prep_data",
-           static_cast<void (PhotoZ::*)(onesource *)>(&PhotoZ::prep_data))
+           static_cast<void (PhotoZ::*)(onesource*)>(&PhotoZ::prep_data))
       .def("run_autoadapt", &PhotoZ::run_autoadapt)
       .def("run_photoz", &PhotoZ::run_photoz)
       .def("write_outputs", &PhotoZ::write_outputs)
@@ -393,7 +422,7 @@ PYBIND11_MODULE(_lephare, mod) {
       //    .def("readsource", &onesource::readsource)
       .def("readsource",
            static_cast<void (onesource::*)(
-               const string &, const vector<double>, const vector<double>,
+               const string&, const vector<double>, const vector<double>,
                const long, const double, const string)>(&onesource::readsource))
       .def("set_verbosity", &onesource::set_verbosity)
       .def("get_verbosity", &onesource::get_verbosity)
