@@ -470,7 +470,7 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
     repo_url = f"https://github.com/lephare-photoz/{repo_name}"
     registry_file = DEFAULT_REGISTRY_FILE
     data_path = lephare_dir
-    if keymap is None and clone is True:
+    if clone is True:
         # Assume if filt is present assume everything is.
         if os.path.isdir(f"{lephare_dir}/filt"):
             warnings.warn(
