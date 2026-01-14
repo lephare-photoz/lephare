@@ -497,9 +497,6 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
         download_all_files(retriever, matched, ignore_registry=False)
     os.system(f"rm {registry_file}")
 
-    if keymap is None and clone is False:
-        warnings.warn("No Keymap provided and clone=False. Doing nothing.")
-
 
 def _expand_folders(items):
     """Expand folder paths in a list of items to include all files within those folders."""
