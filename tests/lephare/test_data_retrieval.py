@@ -179,7 +179,7 @@ def test_get_auxiliary_data(test_data_dir: str):
     # Set to a filter that is not in the test directory
     config["FILTER_LIST"] = "lsst/total_g.dat"
     # Check the downloader runs
-    lp.data_retrieval.get_auxiliary_data(keymap=config)
+    lp.data_retrieval.get_auxiliary_data(keymap=config, clone=False)
     filter_file_path = os.path.join(test_dir, "../data/filt/lsst/total_g.dat")
     # Check it was downloaded
     assert os.path.exists(filter_file_path)
@@ -194,6 +194,7 @@ def test_get_auxiliary_data(test_data_dir: str):
             "sed/GAL/MAGDIS",
             "examples/config_svo_filters.yml",
         ],
+        clone=False,
     )
     # Check some examples
     for f in [
