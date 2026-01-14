@@ -1037,7 +1037,7 @@ vector<double> PhotoZ::compute_offsets(vector<onesource *> adaptSources) {
   } else {
     // If adaptation is yes, compute the offset. Can not be done with systematic
     // shifts defined
-    if (autoadapt) {
+    if (autoadapt && (adaptSources.size() > 0)) {
       a0 = run_autoadapt(adaptSources);
     } else {
       // If nothing, initialize at 0
@@ -1702,6 +1702,98 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
     if (outchi) oneObj->writeFullChi(lightLib);
 
   }  // end loop over list of onesources
+  return;
+}
+
+/*
+  Propose a function to fit only one source
+*/
+void PhotoZ::fit_onesource(onesource &src, const vector<double> &a0) {
+  // Threshold in chi2 to consider. Remove <3 bands, stop when below this chi2
+  double thresholdChi2 =
+      ((keys["RM_DISCREPANT_BD"]).split_double("1.e9", 2))[0];
+
+  cout << "gridz " << gridz.size() << endl;
+  double funz0 = lcdm.distMod(gridz[1] / 20.);
+
+  cout << "Fit source with Id " << src.spec << endl;
+  // Apply offset anyway (should be 0 if no auto-adapt or no systematic shifts
+  src.adapt_mag(a0);
+
+  // set the prior on the redshift, abs mag, ebv, etc on the object
+  src.setPriors(magabsB, magabsF);
+  // If ZFIX=YES select the templates with the closest redshift to zs,
+  // in order to save time.
+  vector<size_t> valid;
+  if (zfix) {
+    valid = validLib(src.zs);
+  } else {
+    valid.resize(fullLib.size());
+    iota(valid.begin(), valid.end(), 0);
+  }
+  // Core of the program: compute the chi2
+  src.fit(lightLib, flux, valid, funz0, bp);
+  // Try to remove some bands to improve the chi2, only as long as the chi2 is
+  // above a threshold
+  src.rm_discrepant(lightLib, flux, valid, funz0, bp, thresholdChi2);
+
+  return;
+}
+
+/*
+  Associate PDF and analysis of the PDF to the source which has been fit
+*/
+void PhotoZ::uncertainties_onesource(onesource &src) {
+  // Parabolic interpolation of the redshift
+  bool zintp = keys["Z_INTERP"].split_bool("NO", 1)[0];
+  // DZ_WIN minimal delta z window to search - 0.25 by default
+  double dz_win = ((keys["DZ_WIN"]).split_double("0.25", 1))[0];
+
+  cout << "Analyse PDF for source with Id " << src.spec << endl;
+
+  // If ZFIX=YES select the templates with the closest redshift to zs,
+  // in order to save time.
+  vector<size_t> valid;
+  if (zfix) {
+    valid = validLib(src.zs);
+  } else {
+    valid.resize(fullLib.size());
+    iota(valid.begin(), valid.end(), 0);
+  }
+
+  // Generate the marginalized PDF (z+physical parameters) from the chi2
+  // stored in each SED
+  src.generatePDF(lightLib, valid, colAnalysis, zfix);
+
+  // Interpolation of Z_BEST and ZQ_BEST (zmin) via Chi2 curves, put z-spec if
+  // ZFIX YES  (only gal for the moment)
+  if (zfix || zintp) src.interp(zfix, zintp, lcdm);
+  // Uncertainties from the minimum chi2 + delta chi2
+  src.uncertaintiesMin();
+  // Uncertainties from the bayesian method, centered on the median
+  src.uncertaintiesBay();
+  // find a second peak in the PDZ
+  src.secondpeak(lightLib, dz_win, min_thres);
+  // find the mode of the marginalized PDF and associated uncertainties,
+  // centered on the mode
+  src.mode();
+  // The rest of the procedure requires that a specific choice be made for the
+  // redshift of GAL solutions, to be considered for computation of physical
+  // quantities, among the following choices: the spectro zs, the best chi2
+  // fit solution zmin[0], or the median solution zgmed[0].
+  if (zfix) {
+    src.consiz = src.zs;
+  } else if (methz) {
+    src.consiz = src.zgmed[0];
+    src.chimin[0] = 1.e9;
+    // Select the index of the templates that have a redshift closest to zgmed
+    // We only work on GAL solutions here
+    auto valid = validLib(src.zgmed[0]);
+    src.fit(lightLib, flux, valid, funz0, bp);
+  } else {
+    src.consiz = src.zmin[0];
+  }
+
   return;
 }
 

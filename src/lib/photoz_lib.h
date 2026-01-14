@@ -69,10 +69,15 @@ class PhotoZ {
     fullLibIR.clear();
   }
 
-  vector<double> compute_offsets(vector<onesource *>);
+  vector<double> compute_offsets(vector<onesource *> adaptSources);
+
   vector<double> run_autoadapt(vector<onesource *>);
 
   void run_photoz(vector<onesource *> sources, const vector<double> &a0);
+
+  void fit_onesource(onesource &sources, const vector<double> &a0);
+
+  void uncertainties_onesource(onesource &src);
 
   string prep_header(vector<string> outkeywords);
 
