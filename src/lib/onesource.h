@@ -200,7 +200,7 @@ class onesource {
                      const vector<size_t>& valid, const double funz0,
                      const array<int, 2> bp, double thresholdChi2);
 
-  vector<vector<double>> dered_flux(
+  vector<vector<double>> redden_flux(
       const vector<vector<double>>& flux,
       const vector<vector<double>>& reddening) const;
   /*! Write output in the lephare ascii format

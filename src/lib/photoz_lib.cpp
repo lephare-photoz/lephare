@@ -1040,7 +1040,14 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
         // Fit the source at the spec-z value, using only the template with
         // compatible redshift to zs.
         auto valid = validLib(oneObj->zs);
-        oneObj->fit(fullLib, flux, valid, funz0, bp);
+        if (oneObj->galEbv == 0.0) {
+          // No reddening, use original flux
+          oneObj->fit(fullLib, flux, valid, funz0, bp);
+        } else {
+          // Apply reddening first
+          auto reddened_flux = oneObj->redden_flux(flux, reddening);
+          oneObj->fit(fullLib, reddened_flux, valid, funz0, bp);
+        }
 
         // Interpolation of the predicted magnitudes, scaling at zs, checking
         // first that the fit was sucessfull

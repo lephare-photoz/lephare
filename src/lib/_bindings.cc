@@ -310,6 +310,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("outpara", &PhotoZ::outpara)
       .def_readonly("pdftype", &PhotoZ::pdftype)
       .def_readwrite("outputHeader", &PhotoZ::outputHeader)
+      .def_readwrite("reddening", &PhotoZ::reddening)
       .def(py::init<keymap&>())
       .def("read_autoadapt_sources", &PhotoZ::read_autoadapt_sources)
       .def("read_photoz_sources", &PhotoZ::read_photoz_sources)

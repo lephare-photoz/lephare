@@ -334,7 +334,7 @@ void onesource::rescale_flux_errors(const vector<double> min_err,
 /*
  redden the fluxes according to the galactic E(B-V) value
  */
-vector<vector<double>> onesource::dered_flux(
+vector<vector<double>> onesource::redden_flux(
     const vector<vector<double>>& flux,
     const vector<vector<double>>& reddening) const {
   // Determine dimensions

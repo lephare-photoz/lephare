@@ -20,3 +20,14 @@ def test_photoz(test_data_dir: str):
         if not np.isclose(photz.zLib[i], 0.0):
             # Check redshifted sources have same model as previous sed
             assert sed.nummod == photz.fullLib[i - 1].nummod
+
+
+def test_reddening():
+    # Test the reddening computation function
+    assert hasattr(lp, "get_zero_redshift_id")
+
+    assert hasattr(lp, "observe")
+
+    assert hasattr(lp, "multiply_on_grids")
+
+    assert hasattr(lp, "compute_model_reddening")

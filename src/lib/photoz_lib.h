@@ -47,7 +47,7 @@ class PhotoZ {
   cosmo lcdm;
 
  public:
-  vector<vector<double>> flux, fluxIR, reddening, dereddened_flux;
+  vector<vector<double>> flux, fluxIR, reddening;
   vector<double> zLib, zLibIR;
   vector<SED*> fullLib, fullLibIR, lightLib;
   vector<flt> allFilters;
