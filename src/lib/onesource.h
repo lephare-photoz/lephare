@@ -199,6 +199,10 @@ class onesource {
   void rm_discrepant(vector<SED*>& fulllib, const vector<vector<double>>& flux,
                      const vector<size_t>& valid, const double funz0,
                      const array<int, 2> bp, double thresholdChi2);
+
+  vector<vector<double>> dered_flux(
+      const vector<vector<double>>& flux,
+      const vector<vector<double>>& reddening) const;
   /*! Write output in the lephare ascii format
    * @param stout: stream object pointing to the output file
    * @param outkeywords: list of keywords to be output
