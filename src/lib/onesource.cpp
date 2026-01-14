@@ -1724,7 +1724,6 @@ void onesource::computeEmFlux(vector<SED *> &fulllib, cosmo lcdm,
       SEDz0_Gal.rescale(dmmin[0]);
       // Opacity applied in rest-frame, depending on the redshift of the source
       SEDz0_Gal.applyOpa(opaAll);
-
       // Create a SED of emission lines at z
       GalSED SEDz0_Em(*(fulllib[ind0]));
       // GalSED SEDz0_Em(*(fulllib[indmin[0]])); // To be re-activated if EL

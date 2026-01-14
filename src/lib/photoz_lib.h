@@ -47,6 +47,7 @@ class PhotoZ {
   vector<string> colib;
   vector<int> bapp, bappOp, pdz_fabs, emMod;
   cosmo lcdm;
+  vector<opa> opaOut;
 
  public:
   vector<vector<double>> flux, fluxIR;
@@ -75,9 +76,15 @@ class PhotoZ {
 
   void run_photoz(vector<onesource *> sources, const vector<double> &a0);
 
-  void fit_onesource(onesource &sources, const vector<double> &a0);
+  void fit_onesource(onesource &sources);
 
   void uncertainties_onesource(onesource &src);
+
+  void physpara_onesource(onesource &src);
+
+  pair<vector<double>, vector<double>> besttemplate_onesource(
+      onesource &src, int const templateType, double const minl,
+      double const maxl);
 
   string prep_header(vector<string> outkeywords);
 

@@ -418,6 +418,9 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
     allFiltersAdd = read_doc_filters(filtNameAdd);
   }
 
+  // IGM opacity tables
+  opaOut = Mag::read_opa();
+
   /* Create a 2D array with the predicted flux,
   and a light structure of SED
   Done to improve the performance in the fit*/
@@ -1600,7 +1603,6 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
   vector<vector<double>> maxkcol = maxkcolor(gridz, fullLib, goodFlt);
 
   double funz0 = lcdm.distMod(gridz[1] / 20.);
-  vector<opa> opaOut = Mag::read_opa();
 
   // Specify the offsets in the header
   string offsets;
@@ -1705,98 +1707,6 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
   return;
 }
 
-/*
-  Propose a function to fit only one source
-*/
-void PhotoZ::fit_onesource(onesource &src, const vector<double> &a0) {
-  // Threshold in chi2 to consider. Remove <3 bands, stop when below this chi2
-  double thresholdChi2 =
-      ((keys["RM_DISCREPANT_BD"]).split_double("1.e9", 2))[0];
-
-  cout << "gridz " << gridz.size() << endl;
-  double funz0 = lcdm.distMod(gridz[1] / 20.);
-
-  cout << "Fit source with Id " << src.spec << endl;
-  // Apply offset anyway (should be 0 if no auto-adapt or no systematic shifts
-  src.adapt_mag(a0);
-
-  // set the prior on the redshift, abs mag, ebv, etc on the object
-  src.setPriors(magabsB, magabsF);
-  // If ZFIX=YES select the templates with the closest redshift to zs,
-  // in order to save time.
-  vector<size_t> valid;
-  if (zfix) {
-    valid = validLib(src.zs);
-  } else {
-    valid.resize(fullLib.size());
-    iota(valid.begin(), valid.end(), 0);
-  }
-  // Core of the program: compute the chi2
-  src.fit(lightLib, flux, valid, funz0, bp);
-  // Try to remove some bands to improve the chi2, only as long as the chi2 is
-  // above a threshold
-  src.rm_discrepant(lightLib, flux, valid, funz0, bp, thresholdChi2);
-
-  return;
-}
-
-/*
-  Associate PDF and analysis of the PDF to the source which has been fit
-*/
-void PhotoZ::uncertainties_onesource(onesource &src) {
-  // Parabolic interpolation of the redshift
-  bool zintp = keys["Z_INTERP"].split_bool("NO", 1)[0];
-  // DZ_WIN minimal delta z window to search - 0.25 by default
-  double dz_win = ((keys["DZ_WIN"]).split_double("0.25", 1))[0];
-
-  cout << "Analyse PDF for source with Id " << src.spec << endl;
-
-  // If ZFIX=YES select the templates with the closest redshift to zs,
-  // in order to save time.
-  vector<size_t> valid;
-  if (zfix) {
-    valid = validLib(src.zs);
-  } else {
-    valid.resize(fullLib.size());
-    iota(valid.begin(), valid.end(), 0);
-  }
-
-  // Generate the marginalized PDF (z+physical parameters) from the chi2
-  // stored in each SED
-  src.generatePDF(lightLib, valid, colAnalysis, zfix);
-
-  // Interpolation of Z_BEST and ZQ_BEST (zmin) via Chi2 curves, put z-spec if
-  // ZFIX YES  (only gal for the moment)
-  if (zfix || zintp) src.interp(zfix, zintp, lcdm);
-  // Uncertainties from the minimum chi2 + delta chi2
-  src.uncertaintiesMin();
-  // Uncertainties from the bayesian method, centered on the median
-  src.uncertaintiesBay();
-  // find a second peak in the PDZ
-  src.secondpeak(lightLib, dz_win, min_thres);
-  // find the mode of the marginalized PDF and associated uncertainties,
-  // centered on the mode
-  src.mode();
-  // The rest of the procedure requires that a specific choice be made for the
-  // redshift of GAL solutions, to be considered for computation of physical
-  // quantities, among the following choices: the spectro zs, the best chi2
-  // fit solution zmin[0], or the median solution zgmed[0].
-  if (zfix) {
-    src.consiz = src.zs;
-  } else if (methz) {
-    src.consiz = src.zgmed[0];
-    src.chimin[0] = 1.e9;
-    // Select the index of the templates that have a redshift closest to zgmed
-    // We only work on GAL solutions here
-    auto valid = validLib(src.zgmed[0]);
-    src.fit(lightLib, flux, valid, funz0, bp);
-  } else {
-    src.consiz = src.zmin[0];
-  }
-
-  return;
-}
-
 void PhotoZ::write_outputs(vector<onesource *> sources, const time_t &ti1) {
   // CAT_OUT output  file -  zphot.out default
   string outf = ((keys["CAT_OUT"]).split_string("zphot.out", 1))[0];
@@ -1819,8 +1729,6 @@ void PhotoZ::write_outputs(vector<onesource *> sources, const time_t &ti1) {
       pdf_streams[type].open(output.c_str());
     }
   }
-
-  vector<opa> opaOut = Mag::read_opa();
 
   static bool first_obj = true;
   for (auto &oneObj : sources) {
@@ -1862,4 +1770,213 @@ vector<size_t> PhotoZ::validLib(const double &redshift, const bool &ir) {
                              : indexes_in_vec(closest_red, zLib, 1.e-10);
 
   return result;
+}
+
+/*
+  Propose a function to fit only one source
+*/
+void PhotoZ::fit_onesource(onesource &src) {
+  // Threshold in chi2 to consider. Remove <3 bands, stop when below this chi2
+  double thresholdChi2 =
+      ((keys["RM_DISCREPANT_BD"]).split_double("1.e9", 2))[0];
+
+  double funz0 = lcdm.distMod(gridz[1] / 20.);
+
+  cout << "Fit source with Id " << src.spec << endl;
+
+  // set the prior on the redshift, abs mag, ebv, etc on the object
+  src.setPriors(magabsB, magabsF);
+  // If ZFIX=YES select the templates with the closest redshift to zs,
+  // in order to save time.
+  vector<size_t> valid;
+  if (zfix) {
+    valid = validLib(src.zs);
+  } else {
+    valid.resize(fullLib.size());
+    iota(valid.begin(), valid.end(), 0);
+  }
+  // Core of the program: compute the chi2
+  src.fit(lightLib, flux, valid, funz0, bp);
+  // Try to remove some bands to improve the chi2, only as long as the chi2 is
+  // above a threshold
+  src.rm_discrepant(lightLib, flux, valid, funz0, bp, thresholdChi2);
+
+  return;
+}
+
+/*
+  Associate PDF and analysis of the PDF to the source which has been fit
+*/
+void PhotoZ::uncertainties_onesource(onesource &src) {
+  // Parabolic interpolation of the redshift
+  bool zintp = keys["Z_INTERP"].split_bool("NO", 1)[0];
+  // DZ_WIN minimal delta z window to search - 0.25 by default
+  double dz_win = ((keys["DZ_WIN"]).split_double("0.25", 1))[0];
+
+  // If ZFIX=YES select the templates with the closest redshift to zs,
+  // in order to save time.
+  vector<size_t> valid;
+  if (zfix) {
+    valid = validLib(src.zs);
+  } else {
+    valid.resize(fullLib.size());
+    iota(valid.begin(), valid.end(), 0);
+  }
+
+  // Generate the marginalized PDF (z+physical parameters) from the chi2
+  // stored in each SED
+  src.generatePDF(lightLib, valid, colAnalysis, zfix);
+
+  // Interpolation of Z_BEST and ZQ_BEST (zmin) via Chi2 curves, put z-spec if
+  // ZFIX YES  (only gal for the moment)
+  if (zfix || zintp) src.interp(zfix, zintp, lcdm);
+  // Uncertainties from the minimum chi2 + delta chi2
+  src.uncertaintiesMin();
+  // Uncertainties from the bayesian method, centered on the median
+  src.uncertaintiesBay();
+  // find a second peak in the PDZ
+  src.secondpeak(lightLib, dz_win, min_thres);
+  // find the mode of the marginalized PDF and associated uncertainties,
+  // centered on the mode
+  src.mode();
+
+  return;
+}
+
+/*
+  Compute physical parameters for one source
+*/
+void PhotoZ::physpara_onesource(onesource &src) {
+  /* Define what are the filters to be used for the absolute magnitude depending
+   * on the method adopted */
+  // MABS_METHOD method to compute the absolute magnitudes
+  int method = ((keys["MABS_METHOD"]).split_int("0", -1))[0];
+  // MABS_REF reference filter in case of mag abs method 2
+  vector<int> bapp = (keys["MABS_REF"]).split_int("1", -1);
+  int nbapp = int(bapp.size());
+
+  // MABS_FILT choose filters per redshift bin (MABS_ZBIN) if method 4
+  vector<int> bappOp = (keys["MABS_FILT"]).split_int("1", -1);
+  int nbBinZ = int(bappOp.size());
+
+  // Need to substract one because the convention in the .para file start at 1,
+  // but 0 in the code
+  for (int k = 0; k < nbBinZ; k++) bappOp[k]--;
+  // Need to substract one because the convention in the .para file start at 1,
+  // but 0 in the code
+  for (int k = 0; k < nbapp; k++) bapp[k]--;
+
+  // MABS_ZBIN give the redshift bins corresponding to MABS_FILT
+  vector<double> zbmin = (keys["MABS_ZBIN"]).split_double("0", nbBinZ + 1);
+  zbmin.erase(zbmin.end() - 1);
+  vector<double> zbmax = (keys["MABS_ZBIN"]).split_double("6", nbBinZ + 1);
+  zbmax.erase(zbmax.begin(), zbmax.begin() + 1);
+  // MABS_CONTEXT context for method 1
+  vector<long> magabscont = (keys["MABS_CONTEXT"]).split_long("0", -1);
+  vector<vector<int>> goodFlt = bestFilter(
+      imagm, gridz, fullLib, method, magabscont, bapp, bappOp, zbmin, zbmax);
+  vector<vector<double>> maxkcol = maxkcolor(gridz, fullLib, goodFlt);
+
+  // FIR_LIB name of the library in IR
+  vector<string> libext = (keys["FIR_LIB"]).split_string("NONE", -1);
+  int nlibext = int(libext.size());
+  // if the library is NONE, put the number of library at -1
+  if (nlibext == 1 && libext[0] == "NONE") nlibext = -1;
+  // FIR_LMIN Lambda min given in micron  (um)
+  double fir_lmin = ((keys["FIR_LMIN"]).split_double("7.0", 1))[0];
+  // FIR_CONT context for the far-IR
+  long fir_cont = ((keys["FIR_CONT"]).split_long("-1", 1))[0];
+  // FIR_SCALE context of the bands used for the rescaling in IR
+  int fir_scale = ((keys["FIR_SCALE"]).split_int("-1", 1))[0];
+  // FIR_FREESCALE possible free rscaling in IR, when several bands. Otherwise,
+  // model imposed by its LIR
+  string fir_frsc = ((keys["FIR_FREESCALE"]).split_string("NO", 1))[0];
+  // FIR_SUBSTELLAR remove the stellar component
+  bool substar = keys["FIR_SUBSTELLAR"].split_bool("NO", 1)[0];
+  // MIN_THRES threshold to trigger the detection - 0.1 by default
+  double min_thres = ((keys["MIN_THRES"]).split_double("0.1", 1))[0];
+
+  // The rest of the procedure requires that a specific choice be made for the
+  // redshift of GAL solutions, to be considered for computation of physical
+  // quantities, among the following choices: the spectro zs, the best chi2
+  // fit solution zmin[0], or the median solution zgmed[0].
+  if (zfix) {
+    src.consiz = src.zs;
+  } else if (methz) {
+    src.consiz = src.zgmed[0];
+    src.chimin[0] = 1.e9;
+    // Select the index of the templates that have a redshift closest to zgmed
+    // We only work on GAL solutions here
+    auto valid = validLib(src.zgmed[0]);
+    src.fit(lightLib, flux, valid, funz0, bp);
+  } else {
+    src.consiz = src.zmin[0];
+  }
+
+  // Interpolation at the new redshift  (only gal for the moment)
+  src.interp_lib(fullLib, imagm, lcdm);
+
+  // Compute absolute magnitudes
+  src.absmag(goodFlt, maxkcol, lcdm, gridz);
+
+  // Compute flux of emission lines
+  src.computeEmFlux(fullLib, lcdm, opaOut);
+
+  // Compute FIR properties
+  if (nlibext > 0) {
+    // FIR FIT
+    // Define the filters used for the FIR fit based on the FIR context
+    src.fltUsedIR(fir_cont, fir_scale, imagm, allFilters, fir_lmin);
+    // Substract the stellar component to the FIR observed flux
+    src.substellar(substar, allFilters);
+    // Select in the IR library only the templates with redshifts closest to
+    // consiz
+    auto valid = validLib(src.consiz, true);
+    // Fit the SED on FIR data, with the redshift fixed at zmin or zmed
+    src.fitIR(fullLibIR, fluxIR, valid, imagm, fir_frsc, lcdm);
+    // Compute the IR luminosities
+    src.generatePDF_IR(fullLibIR);
+  }
+
+  // compute physical quantities for the best fit GAL solution
+  src.compute_best_fit_physical_quantities(fullLib);
+
+  return;
+}
+
+/*
+  return the best fit template
+*/
+pair<vector<double>, vector<double>> PhotoZ::besttemplate_onesource(
+    onesource &src, int const templateType, double const minl,
+    double const maxl) {
+  pair<vector<double>, vector<double>> tmp;
+
+  switch (templateType) {
+    case 0:
+      // GALAXY CASE
+      tmp = src.best_spec_vec(0, fullLib, lcdm, opaOut, minl, maxl);
+      break;
+    case 1:
+      // GALAXY CASE, SECOND SOLUTION
+      tmp = src.best_spec_vec(1, fullLib, lcdm, opaOut, minl, maxl);
+      break;
+    case 2:
+      // GALAXY FIR CASE
+      tmp = src.best_spec_vec(2, fullLibIR, lcdm, opaOut, minl, maxl);
+      break;
+    case 3:
+      // QSO CASE
+      tmp = src.best_spec_vec(3, fullLib, lcdm, opaOut, minl, maxl);
+      break;
+    case 4:
+      // STAR CASE
+      tmp = src.best_spec_vec(4, fullLib, lcdm, opaOut, minl, maxl);
+      break;
+    default:
+      // Gestion d'erreur si 'case' n'est pas entre 1 et 5
+      throw std::invalid_argument("Case between 1 and 5.");
+  }
+
+  return tmp;
 }
