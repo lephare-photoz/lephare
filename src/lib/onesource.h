@@ -81,6 +81,9 @@ class onesource {
   double zsec, zsecChi2, zsecEbv, zsecScale, zsecProb, zsecAge;
   int zsecMod, zsecExtlaw;
 
+  // Allow each source to have a galactic ebv value
+  double galEbv = 0.0;
+
   // Minimal constructor of the source
   onesource() {
     spec = "1";      // ident
@@ -102,7 +105,7 @@ class onesource {
   }
 
   // Need to initialize the PDF in the constructor after the ":"
-  onesource(const int posC, const vector<double> &gridz) : onesource() {
+  onesource(const int posC, const vector<double>& gridz) : onesource() {
     pos = posC;  // position in the file
 
     // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] / 5:["AGE"]
@@ -173,7 +176,7 @@ class onesource {
   inline bool get_verbosity() const { return verbose; }
 
   // Prototype
-  void readsource(const string &identifier, const vector<double> vals,
+  void readsource(const string& identifier, const vector<double> vals,
                   const vector<double> err_vals, const long context,
                   const double z_spec, const string additional_input);
   void setPriors(const array<double, 2> magabsB,
@@ -181,31 +184,31 @@ class onesource {
   void fltUsed(const long gbcont, const long contforb, const int imagm);
   void fltUsedIR(const long fir_cont, const long fir_scale, const int imagm,
                  vector<flt> allFilters, const double fir_lmin);
-  void convertFlux(const string &catmag, const vector<flt> allFilters);
+  void convertFlux(const string& catmag, const vector<flt> allFilters);
   void rescale_flux_errors(const vector<double> min_err,
                            const vector<double> fac_err);
 
-  void fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
-           const vector<size_t> &valid, const double &funz0,
-           const array<int, 2> &bp);
-  void fitIR(vector<SED *> &fulllib, const vector<vector<double>> &flux,
-             const vector<size_t> &valid, const int imagm,
+  void fit(vector<SED*>& fulllib, const vector<vector<double>>& flux,
+           const vector<size_t>& valid, const double& funz0,
+           const array<int, 2>& bp);
+  void fitIR(vector<SED*>& fulllib, const vector<vector<double>>& flux,
+             const vector<size_t>& valid, const int imagm,
              const string fit_frsc, cosmo lcdm);
   double nzprior(const double luv, const double lnir, const double reds,
                  const array<int, 2> bp);
-  void rm_discrepant(vector<SED *> &fulllib, const vector<vector<double>> &flux,
-                     const vector<size_t> &valid, const double funz0,
+  void rm_discrepant(vector<SED*>& fulllib, const vector<vector<double>>& flux,
+                     const vector<size_t>& valid, const double funz0,
                      const array<int, 2> bp, double thresholdChi2);
   /*! Write output in the lephare ascii format
    * @param stout: stream object pointing to the output file
    * @param outkeywords: list of keywords to be output
    */
-  void write_out(ofstream &stout, const vector<string> &outkeywords);
+  void write_out(ofstream& stout, const vector<string>& outkeywords);
   void write_pdz_header(vector<string> pdztype,
-                        unordered_map<string, ofstream> &stpdz,
-                        const time_t &ti1);
+                        unordered_map<string, ofstream>& stpdz,
+                        const time_t& ti1);
   void write_pdz(vector<string> pdztype,
-                 unordered_map<string, ofstream> &stpdz);
+                 unordered_map<string, ofstream>& stpdz);
   void convertMag();
   void keepOri();
 
@@ -222,44 +225,44 @@ class onesource {
    * Note that zfix and zintp are not supposed to both be set. In case it
    * happens, zintp is discarded here.
    */
-  void interp(const bool zfix, const bool zintp, const cosmo &lcdm);
+  void interp(const bool zfix, const bool zintp, const cosmo& lcdm);
   void uncertaintiesMin();
   void uncertaintiesBay();
-  void secondpeak(vector<SED *> &fulllib, const double dz_win,
+  void secondpeak(vector<SED*>& fulllib, const double dz_win,
                   const double min_thres);
-  void generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
+  void generatePDF(vector<SED*>& fulllib, const vector<size_t>& va,
                    const vector<int> fltColRF, int fltREF, const bool zfix);
-  void generatePDF_IR(vector<SED *> &fulllib);
+  void generatePDF_IR(vector<SED*>& fulllib);
   void mode();
-  void interp_lib(vector<SED *> &fulllib, const int imagm, cosmo lcdm);
+  void interp_lib(vector<SED*>& fulllib, const int imagm, cosmo lcdm);
   void adapt_mag(vector<double> a0);
   void substellar(const bool substar, vector<flt> allFilters);
-  void absmag(const vector<vector<int>> &bestFlt,
-              const vector<vector<double>> &maxkcolor, cosmo lcdm,
+  void absmag(const vector<vector<int>>& bestFlt,
+              const vector<vector<double>>& maxkcolor, cosmo lcdm,
               const vector<double> gridz);
-  void writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR, cosmo lcdm,
-                 vector<opa> opaAll, const vector<flt> &allFilters,
+  void writeSpec(vector<SED*>& fulllib, vector<SED*>& fulllibIR, cosmo lcdm,
+                 vector<opa> opaAll, const vector<flt>& allFilters,
                  const string outspdir);
   /*! Write out in a Id<source id>.chi file the chi2 of all the templates
    * participating to the fit.
    * @param fulllib : the library of SED objects.
    */
-  void writeFullChi(const vector<SED *> &fulllib);
-  void computePredMag(vector<SED *> &fulllib, cosmo lcdm, vector<opa> opaAll,
+  void writeFullChi(const vector<SED*>& fulllib);
+  void computePredMag(vector<SED*>& fulllib, cosmo lcdm, vector<opa> opaAll,
                       vector<flt> allFltAdd);
-  void computePredAbsMag(vector<SED *> &fulllib, cosmo lcdm, vector<opa> opaAll,
+  void computePredAbsMag(vector<SED*>& fulllib, cosmo lcdm, vector<opa> opaAll,
                          vector<flt> allFltAdd);
-  void computeEmFlux(vector<SED *> &fulllib, cosmo lcdm, vector<opa> opaAll);
-  void limits(vector<SED *> &fulllib, vector<double> &limits_zbin,
-              int limits_ref, vector<int> &limits_sel,
-              vector<double> &limits_cut);
+  void computeEmFlux(vector<SED*>& fulllib, cosmo lcdm, vector<opa> opaAll);
+  void limits(vector<SED*>& fulllib, vector<double>& limits_zbin,
+              int limits_ref, vector<int>& limits_sel,
+              vector<double>& limits_cut);
   pair<vector<double>, vector<double>> best_spec_vec(short sol,
-                                                     vector<SED *> &fulllib,
+                                                     vector<SED*>& fulllib,
                                                      cosmo lcdm,
                                                      vector<opa> opaAll,
                                                      double minl, double maxl);
 
-  void compute_best_fit_physical_quantities(vector<SED *> &fulllib);
+  void compute_best_fit_physical_quantities(vector<SED*>& fulllib);
 };
 
 #endif

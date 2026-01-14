@@ -387,6 +387,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("best_spec_vec", &onesource::best_spec_vec)
       .def_readwrite("spec", &onesource::spec)
       .def_readwrite("consiz", &onesource::consiz)
+      .def_readwrite("galEbv", &onesource::galEbv)
       .def_readonly("pos", &onesource::pos)
       .def_readonly("cont", &onesource::cont)
       .def_readonly("pdfmap", &onesource::pdfmap)
