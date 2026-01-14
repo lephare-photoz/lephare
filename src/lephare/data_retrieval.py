@@ -470,7 +470,7 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
     repo_url = f"https://github.com/lephare-photoz/{repo_name}"
     registry_file = DEFAULT_REGISTRY_FILE
     data_path = lephare_dir
-    if clone is True:
+    if keymap is None and clone is True:
         # Assume if filt is present assume everything is.
         if os.path.isdir(f"{lephare_dir}/filt"):
             warnings.warn(
@@ -482,10 +482,10 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
             print(f"Downloading all auxiliary data (~1.5Gb) to {lephare_dir}.")
             print(f"Getting data from {repo_url}.")
             os.system(f"git clone {repo_url} {lephare_dir}")
-    else:
-        retriever = make_retriever(base_url=base_url, registry_file=registry_file, data_path=data_path)
-        file_list = config_to_required_files(keymap) if keymap is not None else all_files
-        download_all_files(retriever, file_list, ignore_registry=False)
+
+    retriever = make_retriever(base_url=base_url, registry_file=registry_file, data_path=data_path)
+    file_list = config_to_required_files(keymap) if keymap is not None else all_files
+    download_all_files(retriever, file_list, ignore_registry=False)
     if additional_files is not None:
         # Check for wildcard matches using fnmatch
         matched = [
@@ -493,6 +493,9 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
         ]
         download_all_files(retriever, matched, ignore_registry=False)
     os.system(f"rm {registry_file}")
+
+    if keymap is None and clone is False:
+        warnings.warn("No Keymap provided and clone=False. Doing nothing.")
 
 
 def _expand_folders(items):
