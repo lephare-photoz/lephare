@@ -35,6 +35,9 @@ def test_reddening(test_data_dir: str):
     ytest = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
     assert len(lp.multiply_on_grids(xtest, ytest, xtest, ytest, xtest)[0]) == len(xtest)
 
+    # Check it can run without an x axis
+    assert len(lp.multiply_on_grids(xtest, ytest, xtest, ytest)[0]) == len(xtest)
+
     # The reddening calculator
     albd_lib = lp.compute_model_reddening(config)
     assert albd_lib.shape == (307, 2)
