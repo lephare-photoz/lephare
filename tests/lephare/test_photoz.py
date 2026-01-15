@@ -2,6 +2,7 @@ import os
 
 import lephare as lp
 import numpy as np
+from astropy.table import Table
 
 
 def test_photoz(test_data_dir: str):
@@ -38,3 +39,22 @@ def test_reddening(test_data_dir: str):
     albd_lib = lp.compute_model_reddening(config)
     assert albd_lib.shape == (307, 2)
     # test impact of ebv on a source fit
+    # Run preparation tasks.
+    lp.prepare(config)
+    # Read the test input catalogue
+    input_file = os.path.join(test_data_dir, "examples/COSMOS_first100specz.fits")
+    input = Table.read(input_file)
+    test_string = "te s"  # Test with spaces
+    input["string_input"][0] = test_string
+    # Make a reduced column set for the minimal test
+    reduced_cols = []
+    for c in input.colnames:
+        if not c.startswith("f"):
+            reduced_cols.append(c)
+        elif "IB527" in c:
+            reduced_cols.append(c)
+        elif "IB679" in c:
+            reduced_cols.append(c)
+    output, photozlist = lp.process(
+        config, input[reduced_cols], write_outputs=False, reddening=albd_lib, ebv=[0.1] * len(input)
+    )
