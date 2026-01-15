@@ -95,8 +95,14 @@ def compute_model_reddening(config, verbose=False):
     keymap = lp.all_types_to_keymap(config)
 
     photz = lp.PhotoZ(keymap)
+    # Why are these required?
+    keymap["EXT_CURVE"] = lp.keyword("EXT_CURVE", "NONE")
+    keymap["GAL_CURVE"] = lp.keyword("GAL_CURVE", "CARDELLI")
+    keymap["t"] = lp.keyword("t", "Star")
     star_mag = lp.StarMag(keymap)
+    keymap["t"] = lp.keyword("t", "Gal")
     gal_mag = lp.GalMag(keymap)
+    keymap["t"] = lp.keyword("t", "QSO")
     qso_mag = lp.QSOMag(keymap)
 
     # Get the parameters this code is taken from the lp.FitExt runner

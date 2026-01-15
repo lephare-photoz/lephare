@@ -22,13 +22,19 @@ def test_photoz(test_data_dir: str):
             assert sed.nummod == photz.fullLib[i - 1].nummod
 
 
-def test_reddening():
+def test_reddening(test_data_dir: str):
+    test_dir = os.path.abspath(os.path.dirname(__file__))
+    os.environ["LEPHAREDIR"] = os.path.join(test_dir, "../data")
+    os.environ["LEPHAREWORK"] = os.path.join(test_dir, "../tmp")
+    config = lp.read_config(os.path.join(test_data_dir, "examples/COSMOS.para"))
+    # keymap=lp.all_types_to_keymap(config)
+    lp.prepare(config)
     # Test the reddening computation function
     xtest = np.array([0.1, 0.2, 0.3, 0.4, 0.5])
     ytest = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
     assert len(lp.multiply_on_grids(xtest, ytest, xtest, ytest, xtest)[0]) == len(xtest)
 
     # The reddening calculator
-    assert hasattr(lp, "compute_model_reddening")
-
+    albd_lib = lp.compute_model_reddening(config)
+    assert albd_lib.shape == (307, 2)
     # test impact of ebv on a source fit
