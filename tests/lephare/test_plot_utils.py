@@ -1,6 +1,8 @@
 import inspect
+import warnings
 
 import lephare as lp
+import matplotlib.pyplot as plt
 import numpy as np
 from astropy.table import Table
 
@@ -87,8 +89,12 @@ def test_all_plots():
         if not name.startswith("_"):
             print(f"Running method: {name}")
             try:
-                # Call the method
-                method()
+                # Ignore the Matplotlib legend warning during this method call
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", message="No artists with labels found to put in legend")
+                    warnings.filterwarnings("ignore", message="invalid value encountered in divide")
+                    method()
+                    plt.close("all")
             except TypeError as e:
                 # Handle methods that require arguments
                 print(f"Skipping {name}, requires arguments: {e}")

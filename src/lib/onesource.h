@@ -82,7 +82,7 @@ class onesource {
   int zsecMod, zsecExtlaw;
 
   // Allow each source to have a galactic ebv value
-  double galEbv = 0.0;
+  double galEbv = -99.;
 
   // Minimal constructor of the source
   onesource() {

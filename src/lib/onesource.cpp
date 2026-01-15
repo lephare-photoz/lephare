@@ -348,7 +348,8 @@ vector<vector<double>> onesource::redden_flux(
   for (size_t i = 0; i < nRows; ++i) {
     for (size_t k = 0; k < nCols; ++k) {
       double factor = std::pow(10.0, reddening[i][k] * this->galEbv / 2.5);
-      out[i][k] = flux[i][k] * factor;
+      // Divide to redden times to deredden
+      out[i][k] = flux[i][k] / factor;
     }
   }
 

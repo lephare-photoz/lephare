@@ -1040,7 +1040,7 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
         // Fit the source at the spec-z value, using only the template with
         // compatible redshift to zs.
         auto valid = validLib(oneObj->zs);
-        if (oneObj->galEbv == 0.0) {
+        if (oneObj->galEbv < 0.0) {
           // No reddening, use original flux
           oneObj->fit(fullLib, flux, valid, funz0, bp);
         } else {
@@ -1616,7 +1616,14 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
       iota(valid.begin(), valid.end(), 0);
     }
     // Core of the program: compute the chi2
-    oneObj->fit(fullLib, flux, valid, funz0, bp);
+    if (oneObj->galEbv < 0.0) {
+      // No reddening, use original flux
+      oneObj->fit(fullLib, flux, valid, funz0, bp);
+    } else {
+      // Apply reddening first
+      auto reddened_flux = oneObj->redden_flux(flux, reddening);
+      oneObj->fit(fullLib, reddened_flux, valid, funz0, bp);
+    }
     // Try to remove some bands to improve the chi2, only as long as the chi2 is
     // above a threshold
     oneObj->rm_discrepant(fullLib, flux, valid, funz0, bp, thresholdChi2);
@@ -1648,7 +1655,14 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
       // Select the index of the templates that have a redshift closest to zgmed
       // We only work on GAL solutions here
       auto valid = validLib(oneObj->zgmed[0]);
-      oneObj->fit(fullLib, flux, valid, funz0, bp);
+      if (oneObj->galEbv < 0.0) {
+        // No reddening, use original flux
+        oneObj->fit(fullLib, flux, valid, funz0, bp);
+      } else {
+        // Apply reddening first
+        auto reddened_flux = oneObj->redden_flux(flux, reddening);
+        oneObj->fit(fullLib, reddened_flux, valid, funz0, bp);
+      }
     } else {
       oneObj->consiz = oneObj->zmin[0];
     }

@@ -383,6 +383,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("substellar", &onesource::substellar)
       .def("generatePDF_IR", &onesource::generatePDF_IR)
       .def("write_out", &onesource::write_out)
+      .def("redden_flux", &onesource::redden_flux)
       .def("writeSpec", &onesource::writeSpec)
       .def("writeFullChi", &onesource::writeFullChi)
       //    .def("write_pdz", &onesource::write_pdz)
