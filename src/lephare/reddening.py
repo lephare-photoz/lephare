@@ -160,4 +160,6 @@ def compute_model_reddening(config, verbose=False):
                 albd = lp.compute_filter_extinction(one_filt, galactic_ext)
             values[i, j] = albd
 
+    # Replace nans with zeros (probably due to non overlap between filter and SED)
+    values = np.nan_to_num(values, nan=0.0)
     return values
