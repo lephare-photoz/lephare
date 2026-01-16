@@ -76,21 +76,21 @@ def test_onefit():
         )
         is None
     )
-    
+
     photz.prep_data(src)
-    
+
     a0 = photz.compute_offsets([])
     src.adapt_mag(a0)
     print("Done with offsets")
     assert len(a0) == 6
-    
+
     photz.fit_onesource(src)
     print("Done with fit")
     assert np.isclose(src.zmin[0], 0.65)
     assert np.isclose(src.dmmin[0], 1.0000, atol=1e-04)
     assert np.isclose(src.imasmin[0], 1)
     assert src.chimin[0] < src.chimin[1] < src.chimin[2]
-    
+
     photz.uncertainties_onesource(src)
     print("Done with uncertainties")
     max_position = np.argmax(src.pdfmap[11].vPDF)
@@ -102,13 +102,13 @@ def test_onefit():
     assert src.zgmin[3] < src.zgmin[1] < src.zgmin[0] < src.zgmin[2] < src.zgmin[4]
     assert src.zgmed[3] < src.zgmed[1] < src.zgmed[0] < src.zgmed[2] < src.zgmed[4]
     assert src.zgmode[3] < src.zgmode[1] < src.zgmode[0] < src.zgmode[2] < src.zgmode[4]
-    
+
     photz.physpara_onesource(src)
     print("Done with physical parameters")
     assert np.isclose(src.mabs[5], 26.6285 - 42.9504 - src.kap[5], atol=3e-2)
     assert np.isclose(src.mabs[0], 30.9393 - 42.9504 - src.kap[0], atol=3e-2)
     assert np.testing.assert_almost_equal(src.absfilt, [0, 1, 2, 3, 4, 5]) is None
-    
+
     minl = 3000.0
     maxl = 13000.0
     gal1 = photz.besttemplate_onesource(src, 0, minl, maxl)
@@ -126,4 +126,3 @@ def test_onefit():
     assert all(2999.0 < x < 13001.0 for x in star[0])
     assert all(10.0 < x < 40.0 for x in star[1])
     print("Done with the spectra")
-

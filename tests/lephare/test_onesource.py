@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from lephare import onesource
 
 
@@ -39,6 +40,23 @@ def test_onesource_set_priors():
 
 
 def test_readsource():
+    src = onesource()
+    vals = [30.9393, 29.4864, 28.102, 27.1517, 26.8568, 26.6285]
+    err_vals = [0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
+    err_vals_wrong = [0.01, 0.01, 0.01, 0.01, 0.01]
+    with pytest.raises(ValueError):
+        src.readsource("65", vals, err_vals_wrong, 0, 0.65, "test")
+
+    src.readsource("65", vals, err_vals, 1, 0.65, "test")
+    assert src.ab == vals
+    assert src.sab == err_vals
+    assert src.spec == "65"
+    assert src.cont == 1
+    assert src.zs == 0.65
+    assert src.str_inp == "test"
+
+
+def test_readsource2():
     # Instantiate a source
     src = onesource(101, [0, 0.1, 1])
     # read the source, change Id, attribute flux/err, ...
