@@ -1061,7 +1061,6 @@ vector<double> PhotoZ::compute_offsets(vector<onesource *> adaptSources) {
   Median of the difference between the modeled magnitudes and the observed ones
 */
 vector<double> PhotoZ::run_autoadapt(vector<onesource *> adaptSources) {
-  // double funz0 = lcdm.distMod(gridz[1] / 20.);
   vector<double> a0;
   a0.assign(imagm, 0.);
   // Use the spec-z for the adpation
@@ -1607,8 +1606,6 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
       imagm, gridz, fullLib, method, magabscont, bapp, bappOp, zbmin, zbmax);
   vector<vector<double>> maxkcol = maxkcolor(gridz, fullLib, goodFlt);
 
-  // double funz0 = lcdm.distMod(gridz[1] / 20.);
-
   // Specify the offsets in the header
   string offsets;
   for (int k = 0; k < imagm; k++) offsets = offsets + to_string(a0[k]) + ",";
@@ -1784,8 +1781,6 @@ void PhotoZ::fit_onesource(onesource &src) {
   // Threshold in chi2 to consider. Remove <3 bands, stop when below this chi2
   double thresholdChi2 =
       ((keys["RM_DISCREPANT_BD"]).split_double("1.e9", 2))[0];
-
-  // double funz0 = lcdm.distMod(gridz[1] / 20.);
 
   cout << "Fit source with Id " << src.spec << endl;
 
