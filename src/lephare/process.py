@@ -82,6 +82,10 @@ def process(
             photz.prep_data(one_obj)
             srclist.append(one_obj)
 
+        if reddening is not None:
+            for i in range(ng):
+                srclist[i].galEbv = ebv[i]
+
         # compute the offset, depending on the option in the code (AUTO_ADAPT, or APPLY_SYSSHIFT
         a0 = photz.compute_offsets(srclist)
     else:
