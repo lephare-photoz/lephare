@@ -168,7 +168,6 @@ void onesource::fltUsedIR(const long fir_cont, const long fir_scale,
 void onesource::convertFlux(const string &catmag,
                             const vector<flt> allFilters) {
   size_t imagm = allFilters.size();
-
   // If both magnitude and error are negative, flux/err are invalid
   for (size_t k = 0; k < allFilters.size(); k++) {
     if (ab[k] < 0 && sab[k] < 0) {

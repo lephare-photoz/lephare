@@ -1613,6 +1613,12 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
       offsets + '\n';
   outputHeader += offsets;
 
+  vector<size_t> valid;
+  if (!zfix) {
+      valid.reserve(fullLib.size());
+      for (size_t i=0; i<fullLib.size(); ++i) valid.push_back(i);
+  }
+
   unsigned int nobj = 0;
   for (auto &oneObj : sources) {
     if (verbose)
@@ -1626,12 +1632,8 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
     oneObj->setPriors(magabsB, magabsF);
     // If ZFIX=YES select the templates with the closest redshift to zs,
     // in order to save time.
-    vector<size_t> valid;
-    if (zfix) {
+     if (zfix) {
       valid = validLib(oneObj->zs);
-    } else {
-      valid.resize(fullLib.size());
-      iota(valid.begin(), valid.end(), 0);
     }
     // Core of the program: compute the chi2
     oneObj->fit(lightLib, flux, valid, funz0, bp);
@@ -1664,8 +1666,8 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
       oneObj->chimin[0] = 1.e9;
       // Select the index of the templates that have a redshift closest to zgmed
       // We only work on GAL solutions here
-      auto valid = validLib(oneObj->zgmed[0]);
-      oneObj->fit(lightLib, flux, valid, funz0, bp);
+      auto validfix = validLib(oneObj->zgmed[0]);
+      oneObj->fit(lightLib, flux, validfix, funz0, bp);
     } else {
       oneObj->consiz = oneObj->zmin[0];
     }
@@ -1691,9 +1693,9 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
       oneObj->substellar(substar, allFilters);
       // Select in the IR library only the templates with redshifts closest to
       // consiz
-      auto valid = validLib(oneObj->consiz, true);
+      auto validfix = validLib(oneObj->consiz, true);
       // Fit the SED on FIR data, with the redshift fixed at zmin or zmed
-      oneObj->fitIR(fullLibIR, fluxIR, valid, imagm, fir_frsc, lcdm);
+      oneObj->fitIR(fullLibIR, fluxIR, validfix, imagm, fir_frsc, lcdm);
       // Compute the IR luminosities
       oneObj->generatePDF_IR(fullLibIR);
     }
@@ -1702,7 +1704,6 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
 
     // write out chisquare values for all templates
     if (outchi) oneObj->writeFullChi(lightLib);
-
   }  // end loop over list of onesources
   return;
 }
@@ -1792,8 +1793,8 @@ void PhotoZ::fit_onesource(onesource &src) {
   if (zfix) {
     valid = validLib(src.zs);
   } else {
-    valid.resize(fullLib.size());
-    iota(valid.begin(), valid.end(), 0);
+    valid.reserve(fullLib.size());
+    for (size_t i=0; i<fullLib.size(); ++i) valid.push_back(i);
   }
   // Core of the program: compute the chi2
   src.fit(lightLib, flux, valid, funz0, bp);
@@ -1819,8 +1820,8 @@ void PhotoZ::uncertainties_onesource(onesource &src) {
   if (zfix) {
     valid = validLib(src.zs);
   } else {
-    valid.resize(fullLib.size());
-    iota(valid.begin(), valid.end(), 0);
+    valid.reserve(fullLib.size());
+    for (size_t i=0; i<fullLib.size(); ++i) valid.push_back(i);
   }
 
   // Generate the marginalized PDF (z+physical parameters) from the chi2
