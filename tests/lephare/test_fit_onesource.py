@@ -197,11 +197,11 @@ def test_physicalpara_bc03():
 
     # Download large files if needed
     lp.data_retrieval.get_auxiliary_data(
-        keymap=config,
+        keymap=lp.default_cosmos_config.copy(),
         additional_files=[
             "sed/GAL/BC03_CHAB/bc2003_lr_m62_chab_tau1_dust00.ised_ASCII",
-            "sed/GAL/BC03_CHAB/bc2003_lr_m62_chab_tau15_dust00.ised_ASCII",
-        ],
+            "sed/GAL/BC03_CHAB/bc2003_lr_m62_chab_tau15_dust00.ised_ASCII"
+        ]
     )
 
     sedlib = lp.Sedtolib(config_keymap=keymap)
