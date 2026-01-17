@@ -12,7 +12,6 @@ def test_photoz_cosmos():
 
     # Read the config file.
     config_file = os.path.expandvars("$LEPHAREDIR/examples/COSMOS.para")
-    # config_file = os.path.join(test_data_dir, "examples/COSMOS.para")
     config = lp.read_config(config_file)
     print(config_file)
     fltstr = "lsst/total_u.pb,lsst/total_g.pb,lsst/total_r.pb,lsst/total_i.pb,lsst/total_z.pb,lsst/total_y.pb"
@@ -152,6 +151,8 @@ def test_physicalpara_bc03():
     config.update(
         {
             "VERBOSE": "NO",
+            "STAR_SED": "$LEPHAREDIR/sed/STAR/STAR_MOD_ALL.list",
+            "QSO_SED": "$LEPHAREDIR/sed/QSO/SALVATO09/AGN_MOD.list",
             "FILTER_LIST": fltstr,
             "FILTER_FILE": "filters_fir",
             "FILTER_CALIB": "0,0,0,0,0,0,1,1,1,1",
@@ -179,26 +180,35 @@ def test_physicalpara_bc03():
     filterlib.run()
 
     # Generate a test BC03 template list
+    pathlist_bc03 = os.path.expandvars("$LEPHAREWORK/testBC03_MOD.list")
+    print("BC03 file ", pathlist_bc03)
     lines = [
         "BC03_CHAB/bc2003_lr_m62_chab_tau1_dust00.ised_ASCII  BC03\n",
         "BC03_CHAB/bc2003_lr_m62_chab_tau15_dust00.ised_ASCII  BC03\n",
     ]
-    pathlist_bc03 = os.path.expandvars("$LEPHAREWORK/testBC03_MOD.list")
-    print("BC03 file ", pathlist_bc03)
     with open(os.path.expandvars(pathlist_bc03), "w") as file:
         file.writelines(lines)
     # Generate a test BC03 age list
-    lines = ["0.360203\n", "2\n", "7\n"]
     pathage_bc03 = os.path.expandvars("$LEPHAREWORK/agesBC03.txt")
     print("BC03 ages ", pathage_bc03)
+    lines = ["0.360203\n", "2\n", "7\n"]
     with open(os.path.expandvars(pathage_bc03), "w") as file:
         file.writelines(lines)
+
+    # Download large files if needed
+    lp.data_retrieval.get_auxiliary_data(
+        keymap=config,
+        additional_files=[
+            "sed/GAL/BC03_CHAB/bc2003_lr_m62_chab_tau1_dust00.ised_ASCII",
+            "sed/GAL/BC03_CHAB/bc2003_lr_m62_chab_tau15_dust00.ised_ASCII",
+        ],
+    )
 
     sedlib = lp.Sedtolib(config_keymap=keymap)
     sedlib.run(
         typ="GAL",
-        gal_sed=pathlist_bc03,
         gal_lib="LIB_BC03",
+        gal_sed=pathlist_bc03,
         sel_age=pathage_bc03,
     )
 
