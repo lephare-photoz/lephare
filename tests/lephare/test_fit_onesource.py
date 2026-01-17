@@ -2,6 +2,7 @@ import os
 
 import lephare as lp
 import numpy as np
+import pytest
 
 
 def test_photoz_cosmos():
@@ -200,8 +201,8 @@ def test_physicalpara_bc03():
         keymap=lp.default_cosmos_config.copy(),
         additional_files=[
             "sed/GAL/BC03_CHAB/bc2003_lr_m62_chab_tau1_dust00.ised_ASCII",
-            "sed/GAL/BC03_CHAB/bc2003_lr_m62_chab_tau15_dust00.ised_ASCII"
-        ]
+            "sed/GAL/BC03_CHAB/bc2003_lr_m62_chab_tau15_dust00.ised_ASCII",
+        ],
     )
 
     sedlib = lp.Sedtolib(config_keymap=keymap)
@@ -264,9 +265,9 @@ def test_physicalpara_bc03():
 
     photz.fit_onesource(src)
     print("Done with fit")
-    assert np.isclose(src.zmin[0], 0.40)
-    assert np.isclose(src.dmmin[0], 1.0000e10, atol=1e-04)
-    assert np.isclose(src.imasmin[0], 2)
+    assert src.zmin[0] == 0.40
+    assert src.dmmin[0] == pytest.approx(1.0000e10, 1.0e5)
+    assert src.imasmin[0] == 2
     # Low chi2 since no noise and predicted mag in input
     assert src.chimin[0] < 1.0e-2
 
