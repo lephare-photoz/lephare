@@ -1617,8 +1617,8 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
 
   vector<size_t> valid;
   if (!zfix) {
-      valid.reserve(fullLib.size());
-      for (size_t i=0; i<fullLib.size(); ++i) valid.push_back(i);
+    valid.reserve(fullLib.size());
+    for (size_t i = 0; i < fullLib.size(); ++i) valid.push_back(i);
   }
 
   unsigned int nobj = 0;
@@ -1634,7 +1634,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
     oneObj->setPriors(magabsB, magabsF);
     // If ZFIX=YES select the templates with the closest redshift to zs,
     // in order to save time.
-     if (zfix) {
+    if (zfix) {
       valid = validLib(oneObj->zs);
     }
     // Core of the program: compute the chi2
@@ -1794,7 +1794,7 @@ void PhotoZ::fit_onesource(onesource &src) {
     valid = validLib(src.zs);
   } else {
     valid.reserve(fullLib.size());
-    for (size_t i=0; i<fullLib.size(); ++i) valid.push_back(i);
+    for (size_t i = 0; i < fullLib.size(); ++i) valid.push_back(i);
   }
   // Core of the program: compute the chi2
   src.fit(lightLib, flux, valid, funz0, bp);
@@ -1821,7 +1821,7 @@ void PhotoZ::uncertainties_onesource(onesource &src) {
     valid = validLib(src.zs);
   } else {
     valid.reserve(fullLib.size());
-    for (size_t i=0; i<fullLib.size(); ++i) valid.push_back(i);
+    for (size_t i = 0; i < fullLib.size(); ++i) valid.push_back(i);
   }
 
   // Generate the marginalized PDF (z+physical parameters) from the chi2

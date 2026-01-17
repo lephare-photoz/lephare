@@ -215,6 +215,9 @@ void SEDLib<T>::open_output_files() {
       throw invalid_argument("Can't open phys file of the SED library in " +
                              physFile);
     }
+    // header
+    sphysOut << "# age luv lopt lnir  ltir mass  sfr  zmet  tau  d4000 qi"
+             << endl;
   }
 }
 
