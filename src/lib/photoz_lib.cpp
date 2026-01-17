@@ -276,9 +276,6 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   if (fltREF > 0) {
     fltREF--;
   }
-  // Decide if the uncertainties on the rest-frame colors should be analysed
-  colAnalysis = ((fltColRF[0] >= 0) && (fltColRF[1] >= 0) &&
-                 (fltColRF[2] >= 0) && (fltColRF[3] >= 0) && (fltREF >= 0));
 
   /*
     INFO PARAMETERS ON SCREEN AND DOC
@@ -405,8 +402,9 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   // we need to define a zgrid singleton in case zphota ends up
   // running with only STAR templates.
-  if (gridz.empty()) {
+  if (gridz.size() < 2) {
     gridz = {0.};
+    funz0 = lcdm.distMod(0.01 / 20.);
   } else {
     // Specific case to use for distance modulus when z=0 in the grid
     funz0 = lcdm.distMod(gridz[1] / 20.);
@@ -425,6 +423,12 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   // IGM opacity tables
   opaOut = Mag::read_opa();
+
+  // Decide if the uncertainties on the rest-frame colors should be analysed
+  colAnalysis =
+      ((fltColRF[0] >= 0) && (fltColRF[1] >= 0) && (fltColRF[2] >= 0) &&
+       (fltColRF[3] >= 0) && (fltColRF[0] < imagm) && (fltColRF[1] < imagm) &&
+       (fltColRF[2] < imagm) && (fltColRF[3] < imagm) && (fltREF >= 0));
 
   /* Create a 2D array with the predicted flux,
   and a light structure of SED
