@@ -74,7 +74,6 @@ default_cosmos_config = {
     "QSO_SED": f"{lp.LEPHAREDIR}/sed/QSO/SALVATO09/AGN_MOD.list",
     "RF_COLORS": "32,4,4,13",
     "RM_DISCREPANT_BD": "500",
-    "SEL_AGE": "fake.txt",
     "SPEC_OUT": "NO",
     "STAR_FSCALE": "3.432E-09",
     "STAR_LIB": "LIB_STAR",
