@@ -266,10 +266,9 @@ def test_physicalpara_bc03():
     photz.fit_onesource(src)
     print("Done with fit")
     assert src.zmin[0] == 0.40
-    assert src.dmmin[0] == pytest.approx(1.0000e10, 1.0e5)
+    print("src.dmmin[0]: ", src.dmmin[0])
+    assert src.dmmin[0] == pytest.approx(1.0000e10, 1.0e4)
     assert src.imasmin[0] == 2
-    # Low chi2 since no noise and predicted mag in input
-    assert src.chimin[0] < 1.0e-2
 
     photz.uncertainties_onesource(src)
     print("Done with uncertainties")
@@ -277,10 +276,18 @@ def test_physicalpara_bc03():
     assert max_position == 2
     assert len(src.pdfmap[11].xaxis) == 6
     assert np.isclose(src.zs, 0.4, atol=1e-02)
-
     photz.physpara_onesource(src)
     print("Done with physical parameters")
-    assert np.isclose(src.consiz, 0.4, atol=1e-02)
+    assert src.consiz == 0.4
+
+    print(src.results)
+    print("synth mag rescaled to observations: ", src.magm)
+    print("src.chimin[0]: ", src.chimin[0])
+    print("synth mag from template libs: ", photz.fullLib[src.indmin[0]].mag)
+    print("mag pseudo-observéés: ", maglib_bc03)
+
+    # Low chi2 since no noise and predicted mag in input
+    assert src.chimin[0] < 1.0e-2
     # From the .phys
     # mass 0.0168893 ->log10(0.0168893)+10->8.227
     # sfr  6.50848e-11 -> log10(6.50848e-11)+10 -> -0.1865
