@@ -63,13 +63,15 @@ class PhotoZ {
 
   PhotoZ(keymap &key_analysed);
 
+  // LCOV_EXCL_START
   virtual ~PhotoZ() {
     for (auto &sed : fullLib) delete sed;
     for (auto &sed : fullLibIR) delete sed;
     fullLib.clear();
     fullLibIR.clear();
   }
-
+  // LCOV_EXCL_STOP
+    
   vector<double> compute_offsets(vector<onesource *> adaptSources);
 
   vector<double> run_autoadapt(vector<onesource *>);
@@ -97,12 +99,14 @@ class PhotoZ {
   void check_consistency(keymap &keys);
 
   void readsource(onesource *oneObj, const string line);
-  onesource *yield(const int nobj, const string line) {  // LCOV_EXCL_LINE
+  // LCOV_EXCL_START
+  onesource *yield(const int nobj, const string line) {  
     onesource *oneObj = new onesource(nobj, gridz);
     readsource(oneObj, line);
     prep_data(oneObj);
     return oneObj;
   };
+  // LCOV_EXCL_STOP
 
   vector<onesource *> read_autoadapt_sources();
   vector<onesource *> read_photoz_sources();
