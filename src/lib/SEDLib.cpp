@@ -302,7 +302,7 @@ vector<bool> closeAge(vector<double> ageSel, vector<double> age) {
       // difference between selection and SED ages
       diff = abs(*itj - *iti);
       // keep the one which minimize the difference
-      if (diff < dage && diff < 2.e9 && *itj >= agemin &&
+      if (diff < dage && diff < 1.e-5 && *itj >= agemin &&
           (*itj <= agemax || agemax <= 0)) {
         dage = diff;
         kmin = k;

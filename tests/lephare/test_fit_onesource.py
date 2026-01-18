@@ -192,7 +192,7 @@ def test_physicalpara_bc03():
     # Generate a test BC03 age list
     pathage_bc03 = os.path.expandvars("$LEPHAREWORK/agesBC03.txt")
     print("BC03 ages ", pathage_bc03)
-    lines = ["0.360203\n", "2\n", "7\n"]
+    lines = ["0.360203008\n", "2\n", "7\n"]
     with open(os.path.expandvars(pathage_bc03), "w") as file:
         file.writelines(lines)
 
