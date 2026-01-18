@@ -71,7 +71,7 @@ class PhotoZ {
     fullLibIR.clear();
   }
   // LCOV_EXCL_STOP
-    
+
   vector<double> compute_offsets(vector<onesource *> adaptSources);
 
   vector<double> run_autoadapt(vector<onesource *>);
@@ -100,7 +100,7 @@ class PhotoZ {
 
   void readsource(onesource *oneObj, const string line);
   // LCOV_EXCL_START
-  onesource *yield(const int nobj, const string line) {  
+  onesource *yield(const int nobj, const string line) {
     onesource *oneObj = new onesource(nobj, gridz);
     readsource(oneObj, line);
     prep_data(oneObj);
