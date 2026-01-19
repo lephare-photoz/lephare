@@ -296,6 +296,9 @@ void SEDLib<T>::open_output_files() {
       throw invalid_argument("Can't open phys file of the SED library in " +
                              physFile);
     }
+    // header
+    sphysOut << "# age luv lopt lnir  ltir mass  sfr  zmet  tau  d4000 qi"
+             << endl;
   }
 }
 
@@ -347,7 +350,9 @@ void SEDLib<T>::read_model_list() {
   // Close the stream
   smod.close();
 
-  cout << "Number of SED in the list " << nbSED << endl;
+  cout << "Number of templates in the list " << nbSED << endl;
+  cout << "Number of SED in the list (including different ages)"
+       << allSED.size() << endl;
   // Write the documentation
   sdocOut << "NUMBER_SED " << nbSED << endl;
 }

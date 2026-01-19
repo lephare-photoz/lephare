@@ -22,6 +22,7 @@
 using namespace std;
 
 class SED;
+struct SEDlight;
 
 static vector<string> phys_par_names = {"AGE",  "LDUST", "LIR",  "MASS", "SFR",
                                         "SSFR", "COL1",  "COL2", "MREF"};
@@ -185,7 +186,7 @@ class onesource {
   void rescale_flux_errors(const vector<double> min_err,
                            const vector<double> fac_err);
 
-  void fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
+  void fit(SEDlight &lightLib, const vector<vector<double>> &flux,
            const vector<size_t> &valid, const double &funz0,
            const array<int, 2> &bp);
   void fitIR(vector<SED *> &fulllib, const vector<vector<double>> &flux,
@@ -193,7 +194,7 @@ class onesource {
              const string fit_frsc, cosmo lcdm);
   double nzprior(const double luv, const double lnir, const double reds,
                  const array<int, 2> bp);
-  void rm_discrepant(vector<SED *> &fulllib, const vector<vector<double>> &flux,
+  void rm_discrepant(SEDlight &lightLib, const vector<vector<double>> &flux,
                      const vector<size_t> &valid, const double funz0,
                      const array<int, 2> bp, double thresholdChi2);
   /*! Write output in the lephare ascii format
@@ -225,10 +226,10 @@ class onesource {
   void interp(const bool zfix, const bool zintp, const cosmo &lcdm);
   void uncertaintiesMin();
   void uncertaintiesBay();
-  void secondpeak(vector<SED *> &fulllib, const double dz_win,
+  void secondpeak(SEDlight &lightLib, const double dz_win,
                   const double min_thres);
-  void generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
-                   const vector<int> fltColRF, int fltREF, const bool zfix);
+  void generatePDF(SEDlight &lightLib, const vector<size_t> &va,
+                   const bool colAnalysis, const bool zfix);
   void generatePDF_IR(vector<SED *> &fulllib);
   void mode();
   void interp_lib(vector<SED *> &fulllib, const int imagm, cosmo lcdm);
@@ -244,7 +245,7 @@ class onesource {
    * participating to the fit.
    * @param fulllib : the library of SED objects.
    */
-  void writeFullChi(const vector<SED *> &fulllib);
+  void writeFullChi(const SEDlight &lightLib);
   void computePredMag(vector<SED *> &fulllib, cosmo lcdm, vector<opa> opaAll,
                       vector<flt> allFltAdd);
   void computePredAbsMag(vector<SED *> &fulllib, cosmo lcdm, vector<opa> opaAll,

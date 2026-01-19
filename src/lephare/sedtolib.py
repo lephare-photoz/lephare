@@ -65,7 +65,6 @@ class Sedtolib(Runner):
         """
 
         super().run(**kwargs)
-
         if self.typ[0] == "G":
             sed_library = GalSEDLib(self.keymap, self.config, self.typ)
         elif self.typ[0] == "Q":

@@ -243,6 +243,9 @@ PYBIND11_MODULE(_lephare, mod) {
   // other option is getter to ensure that it is readonly:
   // mod.def("ga_HeI_val", [] {return ga_HeI_val;});
 
+  // py::class_<SEDlight>(mod, "SEDlight")
+  //     .def(py::init<>());  // Constructeur par défaut
+
   py::class_<StarSED, SED>(mod, "StarSED")
       .def(py::init<const SED &>())
       .def(py::init<const StarSED &>())
@@ -341,6 +344,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("fluxIR", &PhotoZ::fluxIR)
       .def_readonly("imagm", &PhotoZ::imagm)
       .def_readonly("fullLib", &PhotoZ::fullLib)
+      //.def_readonly("lightLib", &PhotoZ::lightLib)
       .def_readonly("zLib", &PhotoZ::zLib)
       .def_readonly("flux", &PhotoZ::flux)
       .def_readonly("fullLibIR", &PhotoZ::fullLibIR)
@@ -359,6 +363,10 @@ PYBIND11_MODULE(_lephare, mod) {
            static_cast<void (PhotoZ::*)(onesource *)>(&PhotoZ::prep_data))
       .def("run_autoadapt", &PhotoZ::run_autoadapt)
       .def("run_photoz", &PhotoZ::run_photoz)
+      .def("fit_onesource", &PhotoZ::fit_onesource)
+      .def("uncertainties_onesource", &PhotoZ::uncertainties_onesource)
+      .def("physpara_onesource", &PhotoZ::physpara_onesource)
+      .def("besttemplate_onesource", &PhotoZ::besttemplate_onesource)
       .def("write_outputs", &PhotoZ::write_outputs)
       .def("validLib", &PhotoZ::validLib)
       .def("compute_offsets", &PhotoZ::compute_offsets);
@@ -454,8 +462,8 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("indminIR", &onesource::indminIR)
       .def_readonly("imasmin", &onesource::imasmin)
       .def_readonly("imasminIR", &onesource::imasmin)
-      .def_readonly("imasmin", &onesource::imasmin)
       .def_readonly("agemed", &onesource::agemed)
+      .def_readonly("ebvmed", &onesource::ebvmed)
       .def_readonly("Ldustmed", &onesource::Ldustmed)
       .def_readonly("LIRmed", &onesource::LIRmed)
       .def_readonly("massmed", &onesource::massmed)

@@ -457,4 +457,39 @@ class StarSED : public SED {
   void readMagBin(ifstream &ins);
 };
 
+/*! \brief Structure with a light SED vector
+ *
+ * This structure is a light version of the class SED.
+ * It propose a light version to be used in fit
+ */
+struct SEDlight {
+  vector<object_type> nlib;
+  vector<int> index, nummod, extlawId, index_z0;
+  vector<double> red, chi2, dm, luv, lopt, lnir, mag0;
+  vector<double> ebv, lgage, lgmass, lgsfr, lgssfr, ltir;
+  vector<array<double, 3>> colRF;
+
+  void push_sed(SED const &src, const array<double, 3> &colRFin) {
+    nlib.push_back(src.nlib);
+    index.push_back(src.index);
+    nummod.push_back(src.nummod);
+    red.push_back(src.red);
+    chi2.push_back(src.chi2);
+    dm.push_back(src.dm);
+    luv.push_back(src.luv);
+    lopt.push_back(src.lopt);
+    lnir.push_back(src.lnir);
+    ltir.push_back(src.ltir);
+    mag0.push_back(src.mag0);
+    ebv.push_back(src.ebv);
+    extlawId.push_back(src.extlawId);
+    index_z0.push_back(src.index_z0);
+    lgage.push_back(LOG10D(src.age));
+    lgmass.push_back(LOG10D(src.mass));
+    lgsfr.push_back(LOG10D(src.sfr));
+    lgssfr.push_back(LOG10D(src.ssfr));
+    colRF.push_back(colRFin);
+  }
+};
+
 #endif
