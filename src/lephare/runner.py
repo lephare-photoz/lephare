@@ -189,7 +189,7 @@ class Runner:
             self.typ = kwargs.pop("typ", self.typ)
             self.typ = self.typ.upper()
         for k, v in kwargs.items():
-            if k.upper() in self.keymap:
+            if k.upper() in self.config_keys:
                 self.keymap[k.upper()] = keyword(k.upper(), str(v))
 
     def end(self):
