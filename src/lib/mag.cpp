@@ -153,7 +153,7 @@ void Mag::open_files() {
     switch (object) {
       case object_type::GAL:
         sdatOut
-            << "# model ext_law E(B-V) L_T(IR) redshift dist_modulus age "
+            << "# model ext_law E(B-V) frac_EmLines redshift dist_modulus age "
                "N_filt magnitude[N_filt] kcorr[N_filt] em_lines_fluxes[N_filt] "
             << endl;
         break;
