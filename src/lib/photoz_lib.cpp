@@ -211,6 +211,9 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   nlibext = int(libext.size());
   // if the library is NONE, put the number of library at -1
   if (nlibext == 1 && libext[0] == "NONE") nlibext = -1;
+  // Apply a selection in rest-frame wavelength for the fit of the zphotlib
+  // library. For the moment, do it only when a FIR is in used
+  if (nlibext > 0) restrict_rf = true;
 
   // FIR_LMIN Lambda min given in micron  (um)
   fir_lmin = ((key_analysed["FIR_LMIN"]).split_double("7.0", 1))[0];
@@ -430,12 +433,6 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
        (fltColRF[3] >= 0) && (fltColRF[0] < imagm) && (fltColRF[1] < imagm) &&
        (fltColRF[2] < imagm) && (fltColRF[3] < imagm) && (fltREF >= 0));
 
-  // Apply a selection in rest-frame wavelength for the fit of the zphotlib
-  // library. For the moment, do it only when a FIR is in used, using lir_min as
-  // limit It could be extended to lambda ranges to be avoided on the long term
-  double restrict_max = fir_lmin;
-  if (nlibext > 0) restrict_rf = true;
-
   /* Create a 2D array with the predicted flux,
   and a light structure of SED
   Done to improve the performance in the fit*/
@@ -471,10 +468,10 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
     double redin = fullLib[i]->red;
     // Loop over the filters
     for (size_t k = 0; k < allFilters.size(); k++) {
-      flux[i][k] = pow(10., -0.4 * (fullLib[i]->mag[k] + 48.6));
+      flux[i][k] = mag2flux(fullLib[i]->mag[k]);
       // Switch the predicted flux at -1 to dismiss the band in the chi2
       // computation
-      if (restrict_rf && (allFilters[k].lmean / (1 + redin)) > restrict_max)
+      if (restrict_rf && (allFilters[k].lmean / (1 + redin)) > fir_lmin)
         flux[i][k] = -1.;
     }
     // create a vector with the redshift of the library

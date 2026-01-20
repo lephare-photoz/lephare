@@ -398,12 +398,11 @@ void onesource::fit(SEDlight &lightLib, const vector<vector<double>> &flux,
       double avmago = 0., avmagt = 0.;
       double dmloc = -999.;
       for (size_t k = 0; k < imagm; k++) {
-        double fluxin = flux[i][k];
         // Not use negative  predicted flux (restrict RF lambda range)
-        if (!(restrict && fluxin < 0)) {
-          avmago += fluxin * abinvsabSq[k];
-          avmagt += fluxin * fluxin * invsabSq[k];
-        }
+        double fluxin = flux[i][k] < 0 &&restrict ? 0 : flux[i][k];
+
+        avmago += fluxin * abinvsabSq[k];
+        avmagt += fluxin * fluxin * invsabSq[k];
       }
       // Normalisation
       if (avmagt > 0) dmloc = avmago / avmagt;
@@ -412,10 +411,10 @@ void onesource::fit(SEDlight &lightLib, const vector<vector<double>> &flux,
       double chi2loc = 0;
       for (size_t k = 0; k < imagm; k++) {
         // Not use negative  predicted flux (restrict RF lambda range)
-        if (!(restrict && flux[i][k] < 0)) {
-          double inter = s2n[k] - dmloc * flux[i][k] * invsab[k];
-          chi2loc += inter * inter;
-        }
+        double inter = flux[i][k] < 0 &&restrict
+                           ? 0
+                           : s2n[k] - dmloc * flux[i][k] * invsab[k];
+        chi2loc += inter * inter;
       }
 
       // Upper-limits. Check first if some bands have upper-limits, before
