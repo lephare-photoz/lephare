@@ -270,16 +270,16 @@ void onesource::substellar(const bool substar, vector<flt> allFilters) {
     // Loop over each filter
     for (size_t k = 0; k < ab.size(); k++) {
       // Substract the predicted flux to the observed ones, only for
-      // lambda_rf>25000 Check that the filter can be used for that
+      // lambda_rf<25000 Check that the filter can be used for that
       if (busfir[k] == 1 && magm[k] > 0 && ab[k] > 0 &&
           allFilters[k].lmean / (1 + consiz) < 25.) {
         fluxMod = mag2flux(magm[k]);
 
         // Check that the observed flux is larger than the predicted one
-        if (((ab[k] - fluxMod) > 0) && sab[k] > 0) {
+        if (((ab[k] - fluxMod) >= 0) && sab[k] > 0) {
           abIR[k] = ab[k] - fluxMod;
           sabIR[k] = sqrt(pow(sab[k], 2.) + pow(fluxMod, 2.));
-        } else if (((ab[k] - fluxMod) <= 0) && sab[k] > 0) {
+        } else if (((ab[k] - fluxMod) < 0) && sab[k] > 0) {
           abIR[k] = sab[k];
           sabIR[k] = sqrt(pow(sab[k], 2.) + pow(fluxMod, 2.));
         } else {
@@ -341,7 +341,7 @@ void onesource::rescale_flux_errors(const vector<double> min_err,
  */
 void onesource::fit(SEDlight &lightLib, const vector<vector<double>> &flux,
                     const vector<size_t> &va, const double &funz0,
-                    const array<int, 2> &bp) {
+                    const array<int, 2> &bp, bool restrict) {
   int number_threads = 1, thread_id = 0;
   size_t imagm = ab.size();
 
@@ -394,6 +394,18 @@ void onesource::fit(SEDlight &lightLib, const vector<vector<double>> &flux,
       // index to be considered because of ZFIX=YES
       size_t i = va[v];
 
+      // Not use the band in the chi2 computation if predicted flux negative
+      if (restrict) {
+        for (size_t k = 0; k < imagm; k++) {
+          if (flux[i][k] < 0) {
+            s2n[k] = 0.;
+            invsab[k] = 0.;
+            abinvsabSq[k] = 0.;
+            invsabSq[k] = 0.;
+          }
+        }
+      }
+
       // Measurement of scaling factor dm only with (fobs>flim), dchi2/ddm = 0
       double avmago = 0., avmagt = 0.;
       double dmloc = -999.;
@@ -422,9 +434,9 @@ void onesource::fit(SEDlight &lightLib, const vector<vector<double>> &flux,
       }
 
       // Model rejection based on prior
-      // Abs mag rejection
       double reds = lightLib.red[i];
       int libtype = lightLib.nlib[i];
+      // Abs mag rejection
       // Abs Magnitude from model @ z=0 for rejection for galaxies and AGN
       if ((mabsGALprior && libtype == 0) || (mabsAGNprior && libtype == 1)) {
         // predicted magnitudes within the babs filter renormalized by the
@@ -620,7 +632,8 @@ double onesource::nzprior(const double luv, const double lnir,
 void onesource::rm_discrepant(SEDlight &lightLib,
                               const vector<vector<double>> &flux,
                               const vector<size_t> &va, const double funz0,
-                              const array<int, 2> bp, double thresholdChi2) {
+                              const array<int, 2> bp, double thresholdChi2,
+                              bool restrict) {
   size_t imagm = busnorma.size();
   double newmin, improvedChi2;
   // Start with the best chi2 among the libraries
@@ -638,7 +651,7 @@ void onesource::rm_discrepant(SEDlight &lightLib,
       if (busnorma[k] == 1) {
         // Turn the filt off and redo the fit
         busnorma[k] = 0;
-        this->fit(lightLib, flux, va, funz0, bp);
+        this->fit(lightLib, flux, va, funz0, bp, restrict);
         newmin = min({chimin[0], chimin[1], chimin[2]});
         // if the chi2 has been improved, keep the best chi2, and keep the
         // disable band index
@@ -652,11 +665,11 @@ void onesource::rm_discrepant(SEDlight &lightLib,
     if (flDis >= 0) {
       // redo the fit without the disable band
       busnorma[flDis] = 0;
-      this->fit(lightLib, flux, va, funz0, bp);
+      this->fit(lightLib, flux, va, funz0, bp, restrict);
       newmin = min({chimin[0], chimin[1], chimin[2]});
       // One band has been removed in the fit
       nbused--;
-      cout << "Source " << spec << " // Band " << flDis
+      cout << "Source " << spec << " // Band " << (flDis + 1)
            << " removed to improve the chi2, with old and new chi2 " << oldchi2
            << " " << newmin << endl;
       nbRemoved++;
