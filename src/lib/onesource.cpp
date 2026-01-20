@@ -341,7 +341,7 @@ void onesource::rescale_flux_errors(const vector<double> min_err,
  */
 void onesource::fit(SEDlight &lightLib, const vector<vector<double>> &flux,
                     const vector<size_t> &va, const double &funz0,
-                    const array<int, 2> &bp, bool restrict) {
+                    const array<int, 2> &bp, const bool restrict) {
   int number_threads = 1, thread_id = 0;
   size_t imagm = ab.size();
 
@@ -405,7 +405,7 @@ void onesource::fit(SEDlight &lightLib, const vector<vector<double>> &flux,
           }
         }
       }
-
+      
       // Measurement of scaling factor dm only with (fobs>flim), dchi2/ddm = 0
       double avmago = 0., avmagt = 0.;
       double dmloc = -999.;
@@ -633,7 +633,7 @@ void onesource::rm_discrepant(SEDlight &lightLib,
                               const vector<vector<double>> &flux,
                               const vector<size_t> &va, const double funz0,
                               const array<int, 2> bp, double thresholdChi2,
-                              bool restrict) {
+                              const bool restrict) {
   size_t imagm = busnorma.size();
   double newmin, improvedChi2;
   // Start with the best chi2 among the libraries

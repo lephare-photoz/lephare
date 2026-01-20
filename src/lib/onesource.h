@@ -188,7 +188,7 @@ class onesource {
 
   void fit(SEDlight &lightLib, const vector<vector<double>> &flux,
            const vector<size_t> &valid, const double &funz0,
-           const array<int, 2> &bp, bool restrict);
+           const array<int, 2> &bp, const bool restrict);
   void fitIR(vector<SED *> &fulllib, const vector<vector<double>> &flux,
              const vector<size_t> &valid, const int imagm,
              const string fit_frsc, cosmo lcdm);
@@ -197,7 +197,7 @@ class onesource {
   void rm_discrepant(SEDlight &lightLib, const vector<vector<double>> &flux,
                      const vector<size_t> &valid, const double funz0,
                      const array<int, 2> bp, double thresholdChi2,
-                     bool restrict);
+                     const bool restrict);
   /*! Write output in the lephare ascii format
    * @param stout: stream object pointing to the output file
    * @param outkeywords: list of keywords to be output
