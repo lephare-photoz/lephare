@@ -394,25 +394,16 @@ void onesource::fit(SEDlight &lightLib, const vector<vector<double>> &flux,
       // index to be considered because of ZFIX=YES
       size_t i = va[v];
 
-      // Not use the band in the chi2 computation if predicted flux negative
-      if (restrict) {
-        for (size_t k = 0; k < imagm; k++) {
-          if (flux[i][k] < 0) {
-            s2n[k] = 0.;
-            invsab[k] = 0.;
-            abinvsabSq[k] = 0.;
-            invsabSq[k] = 0.;
-          }
-        }
-      }
-      
       // Measurement of scaling factor dm only with (fobs>flim), dchi2/ddm = 0
       double avmago = 0., avmagt = 0.;
       double dmloc = -999.;
       for (size_t k = 0; k < imagm; k++) {
         double fluxin = flux[i][k];
-        avmago += fluxin * abinvsabSq[k];
-        avmagt += fluxin * fluxin * invsabSq[k];
+        // Not use negative  predicted flux (restrict RF lambda range)
+        if (!(restrict && fluxin < 0)) {
+          avmago += fluxin * abinvsabSq[k];
+          avmagt += fluxin * fluxin * invsabSq[k];
+        }
       }
       // Normalisation
       if (avmagt > 0) dmloc = avmago / avmagt;
@@ -420,8 +411,11 @@ void onesource::fit(SEDlight &lightLib, const vector<vector<double>> &flux,
       // Measurement of chi^2
       double chi2loc = 0;
       for (size_t k = 0; k < imagm; k++) {
-        double inter = s2n[k] - dmloc * flux[i][k] * invsab[k];
-        chi2loc += inter * inter;
+        // Not use negative  predicted flux (restrict RF lambda range)
+        if (!(restrict && flux[i][k] < 0)) {
+          double inter = s2n[k] - dmloc * flux[i][k] * invsab[k];
+          chi2loc += inter * inter;
+        }
       }
 
       // Upper-limits. Check first if some bands have upper-limits, before
