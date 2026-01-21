@@ -135,6 +135,7 @@ void onesource::fltUsedIR(const long fir_cont, const long fir_scale,
   bscfir.clear();
   // Loop over each filter
   for (int k = 0; k < imagm; k++) {
+
     // Define if the band should be used based on the context
     if (fir_cont <= 0) {
       // if context=0 or badly define, use all bands
@@ -154,6 +155,7 @@ void onesource::fltUsedIR(const long fir_cont, const long fir_scale,
     bscfir.push_back(busfir[k]);  // same for scaling as the fit
     if (busfir[k] == 1 && fir_scale > 0)
       bscfir[k] = (CHECK_CONTEXT_BIT(fir_scale, k));
+
   }
 }
 // LCOV_EXCL_STOP
@@ -725,7 +727,7 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
         avmago += fluxin * dmcor * bscfir[k] * abinvsabSq[k];
         avmagt += fluxin * fluxin * dmcor * dmcor * bscfir[k] * invsabSq[k];
       }
-      // Check that the normalisation should be computed (if the scaling
+      // Check that the normalisation should be computed (the scaling
       // should be free)
       if (nbusIR < 1) {
         if (verbose)
@@ -2079,6 +2081,7 @@ void onesource::writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
   */
 
   // ... write Nfilt Zspec Zphot
+  stospec << fixed;
   stospec << "# Ident Zspec Zphot " << endl;
   stospec << spec << " " << zs << " " << consiz << endl;
 
