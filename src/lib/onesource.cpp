@@ -135,7 +135,6 @@ void onesource::fltUsedIR(const long fir_cont, const long fir_scale,
   bscfir.clear();
   // Loop over each filter
   for (int k = 0; k < imagm; k++) {
-
     // Define if the band should be used based on the context
     if (fir_cont <= 0) {
       // if context=0 or badly define, use all bands
@@ -155,7 +154,6 @@ void onesource::fltUsedIR(const long fir_cont, const long fir_scale,
     bscfir.push_back(busfir[k]);  // same for scaling as the fit
     if (busfir[k] == 1 && fir_scale > 0)
       bscfir[k] = (CHECK_CONTEXT_BIT(fir_scale, k));
-
   }
 }
 // LCOV_EXCL_STOP
