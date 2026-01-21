@@ -270,7 +270,8 @@ void onesource::substellar(const bool substar, vector<flt> allFilters) {
     // Loop over each filter
     for (size_t k = 0; k < ab.size(); k++) {
       // Substract the predicted flux to the observed ones, only for
-      // lambda_rf<250000 angstrom Check that the filter can be used for that
+      // lambda_rf<250000 angstrom. Stellar continuum don't contribute
+      // at larger wavelength
       if (busfir[k] == 1 && magm[k] > 0 && ab[k] > 0 &&
           allFilters[k].lmean / (1 + consiz) < 250000.) {
         fluxMod = mag2flux(magm[k]);
