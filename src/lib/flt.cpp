@@ -493,9 +493,6 @@ void write_output_filter(string &filtfile, string &filtdoc,
   // Loop over all the filters
   for (vector<flt>::iterator it = vecFlt.begin(); it < vecFlt.end(); ++it) {
     // derive filter properties
-    // double lambm = (it->lambdaMean()) / 10000.;
-    // double lambeff = (it->lambdaEff()) / 10000.;
-    // double wid = ((it->width()) / 10000.);
     double lambm = (it->lambdaMean());
     double lambeff = (it->lambdaEff());
     double wid = ((it->width()));
