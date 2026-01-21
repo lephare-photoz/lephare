@@ -22,11 +22,12 @@ class PhotoZ {
   keymap keys;
   unsigned int rowmin, rowmax;
   int cat_fmt, fl_auto, method, babs;
+  size_t nlibext;
   array<int, 2> bp;
   long gbcont, contforb, bdscal;
   double funz0, adzmin, adzmax, auto_thresmin, auto_thresmax, min_thres, dz_win;
   double fir_lmin, fir_cont, fir_scale;
-  bool verbose;
+  bool verbose, restrict_rf = false;
   array<double, 2> magabsB, magabsF, zrange, ebvrange;
   bool outchi,  /// Whether or not to output th chi2 values in ascii
       zintp,    /// Whether or not to interpolate the z solution from the grid

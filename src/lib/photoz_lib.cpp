@@ -208,9 +208,12 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   // FIR_LIB name of the library in IR
   vector<string> libext = (key_analysed["FIR_LIB"]).split_string("NONE", -1);
-  int nlibext = int(libext.size());
+  nlibext = libext.size();
   // if the library is NONE, put the number of library at -1
-  if (nlibext == 1 && libext[0] == "NONE") nlibext = -1;
+  if (nlibext == 1 && libext[0] == "NONE") nlibext = 0;
+  // Apply a selection in rest-frame wavelength for the fit of the zphotlib
+  // library. For the moment, do it only when a FIR is in used
+  if (nlibext > 0) restrict_rf = true;
 
   // FIR_LMIN Lambda min given in micron  (um)
   fir_lmin = ((key_analysed["FIR_LMIN"]).split_double("7.0", 1))[0];
@@ -295,7 +298,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   };
   outputHeader += '\n';
   outputHeader += "# FIR_LIB                : ";
-  for (int k = 0; k < nlibext; k++) {
+  for (size_t k = 0; k < nlibext; k++) {
     outputHeader += libext[k] + ' ';
   };
   outputHeader += '\n';
@@ -394,11 +397,11 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   int indFIR = 0, nummodpreFIR[3];
 
   // Infrared library
-  for (int j = nlibext - 1; j >= 0; j--) {
-    read_lib(fullLibIR, indFIR, nummodpreFIR, libext[j], filtNameFIR, emMod,
+  for (size_t j = nlibext; j > 0; j--) {
+    read_lib(fullLibIR, indFIR, nummodpreFIR, libext[j - 1], filtNameFIR, emMod,
              babs);
   }
-  cout << "Read filt " << endl;
+  cout << "Done reading the FIR lib " << endl;
 
   // we need to define a zgrid singleton in case zphota ends up
   // running with only STAR templates.
@@ -462,12 +465,17 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 #endif
   // Initialize the chi2
   for (size_t i = 0; i < fullLib.size(); i++) {
+    double redin = fullLib[i]->red;
     // Loop over the filters
     for (size_t k = 0; k < allFilters.size(); k++) {
-      flux[i][k] = pow(10., -0.4 * (fullLib[i]->mag[k] + 48.6));
+      flux[i][k] = mag2flux(fullLib[i]->mag[k]);
+      // Switch the predicted flux at -1 to dismiss the band in the chi2
+      // computation
+      if (restrict_rf && (allFilters[k].lmean / (1 + redin)) > fir_lmin)
+        flux[i][k] = -1.;
     }
     // create a vector with the redshift of the library
-    zLib[i] = fullLib[i]->red;
+    zLib[i] = redin;
   }
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
@@ -1088,7 +1096,7 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource *> adaptSources) {
         // Fit the source at the spec-z value, using only the template with
         // compatible redshift to zs.
         auto valid = validLib(oneObj->zs);
-        oneObj->fit(lightLib, flux, valid, funz0, bp);
+        oneObj->fit(lightLib, flux, valid, funz0, bp, restrict_rf);
 
         // Interpolation of the predicted magnitudes, scaling at zs, checking
         // first that the fit was sucessfull
@@ -1561,11 +1569,6 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
   vector<double> limits_cut =
       (keys["LIMITS_MAPP_CUT"]).split_double("90.", nzbin);
 
-  // FIR_LIB name of the library in IR
-  vector<string> libext = (keys["FIR_LIB"]).split_string("NONE", -1);
-  int nlibext = int(libext.size());
-  // if the library is NONE, put the number of library at -1
-  if (nlibext == 1 && libext[0] == "NONE") nlibext = -1;
   // FIR_LMIN Lambda min given in micron  (um)
   double fir_lmin = ((keys["FIR_LMIN"]).split_double("7.0", 1))[0];
   // FIR_CONT context for the far-IR
@@ -1642,10 +1645,11 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
       valid = validLib(oneObj->zs);
     }
     // Core of the program: compute the chi2
-    oneObj->fit(lightLib, flux, valid, funz0, bp);
+    oneObj->fit(lightLib, flux, valid, funz0, bp, restrict_rf);
     // Try to remove some bands to improve the chi2, only as long as the chi2 is
     // above a threshold
-    oneObj->rm_discrepant(lightLib, flux, valid, funz0, bp, thresholdChi2);
+    oneObj->rm_discrepant(lightLib, flux, valid, funz0, bp, thresholdChi2,
+                          restrict_rf);
     // Generate the marginalized PDF (z+physical parameters) from the chi2
     // stored in each SED
     oneObj->generatePDF(lightLib, valid, colAnalysis, zfix);
@@ -1673,7 +1677,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
       // Select the index of the templates that have a redshift closest to zgmed
       // We only work on GAL solutions here
       auto validfix = validLib(oneObj->zgmed[0]);
-      oneObj->fit(lightLib, flux, validfix, funz0, bp);
+      oneObj->fit(lightLib, flux, validfix, funz0, bp, restrict_rf);
     } else {
       oneObj->consiz = oneObj->zmin[0];
     }
@@ -1801,10 +1805,11 @@ void PhotoZ::fit_onesource(onesource &src) {
     for (size_t i = 0; i < fullLib.size(); ++i) valid.push_back(i);
   }
   // Core of the program: compute the chi2
-  src.fit(lightLib, flux, valid, funz0, bp);
+  src.fit(lightLib, flux, valid, funz0, bp, restrict_rf);
   // Try to remove some bands to improve the chi2, only as long as the chi2 is
   // above a threshold
-  src.rm_discrepant(lightLib, flux, valid, funz0, bp, thresholdChi2);
+  src.rm_discrepant(lightLib, flux, valid, funz0, bp, thresholdChi2,
+                    restrict_rf);
 
   return;
 }
@@ -1882,11 +1887,6 @@ void PhotoZ::physpara_onesource(onesource &src) {
       imagm, gridz, fullLib, method, magabscont, bapp, bappOp, zbmin, zbmax);
   vector<vector<double>> maxkcol = maxkcolor(gridz, fullLib, goodFlt);
 
-  // FIR_LIB name of the library in IR
-  vector<string> libext = (keys["FIR_LIB"]).split_string("NONE", -1);
-  int nlibext = int(libext.size());
-  // if the library is NONE, put the number of library at -1
-  if (nlibext == 1 && libext[0] == "NONE") nlibext = -1;
   // FIR_LMIN Lambda min given in micron  (um)
   double fir_lmin = ((keys["FIR_LMIN"]).split_double("7.0", 1))[0];
   // FIR_CONT context for the far-IR
@@ -1913,7 +1913,7 @@ void PhotoZ::physpara_onesource(onesource &src) {
     // Select the index of the templates that have a redshift closest to zgmed
     // We only work on GAL solutions here
     auto valid = validLib(src.zgmed[0]);
-    src.fit(lightLib, flux, valid, funz0, bp);
+    src.fit(lightLib, flux, valid, funz0, bp, restrict_rf);
   } else {
     src.consiz = src.zmin[0];
   }
