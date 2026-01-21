@@ -21,7 +21,8 @@ class PhotoZ {
  private:
   keymap keys;
   unsigned int rowmin, rowmax;
-  int cat_fmt, fl_auto, method, babs, nlibext;
+  int cat_fmt, fl_auto, method, babs;
+  size_t nlibext;
   array<int, 2> bp;
   long gbcont, contforb, bdscal;
   double funz0, adzmin, adzmax, auto_thresmin, auto_thresmax, min_thres, dz_win;

@@ -208,9 +208,9 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   // FIR_LIB name of the library in IR
   vector<string> libext = (key_analysed["FIR_LIB"]).split_string("NONE", -1);
-  nlibext = int(libext.size());
+  nlibext = libext.size();
   // if the library is NONE, put the number of library at -1
-  if (nlibext == 1 && libext[0] == "NONE") nlibext = -1;
+  if (nlibext == 1 && libext[0] == "NONE") nlibext = 0;
   // Apply a selection in rest-frame wavelength for the fit of the zphotlib
   // library. For the moment, do it only when a FIR is in used
   if (nlibext > 0) restrict_rf = true;
@@ -298,7 +298,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   };
   outputHeader += '\n';
   outputHeader += "# FIR_LIB                : ";
-  for (int k = 0; k < nlibext; k++) {
+  for (size_t k = 0; k < nlibext; k++) {
     outputHeader += libext[k] + ' ';
   };
   outputHeader += '\n';
@@ -397,7 +397,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   int indFIR = 0, nummodpreFIR[3];
 
   // Infrared library
-  for (int j = nlibext - 1; j >= 0; j--) {
+  for (size_t j = nlibext - 1; j >= 0; j--) {
     read_lib(fullLibIR, indFIR, nummodpreFIR, libext[j], filtNameFIR, emMod,
              babs);
   }
