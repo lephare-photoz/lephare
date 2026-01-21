@@ -397,11 +397,11 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   int indFIR = 0, nummodpreFIR[3];
 
   // Infrared library
-  for (size_t j = nlibext - 1; j >= 0; j--) {
-    read_lib(fullLibIR, indFIR, nummodpreFIR, libext[j], filtNameFIR, emMod,
+  for (size_t j = nlibext; j > 0; j--) {
+    read_lib(fullLibIR, indFIR, nummodpreFIR, libext[j - 1], filtNameFIR, emMod,
              babs);
   }
-  cout << "Read filt " << endl;
+  cout << "Done reading the FIR lib " << endl;
 
   // we need to define a zgrid singleton in case zphota ends up
   // running with only STAR templates.
