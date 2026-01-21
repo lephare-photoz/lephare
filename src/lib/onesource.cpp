@@ -270,9 +270,10 @@ void onesource::substellar(const bool substar, vector<flt> allFilters) {
     // Loop over each filter
     for (size_t k = 0; k < ab.size(); k++) {
       // Substract the predicted flux to the observed ones, only for
-      // lambda_rf<25000 Check that the filter can be used for that
+      // lambda_rf<250000 angstrom. Stellar continuum don't contribute
+      // at larger wavelength
       if (busfir[k] == 1 && magm[k] > 0 && ab[k] > 0 &&
-          allFilters[k].lmean / (1 + consiz) < 25.) {
+          allFilters[k].lmean / (1 + consiz) < 250000.) {
         fluxMod = mag2flux(magm[k]);
 
         // Check that the observed flux is larger than the predicted one
@@ -2036,9 +2037,6 @@ void onesource::writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
     if (maxl < (allflt[k]).lmean + 2 * (allflt[k]).dwidth)
       maxl = (allflt[k]).lmean + 2 * (allflt[k]).dwidth;
   }
-  // In angstrom
-  minl = minl * 10000.;
-  maxl = maxl * 10000.;
 
   /*
     GALAXY CASE
@@ -2156,18 +2154,23 @@ void onesource::writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
 
   // write mag obs + predicted + filters (rajouter flmoy(k),flwidth(k),
   // magb(k),magfirb(k),fluxphys(k)+bused
-  for (size_t l = 0; l < mab.size(); l++)
-    stospec << setw(13) << mab[l] << setw(13) << msab[l] << setw(10)
-            << ((allflt[l]).lmean) * 10000 << setw(10)
-            << ((allflt[l]).dwidth) * 10000 << " -1 -1 -1 " << busnorma[l]
-            << " " << magm[l] << endl;
+  for (size_t l = 0; l < mab.size(); l++) {
+    stospec << fixed;
+    stospec << setw(13) << setprecision(2) << mab[l] << setw(13)
+            << setprecision(2) << msab[l] << setw(15) << setprecision(1)
+            << ((allflt[l]).lmean) << setw(15) << setprecision(1)
+            << ((allflt[l]).dwidth) << " -1 -1 -1 " << busnorma[l] << " "
+            << magm[l] << endl;
+  }
 
   // write PDF
   if (pdfmap[11].size() != pdfmap[9].vPDF.size())
     cout << " Problem PDF bay and min differ" << endl;
-  for (size_t l = 0; l < pdfmap[11].size(); l++)
-    stospec << setw(6) << pdfmap[11].xaxis[l] << setw(14) << pdfmap[11].vPDF[l]
-            << setw(14) << pdfmap[9].vPDF[l] << endl;
+  for (size_t l = 0; l < pdfmap[11].size(); l++) {
+    stospec << scientific;
+    stospec << setw(6) << setprecision(3) << pdfmap[11].xaxis[l] << setw(14)
+            << pdfmap[11].vPDF[l] << setw(14) << pdfmap[9].vPDF[l] << endl;
+  }
 
   // GAL: Loop over the full vector with the two vectors concatenated
   for (size_t k = 0; k < lG.size(); ++k)
