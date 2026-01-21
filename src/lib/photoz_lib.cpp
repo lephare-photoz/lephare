@@ -217,6 +217,8 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   // FIR_LMIN Lambda min given in micron  (um)
   fir_lmin = ((key_analysed["FIR_LMIN"]).split_double("7.0", 1))[0];
+  // Convert into angstrom, as used internally in the code
+  fir_lmin = fir_lmin * 10000.;
 
   // FIR_CONT context for the far-IR
   fir_cont = ((key_analysed["FIR_CONT"]).split_long("-1", 1))[0];
@@ -302,7 +304,8 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
     outputHeader += libext[k] + ' ';
   };
   outputHeader += '\n';
-  outputHeader += "# FIR_LMIN               : " + to_string(fir_lmin) + '\n';
+  outputHeader +=
+      "# FIR_LMIN               : " + to_string(fir_lmin / 10000.) + '\n';
   outputHeader += "# FIR_CONT               : " + to_string(fir_cont) + '\n';
   outputHeader += "# FIR_SCALE              : " + to_string(fir_scale) + '\n';
   outputHeader += "# FIR_FREESCALE          : " + fir_frsc + '\n';
@@ -1571,6 +1574,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
 
   // FIR_LMIN Lambda min given in micron  (um)
   double fir_lmin = ((keys["FIR_LMIN"]).split_double("7.0", 1))[0];
+  fir_lmin = fir_lmin * 10000.;
   // FIR_CONT context for the far-IR
   long fir_cont = ((keys["FIR_CONT"]).split_long("-1", 1))[0];
   // FIR_SCALE context of the bands used for the rescaling in IR
@@ -1889,6 +1893,7 @@ void PhotoZ::physpara_onesource(onesource &src) {
 
   // FIR_LMIN Lambda min given in micron  (um)
   double fir_lmin = ((keys["FIR_LMIN"]).split_double("7.0", 1))[0];
+  fir_lmin = fir_lmin * 10000.;
   // FIR_CONT context for the far-IR
   long fir_cont = ((keys["FIR_CONT"]).split_long("-1", 1))[0];
   // FIR_SCALE context of the bands used for the rescaling in IR

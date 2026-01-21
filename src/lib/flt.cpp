@@ -493,9 +493,12 @@ void write_output_filter(string &filtfile, string &filtdoc,
   // Loop over all the filters
   for (vector<flt>::iterator it = vecFlt.begin(); it < vecFlt.end(); ++it) {
     // derive filter properties
-    double lambm = (it->lambdaMean()) / 10000.;
-    double lambeff = (it->lambdaEff()) / 10000.;
-    double wid = ((it->width()) / 10000.);
+    // double lambm = (it->lambdaMean()) / 10000.;
+    // double lambeff = (it->lambdaEff()) / 10000.;
+    // double wid = ((it->width()) / 10000.);
+    double lambm = (it->lambdaMean());
+    double lambeff = (it->lambdaEff());
+    double wid = ((it->width()));
     double ab = (it->abcorr());
     double veg = (it->vega());
     double fcorr = (it->fcorrec());
@@ -505,9 +508,9 @@ void write_output_filter(string &filtfile, string &filtdoc,
     int sizeName = shortName.size() + 2;
     cout << setw(max(30, sizeName)) << left << shortName;
     cout << setw(8) << left << (it->id + 1);
-    cout << setw(12) << right << setprecision(4) << lambm;
-    cout << setw(12) << right << setprecision(4) << lambeff;
-    cout << setw(12) << right << setprecision(4) << wid;
+    cout << setw(12) << right << setprecision(1) << lambm;
+    cout << setw(12) << right << setprecision(1) << lambeff;
+    cout << setw(12) << right << setprecision(1) << wid;
     cout << setw(10) << right << setprecision(4) << ab;
     cout << setw(10) << right << setprecision(4) << (it->tgcorr());
     cout << setw(10) << right << setprecision(4) << veg;
@@ -517,11 +520,12 @@ void write_output_filter(string &filtfile, string &filtdoc,
     cout << setw(12) << right << setprecision(4) << fcorr << endl;
 
     // OUTPUT DOC
+    stfiltdoc << fixed;
     stfiltdoc << setw(max(30, sizeName)) << left << shortName;
     stfiltdoc << setw(8) << left << (it->id + 1);
-    stfiltdoc << setw(12) << right << setprecision(4) << lambm;
-    stfiltdoc << setw(12) << right << setprecision(4) << lambeff;
-    stfiltdoc << setw(10) << right << setprecision(4) << wid;
+    stfiltdoc << setw(12) << right << setprecision(1) << lambm;
+    stfiltdoc << setw(12) << right << setprecision(1) << lambeff;
+    stfiltdoc << setw(10) << right << setprecision(1) << wid;
     stfiltdoc << setw(10) << right << setprecision(4) << ab;
     stfiltdoc << setw(10) << right << setprecision(4) << veg;
     stfiltdoc << setw(10) << right << setprecision(4) << fcorr;
@@ -630,9 +634,9 @@ vector<flt> read_doc_filters(const string filtFile) {
   for (vector<flt>::iterator it = allFilt.begin(); it < allFilt.end(); ++it) {
     cout << setw(30) << left << (it->name).substr(((it->name).rfind("/") + 1));
     cout << setw(8) << left << it->id;
-    cout << setw(12) << right << setprecision(4) << it->lmean;
-    cout << setw(12) << right << setprecision(4) << it->leff;
-    cout << setw(12) << right << setprecision(4) << it->dwidth;
+    cout << setw(12) << right << setprecision(1) << it->lmean;
+    cout << setw(12) << right << setprecision(1) << it->leff;
+    cout << setw(12) << right << setprecision(1) << it->dwidth;
     cout << setw(10) << right << setprecision(4) << it->ab;
     cout << setw(10) << right << setprecision(4) << it->veg;
     cout << setw(8) << right << setprecision(2) << it->calibtyp;
