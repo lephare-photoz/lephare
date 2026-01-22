@@ -39,8 +39,11 @@ class PhotoZ:  # noqa: F811
         outputs = {}
         t = Table()
         for key in outkeys:
+            # Extract the type and the attribute of src to be extracted
+            # for a given keyword (first coloumn)
             typ, attr = allkeys[key]
             is_array = False
+            # In case the attribute is an array
             if "[" in attr:
                 tmp = attr.split("[")
                 attr = tmp[0]
@@ -50,11 +53,18 @@ class PhotoZ:  # noqa: F811
                     index = tmp[1][1:-2]
                 is_array = True
             outputs[key] = []
+            # Loop over all sources
             for src in srclist:
                 if is_array is False:
                     outputs[key].append(getattr(src, attr))
                 else:
-                    outputs[key].append(getattr(src, attr)[index])
+                    getarr = getattr(src, attr)
+                    # Check the value exists at [index] (otherwise put nan)
+                    try:
+                        outputs[key].append(getarr[index])
+                    except (KeyError, IndexError, TypeError):
+                        outputs[key].append(np.nan)
+            # Add all the valiues to a table
             t.add_column(Column(name=key, dtype=typ, data=outputs[key]))
         # NOW THE PDFS, IN THE SAME TABLE FOR NOW
         for typ in self.pdftype:

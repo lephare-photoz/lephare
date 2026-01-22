@@ -59,11 +59,11 @@ class onesource {
       mabs, emabs, ab_ori, mab_ori, abIR, sabIR;
   vector<int> busnorma, busul, busfir, bscfir, absfilt;
   string spec, str_inp;
-  int pos, nbused, nbul, nbusIR, indminSec, indminIR;
+  int pos, nbused, nbul, nbusIR, indminSec, indminIR, imasminIR;
   double zs, dm, consiz;
   array<double, 3> zmin, chimin, dmmin;
   array<int, 3> indmin, imasmin;
-  double zminIR, chiminIR, dmminIR, imasminIR;
+  double zminIR, chiminIR, dmminIR;
   array<double, 4>
       priorLib;  // Prior with the range in abs mag gal, abs mag AGN
 
@@ -72,8 +72,9 @@ class onesource {
   PDF PDFebv;
 
   vector<double> zgmed, zgmin, zgmode, zqmed, zqmin, zqmode;
-  vector<double> massmed, SFRmed, sSFRmed, agemed, Ldustmed, LIRmed, col1med,
-      col2med, ebvmed, Mrefmed;
+  vector<double> massmed, SFRmed, sSFRmed, agemed, Ldustmed, col1med, col2med,
+      ebvmed, Mrefmed;
+  array<double, 7> LIRmed;
 
   array<double, 65> fluxEL_SED = {0};
   double limits_zmax = 20.;
@@ -98,6 +99,7 @@ class onesource {
     indminIR = INVALID_INDEX;
     chiminIR = HIGH_CHI2;
     imasminIR = INVALID_INDEX;
+    LIRmed.fill(INVALID_PHYS);
     nbused = 0;
     pos = 0;
   }
@@ -227,6 +229,7 @@ class onesource {
   void interp(const bool zfix, const bool zintp, const cosmo &lcdm);
   void uncertaintiesMin();
   void uncertaintiesBay();
+  void uncertaintiesBayIR();
   void secondpeak(SEDlight &lightLib, const double dz_win,
                   const double min_thres);
   void generatePDF(SEDlight &lightLib, const vector<size_t> &va,
