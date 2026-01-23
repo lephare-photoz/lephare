@@ -29,7 +29,6 @@ class Mag {
   vector<string> extlaw;
   int nextlaw;
   vector<double> ebv;
-  int nebv;
   vector<int> modext;
   double dz, zmin, zmax;
   string lib, colib;

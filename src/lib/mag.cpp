@@ -54,7 +54,6 @@ Mag::Mag(keymap &key_analysed) {
   // possible E(B-V) values, multiple values are possible, number of expected
   // values unknown in advance -> -1
   ebv = (key_analysed["EB_V"]).split_double("0", -1);
-  nebv = int(ebv.size());
   // model ranges for each extinction curve
   modext = (key_analysed["MOD_EXTINC"]).split_int("0,0", nextlaw * 2);
 
@@ -366,8 +365,8 @@ void Mag::write_doc() {
     sdocOut << modext[k * 2] << "," << modext[2 * k + 1] << ",";
   };
   sdocOut << endl << "EB_V   ";
-  for (int k = 0; k < nebv; k++) {
-    sdocOut << ebv[k] << ",";
+  for (auto tmp : ebv) {
+    sdocOut << tmp << ",";
   };
   sdocOut << endl << "EM_LINES   " << emlines << endl;
   sdocOut << "LIB_ASCII   " << (outasc ? "YES" : "NO") << endl;
@@ -466,7 +465,7 @@ vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
   // Loop over each extinction law
   for (int i = 0; i < nextlaw; i++) {
     // loop over each E(B-V)
-    for (int j = 0; j < nebv; j++) {
+    for (int j = 0; j < ebv.size(); j++) {
       // loop over each fraction of emission line flux (add a dispersion in
       // emission lines as a new template)
       for (size_t l = 0; l < fracEm.size(); l++) {
@@ -635,8 +634,8 @@ void GalMag::print_info() {
     cout << modext[k * 2] << " " << modext[2 * k + 1] << " ";
   };
   cout << endl << "# EB_V   :";
-  for (int k = 0; k < nebv; k++) {
-    cout << ebv[k] << " ";
+  for (auto tmp : ebv) {
+    cout << tmp << " ";
   };
   cout << endl << "# EM_LINES   " << emlines << endl;
   cout << "# EM_DISPERSION   ";
@@ -683,8 +682,8 @@ void QSOMag::print_info() {
     cout << modext[k * 2] << " " << modext[k + 1] << " ";
   };
   cout << endl << "# EB_V   :";
-  for (int k = 0; k < nebv; k++) {
-    cout << ebv[k] << " ";
+  for (auto tmp : ebv) {
+    cout << tmp << " ";
   };
   cout << "# LIB_ASCII   " << (outasc ? "YES" : "NO") << endl;
   time_t result = time(nullptr);
@@ -744,7 +743,7 @@ vector<QSOSED> QSOMag::make_maglib(const QSOSED &oneSED) {
   // Loop over each extinction law
   for (int i = 0; i < nextlaw; i++) {
     // loop over each E(B-V)
-    for (int j = 0; j < nebv; j++) {
+    for (int j = 0; j < ebv.size(); j++) {
       // Loop over the redshift grid
       for (size_t k = 0; k < gridz.size(); k++) {
         // Select case which need to be considered (no extinction or extinction
