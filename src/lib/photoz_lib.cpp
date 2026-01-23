@@ -485,7 +485,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 #endif
   for (size_t i = 0; i < fullLibIR.size(); i++) {
     for (size_t k = 0; k < allFilters.size(); k++) {
-      fluxIR[i][k] = pow(10., -0.4 * (fullLibIR[i]->mag[k] + 48.6));
+      fluxIR[i][k] = mag2flux(fullLibIR[i]->mag[k]);
     }
     zLibIR[i] = fullLibIR[i]->red;
   }
@@ -1712,6 +1712,8 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
       oneObj->fitIR(fullLibIR, fluxIR, validfix, imagm, fir_frsc, lcdm);
       // Compute the IR luminosities
       oneObj->generatePDF_IR(fullLibIR);
+      // Uncertainties from the bayesian method, centered on the median
+      oneObj->uncertaintiesBayIR();
     }
     // compute physical quantities for the best fit GAL solution
     oneObj->compute_best_fit_physical_quantities(fullLib);
@@ -1946,6 +1948,8 @@ void PhotoZ::physpara_onesource(onesource &src) {
     src.fitIR(fullLibIR, fluxIR, valid, imagm, fir_frsc, lcdm);
     // Compute the IR luminosities
     src.generatePDF_IR(fullLibIR);
+    // Uncertainties from the bayesian method, centered on the median
+    src.uncertaintiesBayIR();
   }
 
   // compute physical quantities for the best fit GAL solution

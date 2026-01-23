@@ -827,7 +827,6 @@ void onesource::generatePDF(SEDlight &lightLib, const vector<size_t> &va,
   auto &pdfsfr = pdfmap[1];
   auto &pdfssfr = pdfmap[2];
   auto &pdfldust = pdfmap[3];
-  auto &pdflir = pdfmap[4];
   auto &pdfage = pdfmap[5];
   auto &pdfcol1 = pdfmap[6];
   auto &pdfcol2 = pdfmap[7];
@@ -1538,7 +1537,7 @@ void onesource::uncertaintiesMin() {
 }
 
 /*
- REDSHIFT UNCERTAINTIES (zmin,zmax) for 68%, 90% and 99% of the total PDF area
+ BAYESIAN UNCERTAINTIES (zmin,zmax) for 68%, 90% and 99% of the total PDF area
 */
 void onesource::uncertaintiesBay() {
   // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] / 5:["AGE"] /
@@ -1554,7 +1553,6 @@ void onesource::uncertaintiesBay() {
   col1med.push_back(pdfmap[6].levelCumu2x(0.5));
   col2med.push_back(pdfmap[7].levelCumu2x(0.5));
   Mrefmed.push_back(pdfmap[8].levelCumu2x(0.5));
-  LIRmed.push_back(pdfmap[4].levelCumu2x(0.5));
 
   // Define the confidence levels
   double confLev[3] = {68, 90, 99};
@@ -1610,11 +1608,29 @@ void onesource::uncertaintiesBay() {
     interv = pdfmap[8].credible_interval(confLev[k], Mrefmed[0]);
     Mrefmed.push_back(interv.first);
     Mrefmed.push_back(interv.second);
+  }
 
+  return;
+}
+
+/*
+ BAYESIAN UNCERTAINTIES (zmin,zmax) for 68%, 90% and 99% of the total PDF area
+ Specialized in IR fit
+*/
+void onesource::uncertaintiesBayIR() {
+  //  4:["LIR"]
+
+  LIRmed[0] = pdfmap[4].levelCumu2x(0.5);
+
+  // Define the confidence levels
+  double confLev[3] = {68, 90, 99};
+  // Add the uncertainties, lower and upper for 68%, 90% and 99%
+  pair<double, double> interv;
+  for (size_t k = 0; k < 3; k++) {
     // Estimate the 68% uncertainties for the IR luminosity
-    interv = pdfmap[5].credible_interval(confLev[k], LIRmed[0]);
-    LIRmed.push_back(interv.first);
-    LIRmed.push_back(interv.second);
+    interv = pdfmap[4].credible_interval(confLev[k], LIRmed[0]);
+    LIRmed[k * 2 + 1] = interv.first;
+    LIRmed[k * 2 + 2] = interv.second;
   }
 
   return;
