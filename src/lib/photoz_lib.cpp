@@ -162,16 +162,16 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   // NZ_PRIOR prior on N(z) based on z-VVDS: I mag (the second number is in the
   // case I band is not defined) - -1 by default number of expected values could
   // be one or two
-    bp[0] = ((key_analysed["NZ_PRIOR"]).split_int("-1", 2))[0];
-    bp[1] = ((key_analysed["NZ_PRIOR"]).split_int("-1", 2))[1];
   vector<int> test = key_analysed["NZ_PRIOR"].split_int("-1", -1);
   if (test.size() == 2) {
+    bp[0] = key_analysed["NZ_PRIOR"].split_int("-1", 2)[0];
+    bp[1] = key_analysed["NZ_PRIOR"].split_int("-1", 2)[1];
     // Shift of 1 because of the convention (1 to start in the para, 0 in the
     // array)
     bp[0] = bp[0] - 1;
     bp[1] = bp[1] - 1;
   } else {
-    bp[0] = ((key_analysed["NZ_PRIOR"]).split_int("-1", 1))[0];
+    bp[0] = key_analysed["NZ_PRIOR"].split_int("-1", 1)[0];
     bp[0] = bp[0] - 1;
     bp[1] = bp[0];
   }
@@ -226,31 +226,31 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   // FIR_FREESCALE possible free rscaling in IR, when several bands. Otherwise,
   // model imposed by its LIR
-  string fir_frsc = (key_analysed["FIR_FREESCALE"]).split_string("NO", 1)[0];
+  string fir_frsc = key_analysed["FIR_FREESCALE"].split_string("NO", 1)[0];
 
   // FIR_SUBSTELLAR remove the stellar component
   bool substar = key_analysed["FIR_SUBSTELLAR"].split_bool("NO", 1)[0];
 
   // MABS_METHOD method to compute the absolute magnitudes
-  method = ((key_analysed["MABS_METHOD"]).split_int("0", -1))[0];
+  method = key_analysed["MABS_METHOD"].split_int("0", -1)[0];
 
   // MABS_CONTEXT context for method 1
-  magabscont = (key_analysed["MABS_CONTEXT"]).split_long("0", -1);
+  magabscont = key_analysed["MABS_CONTEXT"].split_long("0", -1);
   int nmagabscont = magabscont.size();
 
   // MABS_REF reference filter in case of mag abs method 2
-  bapp = (key_analysed["MABS_REF"]).split_int("1", -1);
+  bapp = key_analysed["MABS_REF"].split_int("1", -1);
   // Need to substract one because the convention in the .para file
   // start at 1, but 0 in the code
   for (auto tmp : bapp) tmp--;
 
   // MABS_ZBIN give the redshift bins corresponding to MABS_FILT
   // MABS_FILT choose filters per redshift bin (MABS_ZBIN) if method 4
-  bappOp = (key_analysed["MABS_FILT"]).split_int("1", -1);
+  bappOp = key_analysed["MABS_FILT"].split_int("1", -1);
   int nbBinZ = int(bappOp.size());
-  zbmin = (key_analysed["MABS_ZBIN"]).split_double("0", nbBinZ + 1);
+  zbmin = key_analysed["MABS_ZBIN"].split_double("0", nbBinZ + 1);
   zbmin.erase(zbmin.end() - 1);
-  zbmax = (key_analysed["MABS_ZBIN"]).split_double("6", nbBinZ + 1);
+  zbmax = key_analysed["MABS_ZBIN"].split_double("6", nbBinZ + 1);
   zbmax.erase(zbmax.begin(), zbmax.begin() + 1);
 
   /* PDZ OUTPUT */
@@ -261,18 +261,18 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   // ADD_EMLINES
   // minimum and maximum models to add emission lines
-  emMod.push_back(((key_analysed["ADD_EMLINES"]).split_int("-9999", 2))[0]);
-  emMod.push_back(((key_analysed["ADD_EMLINES"]).split_int("-9999", 2))[1]);
+  emMod.push_back(key_analysed["ADD_EMLINES"].split_int("-9999", 2)[0]);
+  emMod.push_back(key_analysed["ADD_EMLINES"].split_int("-9999", 2)[1]);
 
   // RF_COLORS compute 2 rest-frame colors and associated errorbars
-  vector<int> fltColRF = (key_analysed["RF_COLORS"]).split_int("-1", 4);
+  vector<int> fltColRF = key_analysed["RF_COLORS"].split_int("-1", 4);
   // Need to substract one because the convention in the .para file start at 1,
   // but 0 in the code
   if (fltColRF.size() > 1) {
     for (int k = 0; k < 4; k++) fltColRF[k]--;
   }
   // M_REF compute the absolute magnitudes and associated errorbars
-  int fltREF = (key_analysed["M_REF"]).split_int("0", -1)[0];
+  int fltREF = key_analysed["M_REF"].split_int("0", -1)[0];
   // Need to substract one because the convention in the .para file start at 1,
   // but 0 in the code
   if (fltREF > 0) {
@@ -348,19 +348,19 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
                   bool2string(keys["AUTO_ADAPT"].split_bool("NO", 1)[0]) + '\n';
 
   // ADAPT_BAND selection in one band
-  fl_auto = ((key_analysed["ADAPT_BAND"]).split_int("1", 1))[0];
+  fl_auto = key_analysed["ADAPT_BAND"].split_int("1", 1)[0];
   // Need to substract one because the convention in the .para file start at 1,
   // but 0 in the code
   fl_auto--;
   outputHeader += "# ADAPT_BAND             : " + to_string(fl_auto + 1) + '\n';
   // ADAPT_LIM limit for the selection in auto-adapt
-  auto_thresmin = ((key_analysed["ADAPT_LIM"]).split_double("15", 2))[0];
-  auto_thresmax = ((key_analysed["ADAPT_LIM"]).split_double("35", 2))[1];
+  auto_thresmin = key_analysed["ADAPT_LIM"].split_double("15", 2)[0];
+  auto_thresmax = key_analysed["ADAPT_LIM"].split_double("35", 2)[1];
   outputHeader += "# ADAPT_LIM              : " + to_string(auto_thresmin) +
                   ' ' + to_string(auto_thresmax) + '\n';
   // ADAPT_ZBIN minimum and maximum redshift for the adaptation
-  adzmin = ((key_analysed["ADAPT_ZBIN"]).split_double("0.001", 2))[0];
-  adzmax = ((key_analysed["ADAPT_ZBIN"]).split_double("6", 2))[1];
+  adzmin = key_analysed["ADAPT_ZBIN"].split_double("0.001", 2)[0];
+  adzmax = key_analysed["ADAPT_ZBIN"].split_double("6", 2)[1];
   outputHeader += "# ADAPT_ZBIN             : " + to_string(adzmin) + ' ' +
                   to_string(adzmax) + '\n';
 
@@ -1861,7 +1861,7 @@ void PhotoZ::physpara_onesource(onesource &src) {
   /* Define what are the filters to be used for the absolute magnitude depending
    * on the method adopted */
   // MABS_METHOD method to compute the absolute magnitudes
-  int method = ((keys["MABS_METHOD"]).split_int("0", -1))[0];
+  int method = keys["MABS_METHOD"].split_int("0", -1)[0];
   // MABS_REF reference filter in case of mag abs method 2
   vector<int> bapp = keys["MABS_REF"].split_int("1", -1);
   // MABS_FILT choose filters per redshift bin (MABS_ZBIN) if method 4
@@ -1873,31 +1873,31 @@ void PhotoZ::physpara_onesource(onesource &src) {
   for (auto tmp : bapp) tmp--;
 
   // MABS_ZBIN give the redshift bins corresponding to MABS_FILT
-  vector<double> zbmin = (keys["MABS_ZBIN"]).split_double("0", nbBinZ + 1);
   size_t nbBinZ = bappOp.size();
+  vector<double> zbmin = keys["MABS_ZBIN"].split_double("0", nbBinZ + 1);
   zbmin.erase(zbmin.end() - 1);
-  vector<double> zbmax = (keys["MABS_ZBIN"]).split_double("6", nbBinZ + 1);
+  vector<double> zbmax = keys["MABS_ZBIN"].split_double("6", nbBinZ + 1);
   zbmax.erase(zbmax.begin(), zbmax.begin() + 1);
   // MABS_CONTEXT context for method 1
-  vector<long> magabscont = (keys["MABS_CONTEXT"]).split_long("0", -1);
+  vector<long> magabscont = keys["MABS_CONTEXT"].split_long("0", -1);
   vector<vector<int>> goodFlt = bestFilter(
       imagm, gridz, fullLib, method, magabscont, bapp, bappOp, zbmin, zbmax);
   vector<vector<double>> maxkcol = maxkcolor(gridz, fullLib, goodFlt);
 
   // FIR_LMIN Lambda min given in micron  (um)
-  double fir_lmin = ((keys["FIR_LMIN"]).split_double("7.0", 1))[0];
-  fir_lmin = fir_lmin * 10000.;
+  double fir_lmin = keys["FIR_LMIN"].split_double("7.0", 1)[0];
+  fir_lmin *= 10000.;
   // FIR_CONT context for the far-IR
-  long fir_cont = ((keys["FIR_CONT"]).split_long("-1", 1))[0];
+  long fir_cont = keys["FIR_CONT"].split_long("-1", 1)[0];
   // FIR_SCALE context of the bands used for the rescaling in IR
-  int fir_scale = ((keys["FIR_SCALE"]).split_int("-1", 1))[0];
+  int fir_scale = keys["FIR_SCALE"].split_int("-1", 1)[0];
   // FIR_FREESCALE possible free rscaling in IR, when several bands. Otherwise,
   // model imposed by its LIR
-  string fir_frsc = ((keys["FIR_FREESCALE"]).split_string("NO", 1))[0];
+  string fir_frsc = keys["FIR_FREESCALE"].split_string("NO", 1)[0];
   // FIR_SUBSTELLAR remove the stellar component
   bool substar = keys["FIR_SUBSTELLAR"].split_bool("NO", 1)[0];
   // MIN_THRES threshold to trigger the detection - 0.1 by default
-  double min_thres = ((keys["MIN_THRES"]).split_double("0.1", 1))[0];
+  double min_thres = keys["MIN_THRES"].split_double("0.1", 1)[0];
 
   // The rest of the procedure requires that a specific choice be made for the
   // redshift of GAL solutions, to be considered for computation of physical
