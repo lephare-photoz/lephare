@@ -143,7 +143,7 @@ void Mag::open_files() {
 
     sdatOut << "# Filter list: \n";
     if (allFlt.size() != 0) {
-      for (const auto f : allFlt) {
+      for (const auto &f : allFlt) {
         sdatOut << "#" << f.name << "\n";
       }
     }
@@ -365,7 +365,7 @@ void Mag::write_doc() {
     sdocOut << modext[k * 2] << "," << modext[2 * k + 1] << ",";
   };
   sdocOut << endl << "EB_V   ";
-  for (auto tmp : ebv) {
+  for (auto &tmp : ebv) {
     sdocOut << tmp << ",";
   };
   sdocOut << endl << "EM_LINES   " << emlines << endl;
@@ -634,12 +634,12 @@ void GalMag::print_info() {
     cout << modext[k * 2] << " " << modext[2 * k + 1] << " ";
   };
   cout << endl << "# EB_V   :";
-  for (auto tmp : ebv) {
+  for (auto &tmp : ebv) {
     cout << tmp << " ";
   };
   cout << endl << "# EM_LINES   " << emlines << endl;
   cout << "# EM_DISPERSION   ";
-  for (auto tmp : fracEm) {
+  for (auto &tmp : fracEm) {
     cout << tmp << ",";
   };
   cout << endl << "# LIB_ASCII   " << (outasc ? "YES" : "NO") << endl;
@@ -682,7 +682,7 @@ void QSOMag::print_info() {
     cout << modext[k * 2] << " " << modext[k + 1] << " ";
   };
   cout << endl << "# EB_V   :";
-  for (auto tmp : ebv) {
+  for (auto &tmp : ebv) {
     cout << tmp << " ";
   };
   cout << "# LIB_ASCII   " << (outasc ? "YES" : "NO") << endl;

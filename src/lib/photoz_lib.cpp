@@ -242,7 +242,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   bapp = key_analysed["MABS_REF"].split_int("1", -1);
   // Need to substract one because the convention in the .para file
   // start at 1, but 0 in the code
-  for (auto tmp : bapp) tmp--;
+  for (auto &tmp : bapp) tmp--;
 
   // MABS_ZBIN give the redshift bins corresponding to MABS_FILT
   // MABS_FILT choose filters per redshift bin (MABS_ZBIN) if method 4
@@ -308,12 +308,12 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   outputHeader += "# FIR_FREESCALE          : " + fir_frsc + '\n';
   outputHeader += "# FIR_SUBSTELLAR         : " + bool2string(substar) + '\n';
   outputHeader += "# ERR_SCALE              : ";
-  for (auto err : min_err) {
+  for (auto &err : min_err) {
     outputHeader += to_string(err) + ' ';
   };
   outputHeader += '\n';
   outputHeader += "# ERR_FACTOR             : ";
-  for (auto err : fac_err) {
+  for (auto &err : fac_err) {
     outputHeader += to_string(err) + ' ';
   };
   outputHeader += '\n';
@@ -334,12 +334,12 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   outputHeader += "# MABS_METHOD            : " + to_string(method) + '\n';
   outputHeader += "# MABS_CONTEXT           : ";
-  for (auto tmp : magabscont) {
+  for (auto &tmp : magabscont) {
     outputHeader += to_string(tmp) + ' ';
   };
   outputHeader += '\n';
   outputHeader += "# MABS_REF               : ";
-  for (auto tmp : bapp) {
+  for (auto &tmp : bapp) {
     outputHeader += to_string(tmp + 1) + ' ';
   };
   outputHeader += '\n';
@@ -1596,10 +1596,10 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
 
   // Need to substract one because the convention in the .para file start at 1,
   // but 0 in the code
-  for (auto tmp : bappOp) tmp--;
+  for (auto &tmp : bappOp) tmp--;
   // Need to substract one because the convention in the .para file start at 1,
   // but 0 in the code
-  for (auto tmp : bapp) tmp--;
+  for (auto &tmp : bapp) tmp--;
 
   // MABS_ZBIN give the redshift bins corresponding to MABS_FILT
   vector<double> zbmin = (keys["MABS_ZBIN"]).split_double("0", nbBinZ + 1);
@@ -1869,8 +1869,8 @@ void PhotoZ::physpara_onesource(onesource &src) {
 
   // Need to substract one because the convention in the .para file
   // start at 1, but 0 in the code
-  for (auto tmp : bappOp) tmp--;
-  for (auto tmp : bapp) tmp--;
+  for (auto &tmp : bappOp) tmp--;
+  for (auto &tmp : bapp) tmp--;
 
   // MABS_ZBIN give the redshift bins corresponding to MABS_FILT
   size_t nbBinZ = bappOp.size();
