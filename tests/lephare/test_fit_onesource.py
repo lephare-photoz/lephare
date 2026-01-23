@@ -565,7 +565,6 @@ def test_fit_fir():
     photz.fit_onesource(src)
     print("Done with fit")
     assert src.zmin[0] == 0.40
-    print("src.dmmin[0]: ", src.dmmin[0])
     assert src.dmmin[0] == pytest.approx(1.0000e10, 1.0e4)
     assert src.imasmin[0] == 2
 
@@ -585,7 +584,7 @@ def test_fit_fir():
     assert np.allclose(src.magm, maglib_bc03, atol=1e-3)
     # compare the original FIR flux and the one obtained after substracted the BC03 flux
     # only for the filters used in FIR
-    assert np.allclose(src.abIR[6:10], flux_dale[6:10], atol=1e-3)
+    assert np.allclose(src.abIR[6:10], flux_dale[6:10], atol=1e-30)
     # Rescaling of the FIR library (none)
     assert src.dmminIR == pytest.approx(1.0000, 1.0e4)
     # Low chi2 since no noise and predicted mag in input
@@ -601,11 +600,15 @@ def test_fit_fir():
     assert np.isclose(src.results["EBV_BEST"], 0.5, atol=1e-02)
     assert np.isclose(src.results["AGE_BEST"], 8.55654, atol=1e-02)
     assert np.isclose(src.results["EXTLAW_BEST"], 1, atol=1e-02)
+    # The LTIR from .phys is slightly different from the one announced by Dale
+    assert np.isclose(src.results["LUM_TIR_BEST"], 9.74753, atol=1e-02)
+    assert np.isclose(src.results["EXTLAW_BEST"], 1, atol=1e-02)
     assert src.massmed[1] < 8.227 < src.massmed[2]
     assert src.agemed[1] < 8.55654 < src.agemed[2]
     assert src.SFRmed[1] < -0.1865 < src.SFRmed[2]
-    # The LTIR from .phys is slightly different from the one announced by Dale
-    assert np.isclose(src.results["LUM_TIR_BEST"], 9.74753, atol=1e-02)
+    # compare the predicted magnitudes
+    assert np.isclose(src.LIRmed[0], 9.74753, atol=1e-01)
+    assert src.LIRmed[1] < 9.74753 < src.LIRmed[2]
 
     minl = 3000.0
     maxl = 200000.0
