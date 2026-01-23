@@ -639,8 +639,8 @@ void GalMag::print_info() {
   };
   cout << endl << "# EM_LINES   " << emlines << endl;
   cout << "# EM_DISPERSION   ";
-  for (size_t k = 0; k < fracEm.size(); k++) {
-    cout << fracEm[k] << ",";
+  for (auto tmp : fracEm) {
+    cout << tmp << ",";
   };
   cout << endl << "# LIB_ASCII   " << (outasc ? "YES" : "NO") << endl;
   time_t result = time(nullptr);

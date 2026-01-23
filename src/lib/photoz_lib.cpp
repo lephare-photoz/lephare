@@ -70,7 +70,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   // ZPHOTLIB values, multiple librairies are possible,
   // number of expected values unknown in advance -> -1
   colib = (key_analysed["ZPHOTLIB"]).split_string("GAL_LIB", -1);
-  int numlib = int(colib.size());
+  size_t numlib = colib.size();
 
   // PARA_OUT output parameter file - output.para default
   outpara = ((key_analysed["PARA_OUT"]).split_string("output.para", 1))[0];
@@ -90,12 +90,12 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   // ERR_SCALE Minimal uncertainties to be added in quadrature - 0.0 default
   min_err = (key_analysed["ERR_SCALE"]).split_double("0.0", -1);
-  int nerr = int(min_err.size());
+  size_t nerr = min_err.size();
 
   // ERR_FACTOR Multiply the flux uncertainties by a given factor - 1.0 default
   fac_err = ((key_analysed["ERR_FACTOR"]).split_double("1.0", -1));
-  int nfac = int(fac_err.size());
-  if ((nerr > 1) && (nfac > 1) && (nfac != nerr)) {
+  size_t nfac = fac_err.size();
+  if (nerr > 1 && nfac > 1 && nfac != nerr) {
     cout << "The number of filters in ERR_SCALE and ERR_FACTOR do not "
             "correspond."
          << endl;
@@ -162,12 +162,10 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   // NZ_PRIOR prior on N(z) based on z-VVDS: I mag (the second number is in the
   // case I band is not defined) - -1 by default number of expected values could
   // be one or two
-  vector<int> test;
-  test = (key_analysed["NZ_PRIOR"]).split_int("-1", -1);
-  int testNb = int(test.size());
-  if (testNb == 2) {
     bp[0] = ((key_analysed["NZ_PRIOR"]).split_int("-1", 2))[0];
     bp[1] = ((key_analysed["NZ_PRIOR"]).split_int("-1", 2))[1];
+  vector<int> test = key_analysed["NZ_PRIOR"].split_int("-1", -1);
+  if (test.size() == 2) {
     // Shift of 1 because of the convention (1 to start in the para, 0 in the
     // array)
     bp[0] = bp[0] - 1;
@@ -242,10 +240,9 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   // MABS_REF reference filter in case of mag abs method 2
   bapp = (key_analysed["MABS_REF"]).split_int("1", -1);
-  int nbapp = int(bapp.size());
-  // Need to substract one because the convention in the .para file start at 1,
-  // but 0 in the code
-  for (int k = 0; k < nbapp; k++) bapp[k]--;
+  // Need to substract one because the convention in the .para file
+  // start at 1, but 0 in the code
+  for (auto tmp : bapp) tmp--;
 
   // MABS_ZBIN give the redshift bins corresponding to MABS_FILT
   // MABS_FILT choose filters per redshift bin (MABS_ZBIN) if method 4
@@ -295,7 +292,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   outputHeader += "# CAT_FMT[0:MEME 1:MMEE] : " + to_string(cat_fmt) + '\n';
   outputHeader += "# CAT_MAG                : " + catmag + '\n';
   outputHeader += "# ZPHOTLIB               : ";
-  for (int k = 0; k < numlib; k++) {
+  for (size_t k = 0; k < numlib; k++) {
     outputHeader += colib[k] + ' ';
   };
   outputHeader += '\n';
@@ -311,13 +308,13 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   outputHeader += "# FIR_FREESCALE          : " + fir_frsc + '\n';
   outputHeader += "# FIR_SUBSTELLAR         : " + bool2string(substar) + '\n';
   outputHeader += "# ERR_SCALE              : ";
-  for (int k = 0; k < nerr; k++) {
-    outputHeader += to_string(min_err[k]) + ' ';
+  for (auto err : min_err) {
+    outputHeader += to_string(err) + ' ';
   };
   outputHeader += '\n';
   outputHeader += "# ERR_FACTOR             : ";
-  for (int k = 0; k < nfac; k++) {
-    outputHeader += to_string(fac_err[k]) + ' ';
+  for (auto err : fac_err) {
+    outputHeader += to_string(err) + ' ';
   };
   outputHeader += '\n';
   outputHeader += "# GLB_CONTEXT            : " + to_string(gbcont) + '\n';
@@ -337,13 +334,13 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   outputHeader += "# MABS_METHOD            : " + to_string(method) + '\n';
   outputHeader += "# MABS_CONTEXT           : ";
-  for (int k = 0; k < nmagabscont; k++) {
-    outputHeader += to_string(magabscont[k]) + ' ';
+  for (auto tmp : magabscont) {
+    outputHeader += to_string(tmp) + ' ';
   };
   outputHeader += '\n';
   outputHeader += "# MABS_REF               : ";
-  for (int k = 0; k < nbapp; k++) {
-    outputHeader += to_string(bapp[k] + 1) + ' ';
+  for (auto tmp : bapp) {
+    outputHeader += to_string(tmp + 1) + ' ';
   };
   outputHeader += '\n';
   // AUTO-ADAPT
@@ -390,8 +387,8 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   int ind = 0, nummodpre[3] = {0, 0, 0};
 
   // Open the galaxies last to keep the grid z of their library
-  for (int j = numlib - 1; j >= 0; j--) {
-    read_lib(fullLib, ind, nummodpre, colib[j], filtName, emMod, babs);
+  for (size_t j = numlib; j > 0; j--) {
+    read_lib(fullLib, ind, nummodpre, colib[j - 1], filtName, emMod, babs);
   }
   cout << "Read lib out " << endl;
 
@@ -652,8 +649,7 @@ void PhotoZ::read_lib(vector<SED *> &libFull, int &ind, int nummodpre[3],
           ind0 = oneSED->index;
           // Keep the magnitude in each band
           mag_z0.clear();
-          for (int k = 0; k < int((oneSED->mag).size()); k++)
-            mag_z0.push_back(oneSED->mag[k]);
+          for (auto mag : oneSED->mag) mag_z0.push_back(mag);
         }
         // Store the index at z=0 in the SED
         oneSED->index_z0 = ind0;
@@ -1593,7 +1589,6 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
   int method = ((keys["MABS_METHOD"]).split_int("0", -1))[0];
   // MABS_REF reference filter in case of mag abs method 2
   vector<int> bapp = (keys["MABS_REF"]).split_int("1", -1);
-  int nbapp = int(bapp.size());
 
   // MABS_FILT choose filters per redshift bin (MABS_ZBIN) if method 4
   vector<int> bappOp = (keys["MABS_FILT"]).split_int("1", -1);
@@ -1601,10 +1596,10 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
 
   // Need to substract one because the convention in the .para file start at 1,
   // but 0 in the code
-  for (int k = 0; k < nbBinZ; k++) bappOp[k]--;
+  for (auto tmp : bappOp) tmp--;
   // Need to substract one because the convention in the .para file start at 1,
   // but 0 in the code
-  for (int k = 0; k < nbapp; k++) bapp[k]--;
+  for (auto tmp : bapp) tmp--;
 
   // MABS_ZBIN give the redshift bins corresponding to MABS_FILT
   vector<double> zbmin = (keys["MABS_ZBIN"]).split_double("0", nbBinZ + 1);
@@ -1868,22 +1863,18 @@ void PhotoZ::physpara_onesource(onesource &src) {
   // MABS_METHOD method to compute the absolute magnitudes
   int method = ((keys["MABS_METHOD"]).split_int("0", -1))[0];
   // MABS_REF reference filter in case of mag abs method 2
-  vector<int> bapp = (keys["MABS_REF"]).split_int("1", -1);
-  int nbapp = int(bapp.size());
-
+  vector<int> bapp = keys["MABS_REF"].split_int("1", -1);
   // MABS_FILT choose filters per redshift bin (MABS_ZBIN) if method 4
-  vector<int> bappOp = (keys["MABS_FILT"]).split_int("1", -1);
-  int nbBinZ = int(bappOp.size());
+  vector<int> bappOp = keys["MABS_FILT"].split_int("1", -1);
 
-  // Need to substract one because the convention in the .para file start at 1,
-  // but 0 in the code
-  for (int k = 0; k < nbBinZ; k++) bappOp[k]--;
-  // Need to substract one because the convention in the .para file start at 1,
-  // but 0 in the code
-  for (int k = 0; k < nbapp; k++) bapp[k]--;
+  // Need to substract one because the convention in the .para file
+  // start at 1, but 0 in the code
+  for (auto tmp : bappOp) tmp--;
+  for (auto tmp : bapp) tmp--;
 
   // MABS_ZBIN give the redshift bins corresponding to MABS_FILT
   vector<double> zbmin = (keys["MABS_ZBIN"]).split_double("0", nbBinZ + 1);
+  size_t nbBinZ = bappOp.size();
   zbmin.erase(zbmin.end() - 1);
   vector<double> zbmax = (keys["MABS_ZBIN"]).split_double("6", nbBinZ + 1);
   zbmax.erase(zbmax.begin(), zbmax.begin() + 1);
