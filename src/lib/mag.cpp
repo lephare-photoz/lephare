@@ -203,12 +203,6 @@ void Mag::read_ext() {
     // store it into the vector of exction laws
     extAll.push_back(oneext);
   }
-  // Read the MW extinction curve and store it into the last item
-  // Do not increment nextlaw
-  ext oneext("MW_seaton.dat", nextlaw);
-  string extFile = lepharedir + "/ext/MW_seaton.dat";
-  oneext.read(extFile);
-  extAll.push_back(oneext);
 }
 
 // Function of the basis class which read the IGM opacity
@@ -460,6 +454,12 @@ vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
   // build the emission line SED. This changes the state of oneSED
   GalSED oneEm = oneSED.generateEmSED(emlines);
 
+  // Read the MW extinction curve to be applied to emission lines
+  // use extlaw.size() as a counter past the last standard extinction file
+  ext mw_ext("MW_seaton.dat", extlaw.size());
+  string mwFile = lepharedir + "/ext/MW_seaton.dat";
+  mw_ext.read(mwFile);
+
 // PARALLELIZE all the 4 loops  [Iary, 12 March 2018]
 #pragma omp parallel for ordered schedule(dynamic) collapse(4)
   // Loop over each extinction law
@@ -533,7 +533,7 @@ vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
                 oneEmInt.ebv = ebv[j];
                 oneEmInt.red = gridz[k];
                 // For the emission lines, use only the MW. Change fac_line
-                oneEmInt.apply_extinction_to_lines(ebv[j], extAll[nextlaw]);
+                oneEmInt.apply_extinction_to_lines(ebv[j], mw_ext);
                 // rescale the lines as a free parameter
                 oneEmInt.fracEm = fracEm[l];
                 oneEmInt.rescaleEmLines();
