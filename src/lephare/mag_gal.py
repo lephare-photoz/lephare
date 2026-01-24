@@ -107,10 +107,6 @@ class MagGal(Runner):
             raise KeyError("-t arg must start with G/g Q/q or S/s for Galaxy QSO and Star respectively.")
         mag.open_files()
         mag.print_info()
-        # Read dust extinction laws
-        mag.read_ext()
-        # Define the redshift grid
-        mag.def_zgrid()
         # Read B12 templates to add dust emission to BC03
         add_dust = self.keymap["ADD_DUSTEM"].split_bool("NO", 1)
         if add_dust:
