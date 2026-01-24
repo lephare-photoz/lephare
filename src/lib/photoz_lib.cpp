@@ -222,7 +222,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   fir_cont = ((key_analysed["FIR_CONT"]).split_long("-1", 1))[0];
 
   // FIR_SCALE context of the bands used for the rescaling in IR
-  fir_scale = ((key_analysed["FIR_SCALE"]).split_int("-1", 1))[0];
+  fir_scale = key_analysed["FIR_SCALE"].split_long("-1", 1)[0];
 
   // FIR_FREESCALE possible free rscaling in IR, when several bands. Otherwise,
   // model imposed by its LIR
@@ -1574,7 +1574,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
   // FIR_CONT context for the far-IR
   long fir_cont = ((keys["FIR_CONT"]).split_long("-1", 1))[0];
   // FIR_SCALE context of the bands used for the rescaling in IR
-  int fir_scale = ((keys["FIR_SCALE"]).split_int("-1", 1))[0];
+  long fir_scale = keys["FIR_SCALE"].split_long("-1", 1)[0];
   // FIR_FREESCALE possible free rscaling in IR, when several bands. Otherwise,
   // model imposed by its LIR
   string fir_frsc = ((keys["FIR_FREESCALE"]).split_string("NO", 1))[0];
@@ -1890,7 +1890,7 @@ void PhotoZ::physpara_onesource(onesource &src) {
   // FIR_CONT context for the far-IR
   long fir_cont = keys["FIR_CONT"].split_long("-1", 1)[0];
   // FIR_SCALE context of the bands used for the rescaling in IR
-  int fir_scale = keys["FIR_SCALE"].split_int("-1", 1)[0];
+  long fir_scale = keys["FIR_SCALE"].split_long("-1", 1)[0];
   // FIR_FREESCALE possible free rscaling in IR, when several bands. Otherwise,
   // model imposed by its LIR
   string fir_frsc = keys["FIR_FREESCALE"].split_string("NO", 1)[0];
