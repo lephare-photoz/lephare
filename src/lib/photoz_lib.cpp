@@ -236,7 +236,6 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   // MABS_CONTEXT context for method 1
   magabscont = key_analysed["MABS_CONTEXT"].split_long("0", -1);
-  int nmagabscont = magabscont.size();
 
   // MABS_REF reference filter in case of mag abs method 2
   bapp = key_analysed["MABS_REF"].split_int("1", -1);

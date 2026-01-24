@@ -299,6 +299,7 @@ PYBIND11_MODULE(_lephare, mod) {
        .def("close_files", &c::close_files)                \
        .def("open_opa_files", &c::open_opa_files)          \
        .def("print_info", &c::print_info)                  \
+       .def("read_ext", &c::read_ext)                      \
        .def("read_opa", &c::read_opa)                      \
        .def("read_B12", &c::read_B12)                      \
        .def("set_zgrid", &c::set_zgrid)                    \
