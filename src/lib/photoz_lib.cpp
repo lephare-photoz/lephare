@@ -69,11 +69,11 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   // ZPHOTLIB values, multiple librairies are possible,
   // number of expected values unknown in advance -> -1
-  colib = (key_analysed["ZPHOTLIB"]).split_string("GAL_LIB", -1);
+  colib = key_analysed["ZPHOTLIB"].split_string("GAL_LIB", -1);
   size_t numlib = colib.size();
 
   // PARA_OUT output parameter file - output.para default
-  outpara = key_analysed["PARA_OUT"]).split_string("output.para", 1)[0];
+  outpara = key_analysed["PARA_OUT"].split_string("output.para", 1)[0];
 
   // CAT_OUT output  file -  zphot.out default
   outf = key_analysed["CAT_OUT"].split_string("zphot.out", 1)[0];
@@ -119,8 +119,8 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
     zrange[0] = 0;
     zrange[1] = 10000;
   }
-  ebvrange[0] = keys["EBV_RANGE"]).split_double("0", 2)[0];
-  ebvrange[1] = keys["EBV_RANGE"]).split_double("10000", 2)[1];
+  ebvrange[0] = keys["EBV_RANGE"].split_double("0", 2)[0];
+  ebvrange[1] = keys["EBV_RANGE"].split_double("10000", 2)[1];
   if (ebvrange[0] < 0 || ebvrange[1] < 0) {
     ebvrange[0] = 0;
     ebvrange[1] = 10000;
