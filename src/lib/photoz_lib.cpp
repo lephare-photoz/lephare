@@ -52,18 +52,18 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   typm = key_analysed["INP_TYPE"].value;
 
   // CAT_MAG mag type AB/VEGA - AB default
-  catmag = ((key_analysed["CAT_MAG"]).split_string("AB", 1))[0];
+  catmag = key_analysed["CAT_MAG"].split_string("AB", 1)[0];
 
   // CAT_FMT format of the input file MEME/MMEE - MEME default
-  string meme = ((key_analysed["CAT_FMT"]).split_string("MEME", 1))[0];
+  string meme = key_analysed["CAT_FMT"].split_string("MEME", 1)[0];
   cat_fmt = 0;
   if (meme[1] == 'M') cat_fmt = 1;
 
   // CAT_LINE define the line range to be considered in the input catalogue
   // NOTE: commented lines are NOT considered while reading the catalogue,
   //       so this range should be intended as the number of entries, not rows
-  int rowmin_tmp = ((key_analysed["CAT_LINES"]).split_int("0", 2))[0];
-  int rowmax_tmp = ((key_analysed["CAT_LINES"]).split_int("20000000000", 2))[1];
+  int rowmin_tmp = key_analysed["CAT_LINES"].split_int("0", 2)[0];
+  int rowmax_tmp = key_analysed["CAT_LINES"].split_int("20000000000", 2)[1];
   rowmin = rowmin_tmp < 0 ? 0 : rowmin_tmp;
   rowmax = rowmax_tmp < 0 ? 2000000000 : rowmax_tmp;
 
@@ -73,10 +73,10 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   size_t numlib = colib.size();
 
   // PARA_OUT output parameter file - output.para default
-  outpara = ((key_analysed["PARA_OUT"]).split_string("output.para", 1))[0];
+  outpara = key_analysed["PARA_OUT"]).split_string("output.para", 1)[0];
 
   // CAT_OUT output  file -  zphot.out default
-  outf = ((key_analysed["CAT_OUT"]).split_string("zphot.out", 1))[0];
+  outf = key_analysed["CAT_OUT"].split_string("zphot.out", 1)[0];
 
   // Want to display the template number on the screen
   // VERBOSE output  file -  YES default
@@ -86,14 +86,14 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   // CAT_TYPE Type of catalogue (short: read only Id mag err; long: add context
   // zs ...) - SHORT default
-  cattyp = ((key_analysed["CAT_TYPE"]).split_string("SHORT", 1))[0];
+  cattyp = key_analysed["CAT_TYPE"].split_string("SHORT", 1)[0];
 
   // ERR_SCALE Minimal uncertainties to be added in quadrature - 0.0 default
-  min_err = (key_analysed["ERR_SCALE"]).split_double("0.0", -1);
+  min_err = key_analysed["ERR_SCALE"].split_double("0.0", -1);
   size_t nerr = min_err.size();
 
   // ERR_FACTOR Multiply the flux uncertainties by a given factor - 1.0 default
-  fac_err = ((key_analysed["ERR_FACTOR"]).split_double("1.0", -1));
+  fac_err = key_analysed["ERR_FACTOR"].split_double("1.0", -1);
   size_t nfac = fac_err.size();
   if (nerr > 1 && nfac > 1 && nfac != nerr) {
     cout << "The number of filters in ERR_SCALE and ERR_FACTOR do not "
@@ -105,30 +105,30 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   // GLB_CONTEXT Global context to be used for all objects - 0 default (all
   // bands)
-  gbcont = ((key_analysed["GLB_CONTEXT"]).split_long("-99", 1))[0];
+  gbcont = key_analysed["GLB_CONTEXT"].split_long("-99", 1)[0];
 
   // FORB_CONTEXT Context to reject some bands for all sources - 0 default
-  contforb = ((key_analysed["FORB_CONTEXT"]).split_long("0", 1))[0];
+  contforb = key_analysed["FORB_CONTEXT"].split_long("0", 1)[0];
 
   /*  PRIOR  */
 
   // Limits the size of the library in redshift and E(B-V)
-  zrange[0] = ((keys["Z_RANGE"]).split_double("0", 2))[0];
-  zrange[1] = ((keys["Z_RANGE"]).split_double("10000", 2))[1];
+  zrange[0] = keys["Z_RANGE"].split_double("0", 2)[0];
+  zrange[1] = keys["Z_RANGE"].split_double("10000", 2)[1];
   if (zrange[0] < 0 || zrange[1] < 0) {
     zrange[0] = 0;
     zrange[1] = 10000;
   }
-  ebvrange[0] = ((keys["EBV_RANGE"]).split_double("0", 2))[0];
-  ebvrange[1] = ((keys["EBV_RANGE"]).split_double("10000", 2))[1];
+  ebvrange[0] = keys["EBV_RANGE"]).split_double("0", 2)[0];
+  ebvrange[1] = keys["EBV_RANGE"]).split_double("10000", 2)[1];
   if (ebvrange[0] < 0 || ebvrange[1] < 0) {
     ebvrange[0] = 0;
     ebvrange[1] = 10000;
   }
 
   // MAG_ABS allowed range in absolute magnitude for galaxies - 0 default
-  magabsB[0] = ((key_analysed["MAG_ABS"]).split_double("0.", 2))[0];
-  magabsF[0] = ((key_analysed["MAG_ABS"]).split_double("0.", 2))[1];
+  magabsB[0] = key_analysed["MAG_ABS"].split_double("0.", 2)[0];
+  magabsF[0] = key_analysed["MAG_ABS"].split_double("0.", 2)[1];
   // be sure that magabsB is the minimum value
   if (magabsB[0] > magabsF[0]) {
     double inter = magabsF[0];
@@ -138,8 +138,8 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   // MAG_ABS_QSO allowed range in absolute magnitude for QSO library - 0 default
   // (all bands)
-  magabsB[1] = ((key_analysed["MAG_ABS_QSO"]).split_double("0.", 2))[0];
-  magabsF[1] = ((key_analysed["MAG_ABS_QSO"]).split_double("0.", 2))[1];
+  magabsB[1] = key_analysed["MAG_ABS_QSO"].split_double("0.", 2)[0];
+  magabsF[1] = key_analysed["MAG_ABS_QSO"].split_double("0.", 2)[1];
   // be sure that magabsB is the minimum value
   if (magabsB[1] > magabsF[1]) {
     double inter = magabsF[1];
@@ -148,7 +148,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   }
 
   // MAG_REF allowed range in absolute magnitude: define the band - 1 default
-  babs = ((key_analysed["MAG_REF"]).split_int("1", 1))[0];
+  babs = key_analysed["MAG_REF"].split_int("1", 1)[0];
   // Shift of 1 because of the convention (1 to start in the para, 0 in the
   // array)
   babs = babs - 1;
@@ -198,9 +198,9 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   /* Output */
 
   // SPEC_OUT Output individual spectra - NO default
-  outsp = ((key_analysed["SPEC_OUT"]).split_string("NO", 1))[0];
+  outsp = key_analysed["SPEC_OUT"].split_string("NO", 1)[0];
   // CHI2_OUT Output the full chi2 library - NO default
-  outchi = (key_analysed["CHI2_OUT"]).split_bool("NO", 1)[0];
+  outchi = key_analysed["CHI2_OUT"].split_bool("NO", 1)[0];
 
   /* FIR Libraries */
 
@@ -214,12 +214,12 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   if (nlibext > 0) restrict_rf = true;
 
   // FIR_LMIN Lambda min given in micron  (um)
-  fir_lmin = ((key_analysed["FIR_LMIN"]).split_double("7.0", 1))[0];
+  fir_lmin = key_analysed["FIR_LMIN"].split_double("7.0", 1)[0];
   // Convert into angstrom, as used internally in the code
   fir_lmin = fir_lmin * 10000.;
 
   // FIR_CONT context for the far-IR
-  fir_cont = ((key_analysed["FIR_CONT"]).split_long("-1", 1))[0];
+  fir_cont = key_analysed["FIR_CONT"].split_long("-1", 1)[0];
 
   // FIR_SCALE context of the bands used for the rescaling in IR
   fir_scale = key_analysed["FIR_SCALE"].split_long("-1", 1)[0];
@@ -1572,27 +1572,27 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
   double fir_lmin = ((keys["FIR_LMIN"]).split_double("7.0", 1))[0];
   fir_lmin = fir_lmin * 10000.;
   // FIR_CONT context for the far-IR
-  long fir_cont = ((keys["FIR_CONT"]).split_long("-1", 1))[0];
+  long fir_cont = keys["FIR_CONT"].split_long("-1", 1)[0];
   // FIR_SCALE context of the bands used for the rescaling in IR
   long fir_scale = keys["FIR_SCALE"].split_long("-1", 1)[0];
   // FIR_FREESCALE possible free rscaling in IR, when several bands. Otherwise,
   // model imposed by its LIR
-  string fir_frsc = ((keys["FIR_FREESCALE"]).split_string("NO", 1))[0];
+  string fir_frsc = keys["FIR_FREESCALE"].split_string("NO", 1)[0];
   // FIR_SUBSTELLAR remove the stellar component
   bool substar = keys["FIR_SUBSTELLAR"].split_bool("NO", 1)[0];
   // MIN_THRES threshold to trigger the detection - 0.1 by default
-  double min_thres = ((keys["MIN_THRES"]).split_double("0.1", 1))[0];
+  double min_thres = keys["MIN_THRES"].split_double("0.1", 1)[0];
 
   /* Define what are the filters to be used for the absolute magnitude depending
    * on the method adopted */
   // MABS_METHOD method to compute the absolute magnitudes
-  int method = ((keys["MABS_METHOD"]).split_int("0", -1))[0];
+  int method = keys["MABS_METHOD"].split_int("0", -1)[0];
   // MABS_REF reference filter in case of mag abs method 2
-  vector<int> bapp = (keys["MABS_REF"]).split_int("1", -1);
+  vector<int> bapp = keys["MABS_REF"].split_int("1", -1);
 
   // MABS_FILT choose filters per redshift bin (MABS_ZBIN) if method 4
-  vector<int> bappOp = (keys["MABS_FILT"]).split_int("1", -1);
-  int nbBinZ = int(bappOp.size());
+  vector<int> bappOp = keys["MABS_FILT"].split_int("1", -1);
+  size_t nbBinZ = bappOp.size();
 
   // Need to substract one because the convention in the .para file start at 1,
   // but 0 in the code

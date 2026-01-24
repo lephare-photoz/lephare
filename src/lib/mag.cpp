@@ -57,7 +57,7 @@ Mag::Mag(keymap &key_analysed) {
   modext = (key_analysed["MOD_EXTINC"]).split_int("0,0", extlaw.size() * 2);
 
   // define the grid in redshift
-  dz   = key_analysed["Z_STEP"].split_double("0.04", 3)[0];
+  dz = key_analysed["Z_STEP"].split_double("0.04", 3)[0];
   zmin = key_analysed["Z_STEP"].split_double("0.", 3)[1];
   zmax = key_analysed["Z_STEP"].split_double("6.", 3)[2];
   // LCOV_EXCL_START
@@ -195,7 +195,7 @@ void Mag::close_files() {
 void Mag::read_ext() {
   // Loop over the possible extinction laws
   int count = 0;
-  for (auto& filename : extlaw) {
+  for (auto &filename : extlaw) {
     // Instance one ext object
     ext oneext(filename, count++);
     // Name of the extinction law file
@@ -353,11 +353,11 @@ void Mag::write_doc() {
   sdocOut << endl << "Z_STEP   " << dz << "," << zmin << "," << zmax << endl;
   sdocOut << "COSMOLOGY   " << lcdm << endl;
   sdocOut << "EXTINC_LAW   ";
-  for (auto& law : extlaw) {
+  for (auto &law : extlaw) {
     sdocOut << law << ",";
   };
   sdocOut << endl << "MOD_EXTINC   ";
-  for (auto& mod : modext) {
+  for (auto &mod : modext) {
     sdocOut << mod << ",";
   };
   sdocOut << endl << "EB_V   ";
@@ -628,11 +628,11 @@ void GalMag::print_info() {
   cout << "# Z_STEP   :" << dz << " " << zmin << " " << zmax << endl;
   cout << "# COSMOLOGY   :" << lcdm << endl;
   cout << "# EXTINC_LAW   :";
-  for (auto& law : extlaw) {
+  for (auto &law : extlaw) {
     cout << law << " ";
   };
   cout << endl << "# MOD_EXTINC   :";
-  for (auto& mod : modext) {
+  for (auto &mod : modext) {
     cout << mod << " ";
   };
   cout << endl << "# EB_V   :";
@@ -676,11 +676,11 @@ void QSOMag::print_info() {
   cout << "# Z_STEP   :" << dz << " " << zmin << " " << zmax << endl;
   cout << "# COSMOLOGY   :" << lcdm << endl;
   cout << "# EXTINC_LAW   :";
-  for (auto& law : extlaw) {
+  for (auto &law : extlaw) {
     cout << law << " ";
   };
   cout << endl << "# MOD_EXTINC   :";
-  for (auto& mod : modext) {
+  for (auto &mod : modext) {
     cout << mod << " ";
   };
   cout << endl << "# EB_V   :";
