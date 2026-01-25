@@ -17,7 +17,6 @@
 #include "cosmology.h"
 #include "flt.h"  // filter class
 #include "globals.h"
-#include "opa.h"
 
 using namespace std;
 
@@ -242,25 +241,24 @@ class onesource {
               const vector<vector<double>> &maxkcolor, cosmo lcdm,
               const vector<double> gridz);
   void writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR, cosmo lcdm,
-                 vector<opa> opaAll, const vector<flt> &allFilters,
+                 const vector<flt> &allFilters,
                  const string outspdir);
   /*! Write out in a Id<source id>.chi file the chi2 of all the templates
    * participating to the fit.
    * @param fulllib : the library of SED objects.
    */
   void writeFullChi(const SEDlight &lightLib);
-  void computePredMag(vector<SED *> &fulllib, cosmo lcdm, vector<opa> opaAll,
+  void computePredMag(vector<SED *> &fulllib, cosmo lcdm,
                       vector<flt> allFltAdd);
-  void computePredAbsMag(vector<SED *> &fulllib, cosmo lcdm, vector<opa> opaAll,
+  void computePredAbsMag(vector<SED *> &fulllib, cosmo lcdm,
                          vector<flt> allFltAdd);
-  void computeEmFlux(vector<SED *> &fulllib, cosmo lcdm, vector<opa> opaAll);
+  void computeEmFlux(vector<SED *> &fulllib, cosmo lcdm);
   void limits(vector<SED *> &fulllib, vector<double> &limits_zbin,
               int limits_ref, vector<int> &limits_sel,
               vector<double> &limits_cut);
   pair<vector<double>, vector<double>> best_spec_vec(short sol,
                                                      vector<SED *> &fulllib,
                                                      cosmo lcdm,
-                                                     vector<opa> opaAll,
                                                      double minl, double maxl);
 
   void compute_best_fit_physical_quantities(vector<SED *> &fulllib);

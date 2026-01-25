@@ -258,8 +258,7 @@ class SED {
    * \param opaAll Vector of opacities to compute extinction along the line of
    * sight
    */
-  void generate_spectra(double zin = 0.0, double dmin = 1.0,
-                        vector<opa> opaAll = {});
+  void generate_spectra(double zin = 0.0, double dmin = 1.0);
 
   ///< clean content of base class
   virtual void clean() {

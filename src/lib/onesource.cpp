@@ -25,7 +25,6 @@
 #include "PDF.h"
 #include "SED.h"
 #include "globals.h"
-#include "opa.h"
 
 using namespace std;
 
@@ -1727,8 +1726,7 @@ void onesource::absmag(const vector<vector<int>> &bestFlt,
 /*
  Compute the emission lines to add them in the output later
 */
-void onesource::computeEmFlux(vector<SED *> &fulllib, cosmo lcdm,
-                              vector<opa> opaAll) {
+void onesource::computeEmFlux(vector<SED *> &fulllib, cosmo lcdm) {
   /// rest frame wavelengths [Lya, OII, Hb, OIIIa, OIIIb, Ha, SIIIa, SIIIb]
   array<double, 8> lambda_em = {1215.67, 3727.00, 4861.32, 4958.91,
                                 5006.84, 6562.80, 9068.60, 9530.85};
@@ -1746,7 +1744,7 @@ void onesource::computeEmFlux(vector<SED *> &fulllib, cosmo lcdm,
       // Rescale SED continuum
       SEDz0_Gal.rescale(dmmin[0]);
       // Opacity applied in rest-frame, depending on the redshift of the source
-      SEDz0_Gal.applyOpa(opaAll);
+      SEDz0_Gal.applyOpa(get_opa_vector());
       // Create a SED of emission lines at z
       GalSED SEDz0_Em(*(fulllib[ind0]));
       // GalSED SEDz0_Em(*(fulllib[indmin[0]])); // To be re-activated if EL
@@ -1757,7 +1755,7 @@ void onesource::computeEmFlux(vector<SED *> &fulllib, cosmo lcdm,
       SEDz0_Em.rescale(dmmin[0]);
       // Opacity applied in rest-frame (lines are in rest-frame), depending on
       // the redshift of the source
-      SEDz0_Em.applyOpa(opaAll);
+      SEDz0_Em.applyOpa(get_opa_vector());
 
       // Integrated flux divide by the filter area for emission lines. Reference
       // was at 10pc, which explain the 100 factor. The distance is in Mpc
@@ -1810,7 +1808,7 @@ void onesource::computeEmFlux(vector<SED *> &fulllib, cosmo lcdm,
 Compute predicted magnitude in new filters
 */
 void onesource::computePredMag(vector<SED *> &fulllib, cosmo lcdm,
-                               vector<opa> opaAll, vector<flt> allFltAdd) {
+                               vector<flt> allFltAdd) {
   double val;
 
   if (indmin[0] > 0) {
@@ -1824,7 +1822,7 @@ void onesource::computePredMag(vector<SED *> &fulllib, cosmo lcdm,
     // SED_gal.fac_line=SED_emSave.fac_line; // To be re-activated if EL ratio
     // can change with z Generate the spectra at the right redshift, opacity,
     // emission lines
-    if (consiz > 0) SED_gal.generate_spectra(consiz, dmmin[0], opaAll);
+    if (consiz > 0) SED_gal.generate_spectra(consiz, dmmin[0]);
     // check that the filter cover a SED
     SED_gal.warning_integrateSED(allFltAdd, true);
 
@@ -1855,7 +1853,7 @@ void onesource::computePredMag(vector<SED *> &fulllib, cosmo lcdm,
 Compute absolute magnitudes in new filters
 */
 void onesource::computePredAbsMag(vector<SED *> &fulllib, cosmo lcdm,
-                                  vector<opa> opaAll, vector<flt> allFltAdd) {
+                                  vector<flt> allFltAdd) {
   double val;
 
   if (indmin[0] > 0) {
@@ -1869,7 +1867,7 @@ void onesource::computePredAbsMag(vector<SED *> &fulllib, cosmo lcdm,
     // SED_gal.fac_line=SED_emSave.fac_line; // To be re-activated if EL ratio
     // can change with z Generate the spectra at the right redshift, opacity,
     // emission lines
-    if (consiz > 0) SED_gal.generate_spectra(0., dmmin[0], opaAll);
+    if (consiz > 0) SED_gal.generate_spectra(0., dmmin[0]);
     // check that the filter cover a SED
     SED_gal.warning_integrateSED(allFltAdd, true);
 
@@ -1965,7 +1963,7 @@ void onesource::limits(vector<SED *> &fulllib, vector<double> &limits_zbin,
 
 // Used for the python interface in the notebook
 pair<vector<double>, vector<double>> onesource::best_spec_vec(
-    short sol, vector<SED *> &fulllib, cosmo lcdm, vector<opa> opaAll,
+    short sol, vector<SED *> &fulllib, cosmo lcdm,
     double minl, double maxl) {
   // sol=0 for GAL-1, sol=1 for GAL-2, sol=2 for FIR, sol=3 for QSO, sol=4 for
   // STAR
@@ -2017,7 +2015,7 @@ pair<vector<double>, vector<double>> onesource::best_spec_vec(
     //  SED emlinesSED(*fulllib[index]);
     //  tmpSED.fac_line = emlinesSED.fac_line;
     // }
-    tmpSED.generate_spectra(red, scale, opaAll);
+    tmpSED.generate_spectra(red, scale);
     // for STAR, red=zmin[2]=0 by construction
     return tmpSED.get_data_vector(minl, maxl, true, lcdm.distMod(red));
   }
@@ -2030,7 +2028,7 @@ pair<vector<double>, vector<double>> onesource::best_spec_vec(
  WRITE .SPEC FILE
 */
 void onesource::writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
-                          cosmo lcdm, vector<opa> opaAll,
+                          cosmo lcdm,
                           const vector<flt> &allflt, const string outspdir) {
   // open the output file
   ofstream stospec;
@@ -2062,35 +2060,35 @@ void onesource::writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
     GALAXY CASE
   */
   vector<double> lG, mG;
-  auto tmp = best_spec_vec(0, fulllib, lcdm, opaAll, minl, maxl);
+  auto tmp = best_spec_vec(0, fulllib, lcdm, minl, maxl);
   lG = tmp.first;
   mG = tmp.second;
   /*
     GALAXY CASE, SECOND SOLUTION
   */
   vector<double> lGsec, mGsec;
-  tmp = best_spec_vec(1, fulllib, lcdm, opaAll, minl, maxl);
+  tmp = best_spec_vec(1, fulllib, lcdm, minl, maxl);
   lGsec = tmp.first;
   mGsec = tmp.second;
   /*
     GALAXY FIR CASE
   */
   vector<double> lIR, mIR;
-  tmp = best_spec_vec(2, fulllibIR, lcdm, opaAll, minl, maxl);
+  tmp = best_spec_vec(2, fulllibIR, lcdm, minl, maxl);
   lIR = tmp.first;
   mIR = tmp.second;
   /*
     QSO CASE
   */
   vector<double> lQ, mQ;
-  tmp = best_spec_vec(3, fulllib, lcdm, opaAll, minl, maxl);
+  tmp = best_spec_vec(3, fulllib, lcdm, minl, maxl);
   lQ = tmp.first;
   mQ = tmp.second;
   /*
     STAR CASE
   */
   vector<double> lS, mS;
-  tmp = best_spec_vec(4, fulllib, lcdm, opaAll, minl, maxl);
+  tmp = best_spec_vec(4, fulllib, lcdm, minl, maxl);
   lS = tmp.first;
   mS = tmp.second;
 

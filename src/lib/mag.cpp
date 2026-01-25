@@ -79,8 +79,11 @@ Mag::Mag(keymap &key_analysed) {
   // VERBOSE output  file -  YES default
   verbose = key_analysed["VERBOSE"].split_bool("YES", 1)[0];
 
-  // Read the extragalactic opacity files into a vector
-  opaAll = read_opa();
+  //need to call it here so that it is guaranteed
+  //that the vector has been created before each thread in make_maglib
+  //uses it.
+  auto opas = get_opa_vector();
+
 }
 
 // destructor of the class Mag cleaning all the vectors
@@ -92,7 +95,6 @@ Mag::~Mag() {
   modext.clear();
 
   extAll.clear();
-  opaAll.clear();
   allFlt.clear();
   gridz.clear();
   gridT.clear();
@@ -171,19 +173,6 @@ void Mag::open_files() {
   if (verbose) cout << " All files opened " << endl;
 }
 
-// open the opacity files
-ifstream Mag::open_opa_files() {
-  ifstream stream;
-  // open the ascii file with all the opacity file listed
-  string opaListFile = lepharedir + "/opa/OPACITY.dat";
-  stream.open(opaListFile.c_str());
-  // Check if file is opened
-  if (!stream) {
-    throw invalid_argument("Can't open file with opacity " + opaListFile);
-  }
-  return stream;
-}
-
 void Mag::close_files() {
   sbinOut.close();
   sdocOut.close();
@@ -207,40 +196,6 @@ void Mag::read_ext() {
   }
 }
 
-// Function of the basis class which read the IGM opacity
-vector<opa> Mag::read_opa() {
-  string name;
-  double red;
-
-  // In oder to fill the two last elements around Lyman alpha
-  // Put 1 for the last element
-  // Put the last value of the opa below 1215.67 just before
-  oneElLambda beflastOpa(1215.66, 1.);
-  oneElLambda lastOpa(1215.67, 1.);
-
-  ifstream stream = Mag::open_opa_files();
-  vector<opa> result;
-
-  // Take the stream line by line: list of each opa file
-  for (int i = 0; i < 81; i++) {
-    stream >> red >> name;
-    opa oneOpa(red, name);
-    oneOpa.read();
-    // Put as last element a lambda at the Lyman-alpha wavelength with
-    // transmission=1 Meiksin case : remove the last element which is after the
-    // Lya line
-    if (oneOpa.lamb_opa.back().lamb > 1215.66) oneOpa.lamb_opa.pop_back();
-    // Put the last transmission value very close to Lyman alpha
-    beflastOpa.val = oneOpa.lamb_opa.back().val;
-    // Add the two last values close to Lyman alpha
-    oneOpa.lamb_opa.push_back(beflastOpa);
-    oneOpa.lamb_opa.push_back(lastOpa);
-    oneOpa.lmax = 1215.67;
-    // Add to the list of opacity
-    result.push_back(oneOpa);
-  }
-  return result;
-}
 
 // Read the long wavelength Bethermin+2012 templates to add the dust emission to
 // the BC03 templates Associate a b12 SED to each redshift of the grid in
@@ -461,7 +416,7 @@ vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
   ext mw_ext("MW_seaton.dat", extlaw.size());
   string mwFile = lepharedir + "/ext/MW_seaton.dat";
   mw_ext.read(mwFile);
-
+  
 // PARALLELIZE all the 4 loops  [Iary, 12 March 2018]
 #pragma omp parallel for ordered schedule(dynamic) collapse(4)
   // Loop over each extinction law
@@ -515,7 +470,7 @@ vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
 
               // Opacity applied in rest-frame, depending on the redshift of the
               // source
-              oneSEDInt.applyOpa(opaAll);
+              oneSEDInt.applyOpa(get_opa_vector());
 
               // redshift the SED, and restrict it to the union of the filters
               // support.
@@ -548,7 +503,7 @@ vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
                 oneEmInt.generateEmSpectra(40);
                 // Opacity applied in rest-frame, depending on the redshift of
                 // the source
-                oneEmInt.applyOpa(opaAll);
+                oneEmInt.applyOpa(get_opa_vector());
                 // Save the emission lines rest-frame in the continuum SED
                 oneSEDInt.fac_line = oneEmInt.fac_line;
                 //
@@ -770,7 +725,7 @@ vector<QSOSED> QSOMag::make_maglib(const QSOSED &oneSED) {
 
           // Opacity applied in rest-frame, depending on the redshift of the
           // source
-          oneSEDInt.applyOpa(opaAll);
+          oneSEDInt.applyOpa(get_opa_vector());
 
           // redshift the SED
           oneSEDInt.redshift();
