@@ -269,8 +269,6 @@ class SED {
     fac_line.clear();
   };
 
-  void fit_normalization(const onesource &source, const int imagm);
-
   /*! Check if the SED is identical to another one
    * @param other: the SED to compare to
    * equality of the following attributes are compared:
