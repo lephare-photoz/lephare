@@ -181,8 +181,8 @@ class onesource {
                   const double z_spec, const string additional_input);
   void setPriors(const array<double, 2> magabsB,
                  const array<double, 2> magabsF);
-  void fltUsed(const long gbcont, const long contforb, const int imagm);
-  void fltUsedIR(const long fir_cont, const long fir_scale, const int imagm,
+  void fltUsed(const long gbcont, const long contforb);
+  void fltUsedIR(const long fir_cont, const long fir_scale,
                  vector<flt> allFilters, const double fir_lmin);
   void convertFlux(const string &catmag, const vector<flt> allFilters);
   void rescale_flux_errors(const vector<double> min_err,

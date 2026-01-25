@@ -62,8 +62,7 @@ void onesource::setPriors(const array<double, 2> magabsB,
 /*
  DEFINE THE FILTERS WHICH SHOULD BE USED IN THE FIT
 */
-void onesource::fltUsed(const long gbcont, const long contforb,
-                        const int imagm) {
+void onesource::fltUsed(const long gbcont, const long contforb) {
   vector<int> bused;
   busnorma.clear();
   busul.clear();
@@ -73,8 +72,9 @@ void onesource::fltUsed(const long gbcont, const long contforb,
   int nf = 0;
   nbul = 0;
   nbused = 0;
-  // Loop over each filter
-  for (int k = 0; k < imagm; k++) {
+  // Loop over the photometry, ab and sab are guaranteed to be
+  // of the same side, which is  equal to the number of considered filters.
+  for (int k = 0; k < ab.size(); k++) {
     // Define if the band should be used based on the context
     if (cont <= 0) {
       // if context=0 or badly define, use all bands
@@ -129,12 +129,13 @@ void onesource::fltUsed(const long gbcont, const long contforb,
 */
 // LCOV_EXCL_START
 void onesource::fltUsedIR(const long fir_cont, const long fir_scale,
-                          const int imagm, vector<flt> allFilters,
-                          const double fir_lmin) {
+                          vector<flt> allFilters, const double fir_lmin) {
   busfir.clear();
   bscfir.clear();
-  // Loop over each filter
-  for (int k = 0; k < imagm; k++) {
+
+  // Loop over the photometry, ab and sab are guaranteed to be
+  // of the same side, which is  equal to the number of considered filters.
+  for (int k = 0; k < ab.size(); k++) {
     // Define if the band should be used based on the context
     if (fir_cont <= 0) {
       // if context=0 or badly define, use all bands

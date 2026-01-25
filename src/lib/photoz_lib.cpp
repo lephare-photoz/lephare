@@ -1521,7 +1521,7 @@ void PhotoZ::prep_data(onesource *oneObj) {
   // Keep original magnitudes
   oneObj->keepOri();
   // Define the filters used for the fit based on the context
-  oneObj->fltUsed(gbcont, contforb, imagm);
+  oneObj->fltUsed(gbcont, contforb);
   return;
 }
 
@@ -1696,7 +1696,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
     if (nlibext > 0) {
       // FIR FIT
       // Define the filters used for the FIR fit based on the FIR context
-      oneObj->fltUsedIR(fir_cont, fir_scale, imagm, allFilters, fir_lmin);
+      oneObj->fltUsedIR(fir_cont, fir_scale, allFilters, fir_lmin);
       // Substract the stellar component to the FIR observed flux
       oneObj->substellar(substar, allFilters);
       // Select in the IR library only the templates with redshifts closest to
@@ -1928,7 +1928,7 @@ void PhotoZ::physpara_onesource(onesource &src) {
   if (nlibext > 0) {
     // FIR FIT
     // Define the filters used for the FIR fit based on the FIR context
-    src.fltUsedIR(fir_cont, fir_scale, imagm, allFilters, fir_lmin);
+    src.fltUsedIR(fir_cont, fir_scale, allFilters, fir_lmin);
     // Substract the stellar component to the FIR observed flux
     src.substellar(substar, allFilters);
     // Select in the IR library only the templates with redshifts closest to
