@@ -1425,8 +1425,8 @@ void onesource::interp_lib(vector<SED *> &fulllib) {
     if (fulllib[indmin[0] + deca]->red < 1.e-10) deca = 0;
 
     // Store in two SED around zs
-    SED SEDa(*(fulllib[indmin[0]]));
-    SED SEDb(*(fulllib[indmin[0] + deca]));
+    const SED& SEDa = *fulllib[indmin[0]];
+    const SED& SEDb = *fulllib[indmin[0] + deca];
 
     // Check that the interpolation can be done
     // same model in the library around zs
