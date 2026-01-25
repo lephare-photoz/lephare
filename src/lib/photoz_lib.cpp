@@ -1703,7 +1703,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
       // consiz
       auto validfix = validLib(oneObj->consiz, true);
       // Fit the SED on FIR data, with the redshift fixed at zmin or zmed
-      oneObj->fitIR(fullLibIR, fluxIR, validfix, imagm, fir_frsc, lcdm);
+      oneObj->fitIR(fullLibIR, fluxIR, validfix, fir_frsc, lcdm);
       // Compute the IR luminosities
       oneObj->generatePDF_IR(fullLibIR);
       // Uncertainties from the bayesian method, centered on the median
@@ -1935,7 +1935,7 @@ void PhotoZ::physpara_onesource(onesource &src) {
     // consiz
     auto valid = validLib(src.consiz, true);
     // Fit the SED on FIR data, with the redshift fixed at zmin or zmed
-    src.fitIR(fullLibIR, fluxIR, valid, imagm, fir_frsc, lcdm);
+    src.fitIR(fullLibIR, fluxIR, valid, fir_frsc, lcdm);
     // Compute the IR luminosities
     src.generatePDF_IR(fullLibIR);
     // Uncertainties from the bayesian method, centered on the median

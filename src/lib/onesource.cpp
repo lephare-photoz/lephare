@@ -679,8 +679,8 @@ void onesource::rm_discrepant(SEDlight &lightLib,
 */
 void onesource::fitIR(vector<SED *> &fulllibIR,
                       const vector<vector<double>> &fluxIR,
-                      const vector<size_t> &va, const int imagm,
-                      const string fit_frsc, cosmo lcdm) {
+                      const vector<size_t> &va, const string fit_frsc,
+                      cosmo lcdm) {
   int number_threads = 1, thread_id = 0;
 // Do a local minimisation per thread (store chi2 and index)
 // Catch first the number of threads
@@ -693,7 +693,7 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
   // Compute some quantities linked to ab and sab to save computational time in
   // the fit. No need to do it every step
   vector<double> s2n, invsab, invsabSq, abinvsabSq;
-  for (int k = 0; k < imagm; k++) {
+  for (int k = 0; k < abIR.size(); k++) {
     s2n.push_back(abIR[k] / sabIR[k]);
     invsab.push_back(1. / sabIR[k]);
     invsabSq.push_back(1. / sabIR[k] / sabIR[k]);
@@ -721,8 +721,9 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
       double avmago = 0.0, avmagt = 0.0, dmloc = -99.0;
       int nbusIR = 0;
       nbusIR = accumulate(bscfir.begin(), bscfir.end(), 0);
-      for (int k = 0; k < imagm; k++) {
-        double fluxin = fluxIR[i][k];
+      auto fluxes = fluxIR[i];
+      for (int k = 0; k < fluxes.size(); k++) {
+        double fluxin = fluxes[k];
         avmago += fluxin * dmcor * bscfir[k] * abinvsabSq[k];
         avmagt += fluxin * fluxin * dmcor * dmcor * bscfir[k] * invsabSq[k];
       }
@@ -742,8 +743,8 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
 
       double chi2loc = 0;
       // Measurement of chi^2
-      for (int k = 0; k < imagm; k++) {
-        double inter = (s2n[k] - (dmEff * fluxIR[i][k] * dmcor * invsab[k]));
+      for (int k = 0; k < fluxes.size(); k++) {
+        double inter = (s2n[k] - (dmEff * fluxes[k] * dmcor * invsab[k]));
         chi2loc += busfir[k] * inter * inter;
       }
 
