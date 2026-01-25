@@ -1393,10 +1393,12 @@ void onesource::write_pdz(vector<string> pdztype,
  INTERPOLATE LINEARILY IN THE LIBRARY
  Do it only for GAL
 */
-void onesource::interp_lib(vector<SED *> &fulllib, const int imagm,
-                           cosmo lcdm) {
+void onesource::interp_lib(vector<SED *> &fulllib) {
   magm.clear();
-
+  //all the sizes in in the fulllib SED should be identical to the
+  //bands saved in the onesource object
+  size_t imagm = ab.size();
+      
   // Take the value of zs to interpolate in the library
   if (indmin[0] >= 0) {
     // If zs is above or below the best fit bin

@@ -1101,7 +1101,7 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource *> adaptSources) {
         if (oneObj->indmin[0] >= 0) {
           // interp_lib uses consiz to define the position of interpolation
           oneObj->consiz = oneObj->zs;
-          oneObj->interp_lib(fullLib, imagm, lcdm);
+          oneObj->interp_lib(fullLib);
         }
         if (verbose)
           cout << " Fit source for adapt " << oneObj->spec << "  \r " << flush;
@@ -1681,7 +1681,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
     }
 
     // Interpolation at the new redshift  (only gal for the moment)
-    oneObj->interp_lib(fullLib, imagm, lcdm);
+    oneObj->interp_lib(fullLib);
     // Compute absolute magnitudes
     oneObj->absmag(goodFlt, maxkcol, lcdm, gridz);
     // Compute zmax and M_faint
@@ -1916,7 +1916,7 @@ void PhotoZ::physpara_onesource(onesource &src) {
   }
 
   // Interpolation at the new redshift  (only gal for the moment)
-  src.interp_lib(fullLib, imagm, lcdm);
+  src.interp_lib(fullLib);
 
   // Compute absolute magnitudes
   src.absmag(goodFlt, maxkcol, lcdm, gridz);
