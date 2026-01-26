@@ -41,7 +41,7 @@ def multiply_on_grids(x1, f1, x2, f2, x=None):
     Notes
     -----
     - Currently uses linear interpolation with `fill_value=0.0` outside the original ranges.
-    - This is a temporary implementation; replacing it with native LePHARE classes is recommended.
+    - If the functions do not overlap we simply return the first function `f1`.
     """
 
     if x is None:
@@ -54,8 +54,20 @@ def multiply_on_grids(x1, f1, x2, f2, x=None):
         x = np.linspace(xmin, xmax, len(x2))
     f1i = interp1d(x1, f1, bounds_error=False, fill_value=0.0)(x)
     f2i = interp1d(x2, f2, bounds_error=False, fill_value=0.0)(x)
+    prod = f1i * f2i
+    norm = np.max(prod)
 
-    return np.array([x, f1i * f2i])  # fftconvolve(f1i, f2i, mode="same") * dx
+    # If there is no overlap simply return f1
+    if norm <= 0 or not np.isfinite(norm):
+        x = x1
+        y = f1
+    else:
+        y = prod / norm
+
+    if not np.isfinite(np.array([x, y])).all():
+        raise ValueError("Array contains NaN or infinite values")
+    return np.array([x, y])
+    # return np.array([x, (f1i * f2i) / np.max(f1i * f2i)])  # fftconvolve(f1i, f2i, mode="same") * dx
 
 
 def compute_model_reddening(config, verbose=False):
@@ -129,7 +141,7 @@ def compute_model_reddening(config, verbose=False):
             model.lamb_flux = photz.fullLib[model.index_z0].lamb_flux
             model.generate_spectra(photz.zLib[i], 1.0, mag.opaAll)
             model_filt_product = multiply_on_grids(
-                model.data()[0], model.data()[1], filt[0], filt[1], x=filt[0]
+                filt[0], filt[1], model.data()[0], model.data()[1], x=filt[0]
             )
 
             # make a oneflt instance from the updated
