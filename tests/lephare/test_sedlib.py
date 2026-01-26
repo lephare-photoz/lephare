@@ -75,10 +75,15 @@ def test_closeage_out_of_range_or_tolerance():
     res1 = lp._closeAge(age_sel_out_of_range, age_library)
     assert res1 == [False, False]
 
-    # Target 1.0001e9 is too far from 1.0e9 (diff > 1e-5 tolerance)
-    age_sel_tolerance = [0.0, 5.0e9, 1.0001e9]
+    # Target 1.0001e9 is too far from 1.0e9 (diff > 1e6 tolerance)
+    age_sel_tolerance = [0.0, 5.0e9, 1.01e9]
     res2 = lp._closeAge(age_sel_tolerance, age_library)
     assert res2 == [False, False]
+
+    # Target 1.0001e9 is close enough from 1.0e9 (diff > 1e6 tolerance)
+    age_sel_tolerance = [0.0, 5.0e9, 1.0001e9]
+    res2 = lp._closeAge(age_sel_tolerance, age_library)
+    assert res2 == [True, False]
 
 
 def test_closeage_multiple_targets():

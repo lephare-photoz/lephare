@@ -22,7 +22,7 @@ vector<GalSED> readPEGASE(string sedFile, int nummod, vector<double> &ageSel);
  * * This function creates a boolean mask for a vector of ages. If no specific
  * target ages are provided (only the bounds), all ages are selected. Otherwise,
  * it finds the closest match in the library for each target age, provided
- * the match is within a tolerance (1e-5) and falls within the specified
+ * the match is within a tolerance (1e6yr) and falls within the specified
  * [agemin, agemax] range.
  * * @param ageSel A vector where:
  * - ageSel[0] is the minimum allowed age (agemin).
@@ -32,7 +32,7 @@ vector<GalSED> readPEGASE(string sedFile, int nummod, vector<double> &ageSel);
  * * @return std::vector<bool> A mask of the same size as the 'age' parameter.
  * True if the age is selected, False otherwise.
  * * @note If agemax <= 0, the upper bound check is ignored.
- * @note The matching tolerance is strictly hardcoded at 1e-5.
+ * @note The matching tolerance is strictly hardcoded at 1e6yr.
  */
 vector<bool> closeAge(vector<double> ageSel, vector<double> age);
 
