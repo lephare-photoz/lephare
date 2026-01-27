@@ -46,8 +46,8 @@ def test_generate_lines():
         scalefac = 10 ** (np.log10(sfr) + 41.27 - np.log10(4 * np.pi * 100 * 3.08568**2) - 36) / 2.85
     vals = [ell.val for ell in sed.fac_line]
     print(vals)
-    print(scalefac * np.array(lp._empirical_ratio2))
-    assert np.allclose(np.array(vals), scalefac * np.array(lp._empirical_ratio2))
+    print(scalefac * np.array(lp._empirical_ratio))
+    assert np.allclose(np.array(vals), scalefac * np.array(lp._empirical_ratio))
 
 
 # def test_apply_ext_lines():
