@@ -165,8 +165,8 @@ def compute_model_reddening(config, verbose=False):
                 rv = 3.1
                 if "SMC_prevot" in galec:
                     rv = 2.72
-                    if "calzetti" in galec:
-                        rv = 4.05
+                if "calzetti" in galec:
+                    rv = 4.05
                 if verbose:
                     print(f"assuming Rv={rv} for this Extinction law {galec}")
                 albd = lp.compute_filter_extinction(one_filt, galactic_ext)
