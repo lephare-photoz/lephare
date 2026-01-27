@@ -787,7 +787,7 @@ void GalSED::generateEmEmpSFR(double sfr, double NUVR) {
   // Create the emission line and rescale them
   fac_line.clear();
   for (size_t i = 0; i < NUM_EMISSION_LINES; i++) {
-    fac_line.emplace_back(emission_lines[i], scaleFac * empirical_ratio2[i]);
+    fac_line.emplace_back(emission_lines[i], scaleFac * empirical_ratio[i]);
   }
   // sort the vector by wavelength
   sort(fac_line.begin(), fac_line.end());

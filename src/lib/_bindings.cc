@@ -233,7 +233,7 @@ PYBIND11_MODULE(_lephare, mod) {
       });
   mod.attr("_emission_lines") = emission_lines;
   mod.attr("_empirical_ratio") = empirical_ratio;
-  mod.attr("_empirical_ratio2") = empirical_ratio2;
+  mod.attr("_empirical_ratio_ori") = empirical_ratio_ori;
   mod.attr("_ga_total") = ga_total;
   mod.attr("_ga_lamb") = ga_lamb;
   mod.attr("_ga_H_val") = ga_H_val;

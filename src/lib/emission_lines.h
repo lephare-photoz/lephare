@@ -35,29 +35,29 @@ const std::array<double, NUM_EMISSION_LINES> emission_lines = {
     8545.383,  40511.742, 26251.517, 21655.267, 19445.581, 18174.237, 17362.143,
     16806.509, 16407.21};
 
-// In the empirical GalSED::generateEmEmpUV ratio estimation, we only
-// consider Lyman_alpha, OIIa and OIIb; Hbeta, OIII doublet et Halpha.
-// Hbeta is taken as normalization.
-// published in a slightly different form in Ilbert et al. 2009
-const std::array<double, NUM_EMISSION_LINES> empirical_ratio = {
+// Original ratios from Ilbert et al. (2009).
+// Consider only Lyman_alpha, OII doublet, Hbeta, OIII doublet et Halpha.
+// Some modifications compared to the original values:
+// - Hbeta is taken as reference
+// - Split OII in a doublet
+// - take the instrinsic ratio Lyman alpha / H beta as reference
+const std::array<double, NUM_EMISSION_LINES> empirical_ratio_ori = {
     22.2, 0, 0, 0, 0,    0,    0, 0.81, 0.81, 0, 0, 0, 0,    0,  0, 0, 0,
     0,    0, 0, 1, 0.21, 0.59, 0, 0,    0,    0, 0, 0, 2.90, 0., 0, 0, 0,
     0,    0, 0, 0, 0,    0,    0, 0,    0,    0, 0, 0, 0,    0,  0, 0, 0,
     0,    0, 0, 0, 0,    0,    0, 0,    0,    0, 0, 0, 0,    0};
 
-// conversion factor between Halpa and other lines
-// Use a ratio 1 for Halpha/OII, according to Iary. Drop the 1.77 since
-// attenuation seems to be alreay included I took OIII5007/OIII4959=3 I
-// took 4.081 betwen 5007 and Hbeta, as the physical recipes.
-// This ratio will be modified later as a function of redshift.
-// For NII/Halpha, take 0.3 according to the BPT diagram.
-// For Lyman_alpha, use the same factor as for
-// physical recipes since fescape fraction is applied.
-const std::array<double, NUM_EMISSION_LINES> empirical_ratio2 = {
-    22.2, 0, 0, 0, 0,    0,     0, 1.425, 1.425, 0, 0, 0, 0,    0,    0, 0, 0,
-    0,    0, 0, 1, 1.36, 4.081, 0, 0,     0,     0, 0, 0, 2.85, 0.86, 0, 0, 0,
-    0,    0, 0, 0, 0,    0,     0, 0,     0,     0, 0, 0, 0,    0,    0, 0, 0,
-    0,    0, 0, 0, 0,    0,     0, 0,     0,     0, 0, 0, 0,    0};
+// Improved values of these ratios following the work of Iary Davidzon (2017)
+// - We use a ratio OII/Halpha=1 based on Kewley, Geller & Jansen 2004
+// - OIIIb/OII=0.4 based Kewley+06, Moustakas+06
+// - Halpha/Hbeta=2.85 from Osterbrock (1989)
+// - OIIIb/OIIIa=3
+// - NII/Halpha=0.3 from the SDSS BPT diagram
+const std::array<double, NUM_EMISSION_LINES> empirical_ratio = {
+    22.2, 0, 0, 0, 0,    0,    0, 1.425, 1.425, 0, 0, 0, 0,    0,    0, 0, 0,
+    0,    0, 0, 1, 0.38, 1.14, 0, 0,     0,     0, 0, 0, 2.85, 0.86, 0, 0, 0,
+    0,    0, 0, 0, 0,    0,    0, 0,     0,     0, 0, 0, 0,    0,    0, 0, 0,
+    0,    0, 0, 0, 0,    0,    0, 0,     0,     0, 0, 0, 0,    0};
 
 /* Line ratios for 3 different metallicities:
  * Z1 (Z < 0.02),

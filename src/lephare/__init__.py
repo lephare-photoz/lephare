@@ -18,7 +18,7 @@ from ._lephare import (  # noqa: F401
     _closeAge,
     _emission_lines,
     _empirical_ratio,
-    _empirical_ratio2,
+    _empirical_ratio_ori,
     _ga_2q_val,
     _ga_H_val,
     _ga_HeI_val,
