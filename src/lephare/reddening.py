@@ -108,8 +108,10 @@ def compute_model_reddening(config, verbose=False):
 
     photz = lp.PhotoZ(keymap)
     # Why are these required?
-    keymap["EXT_CURVE"] = lp.keyword("EXT_CURVE", "NONE")
-    keymap["GAL_CURVE"] = lp.keyword("GAL_CURVE", "CARDELLI")
+    if "EXT_CURVE" not in keymap:
+        keymap["EXT_CURVE"] = lp.keyword("EXT_CURVE", "NONE")
+    if "GAL_CURVE" not in keymap:
+        keymap["GAL_CURVE"] = lp.keyword("GAL_CURVE", "CARDELLI")
     keymap["t"] = lp.keyword("t", "Star")
     star_mag = lp.StarMag(keymap)
     keymap["t"] = lp.keyword("t", "Gal")
