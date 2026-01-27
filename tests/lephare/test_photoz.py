@@ -68,6 +68,7 @@ def test_reddening(test_data_dir: str):
         lp.process(config, input[reduced_cols], write_outputs=False, reddening=albd_lib)
     # Now test with SMC Prevot curve
     config["GAL_CURVE"] = "SMC_prevot"
+    albd_lib = lp.compute_model_reddening(config)
     # Check AUTO_ADAPT can run with ebv
     config["AUTO_ADAPT"] = "YES"
     output, photozlist = lp.process(
