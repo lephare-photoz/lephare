@@ -2,6 +2,7 @@ import os
 
 import lephare as lp
 import numpy as np
+import pytest
 from astropy.table import Table
 
 
@@ -62,3 +63,6 @@ def test_reddening(test_data_dir: str):
         config, input[reduced_cols], write_outputs=False, reddening=albd_lib, ebv=[0.1] * len(input)
     )
     assert np.isclose(np.sum(output["Z_BEST"]), 185.69925751302745)
+
+    with pytest.warns(UserWarning, match="No ebv provided. Reddening not applied."):
+        lp.process(config, input[reduced_cols], write_outputs=False, reddening=albd_lib)
