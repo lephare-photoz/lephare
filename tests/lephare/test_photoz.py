@@ -63,8 +63,13 @@ def test_reddening(test_data_dir: str):
         config, input[reduced_cols], write_outputs=False, reddening=albd_lib, ebv=[0.1] * len(input)
     )
     assert np.isclose(np.sum(output["Z_BEST"]), 185.69925751302745)
-    # Now test with SMC Prevot curve
-    config["GAL_CURVE"] = "SMC_prevot"
     # Check it gives a warning if no ebv provided
     with pytest.warns(UserWarning, match="No ebv provided. Reddening not applied."):
         lp.process(config, input[reduced_cols], write_outputs=False, reddening=albd_lib)
+    # Now test with SMC Prevot curve
+    config["GAL_CURVE"] = "SMC_prevot"
+    # Check AUTO_ADAPT can run with ebv
+    config["AUTO_ADAPT"] = "YES"
+    output, photozlist = lp.process(
+        config, input[reduced_cols], write_outputs=False, reddening=albd_lib, ebv=[0.1] * len(input)
+    )
