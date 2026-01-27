@@ -1,6 +1,7 @@
 import os
 import shutil
 import time
+import warnings
 
 import numpy as np
 
@@ -13,11 +14,13 @@ object_types = ["STAR", "GAL", "QSO"]
 
 def process(
     config,
-    input,
+    input_table,
     col_names=None,
     standard_names=False,
     filename=None,
     write_outputs=False,
+    reddening=None,
+    ebv=None,
 ):
     """Run all required steps to produce photometric redshift estimates
 
@@ -25,7 +28,7 @@ def process(
     ==========
     config : dict of lephare.keyword
         The configuration for the run
-    input : astropy.table.Table
+    input_table : astropy.table.Table
         The input table which must satisfy column name requirements depending
         on other optional inputs.
     col_names : list
@@ -37,6 +40,12 @@ def process(
     write_outputs : bool
         Whether to write the output spectra, PDF, and ascii file if specified
         in the config. By default these are not written to save space.
+    reddening : np.array or None
+        Array of reddening values to apply to each model and filter. If None the
+        reddening will not be applied.
+    ebv : np.array or None
+        Array of E(B-V) values for each object in the input catalogue. If None
+        no reddening will be applied.
 
     Returns
     =======
@@ -48,13 +57,21 @@ def process(
     # ensure that all values in the keymap are keyword objects
     config = lp.all_types_to_keymap(config)
 
+    photz = lp.PhotoZ(config)
+    # Apply reddening if provided
+    if reddening is not None:
+        photz.reddening = reddening
+        # If reddening is provided but no ebv warn the user
+        if ebv is None:
+            warnings.warn("No ebv provided. Reddening not applied.")
+            reddening = None
     id, flux, flux_err, context, zspec, string_data = table_to_data(
-        config, input, col_names=col_names, standard_names=standard_names
+        config, input_table, col_names=col_names, standard_names=standard_names
     )
     ng = len(id)
     n_filters = len(config["FILTER_LIST"].value.split(","))
     print(f"Processing {ng} objects with {n_filters} bands")
-    photz = lp.PhotoZ(config)
+
     if config["AUTO_ADAPT"].split_bool("", 1):
         print("AUTO_ADAPT is set to YES. Computing offsets.")
         # Loop over all ng galaxies!
@@ -64,6 +81,10 @@ def process(
             one_obj.readsource(str(id[i]), flux[i], flux_err[i], context[i], zspec[i], str(string_data[i]))
             photz.prep_data(one_obj)
             srclist.append(one_obj)
+
+        if reddening is not None:
+            for i in range(ng):
+                srclist[i].galEbv = ebv[i]
 
         # compute the offset, depending on the option in the code (AUTO_ADAPT, or APPLY_SYSSHIFT
         a0 = photz.compute_offsets(srclist)
@@ -81,6 +102,9 @@ def process(
         photz.prep_data(one_obj)
         photozlist.append(one_obj)
 
+    if reddening is not None:
+        for i in range(ng):
+            photozlist[i].galEbv = ebv[i]
     # Perform the main run
     photz.run_photoz(photozlist, a0)
     # Write outputs if requested
@@ -91,7 +115,7 @@ def process(
     return output, photozlist
 
 
-def calculate_offsets_from_input(config, input, col_names=None, standard_names=False):
+def calculate_offsets_from_input(config, input_table, col_names=None, standard_names=False):
     """Calculate the zero point offsets for objects with spectroscopic redshifts
 
     We want to have this available as an independent method so that it can be
@@ -101,7 +125,7 @@ def calculate_offsets_from_input(config, input, col_names=None, standard_names=F
     ==========
     config : dict of lephare.keyword
         The configuration for the run
-    input : astropy.table.Table
+    input_table : astropy.table.Table
         The input table which must satisfy column name requirements depending
         on other optional inputs.
     col_names : list
@@ -116,7 +140,7 @@ def calculate_offsets_from_input(config, input, col_names=None, standard_names=F
     """
     config = lp.all_types_to_keymap(config)
     id, flux, flux_err, context, zspec, string_data = table_to_data(
-        config, input, col_names=col_names, standard_names=standard_names
+        config, input_table, col_names=col_names, standard_names=standard_names
     )
     ng = len(id)
     n_filters = len(config["FILTER_LIST"].value.split(","))
@@ -137,7 +161,7 @@ def calculate_offsets_from_input(config, input, col_names=None, standard_names=F
     return a0
 
 
-def table_to_data(config, input, col_names=None, standard_names=False):
+def table_to_data(config, input_table, col_names=None, standard_names=False):
     """Take an astropy table and return the arrays required for a run.
 
     We assume that either the columns are in the standard LePHARE order or
@@ -152,7 +176,7 @@ def table_to_data(config, input, col_names=None, standard_names=False):
     config : dict of lephare.keyword
         The config keymap. We need this to know if we have magnitudes or
         fluxes and to get the filter names.
-    input : astropy.table.Table
+    input_table : astropy.table.Table
         The input catalogue.
     col_names : list of str
         The column names in the default order.
@@ -178,7 +202,7 @@ def table_to_data(config, input, col_names=None, standard_names=False):
     n_filters = len(config["FILTER_LIST"].value.split(","))
     if col_names is not None:
         print("Using user defined column names based on ordering.")
-        assert len(input.colnames) == 2 * n_filters + 4
+        assert len(input_table.colnames) == 2 * n_filters + 4
 
     elif standard_names:
         print(
@@ -193,27 +217,27 @@ def table_to_data(config, input, col_names=None, standard_names=False):
         col_names += ["string_input"]
     else:
         print("Using user columns from input table assuming they are in the standard order.")
-        assert len(input.colnames) == 2 * n_filters + 4
+        assert len(input_table.colnames) == 2 * n_filters + 4
         col_names = list(np.full(2 * n_filters + 4, ""))
-        col_names[0] = input.colnames[0]
-        col_names[1 : 2 * n_filters : 2] = input.colnames[1 : 2 * n_filters : 2]
-        col_names[2 : 2 * n_filters + 1 : 2] = input.colnames[2 : 2 * n_filters + 1 : 2]
-        col_names[-3] = input.colnames[-3]
-        col_names[-2] = input.colnames[-2]
-        col_names[-1] = input.colnames[-1]
+        col_names[0] = input_table.colnames[0]
+        col_names[1 : 2 * n_filters : 2] = input_table.colnames[1 : 2 * n_filters : 2]
+        col_names[2 : 2 * n_filters + 1 : 2] = input_table.colnames[2 : 2 * n_filters + 1 : 2]
+        col_names[-3] = input_table.colnames[-3]
+        col_names[-2] = input_table.colnames[-2]
+        col_names[-1] = input_table.colnames[-1]
         # print(col_names)
 
     assert len(col_names) == 2 * n_filters + 4
-    id = [str(i) for i in input[col_names[0]]]
-    flux = input[col_names[1 : 2 * n_filters : 2]]
+    id = [str(i) for i in input_table[col_names[0]]]
+    flux = input_table[col_names[1 : 2 * n_filters : 2]]
     flux = np.array([np.array(flux[c]) for c in flux.colnames])
     flux = flux.T
-    flux_err = input[col_names[2 : 2 * n_filters + 1 : 2]]
+    flux_err = input_table[col_names[2 : 2 * n_filters + 1 : 2]]
     flux_err = np.array([np.array(flux_err[c]) for c in flux_err.colnames])
     flux_err = flux_err.T
-    context = input[col_names[-3]]
-    zspec = input[col_names[-2]]
-    string_data = input[col_names[-1]]
+    context = input_table[col_names[-3]]
+    zspec = input_table[col_names[-2]]
+    string_data = input_table[col_names[-1]]
 
     # Perform basic checks on table
     # Replace nans with -99

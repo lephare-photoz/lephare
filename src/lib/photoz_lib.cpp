@@ -33,7 +33,7 @@ using namespace std;
   1 - Analyse the keywords
   2 - Read the magnitude's library and other documentation
 */
-PhotoZ::PhotoZ(keymap &key_analysed) {
+PhotoZ::PhotoZ(keymap& key_analysed) {
   keys = key_analysed;
   imagm = 0;
 
@@ -403,6 +403,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   /* Create a 2D array with the predicted flux.
   Done to improve the performance in the fit*/
   flux.resize(fullLib.size(), vector<double>(imagm, 0.));
+  reddening.resize(fullLib.size(), vector<double>(imagm, 0.));
   zLib.resize(fullLib.size(), -99.);
   fluxIR.resize(fullLibIR.size(), vector<double>(imagm, 0.));
   zLibIR.resize(fullLibIR.size(), -99.);
@@ -450,16 +451,16 @@ keymap read_keymap_from_doc(const string libName) {
   }
   // need to create an array of char pointer, exactly as argv, in order to use
   // analyse_keywords
-  char *writable = new char[docOutFile.size() + 1];
+  char* writable = new char[docOutFile.size() + 1];
   copy(docOutFile.begin(), docOutFile.end(), writable);
   writable[docOutFile.size()] = '\0';
-  char *argv[] = {(char *)"bid", (char *)"-c", writable, NULL};
+  char* argv[] = {(char*)"bid", (char*)"-c", writable, NULL};
   keymap key_analysed = analyse_keywords(2, argv, list_keywords, nb_doc_key);
   delete[] writable;
   return key_analysed;
 }
 
-void PhotoZ::check_consistency(keymap &keys) {
+void PhotoZ::check_consistency(keymap& keys) {
   string valc = keys["LIB_TYPE"].split_string("GALAXY", 1)[0];
   // if we are not looking at a STAR library, we need
   // to assert that cosmology and z grids have been defined identically
@@ -491,9 +492,9 @@ void PhotoZ::check_consistency(keymap &keys) {
 /*
   Read the magnitude library
 */
-void PhotoZ::read_lib(vector<SED *> &libFull, int &ind, int nummodpre[3],
-                      const string libName, string &filtname, vector<int> emMod,
-                      int &babs) {
+void PhotoZ::read_lib(vector<SED*>& libFull, int& ind, int nummodpre[3],
+                      const string libName, string& filtname, vector<int> emMod,
+                      int& babs) {
   keyword oneel;
   vector<keyword> key_doc;
   string line;
@@ -544,7 +545,7 @@ void PhotoZ::read_lib(vector<SED *> &libFull, int &ind, int nummodpre[3],
   int ind0 = 0;
   vector<double> mag_z0;
   while (slibIn.tellg() < length) {
-    SED *oneSED;
+    SED* oneSED;
 
     if (valc[0] == 'G' || valc[0] == 'g') {
       oneSED = new GalSED("bid.dat", 0);
@@ -701,7 +702,7 @@ string PhotoZ::prep_header(vector<string> outkeywords) {
   string form = "# Format: \n#";
 
   // Loop over each keyword
-  for (const auto &outkey : outkeywords) {
+  for (const auto& outkey : outkeywords) {
     for (const string k : {"IDENT", "CONTEXT", "NBAND_USED", "NBAND_ULIM",
                            "ZSPEC", "STRING_INPUT"}) {
       if (outkey == k) {
@@ -798,7 +799,7 @@ string PhotoZ::prep_header(vector<string> outkeywords) {
   ////////////////////////////////////////////////////////////////////////
   // Format for topcat
   form += "# Format topcat: \n#";
-  for (const auto &outkey : outkeywords) {
+  for (const auto& outkey : outkeywords) {
     for (const string k : {"IDENT", "CONTEXT", "NBAND_USED", "NBAND_ULIM",
                            "ZSPEC", "STRING_INPUT"}) {
       if (outkey == k) {
@@ -890,7 +891,7 @@ string PhotoZ::prep_header(vector<string> outkeywords) {
 /*
  READ THE SOURCE IN THE INPUT CATALOGUE, CHOICE BETWEEN VARIOUS FORMATS
 */
-void PhotoZ::readsource(onesource *src, const string line) {
+void PhotoZ::readsource(onesource* src, const string line) {
   double dab, dsab;
 
   // put the line into the stream ss
@@ -936,10 +937,10 @@ void PhotoZ::readsource(onesource *src, const string line) {
 /*
   read the sources which are used for the adaotation of the zero-points
  */
-vector<onesource *> PhotoZ::read_autoadapt_sources() {
+vector<onesource*> PhotoZ::read_autoadapt_sources() {
   string line;
   // Vector of the objects with a spec-z
-  vector<onesource *> adaptSources;
+  vector<onesource*> adaptSources;
   ifstream sin(cat.c_str());
   // Read all the sources for auto-adapt, store them
   int nobj = 0;
@@ -947,7 +948,7 @@ vector<onesource *> PhotoZ::read_autoadapt_sources() {
     // If the first character of the line is not #
     if (check_first_char(line)) {
       // Construct one objet
-      onesource *oneObj = yield(nobj, line);
+      onesource* oneObj = yield(nobj, line);
       oneObj->set_verbosity(verbose);
 
       // Keep only sources with a spectroscopic redshift
@@ -976,7 +977,7 @@ vector<onesource *> PhotoZ::read_autoadapt_sources() {
    Decide which offsets to be used depending on the AUTO_ADAPT and
    APPLY_SYSSHIFT option
 */
-vector<double> PhotoZ::compute_offsets(vector<onesource *> adaptSources) {
+vector<double> PhotoZ::compute_offsets(vector<onesource*> adaptSources) {
   // Offsets stored in a0
   vector<double> a0;
 
@@ -1014,7 +1015,7 @@ vector<double> PhotoZ::compute_offsets(vector<onesource *> adaptSources) {
   Run the fit in order to get an adaptation of the zero-points
   Median of the difference between the modeled magnitudes and the observed ones
 */
-vector<double> PhotoZ::run_autoadapt(vector<onesource *> adaptSources) {
+vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
   double funz0 = lcdm.distMod(gridz[1] / 20.);
   vector<double> a0;
   a0.assign(imagm, 0.);
@@ -1029,7 +1030,7 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource *> adaptSources) {
     // While the convergence is not reached and we have less than 10 iterations
     while (converge == 0 && iteration < 10) {
       // Loop over the sources
-      for (auto &oneObj : adaptSources) {
+      for (auto& oneObj : adaptSources) {
         // Correct the observed magnitudes and fluxes with the coefficients
         // found by auto-adapt
         oneObj->adapt_mag(a0);
@@ -1039,7 +1040,14 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource *> adaptSources) {
         // Fit the source at the spec-z value, using only the template with
         // compatible redshift to zs.
         auto valid = validLib(oneObj->zs);
-        oneObj->fit(fullLib, flux, valid, funz0, bp);
+        if (oneObj->galEbv < 0.0) {
+          // No reddening, use original flux
+          oneObj->fit(fullLib, flux, valid, funz0, bp);
+        } else {
+          // Apply reddening first
+          auto reddened_flux = oneObj->redden_flux(flux, reddening);
+          oneObj->fit(fullLib, reddened_flux, valid, funz0, bp);
+        }
 
         // Interpolation of the predicted magnitudes, scaling at zs, checking
         // first that the fit was sucessfull
@@ -1068,8 +1076,8 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource *> adaptSources) {
 /*
   function to compare observed magnitudes and predicted ones
 */
-void auto_adapt(const vector<onesource *> adaptSources, vector<double> &a0,
-                int &converge, int &iteration) {
+void auto_adapt(const vector<onesource*> adaptSources, vector<double>& a0,
+                int& converge, int& iteration) {
   vector<double> diff, a0pre;
   double inter;
 
@@ -1084,7 +1092,7 @@ void auto_adapt(const vector<onesource *> adaptSources, vector<double> &a0,
   for (int k = 0; k < imagm; k++) {
     diff.clear();
     // define a vector difference between the observed and predicted mag
-    for (auto &oneObj : adaptSources) {
+    for (auto& oneObj : adaptSources) {
       // Only in the case of a positive flux and a fit successfully performed
       if (oneObj->mab_ori[k] > 0 && oneObj->indmin[0] > 0 &&
           oneObj->busnorma[k] == 1) {
@@ -1132,7 +1140,7 @@ void auto_adapt(const vector<onesource *> adaptSources, vector<double> &a0,
    Determine the best filter to be used as a function of redshift
 */
 vector<vector<int>> bestFilter(int nbFlt, vector<double> gridz,
-                               vector<SED *> fulllib, int method,
+                               vector<SED*> fulllib, int method,
                                vector<long> magabscont, vector<int> bapp,
                                vector<int> bappOp, vector<double> zbmin,
                                vector<double> zbmax) {
@@ -1203,7 +1211,7 @@ vector<vector<int>> bestFilter(int nbFlt, vector<double> gridz,
   Derive the k-color term (rest-frame color - k-correction) maximum, in order to
   conserve the error bars for the absolute magnitudes
 */
-vector<vector<double>> maxkcolor(vector<double> gridz, vector<SED *> fulllib,
+vector<vector<double>> maxkcolor(vector<double> gridz, vector<SED*> fulllib,
                                  vector<vector<int>> bestFlt) {
   vector<vector<double>> extremeDiff, extremeDiffMin, extremeDiffMax;
   vector<double> extremeValMin, extremeValMax, extremeVal, di;
@@ -1228,7 +1236,7 @@ vector<vector<double>> maxkcolor(vector<double> gridz, vector<SED *> fulllib,
   {
 #pragma omp for
 #endif
-    for (vector<SED *>::iterator it = fulllib.begin(); it < fulllib.end();
+    for (vector<SED*>::iterator it = fulllib.begin(); it < fulllib.end();
          ++it) {
       // computed only for galaxies
       if ((*it)->nlib == 0) {
@@ -1271,8 +1279,8 @@ vector<vector<double>> maxkcolor(vector<double> gridz, vector<SED *> fulllib,
   Define the filters to pick (depending on the redshift) to minimize the
   k-correction + rest-frame color term in the absolute magnitude computation
 */
-void minimizekcolor(vector<double> gridz, vector<SED *> fulllib,
-                    vector<vector<int>> &bestFlt, vector<long> magabscont) {
+void minimizekcolor(vector<double> gridz, vector<SED*> fulllib,
+                    vector<vector<int>>& bestFlt, vector<long> magabscont) {
   vector<vector<double>> extremeDiffMin, extremeDiffMax;
   vector<double> extremeValMin, extremeValMax, extremeVal, di;
   vector<int> possiFlt;
@@ -1327,7 +1335,7 @@ void minimizekcolor(vector<double> gridz, vector<SED *> fulllib,
     {
 #pragma omp for
 #endif
-      for (vector<SED *>::iterator it = fulllib.begin(); it < fulllib.end();
+      for (vector<SED*>::iterator it = fulllib.begin(); it < fulllib.end();
            ++it) {
         // computed only for galaxies
         if ((*it)->nlib == 0) {
@@ -1373,8 +1381,8 @@ void minimizekcolor(vector<double> gridz, vector<SED *> fulllib,
   return;
 }
 
-vector<onesource *> PhotoZ::read_photoz_sources() {
-  vector<onesource *> photoz_sources;
+vector<onesource*> PhotoZ::read_photoz_sources() {
+  vector<onesource*> photoz_sources;
   // open the external file with zspec
   ifstream szex;
   string externalzfile = ((keys["EXTERNALZ_FILE"]).split_string("NONE", 1))[0];
@@ -1428,7 +1436,7 @@ vector<onesource *> PhotoZ::read_photoz_sources() {
       }  // CAT_LINES option
 
       // Generate one objet
-      onesource *oneObj = yield(nobj, line);
+      onesource* oneObj = yield(nobj, line);
       oneObj->set_verbosity(verbose);
 
       // Use zspec from external file
@@ -1456,7 +1464,7 @@ vector<onesource *> PhotoZ::read_photoz_sources() {
   Additional layer to prepare the data for the run (context, flux and asscoiated
   uncertainties)
 */
-void PhotoZ::prep_data(onesource *oneObj) {
+void PhotoZ::prep_data(onesource* oneObj) {
   // Convert the magnitude in fluxes if needed
   if (typm[0] == 'M') oneObj->convertFlux(catmag, allFilters);
   // Rescale the flux errors if needed
@@ -1470,9 +1478,9 @@ void PhotoZ::prep_data(onesource *oneObj) {
   return;
 }
 
-void PhotoZ::prep_data(vector<onesource *> sources) {
+void PhotoZ::prep_data(vector<onesource*> sources) {
   // Loop over all sources
-  for (auto &oneObj : sources) {
+  for (auto& oneObj : sources) {
     prep_data(oneObj);
   }
   return;
@@ -1481,7 +1489,7 @@ void PhotoZ::prep_data(vector<onesource *> sources) {
 /*
   Central part of the code to fit the templates and measure the photo-z
 */
-void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
+void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
   // Open the output file
   // RM_DISCREPANT_BD
   // Threshold in chi2 to consider. Remove <3 bands, stop when below this chi2
@@ -1588,7 +1596,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
   outputHeader += offsets;
 
   unsigned int nobj = 0;
-  for (auto &oneObj : sources) {
+  for (auto& oneObj : sources) {
     if (verbose)
       cout << "Fit source " << nobj << " with Id " << oneObj->spec << " \r "
            << flush;
@@ -1608,7 +1616,14 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
       iota(valid.begin(), valid.end(), 0);
     }
     // Core of the program: compute the chi2
-    oneObj->fit(fullLib, flux, valid, funz0, bp);
+    if (oneObj->galEbv < 0.0) {
+      // No reddening, use original flux
+      oneObj->fit(fullLib, flux, valid, funz0, bp);
+    } else {
+      // Apply reddening first
+      auto reddened_flux = oneObj->redden_flux(flux, reddening);
+      oneObj->fit(fullLib, reddened_flux, valid, funz0, bp);
+    }
     // Try to remove some bands to improve the chi2, only as long as the chi2 is
     // above a threshold
     oneObj->rm_discrepant(fullLib, flux, valid, funz0, bp, thresholdChi2);
@@ -1640,7 +1655,14 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
       // Select the index of the templates that have a redshift closest to zgmed
       // We only work on GAL solutions here
       auto valid = validLib(oneObj->zgmed[0]);
-      oneObj->fit(fullLib, flux, valid, funz0, bp);
+      if (oneObj->galEbv < 0.0) {
+        // No reddening, use original flux
+        oneObj->fit(fullLib, flux, valid, funz0, bp);
+      } else {
+        // Apply reddening first
+        auto reddened_flux = oneObj->redden_flux(flux, reddening);
+        oneObj->fit(fullLib, reddened_flux, valid, funz0, bp);
+      }
     } else {
       oneObj->consiz = oneObj->zmin[0];
     }
@@ -1682,7 +1704,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
   return;
 }
 
-void PhotoZ::write_outputs(vector<onesource *> sources, const time_t &ti1) {
+void PhotoZ::write_outputs(vector<onesource*> sources, const time_t& ti1) {
   // CAT_OUT output  file -  zphot.out default
   string outf = ((keys["CAT_OUT"]).split_string("zphot.out", 1))[0];
   ofstream stout;
@@ -1699,7 +1721,7 @@ void PhotoZ::write_outputs(vector<onesource *> sources, const time_t &ti1) {
   // If the pdf(z) is requested in output, open the several streams
   unordered_map<string, ofstream> pdf_streams;
   if (outpdz.compare(nonestring) != 0) {
-    for (const auto &type : pdftype) {
+    for (const auto& type : pdftype) {
       string output = outpdz + "_" + type + ".prob";
       pdf_streams[type].open(output.c_str());
     }
@@ -1708,7 +1730,7 @@ void PhotoZ::write_outputs(vector<onesource *> sources, const time_t &ti1) {
   vector<opa> opaOut = Mag::read_opa();
 
   static bool first_obj = true;
-  for (auto &oneObj : sources) {
+  for (auto& oneObj : sources) {
     // write the object in output
     oneObj->write_out(stout, outkeywords);
 
@@ -1724,7 +1746,7 @@ void PhotoZ::write_outputs(vector<onesource *> sources, const time_t &ti1) {
   }
 
   if (outpdz.compare(nonestring) != 0)
-    for (const auto &type : pdftype) {
+    for (const auto& type : pdftype) {
       pdf_streams[type].close();
     }
   stout.close();
@@ -1741,7 +1763,7 @@ void PhotoZ::write_outputs(vector<onesource *> sources, const time_t &ti1) {
   return;
 }
 
-vector<size_t> PhotoZ::validLib(const double &redshift, const bool &ir) {
+vector<size_t> PhotoZ::validLib(const double& redshift, const bool& ir) {
   double closest_red = gridz[indexz(redshift, gridz)];
   vector<size_t> result = ir ? indexes_in_vec(closest_red, zLibIR, 1.e-10)
                              : indexes_in_vec(closest_red, zLib, 1.e-10);
