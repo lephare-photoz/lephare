@@ -269,14 +269,12 @@ class SED {
     fac_line.clear();
   };
 
-  void fit_normalization(const onesource &source, const int imagm);
-
   /*! Check if the SED is identical to another one
    * @param other: the SED to compare to
    * equality of the following attributes are compared:
    * `nummod`, `ebv`, and `age`
    */
-  inline bool is_same_model(const SED &other) {
+  inline bool is_same_model(const SED &other)  const {
     return ((*this).nummod == other.nummod && (*this).ebv == other.ebv &&
             (*this).age == other.age);
   }

@@ -181,8 +181,8 @@ class onesource {
                   const double z_spec, const string additional_input);
   void setPriors(const array<double, 2> magabsB,
                  const array<double, 2> magabsF);
-  void fltUsed(const long gbcont, const long contforb, const int imagm);
-  void fltUsedIR(const long fir_cont, const long fir_scale, const int imagm,
+  void fltUsed(const long gbcont, const long contforb);
+  void fltUsedIR(const long fir_cont, const long fir_scale,
                  vector<flt> allFilters, const double fir_lmin);
   void convertFlux(const string &catmag, const vector<flt> allFilters);
   void rescale_flux_errors(const vector<double> min_err,
@@ -192,8 +192,7 @@ class onesource {
            const vector<size_t> &valid, const double &funz0,
            const array<int, 2> &bp, const bool restrict);
   void fitIR(vector<SED *> &fulllib, const vector<vector<double>> &flux,
-             const vector<size_t> &valid, const int imagm,
-             const string fit_frsc, cosmo lcdm);
+             const vector<size_t> &valid, const string fit_frsc, cosmo lcdm);
   double nzprior(const double luv, const double lnir, const double reds,
                  const array<int, 2> bp);
   void rm_discrepant(SEDlight &lightLib, const vector<vector<double>> &flux,
@@ -236,7 +235,7 @@ class onesource {
                    const bool colAnalysis, const bool zfix);
   void generatePDF_IR(vector<SED *> &fulllib);
   void mode();
-  void interp_lib(vector<SED *> &fulllib, const int imagm, cosmo lcdm);
+  void interp_lib(vector<SED *> &fulllib);
   void adapt_mag(vector<double> a0);
   void substellar(const bool substar, vector<flt> allFilters);
   void absmag(const vector<vector<int>> &bestFlt,

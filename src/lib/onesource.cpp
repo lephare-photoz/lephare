@@ -62,8 +62,7 @@ void onesource::setPriors(const array<double, 2> magabsB,
 /*
  DEFINE THE FILTERS WHICH SHOULD BE USED IN THE FIT
 */
-void onesource::fltUsed(const long gbcont, const long contforb,
-                        const int imagm) {
+void onesource::fltUsed(const long gbcont, const long contforb) {
   vector<int> bused;
   busnorma.clear();
   busul.clear();
@@ -73,8 +72,9 @@ void onesource::fltUsed(const long gbcont, const long contforb,
   int nf = 0;
   nbul = 0;
   nbused = 0;
-  // Loop over each filter
-  for (int k = 0; k < imagm; k++) {
+  // Loop over the photometry, ab and sab are guaranteed to be
+  // of the same side, which is  equal to the number of considered filters.
+  for (int k = 0; k < ab.size(); k++) {
     // Define if the band should be used based on the context
     if (cont <= 0) {
       // if context=0 or badly define, use all bands
@@ -129,12 +129,13 @@ void onesource::fltUsed(const long gbcont, const long contforb,
 */
 // LCOV_EXCL_START
 void onesource::fltUsedIR(const long fir_cont, const long fir_scale,
-                          const int imagm, vector<flt> allFilters,
-                          const double fir_lmin) {
+                          vector<flt> allFilters, const double fir_lmin) {
   busfir.clear();
   bscfir.clear();
-  // Loop over each filter
-  for (int k = 0; k < imagm; k++) {
+
+  // Loop over the photometry, ab and sab are guaranteed to be
+  // of the same side, which is  equal to the number of considered filters.
+  for (int k = 0; k < ab.size(); k++) {
     // Define if the band should be used based on the context
     if (fir_cont <= 0) {
       // if context=0 or badly define, use all bands
@@ -678,8 +679,8 @@ void onesource::rm_discrepant(SEDlight &lightLib,
 */
 void onesource::fitIR(vector<SED *> &fulllibIR,
                       const vector<vector<double>> &fluxIR,
-                      const vector<size_t> &va, const int imagm,
-                      const string fit_frsc, cosmo lcdm) {
+                      const vector<size_t> &va, const string fit_frsc,
+                      cosmo lcdm) {
   int number_threads = 1, thread_id = 0;
 // Do a local minimisation per thread (store chi2 and index)
 // Catch first the number of threads
@@ -692,7 +693,7 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
   // Compute some quantities linked to ab and sab to save computational time in
   // the fit. No need to do it every step
   vector<double> s2n, invsab, invsabSq, abinvsabSq;
-  for (int k = 0; k < imagm; k++) {
+  for (int k = 0; k < abIR.size(); k++) {
     s2n.push_back(abIR[k] / sabIR[k]);
     invsab.push_back(1. / sabIR[k]);
     invsabSq.push_back(1. / sabIR[k] / sabIR[k]);
@@ -720,8 +721,9 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
       double avmago = 0.0, avmagt = 0.0, dmloc = -99.0;
       int nbusIR = 0;
       nbusIR = accumulate(bscfir.begin(), bscfir.end(), 0);
-      for (int k = 0; k < imagm; k++) {
-        double fluxin = fluxIR[i][k];
+      auto fluxes = fluxIR[i];
+      for (int k = 0; k < fluxes.size(); k++) {
+        double fluxin = fluxes[k];
         avmago += fluxin * dmcor * bscfir[k] * abinvsabSq[k];
         avmagt += fluxin * fluxin * dmcor * dmcor * bscfir[k] * invsabSq[k];
       }
@@ -741,8 +743,8 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
 
       double chi2loc = 0;
       // Measurement of chi^2
-      for (int k = 0; k < imagm; k++) {
-        double inter = (s2n[k] - (dmEff * fluxIR[i][k] * dmcor * invsab[k]));
+      for (int k = 0; k < fluxes.size(); k++) {
+        double inter = (s2n[k] - (dmEff * fluxes[k] * dmcor * invsab[k]));
         chi2loc += busfir[k] * inter * inter;
       }
 
@@ -1391,10 +1393,12 @@ void onesource::write_pdz(vector<string> pdztype,
  INTERPOLATE LINEARILY IN THE LIBRARY
  Do it only for GAL
 */
-void onesource::interp_lib(vector<SED *> &fulllib, const int imagm,
-                           cosmo lcdm) {
+void onesource::interp_lib(vector<SED *> &fulllib) {
   magm.clear();
-
+  //all the sizes in in the fulllib SED should be identical to the
+  //bands saved in the onesource object
+  size_t imagm = ab.size();
+      
   // Take the value of zs to interpolate in the library
   if (indmin[0] >= 0) {
     // If zs is above or below the best fit bin
@@ -1421,8 +1425,8 @@ void onesource::interp_lib(vector<SED *> &fulllib, const int imagm,
     if (fulllib[indmin[0] + deca]->red < 1.e-10) deca = 0;
 
     // Store in two SED around zs
-    SED SEDa(*(fulllib[indmin[0]]));
-    SED SEDb(*(fulllib[indmin[0] + deca]));
+    const SED& SEDa = *fulllib[indmin[0]];
+    const SED& SEDb = *fulllib[indmin[0] + deca];
 
     // Check that the interpolation can be done
     // same model in the library around zs

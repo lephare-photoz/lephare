@@ -52,31 +52,31 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   typm = key_analysed["INP_TYPE"].value;
 
   // CAT_MAG mag type AB/VEGA - AB default
-  catmag = ((key_analysed["CAT_MAG"]).split_string("AB", 1))[0];
+  catmag = key_analysed["CAT_MAG"].split_string("AB", 1)[0];
 
   // CAT_FMT format of the input file MEME/MMEE - MEME default
-  string meme = ((key_analysed["CAT_FMT"]).split_string("MEME", 1))[0];
+  string meme = key_analysed["CAT_FMT"].split_string("MEME", 1)[0];
   cat_fmt = 0;
   if (meme[1] == 'M') cat_fmt = 1;
 
   // CAT_LINE define the line range to be considered in the input catalogue
   // NOTE: commented lines are NOT considered while reading the catalogue,
   //       so this range should be intended as the number of entries, not rows
-  int rowmin_tmp = ((key_analysed["CAT_LINES"]).split_int("0", 2))[0];
-  int rowmax_tmp = ((key_analysed["CAT_LINES"]).split_int("20000000000", 2))[1];
+  int rowmin_tmp = key_analysed["CAT_LINES"].split_int("0", 2)[0];
+  int rowmax_tmp = key_analysed["CAT_LINES"].split_int("20000000000", 2)[1];
   rowmin = rowmin_tmp < 0 ? 0 : rowmin_tmp;
   rowmax = rowmax_tmp < 0 ? 2000000000 : rowmax_tmp;
 
   // ZPHOTLIB values, multiple librairies are possible,
   // number of expected values unknown in advance -> -1
-  colib = (key_analysed["ZPHOTLIB"]).split_string("GAL_LIB", -1);
-  int numlib = int(colib.size());
+  colib = key_analysed["ZPHOTLIB"].split_string("GAL_LIB", -1);
+  size_t numlib = colib.size();
 
   // PARA_OUT output parameter file - output.para default
-  outpara = ((key_analysed["PARA_OUT"]).split_string("output.para", 1))[0];
+  outpara = key_analysed["PARA_OUT"].split_string("output.para", 1)[0];
 
   // CAT_OUT output  file -  zphot.out default
-  outf = ((key_analysed["CAT_OUT"]).split_string("zphot.out", 1))[0];
+  outf = key_analysed["CAT_OUT"].split_string("zphot.out", 1)[0];
 
   // Want to display the template number on the screen
   // VERBOSE output  file -  YES default
@@ -86,16 +86,16 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   // CAT_TYPE Type of catalogue (short: read only Id mag err; long: add context
   // zs ...) - SHORT default
-  cattyp = ((key_analysed["CAT_TYPE"]).split_string("SHORT", 1))[0];
+  cattyp = key_analysed["CAT_TYPE"].split_string("SHORT", 1)[0];
 
   // ERR_SCALE Minimal uncertainties to be added in quadrature - 0.0 default
-  min_err = (key_analysed["ERR_SCALE"]).split_double("0.0", -1);
-  int nerr = int(min_err.size());
+  min_err = key_analysed["ERR_SCALE"].split_double("0.0", -1);
+  size_t nerr = min_err.size();
 
   // ERR_FACTOR Multiply the flux uncertainties by a given factor - 1.0 default
-  fac_err = ((key_analysed["ERR_FACTOR"]).split_double("1.0", -1));
-  int nfac = int(fac_err.size());
-  if ((nerr > 1) && (nfac > 1) && (nfac != nerr)) {
+  fac_err = key_analysed["ERR_FACTOR"].split_double("1.0", -1);
+  size_t nfac = fac_err.size();
+  if (nerr > 1 && nfac > 1 && nfac != nerr) {
     cout << "The number of filters in ERR_SCALE and ERR_FACTOR do not "
             "correspond."
          << endl;
@@ -105,30 +105,30 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   // GLB_CONTEXT Global context to be used for all objects - 0 default (all
   // bands)
-  gbcont = ((key_analysed["GLB_CONTEXT"]).split_long("-99", 1))[0];
+  gbcont = key_analysed["GLB_CONTEXT"].split_long("-99", 1)[0];
 
   // FORB_CONTEXT Context to reject some bands for all sources - 0 default
-  contforb = ((key_analysed["FORB_CONTEXT"]).split_long("0", 1))[0];
+  contforb = key_analysed["FORB_CONTEXT"].split_long("0", 1)[0];
 
   /*  PRIOR  */
 
   // Limits the size of the library in redshift and E(B-V)
-  zrange[0] = ((keys["Z_RANGE"]).split_double("0", 2))[0];
-  zrange[1] = ((keys["Z_RANGE"]).split_double("10000", 2))[1];
+  zrange[0] = keys["Z_RANGE"].split_double("0", 2)[0];
+  zrange[1] = keys["Z_RANGE"].split_double("10000", 2)[1];
   if (zrange[0] < 0 || zrange[1] < 0) {
     zrange[0] = 0;
     zrange[1] = 10000;
   }
-  ebvrange[0] = ((keys["EBV_RANGE"]).split_double("0", 2))[0];
-  ebvrange[1] = ((keys["EBV_RANGE"]).split_double("10000", 2))[1];
+  ebvrange[0] = keys["EBV_RANGE"].split_double("0", 2)[0];
+  ebvrange[1] = keys["EBV_RANGE"].split_double("10000", 2)[1];
   if (ebvrange[0] < 0 || ebvrange[1] < 0) {
     ebvrange[0] = 0;
     ebvrange[1] = 10000;
   }
 
   // MAG_ABS allowed range in absolute magnitude for galaxies - 0 default
-  magabsB[0] = ((key_analysed["MAG_ABS"]).split_double("0.", 2))[0];
-  magabsF[0] = ((key_analysed["MAG_ABS"]).split_double("0.", 2))[1];
+  magabsB[0] = key_analysed["MAG_ABS"].split_double("0.", 2)[0];
+  magabsF[0] = key_analysed["MAG_ABS"].split_double("0.", 2)[1];
   // be sure that magabsB is the minimum value
   if (magabsB[0] > magabsF[0]) {
     double inter = magabsF[0];
@@ -138,8 +138,8 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   // MAG_ABS_QSO allowed range in absolute magnitude for QSO library - 0 default
   // (all bands)
-  magabsB[1] = ((key_analysed["MAG_ABS_QSO"]).split_double("0.", 2))[0];
-  magabsF[1] = ((key_analysed["MAG_ABS_QSO"]).split_double("0.", 2))[1];
+  magabsB[1] = key_analysed["MAG_ABS_QSO"].split_double("0.", 2)[0];
+  magabsF[1] = key_analysed["MAG_ABS_QSO"].split_double("0.", 2)[1];
   // be sure that magabsB is the minimum value
   if (magabsB[1] > magabsF[1]) {
     double inter = magabsF[1];
@@ -148,7 +148,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   }
 
   // MAG_REF allowed range in absolute magnitude: define the band - 1 default
-  babs = ((key_analysed["MAG_REF"]).split_int("1", 1))[0];
+  babs = key_analysed["MAG_REF"].split_int("1", 1)[0];
   // Shift of 1 because of the convention (1 to start in the para, 0 in the
   // array)
   babs = babs - 1;
@@ -162,18 +162,16 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   // NZ_PRIOR prior on N(z) based on z-VVDS: I mag (the second number is in the
   // case I band is not defined) - -1 by default number of expected values could
   // be one or two
-  vector<int> test;
-  test = (key_analysed["NZ_PRIOR"]).split_int("-1", -1);
-  int testNb = int(test.size());
-  if (testNb == 2) {
-    bp[0] = ((key_analysed["NZ_PRIOR"]).split_int("-1", 2))[0];
-    bp[1] = ((key_analysed["NZ_PRIOR"]).split_int("-1", 2))[1];
+  vector<int> test = key_analysed["NZ_PRIOR"].split_int("-1", -1);
+  if (test.size() == 2) {
+    bp[0] = key_analysed["NZ_PRIOR"].split_int("-1", 2)[0];
+    bp[1] = key_analysed["NZ_PRIOR"].split_int("-1", 2)[1];
     // Shift of 1 because of the convention (1 to start in the para, 0 in the
     // array)
     bp[0] = bp[0] - 1;
     bp[1] = bp[1] - 1;
   } else {
-    bp[0] = ((key_analysed["NZ_PRIOR"]).split_int("-1", 1))[0];
+    bp[0] = key_analysed["NZ_PRIOR"].split_int("-1", 1)[0];
     bp[0] = bp[0] - 1;
     bp[1] = bp[0];
   }
@@ -200,9 +198,9 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   /* Output */
 
   // SPEC_OUT Output individual spectra - NO default
-  outsp = ((key_analysed["SPEC_OUT"]).split_string("NO", 1))[0];
+  outsp = key_analysed["SPEC_OUT"].split_string("NO", 1)[0];
   // CHI2_OUT Output the full chi2 library - NO default
-  outchi = (key_analysed["CHI2_OUT"]).split_bool("NO", 1)[0];
+  outchi = key_analysed["CHI2_OUT"].split_bool("NO", 1)[0];
 
   /* FIR Libraries */
 
@@ -216,44 +214,42 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   if (nlibext > 0) restrict_rf = true;
 
   // FIR_LMIN Lambda min given in micron  (um)
-  fir_lmin = ((key_analysed["FIR_LMIN"]).split_double("7.0", 1))[0];
+  fir_lmin = key_analysed["FIR_LMIN"].split_double("7.0", 1)[0];
   // Convert into angstrom, as used internally in the code
   fir_lmin = fir_lmin * 10000.;
 
   // FIR_CONT context for the far-IR
-  fir_cont = ((key_analysed["FIR_CONT"]).split_long("-1", 1))[0];
+  fir_cont = key_analysed["FIR_CONT"].split_long("-1", 1)[0];
 
   // FIR_SCALE context of the bands used for the rescaling in IR
-  fir_scale = ((key_analysed["FIR_SCALE"]).split_int("-1", 1))[0];
+  fir_scale = key_analysed["FIR_SCALE"].split_long("-1", 1)[0];
 
   // FIR_FREESCALE possible free rscaling in IR, when several bands. Otherwise,
   // model imposed by its LIR
-  string fir_frsc = (key_analysed["FIR_FREESCALE"]).split_string("NO", 1)[0];
+  string fir_frsc = key_analysed["FIR_FREESCALE"].split_string("NO", 1)[0];
 
   // FIR_SUBSTELLAR remove the stellar component
   bool substar = key_analysed["FIR_SUBSTELLAR"].split_bool("NO", 1)[0];
 
   // MABS_METHOD method to compute the absolute magnitudes
-  method = ((key_analysed["MABS_METHOD"]).split_int("0", -1))[0];
+  method = key_analysed["MABS_METHOD"].split_int("0", -1)[0];
 
   // MABS_CONTEXT context for method 1
-  magabscont = (key_analysed["MABS_CONTEXT"]).split_long("0", -1);
-  int nmagabscont = magabscont.size();
+  magabscont = key_analysed["MABS_CONTEXT"].split_long("0", -1);
 
   // MABS_REF reference filter in case of mag abs method 2
-  bapp = (key_analysed["MABS_REF"]).split_int("1", -1);
-  int nbapp = int(bapp.size());
-  // Need to substract one because the convention in the .para file start at 1,
-  // but 0 in the code
-  for (int k = 0; k < nbapp; k++) bapp[k]--;
+  bapp = key_analysed["MABS_REF"].split_int("1", -1);
+  // Need to substract one because the convention in the .para file
+  // start at 1, but 0 in the code
+  for (auto &tmp : bapp) tmp--;
 
   // MABS_ZBIN give the redshift bins corresponding to MABS_FILT
   // MABS_FILT choose filters per redshift bin (MABS_ZBIN) if method 4
-  bappOp = (key_analysed["MABS_FILT"]).split_int("1", -1);
+  bappOp = key_analysed["MABS_FILT"].split_int("1", -1);
   int nbBinZ = int(bappOp.size());
-  zbmin = (key_analysed["MABS_ZBIN"]).split_double("0", nbBinZ + 1);
+  zbmin = key_analysed["MABS_ZBIN"].split_double("0", nbBinZ + 1);
   zbmin.erase(zbmin.end() - 1);
-  zbmax = (key_analysed["MABS_ZBIN"]).split_double("6", nbBinZ + 1);
+  zbmax = key_analysed["MABS_ZBIN"].split_double("6", nbBinZ + 1);
   zbmax.erase(zbmax.begin(), zbmax.begin() + 1);
 
   /* PDZ OUTPUT */
@@ -264,18 +260,18 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   // ADD_EMLINES
   // minimum and maximum models to add emission lines
-  emMod.push_back(((key_analysed["ADD_EMLINES"]).split_int("-9999", 2))[0]);
-  emMod.push_back(((key_analysed["ADD_EMLINES"]).split_int("-9999", 2))[1]);
+  emMod.push_back(key_analysed["ADD_EMLINES"].split_int("-9999", 2)[0]);
+  emMod.push_back(key_analysed["ADD_EMLINES"].split_int("-9999", 2)[1]);
 
   // RF_COLORS compute 2 rest-frame colors and associated errorbars
-  vector<int> fltColRF = (key_analysed["RF_COLORS"]).split_int("-1", 4);
+  vector<int> fltColRF = key_analysed["RF_COLORS"].split_int("-1", 4);
   // Need to substract one because the convention in the .para file start at 1,
   // but 0 in the code
   if (fltColRF.size() > 1) {
     for (int k = 0; k < 4; k++) fltColRF[k]--;
   }
   // M_REF compute the absolute magnitudes and associated errorbars
-  int fltREF = (key_analysed["M_REF"]).split_int("0", -1)[0];
+  int fltREF = key_analysed["M_REF"].split_int("0", -1)[0];
   // Need to substract one because the convention in the .para file start at 1,
   // but 0 in the code
   if (fltREF > 0) {
@@ -295,7 +291,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   outputHeader += "# CAT_FMT[0:MEME 1:MMEE] : " + to_string(cat_fmt) + '\n';
   outputHeader += "# CAT_MAG                : " + catmag + '\n';
   outputHeader += "# ZPHOTLIB               : ";
-  for (int k = 0; k < numlib; k++) {
+  for (size_t k = 0; k < numlib; k++) {
     outputHeader += colib[k] + ' ';
   };
   outputHeader += '\n';
@@ -311,13 +307,13 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   outputHeader += "# FIR_FREESCALE          : " + fir_frsc + '\n';
   outputHeader += "# FIR_SUBSTELLAR         : " + bool2string(substar) + '\n';
   outputHeader += "# ERR_SCALE              : ";
-  for (int k = 0; k < nerr; k++) {
-    outputHeader += to_string(min_err[k]) + ' ';
+  for (auto &err : min_err) {
+    outputHeader += to_string(err) + ' ';
   };
   outputHeader += '\n';
   outputHeader += "# ERR_FACTOR             : ";
-  for (int k = 0; k < nfac; k++) {
-    outputHeader += to_string(fac_err[k]) + ' ';
+  for (auto &err : fac_err) {
+    outputHeader += to_string(err) + ' ';
   };
   outputHeader += '\n';
   outputHeader += "# GLB_CONTEXT            : " + to_string(gbcont) + '\n';
@@ -337,13 +333,13 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   outputHeader += "# MABS_METHOD            : " + to_string(method) + '\n';
   outputHeader += "# MABS_CONTEXT           : ";
-  for (int k = 0; k < nmagabscont; k++) {
-    outputHeader += to_string(magabscont[k]) + ' ';
+  for (auto &tmp : magabscont) {
+    outputHeader += to_string(tmp) + ' ';
   };
   outputHeader += '\n';
   outputHeader += "# MABS_REF               : ";
-  for (int k = 0; k < nbapp; k++) {
-    outputHeader += to_string(bapp[k] + 1) + ' ';
+  for (auto &tmp : bapp) {
+    outputHeader += to_string(tmp + 1) + ' ';
   };
   outputHeader += '\n';
   // AUTO-ADAPT
@@ -351,19 +347,19 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
                   bool2string(keys["AUTO_ADAPT"].split_bool("NO", 1)[0]) + '\n';
 
   // ADAPT_BAND selection in one band
-  fl_auto = ((key_analysed["ADAPT_BAND"]).split_int("1", 1))[0];
+  fl_auto = key_analysed["ADAPT_BAND"].split_int("1", 1)[0];
   // Need to substract one because the convention in the .para file start at 1,
   // but 0 in the code
   fl_auto--;
   outputHeader += "# ADAPT_BAND             : " + to_string(fl_auto + 1) + '\n';
   // ADAPT_LIM limit for the selection in auto-adapt
-  auto_thresmin = ((key_analysed["ADAPT_LIM"]).split_double("15", 2))[0];
-  auto_thresmax = ((key_analysed["ADAPT_LIM"]).split_double("35", 2))[1];
+  auto_thresmin = key_analysed["ADAPT_LIM"].split_double("15", 2)[0];
+  auto_thresmax = key_analysed["ADAPT_LIM"].split_double("35", 2)[1];
   outputHeader += "# ADAPT_LIM              : " + to_string(auto_thresmin) +
                   ' ' + to_string(auto_thresmax) + '\n';
   // ADAPT_ZBIN minimum and maximum redshift for the adaptation
-  adzmin = ((key_analysed["ADAPT_ZBIN"]).split_double("0.001", 2))[0];
-  adzmax = ((key_analysed["ADAPT_ZBIN"]).split_double("6", 2))[1];
+  adzmin = key_analysed["ADAPT_ZBIN"].split_double("0.001", 2)[0];
+  adzmax = key_analysed["ADAPT_ZBIN"].split_double("6", 2)[1];
   outputHeader += "# ADAPT_ZBIN             : " + to_string(adzmin) + ' ' +
                   to_string(adzmax) + '\n';
 
@@ -390,8 +386,8 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   int ind = 0, nummodpre[3] = {0, 0, 0};
 
   // Open the galaxies last to keep the grid z of their library
-  for (int j = numlib - 1; j >= 0; j--) {
-    read_lib(fullLib, ind, nummodpre, colib[j], filtName, emMod, babs);
+  for (size_t j = numlib; j > 0; j--) {
+    read_lib(fullLib, ind, nummodpre, colib[j - 1], filtName, emMod, babs);
   }
   cout << "Read lib out " << endl;
 
@@ -652,8 +648,7 @@ void PhotoZ::read_lib(vector<SED *> &libFull, int &ind, int nummodpre[3],
           ind0 = oneSED->index;
           // Keep the magnitude in each band
           mag_z0.clear();
-          for (int k = 0; k < int((oneSED->mag).size()); k++)
-            mag_z0.push_back(oneSED->mag[k]);
+          for (auto mag : oneSED->mag) mag_z0.push_back(mag);
         }
         // Store the index at z=0 in the SED
         oneSED->index_z0 = ind0;
@@ -1106,7 +1101,7 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource *> adaptSources) {
         if (oneObj->indmin[0] >= 0) {
           // interp_lib uses consiz to define the position of interpolation
           oneObj->consiz = oneObj->zs;
-          oneObj->interp_lib(fullLib, imagm, lcdm);
+          oneObj->interp_lib(fullLib);
         }
         if (verbose)
           cout << " Fit source for adapt " << oneObj->spec << "  \r " << flush;
@@ -1526,7 +1521,7 @@ void PhotoZ::prep_data(onesource *oneObj) {
   // Keep original magnitudes
   oneObj->keepOri();
   // Define the filters used for the fit based on the context
-  oneObj->fltUsed(gbcont, contforb, imagm);
+  oneObj->fltUsed(gbcont, contforb);
   return;
 }
 
@@ -1576,35 +1571,34 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
   double fir_lmin = ((keys["FIR_LMIN"]).split_double("7.0", 1))[0];
   fir_lmin = fir_lmin * 10000.;
   // FIR_CONT context for the far-IR
-  long fir_cont = ((keys["FIR_CONT"]).split_long("-1", 1))[0];
+  long fir_cont = keys["FIR_CONT"].split_long("-1", 1)[0];
   // FIR_SCALE context of the bands used for the rescaling in IR
-  int fir_scale = ((keys["FIR_SCALE"]).split_int("-1", 1))[0];
+  long fir_scale = keys["FIR_SCALE"].split_long("-1", 1)[0];
   // FIR_FREESCALE possible free rscaling in IR, when several bands. Otherwise,
   // model imposed by its LIR
-  string fir_frsc = ((keys["FIR_FREESCALE"]).split_string("NO", 1))[0];
+  string fir_frsc = keys["FIR_FREESCALE"].split_string("NO", 1)[0];
   // FIR_SUBSTELLAR remove the stellar component
   bool substar = keys["FIR_SUBSTELLAR"].split_bool("NO", 1)[0];
   // MIN_THRES threshold to trigger the detection - 0.1 by default
-  double min_thres = ((keys["MIN_THRES"]).split_double("0.1", 1))[0];
+  double min_thres = keys["MIN_THRES"].split_double("0.1", 1)[0];
 
   /* Define what are the filters to be used for the absolute magnitude depending
    * on the method adopted */
   // MABS_METHOD method to compute the absolute magnitudes
-  int method = ((keys["MABS_METHOD"]).split_int("0", -1))[0];
+  int method = keys["MABS_METHOD"].split_int("0", -1)[0];
   // MABS_REF reference filter in case of mag abs method 2
-  vector<int> bapp = (keys["MABS_REF"]).split_int("1", -1);
-  int nbapp = int(bapp.size());
+  vector<int> bapp = keys["MABS_REF"].split_int("1", -1);
 
   // MABS_FILT choose filters per redshift bin (MABS_ZBIN) if method 4
-  vector<int> bappOp = (keys["MABS_FILT"]).split_int("1", -1);
-  int nbBinZ = int(bappOp.size());
+  vector<int> bappOp = keys["MABS_FILT"].split_int("1", -1);
+  size_t nbBinZ = bappOp.size();
 
   // Need to substract one because the convention in the .para file start at 1,
   // but 0 in the code
-  for (int k = 0; k < nbBinZ; k++) bappOp[k]--;
+  for (auto &tmp : bappOp) tmp--;
   // Need to substract one because the convention in the .para file start at 1,
   // but 0 in the code
-  for (int k = 0; k < nbapp; k++) bapp[k]--;
+  for (auto &tmp : bapp) tmp--;
 
   // MABS_ZBIN give the redshift bins corresponding to MABS_FILT
   vector<double> zbmin = (keys["MABS_ZBIN"]).split_double("0", nbBinZ + 1);
@@ -1687,7 +1681,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
     }
 
     // Interpolation at the new redshift  (only gal for the moment)
-    oneObj->interp_lib(fullLib, imagm, lcdm);
+    oneObj->interp_lib(fullLib);
     // Compute absolute magnitudes
     oneObj->absmag(goodFlt, maxkcol, lcdm, gridz);
     // Compute zmax and M_faint
@@ -1702,14 +1696,14 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
     if (nlibext > 0) {
       // FIR FIT
       // Define the filters used for the FIR fit based on the FIR context
-      oneObj->fltUsedIR(fir_cont, fir_scale, imagm, allFilters, fir_lmin);
+      oneObj->fltUsedIR(fir_cont, fir_scale, allFilters, fir_lmin);
       // Substract the stellar component to the FIR observed flux
       oneObj->substellar(substar, allFilters);
       // Select in the IR library only the templates with redshifts closest to
       // consiz
       auto validfix = validLib(oneObj->consiz, true);
       // Fit the SED on FIR data, with the redshift fixed at zmin or zmed
-      oneObj->fitIR(fullLibIR, fluxIR, validfix, imagm, fir_frsc, lcdm);
+      oneObj->fitIR(fullLibIR, fluxIR, validfix, fir_frsc, lcdm);
       // Compute the IR luminosities
       oneObj->generatePDF_IR(fullLibIR);
       // Uncertainties from the bayesian method, centered on the median
@@ -1866,47 +1860,43 @@ void PhotoZ::physpara_onesource(onesource &src) {
   /* Define what are the filters to be used for the absolute magnitude depending
    * on the method adopted */
   // MABS_METHOD method to compute the absolute magnitudes
-  int method = ((keys["MABS_METHOD"]).split_int("0", -1))[0];
+  int method = keys["MABS_METHOD"].split_int("0", -1)[0];
   // MABS_REF reference filter in case of mag abs method 2
-  vector<int> bapp = (keys["MABS_REF"]).split_int("1", -1);
-  int nbapp = int(bapp.size());
-
+  vector<int> bapp = keys["MABS_REF"].split_int("1", -1);
   // MABS_FILT choose filters per redshift bin (MABS_ZBIN) if method 4
-  vector<int> bappOp = (keys["MABS_FILT"]).split_int("1", -1);
-  int nbBinZ = int(bappOp.size());
+  vector<int> bappOp = keys["MABS_FILT"].split_int("1", -1);
 
-  // Need to substract one because the convention in the .para file start at 1,
-  // but 0 in the code
-  for (int k = 0; k < nbBinZ; k++) bappOp[k]--;
-  // Need to substract one because the convention in the .para file start at 1,
-  // but 0 in the code
-  for (int k = 0; k < nbapp; k++) bapp[k]--;
+  // Need to substract one because the convention in the .para file
+  // start at 1, but 0 in the code
+  for (auto &tmp : bappOp) tmp--;
+  for (auto &tmp : bapp) tmp--;
 
   // MABS_ZBIN give the redshift bins corresponding to MABS_FILT
-  vector<double> zbmin = (keys["MABS_ZBIN"]).split_double("0", nbBinZ + 1);
+  size_t nbBinZ = bappOp.size();
+  vector<double> zbmin = keys["MABS_ZBIN"].split_double("0", nbBinZ + 1);
   zbmin.erase(zbmin.end() - 1);
-  vector<double> zbmax = (keys["MABS_ZBIN"]).split_double("6", nbBinZ + 1);
+  vector<double> zbmax = keys["MABS_ZBIN"].split_double("6", nbBinZ + 1);
   zbmax.erase(zbmax.begin(), zbmax.begin() + 1);
   // MABS_CONTEXT context for method 1
-  vector<long> magabscont = (keys["MABS_CONTEXT"]).split_long("0", -1);
+  vector<long> magabscont = keys["MABS_CONTEXT"].split_long("0", -1);
   vector<vector<int>> goodFlt = bestFilter(
       imagm, gridz, fullLib, method, magabscont, bapp, bappOp, zbmin, zbmax);
   vector<vector<double>> maxkcol = maxkcolor(gridz, fullLib, goodFlt);
 
   // FIR_LMIN Lambda min given in micron  (um)
-  double fir_lmin = ((keys["FIR_LMIN"]).split_double("7.0", 1))[0];
-  fir_lmin = fir_lmin * 10000.;
+  double fir_lmin = keys["FIR_LMIN"].split_double("7.0", 1)[0];
+  fir_lmin *= 10000.;
   // FIR_CONT context for the far-IR
-  long fir_cont = ((keys["FIR_CONT"]).split_long("-1", 1))[0];
+  long fir_cont = keys["FIR_CONT"].split_long("-1", 1)[0];
   // FIR_SCALE context of the bands used for the rescaling in IR
-  int fir_scale = ((keys["FIR_SCALE"]).split_int("-1", 1))[0];
+  long fir_scale = keys["FIR_SCALE"].split_long("-1", 1)[0];
   // FIR_FREESCALE possible free rscaling in IR, when several bands. Otherwise,
   // model imposed by its LIR
-  string fir_frsc = ((keys["FIR_FREESCALE"]).split_string("NO", 1))[0];
+  string fir_frsc = keys["FIR_FREESCALE"].split_string("NO", 1)[0];
   // FIR_SUBSTELLAR remove the stellar component
   bool substar = keys["FIR_SUBSTELLAR"].split_bool("NO", 1)[0];
   // MIN_THRES threshold to trigger the detection - 0.1 by default
-  double min_thres = ((keys["MIN_THRES"]).split_double("0.1", 1))[0];
+  double min_thres = keys["MIN_THRES"].split_double("0.1", 1)[0];
 
   // The rest of the procedure requires that a specific choice be made for the
   // redshift of GAL solutions, to be considered for computation of physical
@@ -1926,7 +1916,7 @@ void PhotoZ::physpara_onesource(onesource &src) {
   }
 
   // Interpolation at the new redshift  (only gal for the moment)
-  src.interp_lib(fullLib, imagm, lcdm);
+  src.interp_lib(fullLib);
 
   // Compute absolute magnitudes
   src.absmag(goodFlt, maxkcol, lcdm, gridz);
@@ -1938,14 +1928,14 @@ void PhotoZ::physpara_onesource(onesource &src) {
   if (nlibext > 0) {
     // FIR FIT
     // Define the filters used for the FIR fit based on the FIR context
-    src.fltUsedIR(fir_cont, fir_scale, imagm, allFilters, fir_lmin);
+    src.fltUsedIR(fir_cont, fir_scale, allFilters, fir_lmin);
     // Substract the stellar component to the FIR observed flux
     src.substellar(substar, allFilters);
     // Select in the IR library only the templates with redshifts closest to
     // consiz
     auto valid = validLib(src.consiz, true);
     // Fit the SED on FIR data, with the redshift fixed at zmin or zmed
-    src.fitIR(fullLibIR, fluxIR, valid, imagm, fir_frsc, lcdm);
+    src.fitIR(fullLibIR, fluxIR, valid, fir_frsc, lcdm);
     // Compute the IR luminosities
     src.generatePDF_IR(fullLibIR);
     // Uncertainties from the bayesian method, centered on the median

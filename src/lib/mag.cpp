@@ -48,26 +48,26 @@ Mag::Mag(keymap &key_analysed) {
   // extinction laws, multiple laws are possible, number of expected laws
   // unknown in advance -> -1
   extlaw = (key_analysed["EXTINC_LAW"]).split_string("calzetti.dat", -1);
-  nextlaw = int(extlaw.size());
   read_ext();
 
   // possible E(B-V) values, multiple values are possible, number of expected
   // values unknown in advance -> -1
   ebv = (key_analysed["EB_V"]).split_double("0", -1);
-  nebv = int(ebv.size());
   // model ranges for each extinction curve
-  modext = (key_analysed["MOD_EXTINC"]).split_int("0,0", nextlaw * 2);
+  modext = (key_analysed["MOD_EXTINC"]).split_int("0,0", extlaw.size() * 2);
 
   // define the grid in redshift
-  dz = (key_analysed["Z_STEP"]).split_double("0.04", 3)[0];
-  zmin = (key_analysed["Z_STEP"]).split_double("0.", 3)[1];
-  zmax = (key_analysed["Z_STEP"]).split_double("6.", 3)[2];
+  dz = key_analysed["Z_STEP"].split_double("0.04", 3)[0];
+  zmin = key_analysed["Z_STEP"].split_double("0.", 3)[1];
+  zmax = key_analysed["Z_STEP"].split_double("6.", 3)[2];
   // LCOV_EXCL_START
   if (zmax < zmin) {
     throw runtime_error(
         "You are probably using the old parametrisation of "
         "Z_STEP since Z MIN > Z MAX in Z_STEP. Stop here. ");
   }
+  def_zgrid();
+
   // LCOV_EXCL_STOP
   //  Output file in ascii ?
   outasc = ((key_analysed["LIB_ASCII"]).split_bool("NO", 1))[0];
@@ -144,7 +144,7 @@ void Mag::open_files() {
 
     sdatOut << "# Filter list: \n";
     if (allFlt.size() != 0) {
-      for (const auto f : allFlt) {
+      for (const auto &f : allFlt) {
         sdatOut << "#" << f.name << "\n";
       }
     }
@@ -194,22 +194,17 @@ void Mag::close_files() {
 // Function of the basis class which read the extinction laws
 void Mag::read_ext() {
   // Loop over the possible extinction laws
-  for (int k = 0; k < nextlaw; k++) {
+  int count = 0;
+  for (auto &filename : extlaw) {
     // Instance one ext object
-    ext oneext(extlaw[k], k);
+    ext oneext(filename, count++);
     // Name of the extinction law file
-    string extFile = lepharedir + "/ext/" + extlaw[k];
+    string extFile = lepharedir + "/ext/" + filename;
     // read the extinction law file
     oneext.read(extFile);
     // store it into the vector of exction laws
     extAll.push_back(oneext);
   }
-  // Read the MW extinction curve and store it into the last item
-  // Do not increment nextlaw
-  ext oneext("MW_seaton.dat", nextlaw);
-  string extFile = lepharedir + "/ext/MW_seaton.dat";
-  oneext.read(extFile);
-  extAll.push_back(oneext);
 }
 
 // Function of the basis class which read the IGM opacity
@@ -358,16 +353,16 @@ void Mag::write_doc() {
   sdocOut << endl << "Z_STEP   " << dz << "," << zmin << "," << zmax << endl;
   sdocOut << "COSMOLOGY   " << lcdm << endl;
   sdocOut << "EXTINC_LAW   ";
-  for (int k = 0; k < nextlaw; k++) {
-    sdocOut << extlaw[k] << ",";
+  for (auto &law : extlaw) {
+    sdocOut << law << ",";
   };
   sdocOut << endl << "MOD_EXTINC   ";
-  for (int k = 0; k < nextlaw; k++) {
-    sdocOut << modext[k * 2] << "," << modext[2 * k + 1] << ",";
+  for (auto &mod : modext) {
+    sdocOut << mod << ",";
   };
   sdocOut << endl << "EB_V   ";
-  for (int k = 0; k < nebv; k++) {
-    sdocOut << ebv[k] << ",";
+  for (auto &tmp : ebv) {
+    sdocOut << tmp << ",";
   };
   sdocOut << endl << "EM_LINES   " << emlines << endl;
   sdocOut << "LIB_ASCII   " << (outasc ? "YES" : "NO") << endl;
@@ -461,12 +456,18 @@ vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
   // build the emission line SED. This changes the state of oneSED
   GalSED oneEm = oneSED.generateEmSED(emlines);
 
+  // Read the MW extinction curve to be applied to emission lines
+  // use extlaw.size() as a counter past the last standard extinction file
+  ext mw_ext("MW_seaton.dat", extlaw.size());
+  string mwFile = lepharedir + "/ext/MW_seaton.dat";
+  mw_ext.read(mwFile);
+
 // PARALLELIZE all the 4 loops  [Iary, 12 March 2018]
 #pragma omp parallel for ordered schedule(dynamic) collapse(4)
   // Loop over each extinction law
-  for (int i = 0; i < nextlaw; i++) {
+  for (int i = 0; i < extlaw.size(); i++) {
     // loop over each E(B-V)
-    for (int j = 0; j < nebv; j++) {
+    for (int j = 0; j < ebv.size(); j++) {
       // loop over each fraction of emission line flux (add a dispersion in
       // emission lines as a new template)
       for (size_t l = 0; l < fracEm.size(); l++) {
@@ -534,7 +535,7 @@ vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
                 oneEmInt.ebv = ebv[j];
                 oneEmInt.red = gridz[k];
                 // For the emission lines, use only the MW. Change fac_line
-                oneEmInt.apply_extinction_to_lines(ebv[j], extAll[nextlaw]);
+                oneEmInt.apply_extinction_to_lines(ebv[j], mw_ext);
                 // rescale the lines as a free parameter
                 oneEmInt.fracEm = fracEm[l];
                 oneEmInt.rescaleEmLines();
@@ -627,21 +628,21 @@ void GalMag::print_info() {
   cout << "# Z_STEP   :" << dz << " " << zmin << " " << zmax << endl;
   cout << "# COSMOLOGY   :" << lcdm << endl;
   cout << "# EXTINC_LAW   :";
-  for (int k = 0; k < nextlaw; k++) {
-    cout << extlaw[k] << " ";
+  for (auto &law : extlaw) {
+    cout << law << " ";
   };
   cout << endl << "# MOD_EXTINC   :";
-  for (int k = 0; k < nextlaw; k++) {
-    cout << modext[k * 2] << " " << modext[2 * k + 1] << " ";
+  for (auto &mod : modext) {
+    cout << mod << " ";
   };
   cout << endl << "# EB_V   :";
-  for (int k = 0; k < nebv; k++) {
-    cout << ebv[k] << " ";
+  for (auto &tmp : ebv) {
+    cout << tmp << " ";
   };
   cout << endl << "# EM_LINES   " << emlines << endl;
   cout << "# EM_DISPERSION   ";
-  for (size_t k = 0; k < fracEm.size(); k++) {
-    cout << fracEm[k] << ",";
+  for (auto &tmp : fracEm) {
+    cout << tmp << ",";
   };
   cout << endl << "# LIB_ASCII   " << (outasc ? "YES" : "NO") << endl;
   time_t result = time(nullptr);
@@ -675,16 +676,16 @@ void QSOMag::print_info() {
   cout << "# Z_STEP   :" << dz << " " << zmin << " " << zmax << endl;
   cout << "# COSMOLOGY   :" << lcdm << endl;
   cout << "# EXTINC_LAW   :";
-  for (int k = 0; k < nextlaw; k++) {
-    cout << extlaw[k] << " ";
+  for (auto &law : extlaw) {
+    cout << law << " ";
   };
   cout << endl << "# MOD_EXTINC   :";
-  for (int k = 0; k < nextlaw; k++) {
-    cout << modext[k * 2] << " " << modext[k + 1] << " ";
+  for (auto &mod : modext) {
+    cout << mod << " ";
   };
   cout << endl << "# EB_V   :";
-  for (int k = 0; k < nebv; k++) {
-    cout << ebv[k] << " ";
+  for (auto &tmp : ebv) {
+    cout << tmp << " ";
   };
   cout << "# LIB_ASCII   " << (outasc ? "YES" : "NO") << endl;
   time_t result = time(nullptr);
@@ -742,9 +743,9 @@ vector<QSOSED> QSOMag::make_maglib(const QSOSED &oneSED) {
   vector<QSOSED> allSED;
 #pragma omp parallel for ordered schedule(dynamic) collapse(3)
   // Loop over each extinction law
-  for (int i = 0; i < nextlaw; i++) {
+  for (int i = 0; i < extlaw.size(); i++) {
     // loop over each E(B-V)
-    for (int j = 0; j < nebv; j++) {
+    for (int j = 0; j < ebv.size(); j++) {
       // Loop over the redshift grid
       for (size_t k = 0; k < gridz.size(); k++) {
         // Select case which need to be considered (no extinction or extinction

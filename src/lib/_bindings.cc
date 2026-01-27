@@ -302,7 +302,6 @@ PYBIND11_MODULE(_lephare, mod) {
        .def("read_ext", &c::read_ext)                      \
        .def("read_opa", &c::read_opa)                      \
        .def("read_B12", &c::read_B12)                      \
-       .def("def_zgrid", &c::def_zgrid)                    \
        .def("set_zgrid", &c::set_zgrid)                    \
        .def("read_SED", &c::read_SED)                      \
        .def("write_doc", &c::write_doc)                    \

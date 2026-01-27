@@ -27,9 +27,7 @@ class Mag {
   string filtFile, magtyp;
   bool outasc, verbose, add_dust;
   vector<string> extlaw;
-  int nextlaw;
   vector<double> ebv;
-  int nebv;
   vector<int> modext;
   double dz, zmin, zmax;
   string lib, colib;
