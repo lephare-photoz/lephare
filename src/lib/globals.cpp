@@ -9,6 +9,7 @@ declaration of global variables
 #include <cstring>
 #include <fstream>   // print output file
 #include <iostream>  // print standard file
+#include <mutex>
 #include <string>
 
 using namespace std;
@@ -141,42 +142,44 @@ const vector<opa> &get_opa_vector() {
   // define a static vector that is created once only
   // and the available just calling this function
   static vector<opa> result;
-  if (!result.empty()) return result;
+  static std::once_flag flag;
 
-  ifstream stream;
-  // open the ascii file with all the opacity file listed
-  string opaListFile = lepharedir + "/opa/OPACITY.dat";
-  stream.open(opaListFile.c_str());
-  // Check if file is opened
-  if (!stream) {
-    throw invalid_argument("Can't open file with opacity " + opaListFile);
-  }
+  std::call_once(flag, []() {
+    ifstream stream;
+    // open the ascii file with all the opacity file listed
+    string opaListFile = lepharedir + "/opa/OPACITY.dat";
+    stream.open(opaListFile.c_str());
+    // Check if file is opened
+    if (!stream) {
+      throw invalid_argument("Can't open file with opacity " + opaListFile);
+    }
 
-  // In oder to fill the two last elements around Lyman alpha
-  // Put 1 for the last element
-  // Put the last value of the opa below 1215.67 just before
-  oneElLambda beflastOpa(1215.66, 1.);
-  oneElLambda lastOpa(1215.67, 1.);
+    // In oder to fill the two last elements around Lyman alpha
+    // Put 1 for the last element
+    // Put the last value of the opa below 1215.67 just before
+    oneElLambda beflastOpa(1215.66, 1.);
+    oneElLambda lastOpa(1215.67, 1.);
 
-  string name;
-  double red;
-  // Take the stream line by line: list of each opa file
-  for (int i = 0; i < 81; i++) {
-    stream >> red >> name;
-    opa oneOpa(red, name);
-    oneOpa.read();
-    // Put as last element a lambda at the Lyman-alpha wavelength with
-    // transmission=1 Meiksin case : remove the last element which is after the
-    // Lya line
-    if (oneOpa.lamb_opa.back().lamb > 1215.66) oneOpa.lamb_opa.pop_back();
-    // Put the last transmission value very close to Lyman alpha
-    beflastOpa.val = oneOpa.lamb_opa.back().val;
-    // Add the two last values close to Lyman alpha
-    oneOpa.lamb_opa.push_back(beflastOpa);
-    oneOpa.lamb_opa.push_back(lastOpa);
-    oneOpa.lmax = 1215.67;
-    // Add to the list of opacity
-    result.push_back(oneOpa);
-  }
+    string name;
+    double red;
+    // Take the stream line by line: list of each opa file
+    for (int i = 0; i < 81; i++) {
+      stream >> red >> name;
+      opa oneOpa(red, name);
+      oneOpa.read();
+      // Put as last element a lambda at the Lyman-alpha wavelength with
+      // transmission=1 Meiksin case : remove the last element which is after
+      // the Lya line
+      if (oneOpa.lamb_opa.back().lamb > 1215.66) oneOpa.lamb_opa.pop_back();
+      // Put the last transmission value very close to Lyman alpha
+      beflastOpa.val = oneOpa.lamb_opa.back().val;
+      // Add the two last values close to Lyman alpha
+      oneOpa.lamb_opa.push_back(beflastOpa);
+      oneOpa.lamb_opa.push_back(lastOpa);
+      oneOpa.lmax = 1215.67;
+      // Add to the list of opacity
+      result.push_back(oneOpa);
+    }
+  });
   return result;
 }
