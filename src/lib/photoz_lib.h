@@ -89,6 +89,11 @@ class PhotoZ {
       onesource &src, int const templateType, double const minl,
       double const maxl);
 
+  inline void writeSpec_onesource(const onesource &src,
+                                  const string outdir = ".") {
+    src.writeSpec(fullLib, fullLibIR, lcdm, allFilters, outdir);
+  }
+
   string prep_header(vector<string> outkeywords);
 
   void write_outputs(vector<onesource *> sources, const time_t &ti1);

@@ -1394,10 +1394,10 @@ void onesource::write_pdz(vector<string> pdztype,
 */
 void onesource::interp_lib(vector<SED *> &fulllib) {
   magm.clear();
-  //all the sizes in in the fulllib SED should be identical to the
-  //bands saved in the onesource object
+  // all the sizes in in the fulllib SED should be identical to the
+  // bands saved in the onesource object
   size_t imagm = ab.size();
-      
+
   // Take the value of zs to interpolate in the library
   if (indmin[0] >= 0) {
     // If zs is above or below the best fit bin
@@ -1424,8 +1424,8 @@ void onesource::interp_lib(vector<SED *> &fulllib) {
     if (fulllib[indmin[0] + deca]->red < 1.e-10) deca = 0;
 
     // Store in two SED around zs
-    const SED& SEDa = *fulllib[indmin[0]];
-    const SED& SEDb = *fulllib[indmin[0] + deca];
+    const SED &SEDa = *fulllib[indmin[0]];
+    const SED &SEDb = *fulllib[indmin[0] + deca];
 
     // Check that the interpolation can be done
     // same model in the library around zs
@@ -1963,8 +1963,8 @@ void onesource::limits(vector<SED *> &fulllib, vector<double> &limits_zbin,
 
 // Used for the python interface in the notebook
 pair<vector<double>, vector<double>> onesource::best_spec_vec(
-    short sol, vector<SED *> &fulllib, cosmo lcdm,
-    double minl, double maxl) {
+    short sol, vector<SED *> &fulllib, cosmo lcdm, double minl,
+    double maxl) const {
   // sol=0 for GAL-1, sol=1 for GAL-2, sol=2 for FIR, sol=3 for QSO, sol=4 for
   // STAR
   int index = -1;     // index of the best fit
@@ -2028,8 +2028,8 @@ pair<vector<double>, vector<double>> onesource::best_spec_vec(
  WRITE .SPEC FILE
 */
 void onesource::writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
-                          cosmo lcdm,
-                          const vector<flt> &allflt, const string outspdir) {
+                          cosmo lcdm, const vector<flt> &allflt,
+                          const string outspdir) const {
   // open the output file
   ofstream stospec;
   string ospec = "Id" + string(spec) + ".spec";
@@ -2106,7 +2106,8 @@ void onesource::writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
   stospec << "FILTERS  " << allflt.size() << endl;
 
   stospec << "# Zstep  PDF " << endl;
-  stospec << "PDF  " << pdfmap[11].size() << " " << pdfmap[9].size() << endl;
+  stospec << "PDF  " << pdfmap.at(11).size() << " " << pdfmap.at(9).size()
+          << endl;
 
   stospec << "# Type Nline Model Library Nband  Zphot Zinf Zsup Chi2  PDF  "
              "Extlaw EB-V Lir Age  Mass SFR SSFR"
@@ -2116,10 +2117,11 @@ void onesource::writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
   if (indmin[0] > 0) {
     stospec << "GAL-1 " << lG.size() << " " << imasmin[0] << " 1 " << nbused
             << " " << consiz << " " << zgmin[0] << " " << zgmin[1] << " ";
-    stospec << chimin[0] << " " << " -1" << " " << results["EXTLAW_BEST"] << " "
-            << results["EBV_BEST"] << " " << results["LDUST_BEST"] << " "
-            << results["AGE_BEST"] << " " << results["MASS_BEST"] << " "
-            << results["SFR_BEST"] << " " << results["SSFR_BEST"] << endl;
+    stospec << chimin[0] << " " << " -1" << " " << results.at("EXTLAW_BEST")
+            << " " << results.at("EBV_BEST") << " " << results.at("LDUST_BEST")
+            << " " << results.at("AGE_BEST") << " " << results.at("MASS_BEST")
+            << " " << results.at("SFR_BEST") << " " << results.at("SSFR_BEST")
+            << endl;
 
   } else {
     stospec
@@ -2183,12 +2185,13 @@ void onesource::writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
   }
 
   // write PDF
-  if (pdfmap[11].size() != pdfmap[9].vPDF.size())
+  if (pdfmap.at(11).size() != pdfmap.at(9).vPDF.size())
     cout << " Problem PDF bay and min differ" << endl;
-  for (size_t l = 0; l < pdfmap[11].size(); l++) {
+  for (size_t l = 0; l < pdfmap.at(11).size(); l++) {
     stospec << scientific;
-    stospec << setw(6) << setprecision(3) << pdfmap[11].xaxis[l] << setw(14)
-            << pdfmap[11].vPDF[l] << setw(14) << pdfmap[9].vPDF[l] << endl;
+    stospec << setw(6) << setprecision(3) << pdfmap.at(11).xaxis[l] << setw(14)
+            << pdfmap.at(11).vPDF[l] << setw(14) << pdfmap.at(9).vPDF[l]
+            << endl;
   }
 
   // GAL: Loop over the full vector with the two vectors concatenated

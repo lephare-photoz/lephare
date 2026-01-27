@@ -241,8 +241,7 @@ class onesource {
               const vector<vector<double>> &maxkcolor, cosmo lcdm,
               const vector<double> gridz);
   void writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR, cosmo lcdm,
-                 const vector<flt> &allFilters,
-                 const string outspdir);
+                 const vector<flt> &allFilters, const string outspdir) const;
   /*! Write out in a Id<source id>.chi file the chi2 of all the templates
    * participating to the fit.
    * @param fulllib : the library of SED objects.
@@ -258,8 +257,8 @@ class onesource {
               vector<double> &limits_cut);
   pair<vector<double>, vector<double>> best_spec_vec(short sol,
                                                      vector<SED *> &fulllib,
-                                                     cosmo lcdm,
-                                                     double minl, double maxl);
+                                                     cosmo lcdm, double minl,
+                                                     double maxl) const;
 
   void compute_best_fit_physical_quantities(vector<SED *> &fulllib);
 };

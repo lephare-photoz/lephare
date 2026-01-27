@@ -79,11 +79,10 @@ Mag::Mag(keymap &key_analysed) {
   // VERBOSE output  file -  YES default
   verbose = key_analysed["VERBOSE"].split_bool("YES", 1)[0];
 
-  //need to call it here so that it is guaranteed
-  //that the vector has been created before each thread in make_maglib
-  //uses it.
+  // need to call it here so that it is guaranteed
+  // that the vector has been created before each thread in make_maglib
+  // uses it.
   auto opas = get_opa_vector();
-
 }
 
 // destructor of the class Mag cleaning all the vectors
@@ -195,7 +194,6 @@ void Mag::read_ext() {
     extAll.push_back(oneext);
   }
 }
-
 
 // Read the long wavelength Bethermin+2012 templates to add the dust emission to
 // the BC03 templates Associate a b12 SED to each redshift of the grid in
@@ -416,7 +414,7 @@ vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
   ext mw_ext("MW_seaton.dat", extlaw.size());
   string mwFile = lepharedir + "/ext/MW_seaton.dat";
   mw_ext.read(mwFile);
-  
+
 // PARALLELIZE all the 4 loops  [Iary, 12 March 2018]
 #pragma omp parallel for ordered schedule(dynamic) collapse(4)
   // Loop over each extinction law

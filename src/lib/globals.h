@@ -5,6 +5,7 @@
 #include <cmath>
 #include <string>
 #include <vector>
+
 #include "opa.h"
 
 #define MAX_CONTEXT 1024
@@ -35,7 +36,7 @@ extern const double pi;
 extern const double hc;
 extern const double f_ga;
 
-const vector<opa>& get_opa_vector();
+const vector<opa> &get_opa_vector();
 
 void get_lephare_env();
 

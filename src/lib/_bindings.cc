@@ -334,7 +334,7 @@ PYBIND11_MODULE(_lephare, mod) {
   mod.def("flux2mag", &flux2mag);
   mod.def("indexes_in_vec", &indexes_in_vec);
   mod.def("fast_interpolate", &fast_interpolate);
-  //return a copy to python
+  // return a copy to python
   mod.def("get_opa_vector", &get_opa_vector);
 
   /******** FUNCTIONS IN PHOTOZ_LIB.H *********/
@@ -366,6 +366,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("uncertainties_onesource", &PhotoZ::uncertainties_onesource)
       .def("physpara_onesource", &PhotoZ::physpara_onesource)
       .def("besttemplate_onesource", &PhotoZ::besttemplate_onesource)
+      .def("writeSpec_onesource", &PhotoZ::writeSpec_onesource)
       .def("write_outputs", &PhotoZ::write_outputs)
       .def("validLib", &PhotoZ::validLib)
       .def("compute_offsets", &PhotoZ::compute_offsets);

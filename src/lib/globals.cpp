@@ -137,20 +137,19 @@ vector<double> fast_interpolate(const std::vector<double> &x,
   return out;
 }  // LCOV_EXCL_LINE
 
-const vector<opa>& get_opa_vector() {
-  //define a static vector that is created once only
-  //and the available just calling this function
+const vector<opa> &get_opa_vector() {
+  // define a static vector that is created once only
+  // and the available just calling this function
   static vector<opa> result;
-  if (!result.empty())
-      return result;
-  
+  if (!result.empty()) return result;
+
   ifstream stream;
   // open the ascii file with all the opacity file listed
   string opaListFile = lepharedir + "/opa/OPACITY.dat";
   stream.open(opaListFile.c_str());
   // Check if file is opened
   if (!stream) {
-      throw invalid_argument("Can't open file with opacity " + opaListFile);
+    throw invalid_argument("Can't open file with opacity " + opaListFile);
   }
 
   // In oder to fill the two last elements around Lyman alpha
