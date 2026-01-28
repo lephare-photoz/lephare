@@ -9,12 +9,14 @@ __all__ = [
 def plotspec(filename):
     ### Open .spec file[s] and read the parameters
     fsp = open(filename, "r")  # noqa: SIM115
-    print("File:", filename)
+    # print("File:", filename)
 
     bid = fsp.readline()  # header1
     line = fsp.readline()
     line = line.split()
     id = line[0]
+    zspec = float(line[1])
+    zphot = float(line[2])
     # zspec = line[1]
     # zphot = float(line[2])
     # z68low=float(line[3]); z68hig=float(line[4])
@@ -195,6 +197,10 @@ def plotspec(filename):
     poscond = np.where((zpdf[1, :] / max(zpdf[1, :]) > 0.002) | (zpdf[2, :] / max(zpdf[2, :]) > 0.002))
     zaxe = zpdf[0, poscond]
     ax2.axis([min(zaxe[0]) - 0.1, max(zaxe[0] + 0.1), 0, 1.1])
-    ax2.plot(zpdf[0, :], zpdf[1, :] / max(zpdf[1, :]), color="k", linestyle="solid", label="P(z) Bayesian")
-    ax2.plot(zpdf[0, :], zpdf[2, :] / max(zpdf[2, :]), color="k", linestyle="dashed", label="P(z) Profile")
+    ax2.plot(zpdf[0, :], zpdf[1, :] / max(zpdf[1, :]), color="k", linestyle="solid", label="Bayesian")
+    ax2.plot(zpdf[0, :], zpdf[2, :] / max(zpdf[2, :]), color="k", linestyle="dashed", label="Profile")
+    if zspec > 0:
+        ax2.plot([zspec, zspec], [0, 1.1], color="r", linestyle="solid", label="spec z")
+    ax2.plot([zphot, zphot], [0, 1.1], color="b", linestyle="solid", label="photo z")
     ax2.legend(fontsize="10")
+    ax2.set_title("PDF(z)")

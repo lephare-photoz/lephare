@@ -405,7 +405,7 @@ void SED::reduce_memory(vector<flt> allFlt) {
   return;
 }
 
-void SED::generate_spectra(double zin, double dmin, vector<opa> opaAll) {
+void SED::generate_spectra(double zin, double dmin) {
   if (nlib == 0) {
     // GAL
     red = zin;
@@ -417,7 +417,7 @@ void SED::generate_spectra(double zin, double dmin, vector<opa> opaAll) {
     // Add them to the continuum
     sumSpectra(SEDz0_Em, 1.0);
     // Opacity applied in rest-frame, depending on the redshift of the source
-    applyOpa(opaAll);
+    applyOpa(get_opa_vector());
     // Redshift the SED at the redshift extracted from the minimum chi2
     redshift();
     // Rescale la SED
@@ -428,7 +428,7 @@ void SED::generate_spectra(double zin, double dmin, vector<opa> opaAll) {
     // Rescale la SED
     rescale(dmin);
     // Opacity applied in rest-frame, depending on the redshift of the source
-    applyOpa(opaAll);
+    applyOpa(get_opa_vector());
     //// Redshift the SED at the redshift extracted from the minimum chi2
     redshift();
   } else if (nlib == 2) {

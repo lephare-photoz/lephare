@@ -258,8 +258,7 @@ class SED {
    * \param opaAll Vector of opacities to compute extinction along the line of
    * sight
    */
-  void generate_spectra(double zin = 0.0, double dmin = 1.0,
-                        vector<opa> opaAll = {});
+  void generate_spectra(double zin = 0.0, double dmin = 1.0);
 
   ///< clean content of base class
   virtual void clean() {
@@ -274,7 +273,7 @@ class SED {
    * equality of the following attributes are compared:
    * `nummod`, `ebv`, and `age`
    */
-  inline bool is_same_model(const SED &other)  const {
+  inline bool is_same_model(const SED &other) const {
     return ((*this).nummod == other.nummod && (*this).ebv == other.ebv &&
             (*this).age == other.age);
   }

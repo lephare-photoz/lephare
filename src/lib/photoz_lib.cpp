@@ -423,9 +423,6 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
     allFiltersAdd = read_doc_filters(filtNameAdd);
   }
 
-  // IGM opacity tables
-  opaOut = Mag::read_opa();
-
   // Decide if the uncertainties on the rest-frame colors should be analysed
   colAnalysis =
       ((fltColRF[0] >= 0) && (fltColRF[1] >= 0) && (fltColRF[2] >= 0) &&
@@ -1688,11 +1685,11 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
     oneObj->limits(fullLib, limits_zbin, limits_ref, limits_sel, limits_cut);
     // Compute predicted magnitude in new filters
     if (allFiltersAdd.size() > 0) {
-      oneObj->computePredMag(fullLib, lcdm, opaOut, allFiltersAdd);
-      oneObj->computePredAbsMag(fullLib, lcdm, opaOut, allFiltersAdd);
+      oneObj->computePredMag(fullLib, lcdm, allFiltersAdd);
+      oneObj->computePredAbsMag(fullLib, lcdm, allFiltersAdd);
     }
     // Compute flux of emission lines
-    oneObj->computeEmFlux(fullLib, lcdm, opaOut);
+    oneObj->computeEmFlux(fullLib, lcdm);
     if (nlibext > 0) {
       // FIR FIT
       // Define the filters used for the FIR fit based on the FIR context
@@ -1748,7 +1745,7 @@ void PhotoZ::write_outputs(vector<onesource *> sources, const time_t &ti1) {
 
     // Write an ascii file with the best fit template
     if (outsp.compare("NO") != 0)
-      oneObj->writeSpec(fullLib, fullLibIR, lcdm, opaOut, allFilters, outsp);
+      oneObj->writeSpec(fullLib, fullLibIR, lcdm, allFilters, outsp);
 
     if ((outpdz.compare(nonestring) != 0) && first_obj)
       oneObj->write_pdz_header(pdftype, pdf_streams, ti1);
@@ -1922,7 +1919,7 @@ void PhotoZ::physpara_onesource(onesource &src) {
   src.absmag(goodFlt, maxkcol, lcdm, gridz);
 
   // Compute flux of emission lines
-  src.computeEmFlux(fullLib, lcdm, opaOut);
+  src.computeEmFlux(fullLib, lcdm);
 
   // Compute FIR properties
   if (nlibext > 0) {
@@ -1959,23 +1956,23 @@ pair<vector<double>, vector<double>> PhotoZ::besttemplate_onesource(
   switch (templateType) {
     case 0:
       // GALAXY CASE
-      tmp = src.best_spec_vec(0, fullLib, lcdm, opaOut, minl, maxl);
+      tmp = src.best_spec_vec(0, fullLib, lcdm, minl, maxl);
       break;
     case 1:
       // GALAXY CASE, SECOND SOLUTION
-      tmp = src.best_spec_vec(1, fullLib, lcdm, opaOut, minl, maxl);
+      tmp = src.best_spec_vec(1, fullLib, lcdm, minl, maxl);
       break;
     case 2:
       // GALAXY FIR CASE
-      tmp = src.best_spec_vec(2, fullLibIR, lcdm, opaOut, minl, maxl);
+      tmp = src.best_spec_vec(2, fullLibIR, lcdm, minl, maxl);
       break;
     case 3:
       // QSO CASE
-      tmp = src.best_spec_vec(3, fullLib, lcdm, opaOut, minl, maxl);
+      tmp = src.best_spec_vec(3, fullLib, lcdm, minl, maxl);
       break;
     case 4:
       // STAR CASE
-      tmp = src.best_spec_vec(4, fullLib, lcdm, opaOut, minl, maxl);
+      tmp = src.best_spec_vec(4, fullLib, lcdm, minl, maxl);
       break;
     default:
       // Gestion d'erreur si 'case' n'est pas entre 1 et 5

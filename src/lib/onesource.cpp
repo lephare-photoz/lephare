@@ -25,7 +25,6 @@
 #include "PDF.h"
 #include "SED.h"
 #include "globals.h"
-#include "opa.h"
 
 using namespace std;
 
@@ -1395,10 +1394,10 @@ void onesource::write_pdz(vector<string> pdztype,
 */
 void onesource::interp_lib(vector<SED *> &fulllib) {
   magm.clear();
-  //all the sizes in in the fulllib SED should be identical to the
-  //bands saved in the onesource object
+  // all the sizes in in the fulllib SED should be identical to the
+  // bands saved in the onesource object
   size_t imagm = ab.size();
-      
+
   // Take the value of zs to interpolate in the library
   if (indmin[0] >= 0) {
     // If zs is above or below the best fit bin
@@ -1425,8 +1424,8 @@ void onesource::interp_lib(vector<SED *> &fulllib) {
     if (fulllib[indmin[0] + deca]->red < 1.e-10) deca = 0;
 
     // Store in two SED around zs
-    const SED& SEDa = *fulllib[indmin[0]];
-    const SED& SEDb = *fulllib[indmin[0] + deca];
+    const SED &SEDa = *fulllib[indmin[0]];
+    const SED &SEDb = *fulllib[indmin[0] + deca];
 
     // Check that the interpolation can be done
     // same model in the library around zs
@@ -1727,8 +1726,7 @@ void onesource::absmag(const vector<vector<int>> &bestFlt,
 /*
  Compute the emission lines to add them in the output later
 */
-void onesource::computeEmFlux(vector<SED *> &fulllib, cosmo lcdm,
-                              vector<opa> opaAll) {
+void onesource::computeEmFlux(vector<SED *> &fulllib, cosmo lcdm) {
   /// rest frame wavelengths [Lya, OII, Hb, OIIIa, OIIIb, Ha, SIIIa, SIIIb]
   array<double, 8> lambda_em = {1215.67, 3727.00, 4861.32, 4958.91,
                                 5006.84, 6562.80, 9068.60, 9530.85};
@@ -1746,7 +1744,7 @@ void onesource::computeEmFlux(vector<SED *> &fulllib, cosmo lcdm,
       // Rescale SED continuum
       SEDz0_Gal.rescale(dmmin[0]);
       // Opacity applied in rest-frame, depending on the redshift of the source
-      SEDz0_Gal.applyOpa(opaAll);
+      SEDz0_Gal.applyOpa(get_opa_vector());
       // Create a SED of emission lines at z
       GalSED SEDz0_Em(*(fulllib[ind0]));
       // GalSED SEDz0_Em(*(fulllib[indmin[0]])); // To be re-activated if EL
@@ -1757,7 +1755,7 @@ void onesource::computeEmFlux(vector<SED *> &fulllib, cosmo lcdm,
       SEDz0_Em.rescale(dmmin[0]);
       // Opacity applied in rest-frame (lines are in rest-frame), depending on
       // the redshift of the source
-      SEDz0_Em.applyOpa(opaAll);
+      SEDz0_Em.applyOpa(get_opa_vector());
 
       // Integrated flux divide by the filter area for emission lines. Reference
       // was at 10pc, which explain the 100 factor. The distance is in Mpc
@@ -1810,7 +1808,7 @@ void onesource::computeEmFlux(vector<SED *> &fulllib, cosmo lcdm,
 Compute predicted magnitude in new filters
 */
 void onesource::computePredMag(vector<SED *> &fulllib, cosmo lcdm,
-                               vector<opa> opaAll, vector<flt> allFltAdd) {
+                               vector<flt> allFltAdd) {
   double val;
 
   if (indmin[0] > 0) {
@@ -1824,7 +1822,7 @@ void onesource::computePredMag(vector<SED *> &fulllib, cosmo lcdm,
     // SED_gal.fac_line=SED_emSave.fac_line; // To be re-activated if EL ratio
     // can change with z Generate the spectra at the right redshift, opacity,
     // emission lines
-    if (consiz > 0) SED_gal.generate_spectra(consiz, dmmin[0], opaAll);
+    if (consiz > 0) SED_gal.generate_spectra(consiz, dmmin[0]);
     // check that the filter cover a SED
     SED_gal.warning_integrateSED(allFltAdd, true);
 
@@ -1855,7 +1853,7 @@ void onesource::computePredMag(vector<SED *> &fulllib, cosmo lcdm,
 Compute absolute magnitudes in new filters
 */
 void onesource::computePredAbsMag(vector<SED *> &fulllib, cosmo lcdm,
-                                  vector<opa> opaAll, vector<flt> allFltAdd) {
+                                  vector<flt> allFltAdd) {
   double val;
 
   if (indmin[0] > 0) {
@@ -1869,7 +1867,7 @@ void onesource::computePredAbsMag(vector<SED *> &fulllib, cosmo lcdm,
     // SED_gal.fac_line=SED_emSave.fac_line; // To be re-activated if EL ratio
     // can change with z Generate the spectra at the right redshift, opacity,
     // emission lines
-    if (consiz > 0) SED_gal.generate_spectra(0., dmmin[0], opaAll);
+    if (consiz > 0) SED_gal.generate_spectra(0., dmmin[0]);
     // check that the filter cover a SED
     SED_gal.warning_integrateSED(allFltAdd, true);
 
@@ -1965,8 +1963,8 @@ void onesource::limits(vector<SED *> &fulllib, vector<double> &limits_zbin,
 
 // Used for the python interface in the notebook
 pair<vector<double>, vector<double>> onesource::best_spec_vec(
-    short sol, vector<SED *> &fulllib, cosmo lcdm, vector<opa> opaAll,
-    double minl, double maxl) {
+    short sol, vector<SED *> &fulllib, cosmo lcdm, double minl,
+    double maxl) const {
   // sol=0 for GAL-1, sol=1 for GAL-2, sol=2 for FIR, sol=3 for QSO, sol=4 for
   // STAR
   int index = -1;     // index of the best fit
@@ -2017,7 +2015,7 @@ pair<vector<double>, vector<double>> onesource::best_spec_vec(
     //  SED emlinesSED(*fulllib[index]);
     //  tmpSED.fac_line = emlinesSED.fac_line;
     // }
-    tmpSED.generate_spectra(red, scale, opaAll);
+    tmpSED.generate_spectra(red, scale);
     // for STAR, red=zmin[2]=0 by construction
     return tmpSED.get_data_vector(minl, maxl, true, lcdm.distMod(red));
   }
@@ -2030,8 +2028,8 @@ pair<vector<double>, vector<double>> onesource::best_spec_vec(
  WRITE .SPEC FILE
 */
 void onesource::writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
-                          cosmo lcdm, vector<opa> opaAll,
-                          const vector<flt> &allflt, const string outspdir) {
+                          cosmo lcdm, const vector<flt> &allflt,
+                          const string outspdir) const {
   // open the output file
   ofstream stospec;
   string ospec = "Id" + string(spec) + ".spec";
@@ -2062,35 +2060,35 @@ void onesource::writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
     GALAXY CASE
   */
   vector<double> lG, mG;
-  auto tmp = best_spec_vec(0, fulllib, lcdm, opaAll, minl, maxl);
+  auto tmp = best_spec_vec(0, fulllib, lcdm, minl, maxl);
   lG = tmp.first;
   mG = tmp.second;
   /*
     GALAXY CASE, SECOND SOLUTION
   */
   vector<double> lGsec, mGsec;
-  tmp = best_spec_vec(1, fulllib, lcdm, opaAll, minl, maxl);
+  tmp = best_spec_vec(1, fulllib, lcdm, minl, maxl);
   lGsec = tmp.first;
   mGsec = tmp.second;
   /*
     GALAXY FIR CASE
   */
   vector<double> lIR, mIR;
-  tmp = best_spec_vec(2, fulllibIR, lcdm, opaAll, minl, maxl);
+  tmp = best_spec_vec(2, fulllibIR, lcdm, minl, maxl);
   lIR = tmp.first;
   mIR = tmp.second;
   /*
     QSO CASE
   */
   vector<double> lQ, mQ;
-  tmp = best_spec_vec(3, fulllib, lcdm, opaAll, minl, maxl);
+  tmp = best_spec_vec(3, fulllib, lcdm, minl, maxl);
   lQ = tmp.first;
   mQ = tmp.second;
   /*
     STAR CASE
   */
   vector<double> lS, mS;
-  tmp = best_spec_vec(4, fulllib, lcdm, opaAll, minl, maxl);
+  tmp = best_spec_vec(4, fulllib, lcdm, minl, maxl);
   lS = tmp.first;
   mS = tmp.second;
 
@@ -2108,7 +2106,8 @@ void onesource::writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
   stospec << "FILTERS  " << allflt.size() << endl;
 
   stospec << "# Zstep  PDF " << endl;
-  stospec << "PDF  " << pdfmap[11].size() << " " << pdfmap[9].size() << endl;
+  stospec << "PDF  " << pdfmap.at(11).size() << " " << pdfmap.at(9).size()
+          << endl;
 
   stospec << "# Type Nline Model Library Nband  Zphot Zinf Zsup Chi2  PDF  "
              "Extlaw EB-V Lir Age  Mass SFR SSFR"
@@ -2118,10 +2117,11 @@ void onesource::writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
   if (indmin[0] > 0) {
     stospec << "GAL-1 " << lG.size() << " " << imasmin[0] << " 1 " << nbused
             << " " << consiz << " " << zgmin[0] << " " << zgmin[1] << " ";
-    stospec << chimin[0] << " " << " -1" << " " << results["EXTLAW_BEST"] << " "
-            << results["EBV_BEST"] << " " << results["LDUST_BEST"] << " "
-            << results["AGE_BEST"] << " " << results["MASS_BEST"] << " "
-            << results["SFR_BEST"] << " " << results["SSFR_BEST"] << endl;
+    stospec << chimin[0] << " " << " -1" << " " << results.at("EXTLAW_BEST")
+            << " " << results.at("EBV_BEST") << " " << results.at("LDUST_BEST")
+            << " " << results.at("AGE_BEST") << " " << results.at("MASS_BEST")
+            << " " << results.at("SFR_BEST") << " " << results.at("SSFR_BEST")
+            << endl;
 
   } else {
     stospec
@@ -2185,12 +2185,13 @@ void onesource::writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
   }
 
   // write PDF
-  if (pdfmap[11].size() != pdfmap[9].vPDF.size())
+  if (pdfmap.at(11).size() != pdfmap.at(9).vPDF.size())
     cout << " Problem PDF bay and min differ" << endl;
-  for (size_t l = 0; l < pdfmap[11].size(); l++) {
+  for (size_t l = 0; l < pdfmap.at(11).size(); l++) {
     stospec << scientific;
-    stospec << setw(6) << setprecision(3) << pdfmap[11].xaxis[l] << setw(14)
-            << pdfmap[11].vPDF[l] << setw(14) << pdfmap[9].vPDF[l] << endl;
+    stospec << setw(6) << setprecision(3) << pdfmap.at(11).xaxis[l] << setw(14)
+            << pdfmap.at(11).vPDF[l] << setw(14) << pdfmap.at(9).vPDF[l]
+            << endl;
   }
 
   // GAL: Loop over the full vector with the two vectors concatenated

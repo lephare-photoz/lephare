@@ -3,12 +3,16 @@ import os
 import lephare as lp
 import numpy as np
 
+# explicit import of a private function
+from lephare._lephare import _get_opa_vector
+
 TESTDIR = os.path.abspath(os.path.dirname(__file__))
 TESTDATADIR = os.path.join(TESTDIR, "../data")
 
 
 def test_opa():
-    opalist = lp.GalMag.read_opa()
+    opalist = _get_opa_vector()
+    assert len(opalist) == 81
     sed = lp.GalSED("", 0)
     sed.read(os.path.join(TESTDATADIR, "sed/GAL/COSMOS_SED/Ell1_A_0.sed"))
     sed.red = 0

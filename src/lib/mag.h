@@ -12,7 +12,6 @@
 #include "flt.h"
 #include "globals.h"
 #include "keyword.h"
-#include "opa.h"  // IGM opacity class
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -47,21 +46,14 @@ class Mag {
 
   vector<double> magko;
 
-  vector<opa> opaAll;
-
  public:
   Mag(keymap &key_analysed);
   Mag(){};
   virtual ~Mag();
 
-  /// open the IGM opacity files
-  static ifstream open_opa_files();
   /// read the extinction laws into attribute extAll (vector of vectors of type
   /// ext)
   void read_ext();
-  /// read the IGM opacities into attribute opaAll (vector of vectors of type
-  /// opa)
-  static vector<opa> read_opa();
 
   // Read the long wavelength Bethermin+2012 templates
   // to add the dust emission to the BC03 templates
