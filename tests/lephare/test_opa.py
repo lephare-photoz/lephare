@@ -8,7 +8,7 @@ TESTDATADIR = os.path.join(TESTDIR, "../data")
 
 
 def test_opa():
-    opalist = lp.get_opa_vector()
+    opalist = lp._get_opa_vector()
     assert len(opalist) == 81
     sed = lp.GalSED("", 0)
     sed.read(os.path.join(TESTDATADIR, "sed/GAL/COSMOS_SED/Ell1_A_0.sed"))

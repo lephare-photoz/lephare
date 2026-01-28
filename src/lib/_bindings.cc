@@ -334,8 +334,8 @@ PYBIND11_MODULE(_lephare, mod) {
   mod.def("flux2mag", &flux2mag);
   mod.def("indexes_in_vec", &indexes_in_vec);
   mod.def("fast_interpolate", &fast_interpolate);
-  // return a copy to python
-  mod.def("get_opa_vector", &get_opa_vector);
+  // return a copy to python, only for unit tests
+  mod.def("_get_opa_vector", &get_opa_vector);
 
   /******** FUNCTIONS IN PHOTOZ_LIB.H *********/
   py::class_<PhotoZ>(mod, "PhotoZ")
