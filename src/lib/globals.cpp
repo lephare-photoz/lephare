@@ -14,48 +14,19 @@ declaration of global variables
 
 using namespace std;
 
-string fakeString;
-int fakeInt;
 // lepharedir and lepharework as global variables
 string lepharedir, lepharework;
-// NONE
-const string nonestring = "NONE";
-// pi
-const double pi = 3.14159265359;
-// c
-const double c = 2.99792458e18;  // en A/s
-const double ckms = 2.99792458e5;
-// h
-const double hplanck = 6.62606957e-34;
-// k Boltzmann
-const double kboltzmann = 1.3806488e-23;
-// L solar in erg/s
-const double Lsol = 3.826e33;
-// pc en cm
-const double pc = 3.086e18;
-// hc from Cedric
-const double hc = 12398.42;  // [eV.A]
-// f_ga from Cedric
-const double f_ga = 1;
 
-static const string LEPHAREWORK = "LEPHAREWORK";
-static const string LEPHAREDIR = "LEPHAREDIR";
-
-/*
-10/11/2014
-Get the environment variable LEPHAREWORK and LEPHAREDIR
-Stop the code if LEPHAREDIR not defined
-*/
 // LCOV_EXCL_START
 void get_lephare_env() {
   char const *temp;
-  temp = getenv(LEPHAREDIR.c_str());
+  temp = getenv("LEPHAREDIR");
   if (temp != NULL) {
     lepharedir = string(temp);
   } else {
     cout << "Environment variable LEPHAREDIR not defined, need to stop.";
   }
-  temp = getenv(LEPHAREWORK.c_str());
+  temp = getenv("LEPHAREWORK");
   if (temp != NULL) {
     lepharework = string(temp);
   } else {
