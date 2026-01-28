@@ -151,7 +151,7 @@ const vector<opa> &get_opa_vector() {
     stream.open(opaListFile.c_str());
     // Check if file is opened
     if (!stream) {
-      throw invalid_argument("Can't open file with opacity " + opaListFile);
+      throw invalid_argument("Can't open file with opacity " + opaListFile); // LCOV_EXCL_LINE
     }
 
     // In oder to fill the two last elements around Lyman alpha
