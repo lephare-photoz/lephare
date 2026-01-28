@@ -1,5 +1,6 @@
+import lephare as lp
 import numpy as np
-from lephare._lephare import blackbody, check_first_char, indexes_in_vec
+from lephare import blackbody, check_first_char, indexes_in_vec
 
 
 def test_globals_first_char():
@@ -14,6 +15,7 @@ def test_globals_first_char():
 
 def test_globals_blackbody():
     assert np.isclose(blackbody(10000, 500), 1.018807e-26)
+    assert np.isclose(blackbody(10000000, 5000000), 1.112055e-28)
 
 
 def test_indexes_in_vec():
@@ -22,3 +24,41 @@ def test_indexes_in_vec():
     assert indexes_in_vec(val, v, 0.1) == [1]
     assert indexes_in_vec(val, v, 0.01) == []
     assert indexes_in_vec(val, v, 0.3) == [0, 1]
+
+
+def test_fast_interpolate():
+    x = np.linspace(1, 5, 1000)
+    y = x
+    z = np.linspace(6, 7, 10)
+    # full extrapolation
+    assert np.allclose(lp.fast_interpolate(x, y, z, 0), np.zeros_like(z))
+    assert np.allclose(lp.fast_interpolate(x, y, z, 1), np.ones_like(z))
+    # partial extrapolation
+    z = np.linspace(3.1456, 5.4387, 100)
+    print(z)
+    z2 = lp.fast_interpolate(x, y, z, 0)
+    assert np.allclose(z2[:-19], z[:-19])
+    assert np.allclose(z2[-19:], np.zeros_like(z2[-19:]))
+    z2 = lp.fast_interpolate(x, y, z, 1)
+    assert np.allclose(z2[-19:], np.ones_like(z2[-19:]))
+    # no extrapolation
+    z = np.linspace(2.1456, 4.4387, 100)
+    print(z)
+    z2 = lp.fast_interpolate(x, y, z, 0)
+    assert np.allclose(z2, z)
+
+
+def test_log10pow10():
+    x = np.random.random(10000)
+    pf = lp.POW10D_FASTV(x * 10)
+    ps = lp.POW10D_SLOWV(x * 10)
+    assert np.allclose(ps, pf)
+    lf = lp.LOG10D_FASTV(x * 10)
+    ls = lp.LOG10D_SLOWV(x * 10)
+    assert np.allclose(ls, lf)
+
+
+def test_mag2flux():
+    x = np.random.random() * 24
+    zp = np.random.random() * 20
+    assert lp.mag2flux(x, zp) == 10 ** (-0.4 * (x + 48.6 - zp))

@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from lephare import onesource
 
 
@@ -39,6 +40,23 @@ def test_onesource_set_priors():
 
 
 def test_readsource():
+    src = onesource()
+    vals = [30.9393, 29.4864, 28.102, 27.1517, 26.8568, 26.6285]
+    err_vals = [0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
+    err_vals_wrong = [0.01, 0.01, 0.01, 0.01, 0.01]
+    with pytest.raises(ValueError):
+        src.readsource("65", vals, err_vals_wrong, 0, 0.65, "test")
+
+    src.readsource("65", vals, err_vals, 1, 0.65, "test")
+    assert src.ab == vals
+    assert src.sab == err_vals
+    assert src.spec == "65"
+    assert src.cont == 1
+    assert src.zs == 0.65
+    assert src.str_inp == "test"
+
+
+def test_readsource2():
     # Instantiate a source
     src = onesource(101, [0, 0.1, 1])
     # read the source, change Id, attribute flux/err, ...
@@ -60,21 +78,21 @@ def test_fltused():
         "10", [-6.414e-32, 1.3182e-31, 1.6905e-31], [1.1022e-31, 9.8579e-32, -5.8665e-32], 7, 2.1, "add"
     )
     # Test without global or forbiden context
-    src.fltUsed(-1, -1, 3)
+    src.fltUsed(-1, -1)
     assert src.cont == 7
     assert np.array_equal(src.busnorma, [1, 1, 0])
     assert np.array_equal(src.busul, [0, 0, 1])
     assert src.nbused == 3
     assert src.nbul == 1
     # Test with a forbidden context removing the first band
-    src.fltUsed(-1, 1, 3)
+    src.fltUsed(-1, 1)
     assert src.cont == 7
     assert np.array_equal(src.busnorma, [0, 1, 0])
     assert np.array_equal(src.busul, [0, 0, 1])
     assert src.nbused == 2
     assert src.nbul == 1
     # Test with a global context using only the second band
-    src.fltUsed(2, -1, 3)
+    src.fltUsed(2, -1)
     assert src.cont == 2
     assert np.array_equal(src.busnorma, [0, 1, 0])
     assert np.array_equal(src.busul, [0, 0, 0])

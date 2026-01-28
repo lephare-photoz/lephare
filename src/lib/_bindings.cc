@@ -10,6 +10,7 @@ namespace py = pybind11;
 #include "SED.h"
 #include "SEDLib.h"
 #include "cosmology.h"
+#include "emission_lines.h"
 #include "ext.h"
 #include "flt.h"
 #include "globals.h"
@@ -19,6 +20,9 @@ namespace py = pybind11;
 #include "opa.h"
 #include "photoz_lib.h"
 
+static_assert(PYBIND11_VERSION_MAJOR >= 2 && PYBIND11_VERSION_MINOR >= 11,
+              "pybind11 headers are too old");
+
 template <typename x, typename modT>
 void applySEDLibTemplate(modT &m, std::string name) {
   py::class_<SEDLib<x>>(m, name.c_str())
@@ -27,6 +31,7 @@ void applySEDLibTemplate(modT &m, std::string name) {
            py::arg("config"), py::arg("typ"))
       .def("print_info", &SEDLib<x>::print_info)
       .def("read_model_list", &SEDLib<x>::read_model_list)
+      .def("readSED", &SEDLib<x>::readSED)
       .def("write_SED_lib", &SEDLib<x>::write_SED_lib)
       .def("print_time_tofile", &SEDLib<x>::print_time_tofile)
       .def("close_output_files", &SEDLib<x>::close_output_files);
@@ -41,14 +46,18 @@ PYBIND11_MODULE(_lephare, mod) {
 
   /******** CLASS ONEELLAMBDA *********/
   py::class_<oneElLambda>(mod, "oneElLambda")
-      .def(py::init<double, double, int>(), py::arg("lambin"), py::arg("valin"),
-           py::arg("oriin"), "standard constructor")
+      .def(py::init<double, double>(), py::arg("lambin"), py::arg("valin"),
+           "standard constructor")
       .def(py::init<oneElLambda>(), py::arg("elIn"), "copy constructor")
       .def_readwrite("lamb", &oneElLambda::lamb)
-      .def_readwrite("val", &oneElLambda::val)
-      .def_readwrite("ori", &oneElLambda::ori)
-      .def("interp", &oneElLambda::interp, py::arg("previousEl"),
-           py::arg("nextEl"));
+      .def_readwrite("val", &oneElLambda::val);
+  mod.def("make_regular_grid", &make_regular_grid);
+  mod.def("make_union_grid", &make_union_grid);
+  mod.def("common_interpolate_combined", &common_interpolate_combined);
+  mod.def("restricted_resampling", &restricted_resampling);
+  mod.def("concatenate_and_sort", &concatenate_and_sort,
+          "concatenate and sort two vector of oneElLambda objects. Sorting is "
+          "in increasing lambda.");
 
   /******** CLASS COSMOLOGY*********/
   py::class_<cosmo>(mod, "cosmo")
@@ -87,7 +96,8 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("lmin", &ext::lmin, "return smallest wavelength stored")
       .def_readonly("lmax", &ext::lmax, "return largest wavelength stored")
       .def("read", &ext::read, py::arg("extFile"), "read an extinction file")
-      .def("add_element", &ext::add_element);
+      .def("add_element", &ext::add_element)
+      .def("set_vector", &ext::set_vector);
   mod.def("compute_filter_extinction", &compute_filter_extinction,
           "Compute extinction in a filter band.");
   mod.def("cardelli_ext", &cardelli_ext,
@@ -97,9 +107,6 @@ PYBIND11_MODULE(_lephare, mod) {
   mod.def("cardelli_law", &cardelli_law,
           "compute albd/av at a given lambda (A) for the Cardelli law",
           py::arg("lb"));
-  mod.def("resample", &resample, py::arg("lamb_all"), py::arg("lamb_interp"),
-          py::arg("origine"), py::arg("lmin"), py::arg("lmax"));
-  mod.def("read_flt", &read_flt, py::arg("sfiltIn"));
 
   /******** CLASS KEYWORD *********/
   py::class_<keyword>(mod, "keyword")
@@ -138,7 +145,10 @@ PYBIND11_MODULE(_lephare, mod) {
            "Read filter info from stream")
       .def("lambdaMean", &flt::lambdaMean)
       .def("lambdaEff", &flt::lambdaEff)
+      .def("lambdaEff2", &flt::lambdaEff2)
+      .def("vega", &flt::vega)
       .def("magsun", &flt::magsun)
+      .def("abcorr", &flt::abcorr)
       .def("width", &flt::width)
       .def("lmin", &flt::lmin)
       .def("lmax", &flt::lmax)
@@ -158,6 +168,7 @@ PYBIND11_MODULE(_lephare, mod) {
         }
         return result;
       });
+  mod.def("read_filters_from_file", &read_filters_from_file);
   mod.def("write_output_filter", &write_output_filter);
   mod.def("read_doc_filters", &read_doc_filters);
 
@@ -170,20 +181,33 @@ PYBIND11_MODULE(_lephare, mod) {
            py::arg("type"), py::arg("idAge"))
       .def(py::init<const SED>())
       .def_readonly("lamb_flux", &SED::lamb_flux)
+      .def_readonly("fac_line", &SED::fac_line)
       .def_readonly("extlawId", &SED::extlawId)
       .def_readonly("ebv", &SED::ebv)
+      .def_readonly("luv", &SED::luv)
+      .def_readonly("lopt", &SED::lopt)
+      .def_readonly("lnir", &SED::lnir)
+      .def_readonly("ltir", &SED::ltir)
+      .def_readonly("age", &SED::age)
+      .def_readonly("qi", &SED::qi)
       .def_readonly("name", &SED::name)
       .def_readonly("nummod", &SED::nummod)
       .def_readonly("mag", &SED::mag)
+      .def_readwrite("red", &SED::red)
       .def_readwrite("index_z0", &SED::index_z0)
       .def("string_to_object", &SED::string_to_object)
+      .def("redshift", &SED::redshift)
       .def("is_gal", &SED::is_gal)
       .def("is_star", &SED::is_star)
       .def("is_qso", &SED::is_qso)
       .def("read", &SED::read)
       .def("size", &SED::size)
+      .def("sumSpectra", &SED::sumSpectra)
       .def("integrateSED", &SED::integrateSED)
-      .def("resample", &SED::resample)
+      .def("apply_extinction", &SED::apply_extinction)
+      .def("apply_extinction_to_lines", &SED::apply_extinction_to_lines)
+      .def("applyOpa", &SED::applyOpa)
+      .def("integrate", &SED::integrate)
       .def("generateCalib", &SED::generateCalib)
       .def("rescale", &SED::rescale)
       .def("compute_magnitudes", &SED::compute_magnitudes)
@@ -207,6 +231,20 @@ PYBIND11_MODULE(_lephare, mod) {
         }
         return result;
       });
+  mod.attr("_emission_lines") = emission_lines;
+  mod.attr("_empirical_ratio") = empirical_ratio;
+  mod.attr("_empirical_ratio_ori") = empirical_ratio_ori;
+  mod.attr("_ga_total") = ga_total;
+  mod.attr("_ga_lamb") = ga_lamb;
+  mod.attr("_ga_H_val") = ga_H_val;
+  mod.attr("_ga_HeI_val") = ga_HeI_val;
+  mod.attr("_ga_2q_val") = ga_2q_val;
+  // can add a doc: , mod.attr("_ga_2q_val").doc()="internal use only"
+  // other option is getter to ensure that it is readonly:
+  // mod.def("ga_HeI_val", [] {return ga_HeI_val;});
+
+  // py::class_<SEDlight>(mod, "SEDlight")
+  //     .def(py::init<>());  // Constructeur par défaut
 
   py::class_<StarSED, SED>(mod, "StarSED")
       .def(py::init<const SED &>())
@@ -225,15 +263,18 @@ PYBIND11_MODULE(_lephare, mod) {
       .def(py::init<const GalSED &>())
       .def(py::init<const string, int>(), py::arg("name"),
            py::arg("nummod") = 0)
-      .def(py::init<const string, double, double, string, int, string, int>(),
+      .def(py::init<const string, double, double, string, int, int>(),
            py::arg("name"), py::arg("tau"), py::arg("age"), py::arg("format"),
-           py::arg("nummod"), py::arg("type"), py::arg("idAge"))
-      .def("SEDproperties", &GalSED::SEDproperties)
+           py::arg("nummod"), py::arg("idAge"))
+      .def_readonly("tau", &GalSED::tau)
+      .def_readonly("d4000", &GalSED::d4000)
+      .def_readonly("zmet", &GalSED::zmet)
+      .def("compute_luminosities", &GalSED::compute_luminosities)
       .def("add_neb_cont", &GalSED::add_neb_cont)
       .def("generateEmEmpUV", &GalSED::generateEmEmpUV)
       .def("generateEmEmpSFR", &GalSED::generateEmEmpSFR)
       .def("generateEmPhys", &GalSED::generateEmPhys)
-      //    .def("generateEmSpectra", &GalSED::generateEmSpectra)
+      .def("generateEmSpectra", &GalSED::generateEmSpectra)
       .def("sumEmLines", &GalSED::sumEmLines)
       .def("kcorrec", &GalSED::kcorrec)
       .def("rescaleEmLines", &GalSED::rescaleEmLines)
@@ -244,6 +285,10 @@ PYBIND11_MODULE(_lephare, mod) {
   applySEDLibTemplate<StarSED>(mod, "StarSEDLib");
   applySEDLibTemplate<QSOSED>(mod, "QSOSEDLib");
   applySEDLibTemplate<GalSED>(mod, "GalSEDLib");
+  mod.def("_read_ages_from_file", &read_ages_from_file);
+  mod.def("_closeAge", &closeAge);
+  mod.def("readBC03", &readBC03);
+  mod.def("readPEGASE", &readPEGASE);
 
   /******** CLASS MAG *********/
 #define MAGDEFS(c, n)                                      \
@@ -252,13 +297,9 @@ PYBIND11_MODULE(_lephare, mod) {
        .def(py::init<>())                                  \
        .def("open_files", &c::open_files)                  \
        .def("close_files", &c::close_files)                \
-       .def("open_opa_files", &c::open_opa_files)          \
        .def("print_info", &c::print_info)                  \
        .def("read_ext", &c::read_ext)                      \
-       .def("read_opa", &c::read_opa)                      \
        .def("read_B12", &c::read_B12)                      \
-       .def("read_flt", &c::read_flt)                      \
-       .def("def_zgrid", &c::def_zgrid)                    \
        .def("set_zgrid", &c::set_zgrid)                    \
        .def("read_SED", &c::read_SED)                      \
        .def("write_doc", &c::write_doc)                    \
@@ -274,17 +315,27 @@ PYBIND11_MODULE(_lephare, mod) {
 
   /******** FUNCTIONS IN GLOBALS.H *********/
   mod.attr("HIGH_CHI2") = HIGH_CHI2;
+  mod.attr("INVALID_VAL") = INVALID_VAL;
   mod.def("get_lephare_env", &get_lephare_env);
   mod.def("check_first_char", &check_first_char);
   mod.def("blackbody", &blackbody);
   mod.def("CHECK_CONTEXT_BIT", &CHECK_CONTEXT_BIT);
   mod.def("POW10D", &POW10D);
-  mod.def("POW10DSLOW", &POW10DSLOW);
+  mod.def("LOG10D", &LOG10D);
+  mod.def("POW10D_SLOW", &POW10D_SLOW);
+  mod.def("POW10D_FAST", &POW10D_FAST);
+  mod.def("POW10D_FASTV", &POW10D_FASTV);
+  mod.def("POW10D_SLOWV", &POW10D_SLOWV);
   mod.def("LOG10D_SLOW", &LOG10D_SLOW);
   mod.def("LOG10D_FAST", &LOG10D_FAST);
+  mod.def("LOG10D_SLOWV", &LOG10D_SLOWV);
+  mod.def("LOG10D_FASTV", &LOG10D_FASTV);
   mod.def("mag2flux", &mag2flux);
   mod.def("flux2mag", &flux2mag);
   mod.def("indexes_in_vec", &indexes_in_vec);
+  mod.def("fast_interpolate", &fast_interpolate);
+  // return a copy to python, only for unit tests
+  mod.def("_get_opa_vector", &get_opa_vector);
 
   /******** FUNCTIONS IN PHOTOZ_LIB.H *********/
   py::class_<PhotoZ>(mod, "PhotoZ")
@@ -292,6 +343,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("fluxIR", &PhotoZ::fluxIR)
       .def_readonly("imagm", &PhotoZ::imagm)
       .def_readonly("fullLib", &PhotoZ::fullLib)
+      //.def_readonly("lightLib", &PhotoZ::lightLib)
       .def_readonly("zLib", &PhotoZ::zLib)
       .def_readonly("flux", &PhotoZ::flux)
       .def_readonly("fullLibIR", &PhotoZ::fullLibIR)
@@ -310,6 +362,11 @@ PYBIND11_MODULE(_lephare, mod) {
            static_cast<void (PhotoZ::*)(onesource *)>(&PhotoZ::prep_data))
       .def("run_autoadapt", &PhotoZ::run_autoadapt)
       .def("run_photoz", &PhotoZ::run_photoz)
+      .def("fit_onesource", &PhotoZ::fit_onesource)
+      .def("uncertainties_onesource", &PhotoZ::uncertainties_onesource)
+      .def("physpara_onesource", &PhotoZ::physpara_onesource)
+      .def("besttemplate_onesource", &PhotoZ::besttemplate_onesource)
+      .def("writeSpec_onesource", &PhotoZ::writeSpec_onesource)
       .def("write_outputs", &PhotoZ::write_outputs)
       .def("validLib", &PhotoZ::validLib)
       .def("compute_offsets", &PhotoZ::compute_offsets);
@@ -336,7 +393,7 @@ PYBIND11_MODULE(_lephare, mod) {
   mod.def("maxkcolor", &maxkcolor);
 
   mod.attr("maptype") = maptype;
-  py::class_<onesource>(mod, "onesource")
+  py::class_<onesource>(mod, "onesource", py::dynamic_attr())
       .def(py::init<>())
       .def(py::init<const int, vector<double>>())
       .def("setPriors", &onesource::setPriors)
@@ -388,8 +445,10 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("dm", &onesource::dm)
       .def_readonly("zs", &onesource::zs)
       .def_readonly("ab", &onesource::ab)
+      .def_readonly("abIR", &onesource::abIR)
       .def_readonly("ab_ori", &onesource::ab_ori)
       .def_readonly("sab", &onesource::sab)
+      .def_readonly("sabIR", &onesource::sabIR)
       .def_readonly("mab", &onesource::mab)
       .def_readonly("msab", &onesource::msab)
       .def_readonly("magm", &onesource::magm)
@@ -398,15 +457,16 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("zmin", &onesource::zmin)
       .def_readonly("zminIR", &onesource::zminIR)
       .def_readonly("chimin", &onesource::chimin)
-      .def_readonly("dmmin", &onesource::dmmin)
       .def_readonly("chiminIR", &onesource::chiminIR)
+      .def_readonly("dmmin", &onesource::dmmin)
+      .def_readonly("dmminIR", &onesource::dmminIR)
       .def_readonly("indmin", &onesource::indmin)
       .def_readonly("indminSec", &onesource::indminSec)
       .def_readonly("indminIR", &onesource::indminIR)
       .def_readonly("imasmin", &onesource::imasmin)
-      .def_readonly("imasminIR", &onesource::imasmin)
-      .def_readonly("imasmin", &onesource::imasmin)
+      .def_readonly("imasminIR", &onesource::imasminIR)
       .def_readonly("agemed", &onesource::agemed)
+      .def_readonly("ebvmed", &onesource::ebvmed)
       .def_readonly("Ldustmed", &onesource::Ldustmed)
       .def_readonly("LIRmed", &onesource::LIRmed)
       .def_readonly("massmed", &onesource::massmed)

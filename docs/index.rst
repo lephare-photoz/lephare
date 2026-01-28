@@ -33,7 +33,7 @@ J. Cohen-Tanugi and R. Shirley.
    Usage with Command Line Interface <commandline_usage>
    Detailed documentation <detailed>
    Keywords <keywords>
-   C API Reference <doxygen_output/c_lib/library_root>
+   C++ API Reference <doxygen_output/c_lib/library_root>
    Python API Reference <autoapi/index>
    Known issues <known_issues>
    Acknowledgements <acknowledgements>

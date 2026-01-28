@@ -42,14 +42,25 @@ class ext {
   void read(string extFile);
 
   /// add a single element
-  void add_element(double lam, double val, double ori);
+  void add_element(double lam, double val);
+
+  /*! Helper function to set the ext vector as lambda=x and val = y
+   * @param x: ordered vector of lambda value
+   * @param y: vector of ext values at each lambda of x
+   */
+  inline void set_vector(const vector<double> &x, const vector<double> &y) {
+    if (x.size() != y.size()) throw runtime_error("vector sizes are different");
+    lamb_ext.clear();
+    for (size_t k = 0; k < x.size(); k++) {
+      lamb_ext.emplace_back(x[k], y[k]);
+    }
+    lmin = x.front();
+    lmax = x.back();
+  }
 };
 
 double compute_filter_extinction(const flt &filter, const ext &extinction);
 double cardelli_ext(flt &oneFlt);
 double cardelli_law(double lb);
-void resample(vector<oneElLambda> &lamb_all, vector<oneElLambda> &lamb_interp,
-              const int origine, const double lmin, const double lmax);
-vector<flt> read_flt(ifstream &sfiltIn);
 
 #endif

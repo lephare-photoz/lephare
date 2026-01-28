@@ -1775,7 +1775,7 @@ The predicted apparent magnitudes and absolute magnitudes can be computed in a d
 Physical parameters derived from BC03 templates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Physical parameters are derived as soon as you use a library including physical information like the normalisation of the template in stellar mass. In *LePHARE++* , such measurement is possible only with the BC03 templates (but we plan to integrate the PEGASE or MARASTON libraries on the long term). You don’t need to turn on any keyword to have these measurements. As long as you are using BC03 templates and that the corresponding keywords (as ``MASS_MED``, or ``SFR_MED``) appear in the output parameter file, you should get the physical parameters in output.
+Physical parameters are derived as soon as you use a library including physical information like the normalisation of the template in stellar mass. In *LePHARE++* , such measurement is currently possible with the BC03 or PEGASE2 template libraries (we plan to integrate the MARASTON libraries in the future). You don’t need to turn on any keyword to have these measurements. As long as you are using BC03 templates and that the corresponding keywords (as ``MASS_MED``, or ``SFR_MED``) appear in the output parameter file, you should get the physical parameters in output.
 
 As for the photo-z, you will find physical parameters measured at the minimum :math:`\chi^2` value (indicated with ``_BEST``) and the ones obtained by taken the median of the PDF marginalized over the relevant parameter.
 

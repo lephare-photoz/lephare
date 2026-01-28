@@ -11,12 +11,12 @@ __all__ = [
 # List of keywords associated to setolib
 config_keys = {
     "typ": "define what kind of objects these SED belong to : GAL, QSO, or STAR",
-    "verbose": "increase onscreen verbosity",
+    "VERBOSE": "increase onscreen verbosity",
     "GAL_SED": "file listing the galaxy SEDs to be used",
     "GAL_FSCALE": "arbitrary Flux scale for galaxy templates",
     "GAL_LIB": "name of the output binary SED file for the galaxies (relative to $LEPHAREWORK/lib_bin/)",
-    "SEL_AGE": "file listing the different galaxy ages to consider",
-    "AGE_RANGE": "minimal and maximal age in year to consider",
+    "SEL_AGE": "file listing the different galaxy ages (in Gyr) to consider",
+    "AGE_RANGE": "minimal and maximal age (in yr) to consider",
     "QSO_SED": "same for QSO/AGN templates",
     "QSO_FSCALE": "same for QSO/AGN templates",
     "QSO_LIB": "same for QSO/AGN templates",
@@ -32,7 +32,7 @@ class Sedtolib(Runner):
 
     typ:
            define what kind of objects these SED belong to : GAL, QSO, or STAR
-    verbose:
+    VERBOSE:
            increase onscreen verbosity
     GAL_SED:
            file listing the galaxy SEDs to be used
@@ -41,9 +41,9 @@ class Sedtolib(Runner):
     GAL_LIB:
            name of the output binary SED file for the galaxies (relative to $ZPHOTWORK/lib_bin/)
     SEL_AGE:
-           file listing the different galaxy ages to consider
+           file listing the different galaxy ages to consider (in Gyr)
     AGE_RANGE:
-           minimal and maximal age in year to consider
+           minimal and maximal age (in yr) to consider
     QSO_SED, QSO_FSCALE, QSO_LIB, STAR_SED, STAR_LIB, STAR_FSCALE :
            same for QSO/AGN and STAR SED types
     """
@@ -65,7 +65,6 @@ class Sedtolib(Runner):
         """
 
         super().run(**kwargs)
-
         if self.typ[0] == "G":
             sed_library = GalSEDLib(self.keymap, self.config, self.typ)
         elif self.typ[0] == "Q":
