@@ -704,6 +704,7 @@ vector<string> readOutKeywords(const string outpara) {
       if (check_first_char(lit)) {
         // put the line into the stream ss again
         stringstream ss(lit);
+        string fakeString;
 
         // fill the lambda/trans values of the SED
         ss >> fakeString;

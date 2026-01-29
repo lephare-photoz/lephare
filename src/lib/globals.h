@@ -22,19 +22,23 @@
 
 using namespace std;
 
-// extern tells the compiler this variable is declared elsewhere
+// declare globally the two paths needed in the code
+// they are defined in get_lephare_env, depending on
+// the corresponding environment variables.
 extern string lepharedir, lepharework;
-extern string fakeString;
-extern const string nonestring;
-extern int fakeInt;
-extern const double c, ckms;
-extern const double hplanck;
-extern const double kboltzmann;
-extern const double Lsol;
-extern const double pc;
-extern const double pi;
-extern const double hc;
-extern const double f_ga;
+
+constexpr const char nonestring[] = "NONE";
+constexpr double c = 2.99792458e+18;  // en A/s
+constexpr double ckms = 2.99792458e+5;
+constexpr double hplanck = 6.62606957e-34;
+constexpr double kboltzmann = 1.3806488e-23;
+// L solar in erg/s
+constexpr double Lsol = 3.826e33;
+// pc en cm
+constexpr double pc = 3.086e18;
+constexpr double pi = 3.14159265359;
+constexpr double hc = 12398.42;  // [eV.A]
+constexpr double f_ga = 1;
 
 const vector<opa> &get_opa_vector();
 
