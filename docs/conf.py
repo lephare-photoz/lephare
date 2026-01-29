@@ -71,6 +71,21 @@ breathe_projects = {"lephare": "./doxygen_output/xml"}
 breathe_default_project = "lephare"
 
 nbsphinx_kernel_name = "python3"
+nbsphinx_execute = 'never'  # ou 'auto' pour une exécution conditionnelle
+nbsphinx_prolog = """
+.. only:: html
+
+    .. nbgallery::
+        :glob:
+        :caption: Notebooks
+        :name: notebooks-gallery
+        :maxdepth: 1
+
+        notebooks/*
+"""
+# Deactivate copy of notebooks into _build/doctrees
+nbsphinx_copy_kernelspec_files = False
+nbsphinx_copy_source_files = False
 
 numfig = True
 
