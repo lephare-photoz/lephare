@@ -65,10 +65,10 @@ def test_readsource2():
     )
     assert src.spec == "10"
     assert src.pdfmap[9].size() == 11
-    assert np.isclose(src.zs, 2.1)
+    assert src.zs == pytest.approx(2.1)
     assert src.cont == 6
-    assert np.isclose(src.ab[0] * 1.0e32, -6.414)
-    assert np.isclose(src.sab[0] * 1.0e31, 1.1022)
+    assert src.ab[0] * 1.0e32 == pytest.approx(-6.414)
+    assert src.sab[0] * 1.0e31 == pytest.approx(1.1022)
 
 
 def test_fltused():

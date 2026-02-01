@@ -86,29 +86,34 @@ def test_photoz_cosmos():
 
     photz.fit_onesource(src)
     print("Done with fit")
-    assert np.isclose(src.zmin[0], 0.65)
-    assert np.isclose(src.dmmin[0], 1.0000, atol=1e-04)
-    assert np.isclose(src.imasmin[0], 1)
+
+    # test the value of the minimisation
+    assert src.zmin[0] == pytest.approx(0.65)
+    assert src.dmmin[0] == pytest.approx(1.0000, abs=1e-04)
+    assert src.imasmin[0] == pytest.approx(1)
     assert src.chimin[0] < src.chimin[1] < src.chimin[2]
 
+    # Test the estimate of the median, mode, min computation and associated errors
     photz.uncertainties_onesource(src)
     print("Done with uncertainties")
     max_position = np.argmax(src.pdfmap[11].vPDF)
     assert max_position == 13
     assert len(src.pdfmap[11].xaxis) == 21
-    assert np.isclose(src.zgmed[0], 0.65, atol=1e-02)
-    assert np.isclose(src.zgmode[0], 0.65, atol=1e-02)
-    assert np.isclose(src.zgmin[0], 0.65, atol=1e-02)
+    assert src.zgmed[0] == pytest.approx(0.65, abs=1e-02)
+    assert src.zgmode[0] == pytest.approx(0.65, abs=1e-02)
+    assert src.zgmin[0] == pytest.approx(0.65, abs=1e-02)
     assert src.zgmin[3] < src.zgmin[1] < src.zgmin[0] < src.zgmin[2] < src.zgmin[4]
     assert src.zgmed[3] < src.zgmed[1] < src.zgmed[0] < src.zgmed[2] < src.zgmed[4]
     assert src.zgmode[3] < src.zgmode[1] < src.zgmode[0] < src.zgmode[2] < src.zgmode[4]
 
+    # Test the absolute magnitude estimate
     photz.physpara_onesource(src)
     print("Done with physical parameters")
-    assert np.isclose(src.mabs[5], 26.6285 - 42.9504 - src.kap[5], atol=3e-2)
-    assert np.isclose(src.mabs[0], 30.9393 - 42.9504 - src.kap[0], atol=3e-2)
+    assert src.mabs[5] == pytest.approx(26.6285 - 42.9504 - src.kap[5], abs=3e-2)
+    assert src.mabs[0] == pytest.approx(30.9393 - 42.9504 - src.kap[0], abs=3e-2)
     assert np.testing.assert_almost_equal(src.absfilt, [0, 1, 2, 3, 4, 5]) is None
 
+    # Test how spectra are generated
     minl = 3000.0
     maxl = 13000.0
     gal1 = photz.besttemplate_onesource(src, 0, minl, maxl)
@@ -202,9 +207,9 @@ def test_rm_discrepant():
     photz.prep_data(src)
     photz.fit_onesource(src)
     assert src.nbused == 5
-    assert np.isclose(src.zmin[0], 0.65)
-    assert np.isclose(src.dmmin[0], 1.0000, atol=1e-04)
-    assert np.isclose(src.imasmin[0], 1)
+    assert src.zmin[0] == pytest.approx(0.65)
+    assert src.dmmin[0] == pytest.approx(1.0000, abs=1e-04)
+    assert src.imasmin[0] == pytest.approx(1)
 
 
 def test_physicalpara_bc03():
@@ -355,7 +360,7 @@ def test_physicalpara_bc03():
     max_position = np.argmax(src.pdfmap[11].vPDF)
     assert max_position == 2
     assert len(src.pdfmap[11].xaxis) == 6
-    assert np.isclose(src.zs, 0.4, atol=1e-02)
+    assert src.zs == pytest.approx(0.4, abs=1e-02)
     photz.physpara_onesource(src)
     print("Done with physical parameters")
     assert src.consiz == 0.4
@@ -372,12 +377,12 @@ def test_physicalpara_bc03():
     # mass 0.0168893 ->log10(0.0168893)+10->8.227
     # sfr  6.50848e-11 -> log10(6.50848e-11)+10 -> -0.1865
     # ssfr -8.4135
-    assert np.isclose(src.results["MASS_BEST"], 8.227, atol=1e-02)
-    assert np.isclose(src.results["SFR_BEST"], -0.1865, atol=1e-02)
-    assert np.isclose(src.results["SSFR_BEST"], -8.4135, atol=1e-02)
-    assert np.isclose(src.results["EBV_BEST"], 0.5, atol=1e-02)
-    assert np.isclose(src.results["AGE_BEST"], 8.55654, atol=1e-02)
-    assert np.isclose(src.results["EXTLAW_BEST"], 1, atol=1e-02)
+    assert src.results["MASS_BEST"] == pytest.approx(8.227, abs=1e-02)
+    assert src.results["SFR_BEST"] == pytest.approx(-0.1865, abs=1e-02)
+    assert src.results["SSFR_BEST"] == pytest.approx(-8.4135, abs=1e-02)
+    assert src.results["EBV_BEST"] == pytest.approx(0.5, abs=1e-02)
+    assert src.results["AGE_BEST"] == pytest.approx(8.55654, abs=1e-02)
+    assert src.results["EXTLAW_BEST"] == pytest.approx(1, abs=1e-02)
     assert src.massmed[1] < 8.227 < src.massmed[2]
     assert src.agemed[1] < 8.55654 < src.agemed[2]
     assert src.SFRmed[1] < -0.1865 < src.SFRmed[2]
@@ -573,7 +578,7 @@ def test_fit_fir():
     max_position = np.argmax(src.pdfmap[11].vPDF)
     assert max_position == 2
     assert len(src.pdfmap[11].xaxis) == 6
-    assert np.isclose(src.zs, 0.4, atol=1e-02)
+    assert src.zs == pytest.approx(0.4, abs=1e-02)
 
     photz.physpara_onesource(src)
     print("Done with physical parameters")
@@ -594,20 +599,20 @@ def test_fit_fir():
     # mass 0.0168893 ->log10(0.0168893)+10->8.227
     # sfr  6.50848e-11 -> log10(6.50848e-11)+10 -> -0.1865
     # ssfr -8.4135
-    assert np.isclose(src.results["MASS_BEST"], 8.227, atol=1e-02)
-    assert np.isclose(src.results["SFR_BEST"], -0.1865, atol=1e-02)
-    assert np.isclose(src.results["SSFR_BEST"], -8.4135, atol=1e-02)
-    assert np.isclose(src.results["EBV_BEST"], 0.5, atol=1e-02)
-    assert np.isclose(src.results["AGE_BEST"], 8.55654, atol=1e-02)
-    assert np.isclose(src.results["EXTLAW_BEST"], 1, atol=1e-02)
+    assert src.results["MASS_BEST"] == pytest.approx(8.227, abs=1e-02)
+    assert src.results["SFR_BEST"] == pytest.approx(-0.1865, abs=1e-02)
+    assert src.results["SSFR_BEST"] == pytest.approx(-8.4135, abs=1e-02)
+    assert src.results["EBV_BEST"] == pytest.approx(0.5, abs=1e-02)
+    assert src.results["AGE_BEST"] == pytest.approx(8.55654, abs=1e-02)
+    assert src.results["EXTLAW_BEST"] == pytest.approx(1, abs=1e-02)
     # The LTIR from .phys is slightly different from the one announced by Dale
-    assert np.isclose(src.results["LUM_TIR_BEST"], 9.74753, atol=1e-02)
-    assert np.isclose(src.results["EXTLAW_BEST"], 1, atol=1e-02)
+    assert src.results["LUM_TIR_BEST"] == pytest.approx(9.74753, abs=1e-02)
+    assert src.results["EXTLAW_BEST"] == pytest.approx(1, abs=1e-02)
     assert src.massmed[1] < 8.227 < src.massmed[2]
     assert src.agemed[1] < 8.55654 < src.agemed[2]
     assert src.SFRmed[1] < -0.1865 < src.SFRmed[2]
     # compare the predicted magnitudes
-    assert np.isclose(src.LIRmed[0], 9.74753, atol=1e-01)
+    assert src.LIRmed[0] == pytest.approx(9.74753, abs=1e-01)
     assert src.LIRmed[1] < 9.74753 < src.LIRmed[2]
 
     minl = 3000.0
