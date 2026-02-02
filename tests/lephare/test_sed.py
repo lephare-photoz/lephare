@@ -170,13 +170,15 @@ def test_integration():
         (199, 301),
         (254, 256),
         (100, 500),
+        (101, 102),
     ]:
         result = sed.integrate(lmin, lmax)
         print(result)
         assert result == 0.5 * (lmax**2 - lmin**2)
 
     sed.set_vector([0], [0])
-    assert sed.integrate(0,1) == lp.INVALID_VAL
+    assert sed.integrate(0, 1) == lp.INVALID_VAL
+
 
 def test_integration2():
     # test on a more realistic case
