@@ -60,7 +60,7 @@ def test_reddening(test_data_dir: str):
         elif "IB679" in c:
             reduced_cols.append(c)
     output, photozlist = lp.process(
-        config, input[reduced_cols], write_outputs=False, reddening=albd_lib, ebv=[0.1] * len(input)
+        config, input[reduced_cols], write_outputs=False, reddening=albd_lib, ebvmw=[0.1] * len(input)
     )
     assert np.isclose(np.sum(output["Z_BEST"]), 185.69925751302745)
     # Check it gives a warning if no ebv provided
@@ -72,5 +72,5 @@ def test_reddening(test_data_dir: str):
     # Check AUTO_ADAPT can run with ebv
     config["AUTO_ADAPT"] = "YES"
     output, photozlist = lp.process(
-        config, input[reduced_cols], write_outputs=False, reddening=albd_lib, ebv=[0.1] * len(input)
+        config, input[reduced_cols], write_outputs=False, reddening=albd_lib, ebvmw=[0.1] * len(input)
     )
