@@ -41,6 +41,7 @@ jobs:
           channels:
             - conda-forge
         init-shell: false
+        micromamba-version: latest
 
     - name: Install lephare and dependencies
       run: |
