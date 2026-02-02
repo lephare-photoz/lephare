@@ -208,6 +208,13 @@ def test_get_auxiliary_data(test_data_dir: str):
 
     # Check it continues with a missing file and throws a warning
     config.update({"GAL_SED": "sed/does_not_exist.list"})
-    lp.data_retrieval.get_auxiliary_data(
-        keymap=config,
+    with pytest.warns(UserWarning) as record:
+        lp.data_retrieval.get_auxiliary_data(
+            keymap=config,
+        )
+
+    assert str(record[0].message) == (
+        "Could not retrieve sed list file https://raw.githubusercontent.com/"
+        "lephare-photoz/lephare-data/main/sed/does_not_exist.list. "
+        "Continuing without it."
     )
