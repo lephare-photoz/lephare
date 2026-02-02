@@ -40,8 +40,7 @@ jobs:
         condarc: |
           channels:
             - conda-forge
-        init-shell: false
-        micromamba-version: latest
+        init-shell: bash
 
     - name: Install lephare and dependencies
       run: |
