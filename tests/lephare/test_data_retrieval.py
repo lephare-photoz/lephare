@@ -205,3 +205,9 @@ def test_get_auxiliary_data(test_data_dir: str):
         assert os.path.exists(file_path)
         os.remove(file_path)
         assert not os.path.exists(file_path)
+
+    # Check it continues with a missing file and throws a warning
+    config.update({"GAL_SED": "sed/does_not_exist.list"})
+    lp.data_retrieval.get_auxiliary_data(
+        keymap=config,
+    )

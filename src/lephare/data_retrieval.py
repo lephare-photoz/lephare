@@ -426,6 +426,8 @@ def config_to_required_files(keymap, base_url=None):
             required_files += file_names
         except KeyError:
             warnings.warn(f"{key} keyword not set or not present in auxiliary files directory.")
+        except requests.exceptions.HTTPError:
+            warnings.warn(f"Could not retrieve sed list file {list_file}. Continuing without it.")
     # Bethermin12 always required
     bet_list = "sed/GAL/BETHERMIN12/BETHERMIN12_MOD.list"
     required_files += [bet_list]
