@@ -223,21 +223,23 @@ void SED::warning_integrateSED(const vector<flt> &filters, bool verbose) {
 }
 
 double SED::integrate(const double lmin, const double lmax) {
-  //absurd case, but better safe than sorry
-  if (lamb_flux.size() < 2) { return INVALID_VAL; }
-  
+  // absurd case, but better safe than sorry
+  if (lamb_flux.size() < 2) {
+    return INVALID_VAL;
+  }
+
   // restrict to cases where the SED is defined over the
   // whole range
   if (lamb_flux.front().lamb > lmin || lamb_flux.back().lamb < lmax) {
     return INVALID_VAL;
   }
- 
-  //find the index j in lamb_flux so that lamb_flux[j]<=lmin<lamb_flux[j+1]
+
+  // find the index j in lamb_flux so that lamb_flux[j]<=lmin<lamb_flux[j+1]
   auto up =
       lower_bound(lamb_flux.begin(), lamb_flux.end(), oneElLambda(lmin, 1.));
   size_t dist = std::distance(lamb_flux.begin(), up);
-  //corner case if lmin == lamb_flux[0]
-  size_t j = dist == 0? 0 : dist - 1;
+  // corner case if lmin == lamb_flux[0]
+  size_t j = dist == 0 ? 0 : dist - 1;
 
   // integrate from lmin to lamb_flux[j+1]
   double x1 = lamb_flux[j].lamb;
@@ -246,8 +248,13 @@ double SED::integrate(const double lmin, const double lmax) {
   double y2 = lamb_flux[j + 1].val;
 
   double slope = (y2 - y1) / (x2 - x1);
-  double interp = y1 + slope * (lmin - x1);
-  double res = (y2 + interp) * 0.5 * (x2 - lmin);
+  double ymin = y1 + slope * (lmin - x1);
+  // corner case : [lmin, lmax] is between lamb_flux[j] and lamb_flux[j+1]
+  if (lmax <= y2) {
+    double ymax = y1 + slope * (lmax - x1);
+    return 0.5 * (ymin + ymax) * (lmax - lmin);
+  }
+  double res = (y2 + ymin) * 0.5 * (x2 - lmin);
   size_t lastidx = j + 1;
 
   // #pragma omp parallel for reduction(+:res)
@@ -268,8 +275,8 @@ double SED::integrate(const double lmin, const double lmax) {
   y2 = lamb_flux[lastidx + 1].val;
 
   slope = (y2 - y1) / (x2 - x1);
-  interp = y1 + slope * (lmax - x1);
-  res += (y1 + interp) * 0.5 * (lmax - x1);
+  double ymax = y1 + slope * (lmax - x1);
+  res += (y1 + ymax) * 0.5 * (lmax - x1);
 
   return res;
 }
