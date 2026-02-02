@@ -420,7 +420,8 @@ def config_to_required_files(keymap, base_url=None):
                 list_file = (list_file[list_file.find("sed/") :]).strip()
             required_files += [list_file]
             # Add the url to retrieve the files
-            list_file = base_url + list_file
+            if not os.path.exists(list_file):
+                list_file = base_url + list_file
             file_names = read_list_file(list_file, prefix=f"sed/{key.split('_')[0]}/")
             required_files += file_names
         except KeyError:

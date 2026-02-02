@@ -279,10 +279,17 @@ def test_physicalpara_bc03():
     lines = ["0.360203008\n", "2\n", "7\n"]
     with open(os.path.expandvars(pathage_bc03), "w") as file:
         file.writelines(lines)
-
+    print("pathlist_bc03: ", pathlist_bc03)
+    config.update(
+        {
+            "VERBOSE": "NO",
+            "GAL_SED": os.path.expandvars(pathlist_bc03),
+        }
+    )
+    keymap = lp.all_types_to_keymap(config)
     # Download large files if needed
     lp.data_retrieval.get_auxiliary_data(
-        keymap=lp.default_cosmos_config.copy(),
+        keymap=keymap,  # lp.default_cosmos_config.copy(),
         additional_files=[
             "sed/GAL/BC03_CHAB/bc2003_lr_m62_chab_tau1_dust00.ised_ASCII",
             "sed/GAL/BC03_CHAB/bc2003_lr_m62_chab_tau15_dust00.ised_ASCII",
