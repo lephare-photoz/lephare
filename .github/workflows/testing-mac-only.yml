@@ -40,7 +40,7 @@ jobs:
         condarc: |
           channels:
             - conda-forge
-        init-shell: bash
+        init-shell: false
 
     - name: Install lephare and dependencies
       run: |
