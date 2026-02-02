@@ -229,9 +229,12 @@ double SED::integrate(const double lmin, const double lmax) {
     return INVALID_VAL;
   }
 
+  //find the index j in lamb_flux so that lamb_flux[j]<=lmin<lamb_flux[j+1]
   auto up =
       lower_bound(lamb_flux.begin(), lamb_flux.end(), oneElLambda(lmin, 1.));
-  size_t j = std::distance(lamb_flux.begin(), up) - 1;
+  size_t dist = std::distance(lamb_flux.begin(), up);
+  //corner case if lmin == lamb_flux[0]
+  size_t j = dist == 0? 0 : dist - 1;
 
   // integrate from lmin to lamb_flux[j+1]
   double x1 = lamb_flux[j].lamb;
