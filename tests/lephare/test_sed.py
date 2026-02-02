@@ -175,6 +175,8 @@ def test_integration():
         print(result)
         assert result == 0.5 * (lmax**2 - lmin**2)
 
+    sed.set_vector([0], [0])
+    assert sed.integrate(0,1) == lp.INVALID_VAL
 
 def test_integration2():
     # test on a more realistic case
