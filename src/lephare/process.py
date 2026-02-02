@@ -20,7 +20,7 @@ def process(
     filename=None,
     write_outputs=False,
     reddening=None,
-    ebv=None,
+    ebvmw=None,
 ):
     """Run all required steps to produce photometric redshift estimates
 
@@ -43,7 +43,7 @@ def process(
     reddening : np.array or None
         Array of reddening values to apply to each model and filter. If None the
         reddening will not be applied.
-    ebv : np.array or None
+    ebvmw : np.array or None
         Array of E(B-V) values for each object in the input catalogue. If None
         no reddening will be applied.
 
@@ -62,7 +62,7 @@ def process(
     if reddening is not None:
         photz.reddening = reddening
         # If reddening is provided but no ebv warn the user
-        if ebv is None:
+        if ebvmw is None:
             warnings.warn("No ebv provided. Reddening not applied.")
             reddening = None
     id, flux, flux_err, context, zspec, string_data = table_to_data(
@@ -84,7 +84,7 @@ def process(
 
         if reddening is not None:
             for i in range(ng):
-                srclist[i].galEbv = ebv[i]
+                srclist[i].galEbv = ebvmw[i]
 
         # compute the offset, depending on the option in the code (AUTO_ADAPT, or APPLY_SYSSHIFT
         a0 = photz.compute_offsets(srclist)
@@ -104,7 +104,7 @@ def process(
 
     if reddening is not None:
         for i in range(ng):
-            photozlist[i].galEbv = ebv[i]
+            photozlist[i].galEbv = ebvmw[i]
     # Perform the main run
     photz.run_photoz(photozlist, a0)
     # Write outputs if requested
