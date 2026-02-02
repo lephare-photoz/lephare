@@ -39,6 +39,7 @@ def test_photoz_cosmos():
             "MAG_REF": "2",
             "MABS_METHOD": "0",
             "MABS_CONTEXT": "0",
+            "CHI2_OUT": "YES",
         }
     )
     keymap = lp.all_types_to_keymap(config)
@@ -86,6 +87,9 @@ def test_photoz_cosmos():
 
     photz.fit_onesource(src)
     print("Done with fit")
+
+    # test that the file with the full chi2 was written
+    assert os.path.exists("Id65.chi")
 
     # test the value of the minimisation
     assert src.zmin[0] == pytest.approx(0.65)

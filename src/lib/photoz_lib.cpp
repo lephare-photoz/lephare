@@ -1809,6 +1809,9 @@ void PhotoZ::fit_onesource(onesource &src) {
   src.rm_discrepant(lightLib, flux, valid, funz0, bp, thresholdChi2,
                     restrict_rf);
 
+  // write out chisquare values for all templates
+  if (outchi) src.writeFullChi(lightLib);
+
   return;
 }
 

@@ -26,8 +26,12 @@ def test_photoz_cosmos():
             "QSO_SED": "$LEPHAREDIR/sed/QSO/SALVATO09/AGN_MOD.list",
             "GAL_SED": "$LEPHAREDIR/sed/GAL/COSMOS_SED/COSMOS_MOD.list",
             "LIB_ASCII": "YES",
+            "CAT_IN": str(os.path.expandvars("$LEPHAREWORK/mag.in")),
+            "CAT_FMT": "MMEE",
             "INP_TYPE": "M",
             "CAT_MAG": "AB",
+            "CAT_TYPE": "LONG",
+            "GLB_CONTEXT": "-1",
             "AUTO_ADAPT": "NO",
             "Z_STEP": "0.05,0,1",
             "ZFIX": "NO",
@@ -61,38 +65,51 @@ def test_photoz_cosmos():
     assert photz.gridz[0] == 0
     assert photz.gridz[20] == 1
 
-    allsources = []
+    # Create the input ascii file
     mag_sources = [
         [30.9393, 29.4864, 28.102, 27.1517, 26.8568, 26.6285],  # same test as one source z=0.65
         [24.5493, 23.1701, 22.5265, 22.2859, 22.1366, 22.0255],  # mod 1, no attenuation, z=0.1
         [30.2765, 30.1974, 30.126, 29.6699, 29.4879, 29.4514],  # mod 30, ebv=0.2, z=0.9
         [0.656911, -0.0506009, 0.148528, 0.357171, 0.483391, 0.548042],  # star, mod 24
-        [23.3172, 22.7789, 22.4013, 21.9102, 21.7947, 21.0578],
-    ]  # ebv=0.3, z=0.5, pl_TQSO1_template_norm.sed
+        [23.3172, 22.7789, 22.4013, 21.9102, 21.7947, 21.0578],  # ebv=0.3, z=0.5, pl_TQSO1_template_norm.sed
+    ]
     print(mag_sources[0])
-    for k in range(0, 5):
-        # Instantiate a source (Id, gridz)
-        src = lp.onesource(101, photz.gridz)
-        # read the source, change Id, attribute mag/err, ...
-        cont = 0
-        src.readsource(
-            str(k),
-            mag_sources[k],
-            [0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
-            cont,
-            -99,
-            "test",
-        )
-        allsources.append(src)
-    print("Done creating source")
+    emag_sources = [0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
+    zs_in = [0.65, 0.1, 0.9, 0.000, 0.5]
 
-    photz.prep_data(allsources)
+    # Name of the temprary input file
+    fil = os.path.expandvars("$LEPHAREWORK/mag.in")
+    with open(fil, "w") as f:
+        for idline in range(1, 6):
+            mags = mag_sources[idline - 1][0:6]
+            zsin = zs_in[idline - 1]
+            line = (
+                f"{idline} {' '.join(map(str, mags))}  "
+                f"{' '.join(map(str, emag_sources))} 63 "
+                f"{str(zsin)} -99 \n"
+            )
+            f.write(line)
 
-    a0 = photz.compute_offsets([])
-    src.adapt_mag(a0)
+    # Compute offsets depending on the AUTO_ADAPT and APPLY_SYSSHIFT options (0 if none)
+    adapt_srcs = photz.read_autoadapt_sources()
+    a0 = photz.compute_offsets(adapt_srcs)
     print("Done with offsets")
     assert len(a0) == 6
+    print("a0 ", a0)
 
+    # read ascii table with sources
+    allsources = photz.read_photoz_sources()
+    print("Done creating sources")
+    # Check that input file is well read
+    for k in range(0, 5):
+        # Check magnitudes
+        assert np.isclose(allsources[k].mab, mag_sources[k], atol=0.01).all()
+        # Check context
+        assert allsources[k].cont == 63
+        # Check spec-z
+        assert np.isclose(allsources[k].zs, zs_in[k], atol=0.01).all()
+
+    # run the fit
     photz.run_photoz(allsources, a0)
     print("Done with fit")
 
@@ -138,7 +155,7 @@ def test_photoz_cosmos():
     assert allsources[4].dmmin[1] == pytest.approx(1.0000, abs=1e-04)
     assert allsources[4].imasmin[1] == pytest.approx(30)
 
-    # Check les mag predites
+    # Check predicted mag
     # Since we use the same filters as additional, we should have the input magnitude
     # True only for galaxies
     for k in range(0, 3):
