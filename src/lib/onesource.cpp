@@ -1774,7 +1774,7 @@ void onesource::computeEmFlux(vector<SED *> &fulllib, cosmo lcdm) {
           // int (F*T) dlambda / int (T) dlambda
           double contiF =
               SEDz0_Gal.integrate(lambda_em[k] - 30., lambda_em[k] + 30.) / 60.;
-          flux_em[k] *= emF * rescaleDist;
+          flux_em[k] = emF * rescaleDist;
           // Equivalent width
           // int (Fem*T) dlambda / [int (Fcont*T) dlambda / int (T) dlambda]
           EW_em[k] = emF / contiF;
