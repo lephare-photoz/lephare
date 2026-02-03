@@ -4,7 +4,7 @@
 name: Unit test and code coverage
 
 on:
-  pull_request:
+  push:
     branches: [ main ]
 
 jobs:
@@ -15,7 +15,7 @@ jobs:
       INCLUDE_COVERAGE: TRUE
     strategy:
       matrix:
-        python-version: ['3.12']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
 
     steps:
     - uses: actions/checkout@v6
