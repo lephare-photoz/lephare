@@ -6,6 +6,7 @@ name: Unit test and code coverage on MacOS
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:

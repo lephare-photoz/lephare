@@ -6,6 +6,7 @@ name: Unit test and code coverage
 on:
   push:
     branches: [ main, rc1.0.0, 393-cleaning-up-cmakeliststxt-and-fixing-up-an-issue-wrt-pypi ]
+  workflow_dispatch:
 
 jobs:
   build:
