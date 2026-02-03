@@ -165,6 +165,6 @@ def test_photoz_cosmos():
     photz.write_outputs(allsources, ti1)
     print("Done with writting")
 
-    for k in range(0, 5):
+    for k in range(1, 6):
         file_test = os.path.expandvars("$LEPHAREWORK/spec/") + "Id" + str(k) + ".spec"
         assert os.path.exists(file_test)
