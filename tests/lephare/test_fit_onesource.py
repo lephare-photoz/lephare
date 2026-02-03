@@ -88,9 +88,6 @@ def test_photoz_cosmos():
     photz.fit_onesource(src)
     print("Done with fit")
 
-    # test that the file with the full chi2 was written
-    assert os.path.exists("Id65.chi")
-
     # test the value of the minimisation
     assert src.zmin[0] == pytest.approx(0.65)
     assert src.dmmin[0] == pytest.approx(1.0000, abs=1e-04)

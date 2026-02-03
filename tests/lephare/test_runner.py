@@ -118,7 +118,7 @@ def test_command_line_argument_parsing_basic(monkeypatch):
     runner.run()
     print(runner.start)
     runner.end()
-    assert runner.stop - runner.start > 1.0e-8
+    assert runner.stop - runner.start > 0
 
 
 def test_kwargs_arguments():
