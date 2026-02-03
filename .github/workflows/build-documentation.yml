@@ -6,6 +6,8 @@ name: Build documentation
 on:
   push:
     branches: [ main, rc1.0.0 ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 concurrency:

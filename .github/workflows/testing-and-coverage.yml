@@ -4,6 +4,8 @@
 name: Unit test and code coverage
 
 on:
+  push:
+    branches: [ main, 393-cleaning-up-cmakeliststxt-and-fixing-up-an-issue-wrt-pypi ]
   pull_request:
     branches: [ main, rc1.0.0 ]
   workflow_dispatch:
@@ -16,7 +18,7 @@ jobs:
       INCLUDE_COVERAGE: TRUE
     strategy:
       matrix:
-        python-version: ['3.12']
+        python-version: ['3.10', '3.11', '3.12', '3.13']
 
     steps:
     - uses: actions/checkout@v6
