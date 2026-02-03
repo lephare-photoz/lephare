@@ -250,11 +250,7 @@ double SED::integrate(const double lmin, const double lmax) {
   double slope = (y2 - y1) / (x2 - x1);
   double ymin = y1 + slope * (lmin - x1);
   // corner case : [lmin, lmax] is between lamb_flux[j] and lamb_flux[j+1]
-<<<<<<< HEAD
   if (lmax <= x2) {
-=======
-  if (lmax <= y2) {
->>>>>>> refs/remotes/origin/rc1.0.0
     double ymax = y1 + slope * (lmax - x1);
     return 0.5 * (ymin + ymax) * (lmax - lmin);
   }
