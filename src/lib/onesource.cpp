@@ -1765,7 +1765,7 @@ void onesource::computeEmFlux(vector<SED *> &fulllib, cosmo lcdm) {
 
       // Loop over each emission lines. Only the 8 main lines that we can have
       // in output (lyman alpha, OII, Halpha, etc)
-      for (int k = 0; k < 8; k++) {
+      for (size_t k = 0; k < lambda_em.size(); k++) {
         // Integrate the SED (emission lines & continuum) within the filter
         if (SEDz0_Em.lamb_flux.size() > 0) {
           // int (F*T) dlambda
@@ -1774,7 +1774,7 @@ void onesource::computeEmFlux(vector<SED *> &fulllib, cosmo lcdm) {
           // int (F*T) dlambda / int (T) dlambda
           double contiF =
               SEDz0_Gal.integrate(lambda_em[k] - 30., lambda_em[k] + 30.) / 60.;
-          flux_em[k] *= emF * rescaleDist;
+          flux_em[k] = emF * rescaleDist;
           // Equivalent width
           // int (Fem*T) dlambda / [int (Fcont*T) dlambda / int (T) dlambda]
           EW_em[k] = emF / contiF;

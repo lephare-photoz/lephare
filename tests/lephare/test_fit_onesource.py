@@ -39,6 +39,7 @@ def test_photoz_cosmos():
             "MAG_REF": "2",
             "MABS_METHOD": "0",
             "MABS_CONTEXT": "0",
+            "CHI2_OUT": "YES",
         }
     )
     keymap = lp.all_types_to_keymap(config)
