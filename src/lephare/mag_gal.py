@@ -82,7 +82,7 @@ class MagGal(Runner):
             self.parser.usage = "Build the LePHARE synthetic magnitudes"
         self.__doc__ = doc + "\n"  # + inspect.getdoc(MagGal)
 
-    def __init__(self, config_file=None, config_keymap=None, **kwargs):
+    def __init__(self, config_file="", config_keymap=None, **kwargs):
         self.name = "MagGal"
         super().__init__(config_keys, config_file, config_keymap, **kwargs)
 

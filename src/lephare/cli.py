@@ -1,7 +1,8 @@
 # cli.py (or at bottom of filter.py)
 import click
 
-def build_cli(RunnerClass, config_keys):
+
+def build_cli(runner_class, config_keys):
     @click.command(context_settings={"help_option_names": ["-h", "--help"]})
     @click.option(
         "-c",
@@ -12,7 +13,10 @@ def build_cli(RunnerClass, config_keys):
     @click.option("--timer", is_flag=True, help="Switch timer on")
     def cli(config, timer, **kwargs):
         normalized = {k.upper(): v for k, v in kwargs.items() if v is not None}
-        runner = RunnerClass(config_file=config, **normalized,)
+        runner = runner_class(
+            config_file=config,
+            **normalized,
+        )
         runner.timer = timer
         if "TYP" in normalized:
             runner.typ = normalized["TYP"]
@@ -38,4 +42,3 @@ def build_cli(RunnerClass, config_keys):
             )(cli)
 
     return cli
-

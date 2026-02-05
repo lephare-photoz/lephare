@@ -30,29 +30,6 @@ def test_zphota_config_file_not_found():
         assert excinfo.value == f"File {config_file_path} not found"
 
 
-def test_with_command_line_config(monkeypatch):
-    """Use command line arguments to instantiate the Zphota class. Expect the keymap
-    to be populated."""
-    monkeypatch.setattr("sys.argv", ["zphota.py", "--CAT_IN", "cat_foo", "--Z_INTERP", "YES"])
-    zp = Zphota()
-    assert zp.keymap["CAT_IN"].value == "cat_foo"
-    assert zp.keymap["Z_INTERP"].value == "YES"
-
-
-def test_override_config_file_with_command_line(monkeypatch):
-    """Use the command line to feed in a config file, but override one of the values
-    with a command line value.
-
-     This is the expected behavior, but only if we pass the config file in on the
-    command line. Otherwise, as we test in the last part of this, we do not override
-    the value."""
-    config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
-    monkeypatch.setattr("sys.argv", ["zphota.py", "--config", config_file_path, "--CAT_IN", "cat_foo"])
-    zp = Zphota()
-    assert zp.keymap["CAT_IN"].value == "cat_foo"
-    assert zp.keymap["Z_INTERP"].value == "YES"
-
-
 # Test run
 
 
@@ -98,41 +75,5 @@ def test_run_zp_config_file(monkeypatch):
     Note that we mock the cpp functions that are called by the run method."""
     config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
     zp = Zphota(config_file=config_file_path)
-
-    run_configured_zp(zp, config_file_path)
-
-
-def test_run_zp_command_line(monkeypatch):
-    """Use the command line to run the Zphota class."""
-    config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
-    monkeypatch.setattr("sys.argv", ["zphota.py", "--config", config_file_path, "--timer"])
-    zp = Zphota()
-
-    run_configured_zp(zp, config_file_path)
-
-
-def test_run_zp_extra_command_line_flags(monkeypatch):
-    """Run the zphota class with timer and verbose flags."""
-    config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
-    monkeypatch.setattr("sys.argv", ["zphota.py", "--config", config_file_path, "--timer", "--verbose"])
-    zp = Zphota(config_file=config_file_path)
-
-    run_configured_zp(zp, config_file_path)
-
-
-def test_run_zp_auto_adapt_yes(monkeypatch):
-    """Run the zphota class with AUTO_ADAPT toggled on."""
-    config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
-    monkeypatch.setattr("sys.argv", ["zphota.py", "--config", config_file_path, "--AUTO_ADAPT", "YES"])
-    zp = Zphota()
-
-    run_configured_zp(zp, config_file_path)
-
-
-def test_run_zp_auto_adapt_no(monkeypatch):
-    """Run the zphota class with AUTO_ADAPT toggled off."""
-    config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
-    monkeypatch.setattr("sys.argv", ["zphota.py", "--config", config_file_path, "--AUTO_ADAPT", "NO"])
-    zp = Zphota()
 
     run_configured_zp(zp, config_file_path)

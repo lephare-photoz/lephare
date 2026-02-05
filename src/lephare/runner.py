@@ -32,7 +32,7 @@ class Runner:
              Dictionary of configuration values provided as 'key/keyword object' pairs.
     """
 
-    def __init__(self, config_keys=None, config_file=None, config_keymap=None, **kwargs):
+    def __init__(self, config_keys=None, config_file="", config_keymap=None, **kwargs):
         get_lephare_env()
 
         if config_keys is None:
@@ -135,10 +135,12 @@ class Runner:
         for k, v in kwargs.items():
             if k.upper() in self.config_keys:
                 self.keymap[k.upper()] = keyword(k.upper(), str(v))
-        for k in self.config_keys:
-            key = self.keymap[k.upper()]
-            if DEBUG and key.name not in ["VERBOSE", "TYP"]:
-                print(f"# {key.name} : {key.value}")
+        # for debugging only
+        if DEBUG:
+            for k in self.config_keys:
+                if k.name not in ["VERBOSE", "typ"]:
+                    key = self.keymap[k.upper()]
+                    print(f"# {key.name} : {key.value}")
 
     def end(self):
         if self.timer:

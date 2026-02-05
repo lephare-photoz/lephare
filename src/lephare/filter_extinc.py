@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 import os
 from contextlib import suppress
 
@@ -6,6 +8,7 @@ import numpy as np
 import lephare as lp
 
 from ._lephare import compute_filter_extinction, ext
+from .cli import build_cli
 from .runner import Runner
 
 __all__ = [
@@ -47,7 +50,7 @@ class FiltExt(Runner):
             self.parser.usage = doc
         self.__doc__ = doc + "\n"
 
-    def __init__(self, config_file=None, config_keymap=None, **kwargs):
+    def __init__(self, config_file="", config_keymap=None, **kwargs):
         super().__init__(config_keys, config_file, config_keymap, **kwargs)
 
     def run(self, **kwargs):
@@ -72,7 +75,7 @@ class FiltExt(Runner):
             print("#######################################")
             print("# Computing ATMOSPHERIC AND GALACTIC EXTINCTION ")
             print("# with the following options:")
-            print(f"# Config file: {self.config}")
+            print(f"# Config file: {self.config_file}")
             print(f"# FILTER_FILE: {filters}")
             print(f"# EXT_CURVE (Atmospheric extinction curve): {atmec}")
             print(f"# GAL_CURVE (Galactic extinction curve: {galec}")
@@ -87,7 +90,7 @@ class FiltExt(Runner):
             out.write("#######################################\n")
             out.write("# Computing ATMOSPHERIC AND GALACTIC EXTINCTION \n")
             out.write("# with the following options:\n")
-            out.write(f"# Config file: {self.config}\n")
+            out.write(f"# Config file: {self.config_file}\n")
             out.write(f"# FILTER_FILE: {filters}\n")
             out.write(f"# EXT_CURVE (Atmospheric extinction curve): {atmec}\n")
             out.write(f"# GAL_CURVE (Galactic extinction curve: {galec}\n")
@@ -164,10 +167,13 @@ def calculate_extinction_values(filters, atmec, galec, verbose=False):
     return all_filters, aint, albdav, albd
 
 
-def main():  # pragma no cover
-    runner = FiltExt()
-    runner.run()
-    runner.end()
+# ---- CLI entry point ----
+
+cli = build_cli(FiltExt, config_keys)
+
+
+def main():
+    cli()
 
 
 if __name__ == "__main__":  # pragma no cover
