@@ -42,7 +42,7 @@ echo "Running sedtolib and mag_gal for stars..."
 sedtolib -c $CONFIG_FILE \
     -t S \
     --STAR_SED $LEPHAREDIR/examples/STAR_MOD_ALL.list \
-    --LIB_ASCII YES
+
 mag_gal -c $CONFIG_FILE \
     -t S \
     --LIB_ASCII YES \
@@ -52,6 +52,7 @@ echo "Running sedtolib and mag_gal for QSOs..."
 sedtolib -c $CONFIG_FILE \
     -t Q \
     --QSO_SED $LEPHAREDIR/sed/QSO/SALVATO09/AGN_MOD.list
+
 mag_gal -c $CONFIG_FILE \
     -t Q \
     --MOD_EXTINC 0,1000  \
@@ -65,7 +66,8 @@ echo "Running sedtolib and mag_gal for galaxies..."
 sedtolib -c $CONFIG_FILE \
     -t G \
     --GAL_SED $LEPHAREDIR/examples/COSMOS_MOD.list  \
-    --GAL_LIB LIB_VISTA 
+    --GAL_LIB LIB_VISTA
+
 mag_gal -c $CONFIG_FILE \
     -t G \
     --GAL_LIB_IN LIB_VISTA \
@@ -85,14 +87,12 @@ zphota -c $CONFIG_FILE \
     --ZPHOTLIB VISTA_COSMOS_FREE,ALLSTAR_COSMOS,QSO_COSMOS  \
     --ADD_EMLINES 0,100 \
     --AUTO_ADAPT YES \
-    --Z_STEP 0.04,0,6 \
     --CAT_LINES 1,100 \
     --SPEC_OUT YES \
     --PARA_OUT $LEPHAREDIR/examples/output.para \
     --VERBOSE NO \
     --ZFIX NO \
     --PDZ_OUT $LEPHAREWORK/zphota/ \
-    --VERBOSE NO
 
 echo "Generating figures and specs..."
 python $LEPHAREDIR/examples/figuresLPZ.py $CAT_OUT
