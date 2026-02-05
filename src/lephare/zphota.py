@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 import time
 from contextlib import suppress
 
@@ -5,6 +7,7 @@ from ._lephare import (
     PhotoZ,
     keyword,
 )
+from .cli import build_cli
 from .runner import Runner
 
 __all__ = [
@@ -225,12 +228,13 @@ Need 1 or N values
         self.__doc__ = doc + "\n"  # + inspect.getdoc(Zphota)
 
     def __init__(self, config_file=None, config_keymap=None, **kwargs):
+        self.name = "Zphota"
         super().__init__(config_keys, config_file, **kwargs)
 
     def run(self, **kwargs):
         super().run(**kwargs)
 
-        self.keymap["c"] = keyword("c", self.config)
+        self.keymap["c"] = keyword("c", self.config_file)
 
         photoz = PhotoZ(self.keymap)
 
@@ -249,10 +253,13 @@ Need 1 or N values
         super().end()
 
 
+# ---- CLI entry point ----
+
+cli = build_cli(Zphota, config_keys)
+
+
 def main():  # pragma no cover
-    runner = Zphota()
-    runner.run()
-    runner.end()
+    cli()
 
 
 if __name__ == "__main__":  # pragma no cover

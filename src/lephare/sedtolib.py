@@ -1,7 +1,10 @@
+#! /usr/bin/env python
+
 import time
 from contextlib import suppress
 
 from ._lephare import GalSEDLib, QSOSEDLib, StarSEDLib
+from .cli import build_cli
 from .runner import Runner
 
 __all__ = [
@@ -56,6 +59,7 @@ class Sedtolib(Runner):
         self.__doc__ = doc + "\n"  # + inspect.getdoc(Sedtolib)
 
     def __init__(self, config_file=None, config_keymap=None, **kwargs):
+        self.name = "Sedtolib"
         super().__init__(config_keys, config_file, config_keymap, **kwargs)
 
     def run(self, **kwargs):
@@ -66,11 +70,11 @@ class Sedtolib(Runner):
 
         super().run(**kwargs)
         if self.typ[0] == "G":
-            sed_library = GalSEDLib(self.keymap, self.config, self.typ)
+            sed_library = GalSEDLib(self.keymap, self.config_file, self.typ)
         elif self.typ[0] == "Q":
-            sed_library = QSOSEDLib(self.keymap, self.config, self.typ)
+            sed_library = QSOSEDLib(self.keymap, self.config_file, self.typ)
         elif self.typ[0] == "S":
-            sed_library = StarSEDLib(self.keymap, self.config, self.typ)
+            sed_library = StarSEDLib(self.keymap, self.config_file, self.typ)
         else:
             raise KeyError("-t arg must start with G/g Q/q or S/s for Galaxy QSO and Star respectively.")
 
@@ -86,10 +90,13 @@ class Sedtolib(Runner):
         return
 
 
+# ---- CLI entry point ----
+
+cli = build_cli(Sedtolib, config_keys)
+
+
 def main():  # pragma no cover
-    runner = Sedtolib()
-    runner.run()
-    runner.end()
+    cli()
 
 
 if __name__ == "__main__":  # pragma no cover

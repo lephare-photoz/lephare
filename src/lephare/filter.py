@@ -1,12 +1,14 @@
+#! /usr/bin/env python
+
+# filter.py
 import os
 from contextlib import suppress
 
 from ._lephare import flt, write_output_filter
+from .cli import build_cli
 from .runner import Runner
 
-__all__ = [
-    "Filter",
-]
+__all__ = ["Filter"]
 
 config_keys = {
     "VERBOSE": "increase onscreen verbosity",
@@ -51,6 +53,7 @@ class Filter(Runner):
         self.__doc__ = doc + "\n"  # + inspect.getdoc(Filter)
 
     def __init__(self, config_file=None, config_keymap=None, **kwargs):
+        self.name = "filter"
         super().__init__(config_keys, config_file, config_keymap, **kwargs)
 
     def run(self, **kwargs):
@@ -58,9 +61,7 @@ class Filter(Runner):
 
         This is only when the code is called from python session.
         """
-
         super().run(**kwargs)
-
         keymap = self.keymap
         flt_rep = keymap["FILTER_REP"].split_string(os.path.join(os.environ["LEPHAREDIR"], "filt/"), 1)[0]
         flt_files = keymap["FILTER_LIST"].split_string("flt.pb", -99)
@@ -72,12 +73,12 @@ class Filter(Runner):
         # Output file
         output_name = keymap["FILTER_FILE"].split_string("filters", 1)[0]
         filtfile = os.path.join(os.environ["LEPHAREWORK"], "filt", output_name + ".dat")
-        filtdoc = os.path.join(os.environ["LEPHAREWORK"], "filt", output_name + ".doc")
+        filtdoc = filtfile.replace(".dat", ".doc")
 
         if self.verbose:
             print("#######################################")
             print("# Build the filter file with the following options: ")
-            print(f"# Config file: {self.config}")
+            print(f"# Config file: {self.config_file}")
             print(f"# FILTER_REP: {flt_rep}")
             print(f"# FILTER_LIST: {flt_files}")
             print(f"# TRANS_TYPE: {transtyp}")
@@ -96,11 +97,14 @@ class Filter(Runner):
         return vec_flt
 
 
-def main():  # pragma no cover
-    runner = Filter()
-    _ = runner.run()
-    runner.end()
+# ---- CLI entry point ----
+
+cli = build_cli(Filter, config_keys)
 
 
-if __name__ == "__main__":  # pragma no cover
+def main():
+    cli()
+
+
+if __name__ == "__main__":
     main()
