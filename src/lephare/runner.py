@@ -110,33 +110,33 @@ class Runner:
     # ---------------- runtime ----------------
 
     def run(self, **kwargs):
-        if DEBUG:
+        if DEBUG:  # pragma no cover
             print("#######################################")
             print(f"# Running {self.name} with the following arguments")
             print(f"# Config file : {self.config_file}")
         if self.timer:
             self.start = time.time()
-        if DEBUG:
+        if DEBUG:  # pragma no cover
             print(f"# timer {self.timer}")
 
         if "VERBOSE" in kwargs:
             val = kwargs.pop("VERBOSE")
             self.verbose = bool(val.upper() == "YES")
-        if DEBUG:
+        if DEBUG:  # pragma no cover
             print(f"# verbose {self.verbose}")
 
         if "typ" in self.config_keys:
             if "typ" in kwargs:
                 self.typ = kwargs.pop("typ", self.typ)
                 self.typ = self.typ.upper()
-            if DEBUG:
+            if DEBUG:  # pragma no cover
                 print(f"# typ {self.typ}")
 
         for k, v in kwargs.items():
             if k.upper() in self.config_keys:
                 self.keymap[k.upper()] = keyword(k.upper(), str(v))
         # for debugging only
-        if DEBUG:
+        if DEBUG:  # pragma no cover
             for k in self.config_keys:
                 if k.name not in ["VERBOSE", "typ"]:
                     key = self.keymap[k.upper()]
