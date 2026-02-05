@@ -52,7 +52,7 @@ class Filter(Runner):
             self.parser.usage = doc
         self.__doc__ = doc + "\n"  # + inspect.getdoc(Filter)
 
-    def __init__(self, config_file=None, config_keymap=None, **kwargs):
+    def __init__(self, config_file="", config_keymap=None, **kwargs):
         self.name = "filter"
         super().__init__(config_keys, config_file, config_keymap, **kwargs)
 
