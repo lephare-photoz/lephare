@@ -70,18 +70,17 @@ class Runner:
             if not path.exists():
                 raise RuntimeError(f"File {self.config_file} not found")
 
-            with path.open() as f:
-                with open(self.config_file) as f:
-                    for line in f:
-                        line = line.strip()
-                        if not line or line.startswith("#"):
-                            continue
-                        parts = line.split(None, 2)
-                        if len(parts) < 2:
-                            continue
-                        name, value = parts[0], parts[1]
-                        if name in self.config_keys:
-                            defaults[name] = keyword(name, value)
+            with open(self.config_file) as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    parts = line.split(None, 2)
+                    if len(parts) < 2:
+                        continue
+                    name, value = parts[0], parts[1]
+                    if name in self.config_keys:
+                        defaults[name] = keyword(name, value)
 
         for k in self.config_keys:
             if k not in defaults:
