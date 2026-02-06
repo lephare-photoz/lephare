@@ -19,7 +19,7 @@ def build_cli(runner_class, config_keys):
         )
         runner.timer = timer
         if "TYP" in normalized:
-            runner.typ = normalized["TYP"]
+            runner.typ = normalized["TYP"].upper()
         if "VERBOSE" in normalized:
             runner.verbose = normalized["VERBOSE"] == "YES"
         runner.run()
