@@ -1,6 +1,9 @@
+#! /usr/bin/env python
+
 from contextlib import suppress
 
 from ._lephare import GalMag, QSOMag, StarMag, keyword
+from .cli import build_cli
 from .runner import Runner
 
 __all__ = [
@@ -79,7 +82,8 @@ class MagGal(Runner):
             self.parser.usage = "Build the LePHARE synthetic magnitudes"
         self.__doc__ = doc + "\n"  # + inspect.getdoc(MagGal)
 
-    def __init__(self, config_file=None, config_keymap=None, **kwargs):
+    def __init__(self, config_file="", config_keymap=None, **kwargs):
+        self.name = "MagGal"
         super().__init__(config_keys, config_file, config_keymap, **kwargs)
 
     def run(self, **kwargs):
@@ -95,7 +99,7 @@ class MagGal(Runner):
         # Define the type (Galaxy, QSO, Stars)
         self.keymap["t"] = keyword("t", self.typ)
         # Parameter file
-        self.keymap["c"] = keyword("c", self.config)
+        self.keymap["c"] = keyword("c", self.config_file)
 
         if self.typ[0] == "G":
             mag = GalMag(self.keymap)
@@ -122,10 +126,13 @@ class MagGal(Runner):
         return
 
 
+# ---- CLI entry point ----
+
+cli = build_cli(MagGal, config_keys)
+
+
 def main():  # pragma no cover
-    runner = MagGal()
-    runner.run()
-    runner.end()
+    cli()
 
 
 if __name__ == "__main__":  # pragma no cover
