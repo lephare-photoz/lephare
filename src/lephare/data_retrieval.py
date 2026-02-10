@@ -424,13 +424,18 @@ def config_to_required_files(keymap, base_url=None, lephare_dir=LEPHAREDIR):
             # Add the url to retrieve the files if it is not present locally
             if (not os.path.exists(os.path.join(lephare_dir, list_file))) and (not os.path.exists(list_file)):
                 required_files += [list_file]
+                # Get the files from the list file whether locally present or not
+                # Add url to retireve files
+                list_file = base_url + list_file
             else:
                 warnings.warn(
                     f"{os.path.join(lephare_dir, list_file)} is present locally and will not be overwritten."
                 )
+                # If location implied from data directory get full path for
+                # #reading list file, which is needed to get the files in the list file
+                if list_file.startswith("sed/"):
+                    list_file = os.path.join(lephare_dir, list_file)
             # Get the files from the list file whether locally present or not
-            # Add url to retireve files
-            list_file = base_url + list_file
             file_names = read_list_file(list_file, prefix=f"sed/{key.split('_')[0]}/")
             required_files += file_names
         except KeyError:

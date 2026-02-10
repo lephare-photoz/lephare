@@ -218,8 +218,7 @@ def test_get_auxiliary_data(test_data_dir: str):
 
     # Test that a local file that differs from the remote is not itself overwritten
     lines = [
-        "BC03_CHAB/bc2003_lr_m62_chab_tau1_dust00.ised_ASCII  BC03\n",
-        "BC03_CHAB/bc2003_lr_m62_chab_tau15_dust00.ised_ASCII  BC03\n",
+        "CWW_KINNEY/CWW_E_ext.sed  NotCosmos",
     ]
     with open(os.path.join(test_dir, "../data/sed/GAL/COSMOS_SED/COSMOS_MOD.list"), "w") as file:
         file.writelines(lines)
@@ -231,4 +230,9 @@ def test_get_auxiliary_data(test_data_dir: str):
     assert str(record[1].message).endswith("will not be overwritten.")
     with open(os.path.join(test_dir, "../data/sed/GAL/COSMOS_SED/COSMOS_MOD.list"), "r") as f:
         first_line = f.readline().rstrip("\n")
-    assert first_line == "BC03_CHAB/bc2003_lr_m62_chab_tau1_dust00.ised_ASCII  BC03"
+    assert first_line == "CWW_KINNEY/CWW_E_ext.sed  NotCosmos"
+    # Check file added to list file exists
+    new_sed_file_path = os.path.join(test_dir, "../data/sed/GAL/CWW_KINNEY/CWW_E_ext.sed")
+    assert os.path.exists(new_sed_file_path)
+    os.remove(new_sed_file_path)
+    assert not os.path.exists(new_sed_file_path)
