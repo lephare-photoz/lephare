@@ -9,7 +9,7 @@ def apply_context_function(data_array, n_filters, apply_context):
     Handle the context column according to the 'apply_context' flag.
     
     Parameters
-    ###
+    #---
     data_array : np.ndarray
         Input data array (already structured with mags, errors, context, zspec).
     n_filters : int
@@ -49,17 +49,9 @@ def apply_context_function(data_array, n_filters, apply_context):
         raise ValueError("apply_context must be one of: 'no', 'yes', or 'null'")
 
 
-
-def format_to_lephareinput(CAT_IN,
-                           CAT_OUT,
-                           input_columns,
-                           n_filters,
-                           CAT_TYPE='short',
-                           simple_convert=False,
-                           shuffle=False,
-                           apply_context='no',
-                           max_rows=None,
-                           error_value_state='default',
+def format_to_lephareinput(CAT_IN, CAT_OUT, input_columns, n_filters,
+                           CAT_TYPE='short', simple_convert=False, shuffle=False,
+                           apply_context='no', max_rows=None, error_value_state='default',
                            facticious_specz=None):
     """
     Format input catalog into a LePhare-compatible .dat file.
@@ -93,7 +85,7 @@ def format_to_lephareinput(CAT_IN,
         filled with the provided value.
     """
 
-    ### 1. Read input file ###
+    #--- 1. Read input file ---
     ext = os.path.splitext(CAT_IN)[1].lower()
 
     if ext == '.fits':
@@ -111,14 +103,14 @@ def format_to_lephareinput(CAT_IN,
         except Exception as e:
             raise ValueError(f"Unrecognized input format for {CAT_IN}. Error: {e}")
 
-    ### 2. Limit number of rows ###
+    #--- 2. Limit number of rows ---
     if max_rows is not None:
         if max_rows <= 0:
             raise ValueError("max_rows must be a positive integer.")
         df = df.iloc[:max_rows]
         print(f"[INFO] Limiting to first {max_rows} rows.")
 
-    ### 3. Simple conversion ###
+    #--- 3. Simple conversion ---
     if simple_convert:
         if shuffle:
             df = df.sample(frac=1).reset_index(drop=True)
@@ -127,7 +119,7 @@ def format_to_lephareinput(CAT_IN,
         print(f"[OK] Simple conversion completed → {CAT_OUT}")
         return
     
-    ### 3bis. Add missing 'context' column automatically ###
+    #--- 3bis. Add missing 'context' column automatically ---
     if CAT_TYPE == 'long' and apply_context.lower() in ['yes', 'null']:
         expected_len = 1 + n_filters * 2 + 2  # Id + (mags+errs) + context + zspec
         if (len(input_columns) == expected_len - 1 or expected_len - 2) and apply_context!='no':
@@ -135,15 +127,15 @@ def format_to_lephareinput(CAT_IN,
             input_columns.insert(-1, 'context')
             print("[INFO] Added missing 'context' column automatically.")
 
-    ### 4. Validate input columns ###
+    #--- 4. Validate input columns ---
     if not all(col in df.columns for col in input_columns):
         missing = [c for c in input_columns if c not in df.columns]
         raise ValueError(f"Missing columns in input catalog: {missing}")
 
-    ### 5. Extract selected columns ###
+    #--- 5. Extract selected columns ---
     selected = df[input_columns].copy()
 
-    ### 6. Handle missing values ###
+    #--- 6. Handle missing values ---
     if error_value_state not in ['default', 'delete']:
         raise ValueError("error_value_state must be 'default' or 'delete'.")
 
@@ -158,7 +150,7 @@ def format_to_lephareinput(CAT_IN,
         n_after = len(selected)
         print(f"[INFO] Removed {n_before - n_after} rows with missing values")
 
-    ### 7. Check structure for 'long' catalogs ###
+    #--- 7. Check structure for 'long' catalogs ---
     if CAT_TYPE == 'long':
         expected_len = 1 + n_filters * 2 + 2  # Id + (mags+errs) + context + zspec
         print('number columns:',len(selected.columns))
@@ -173,16 +165,16 @@ def format_to_lephareinput(CAT_IN,
                 f"Check input_columns or parameters (context/specz)."
             )
 
-    ### 8. Shuffle rows ###
+    #--- 8. Shuffle rows ---
     if shuffle:
         selected = selected.sample(frac=1).reset_index(drop=True)
 
-    ### 9. Apply context logic ###
+    #--- 9. Apply context logic ---
     arr = selected.to_numpy(dtype=object)
     if CAT_TYPE == 'long':
         arr = apply_context_function(arr, n_filters, apply_context)
 
-    ### 10. Save formatted output ###
+    #--- 10. Save formatted output ---
     if CAT_TYPE == 'short':
         fmt = ['%d'] + ['%.5f'] * (n_filters * 2)
     elif CAT_TYPE == 'long':

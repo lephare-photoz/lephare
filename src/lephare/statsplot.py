@@ -481,82 +481,93 @@ def chi_stats(x=None, y=None, data=None, x_col='CHI_STAR', y_col='CHI_BEST',
 # chi_stats(x=chi_star, y=chi_best, log=False)
 # # chi_stats(x=chi_star, y=chi_best, mask_max=20, log=True)
 
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
-
-def histograms(data_list, col='Z_BEST', labels=None, bins=100, 
-               xrange=(0,2), log=False, density=False, xlabel=None, 
-               ylabel="Count", title=None, figsize=(8, 5), alpha=0.6):
-    """
-    Plot multiple histograms on the same figure.
-    Supports lists, numpy arrays, or pandas DataFrames.
-
-    Parameters
-    ----------
-    data_list : list
-        List of arrays, Series, or DataFrames.
-    col : str, optional
-        Column name to extract if elements of `data_list` are DataFrames.
-    labels : list of str, optional
-        Labels for each series.
-    bins : int, optional
-        Number of histogram bins (default 100).
-    range : tuple, optional
-        (min, max) range for histogram.
-    log : bool, optional
-        Use log scale on y-axis.
-    density : bool, optional
-        Normalize histograms to unit area.
-    xlabel, ylabel, title : str, optional
-        Axis labels and title.
-    figsize : tuple, optional
-        Figure size.
-    alpha : float, optional
-        Transparency of histograms.
-    """
+def histograms(data_list, col='Z_BEST', labels=None, bins=100,
+               xrange=None, log=False, xlabel=None,
+               ylabel="Count", figsize=None, **histkwargs):
 
     # --- Input normalization ---
-    if not isinstance(data_list, (list, tuple)):
-        data_list = [data_list]
-    n_series = len(data_list)
+    values = []
+    if isinstance(data_list, pd.DataFrame):
+        if col is None:
+            raise ValueError("If passing DataFrames, specify `col`.")
+        else:
+            for c in col:
+                arr = data_list[c].to_numpy()
+                arr = arr[np.isfinite(arr)]
+                values.append(arr)
+        n_series = len(col) if isinstance(col,list) else 1
+    else:
+        if not isinstance(data_list, (list, tuple)):
+            data_list = [data_list]
+        n_series = len(data_list)
 
-    bins=make_bins(xrange[0], xrange[1], bins)
+        for data in data_list:
+            if isinstance(data, (pd.Series, np.ndarray, list)):
+                arr = np.asarray(data)
+            else:
+                raise TypeError("Unsupported type in data_list.")
+            arr = arr[np.isfinite(arr)]
+            values.append(arr)
 
-    # --- Labels ---
     if labels is None:
-        labels = [None for i in range(n_series)]
+        labels = [None] * n_series
     elif len(labels) != n_series:
         raise ValueError("Length of 'labels' must match number of datasets.")
 
-    # --- Extract arrays ---
-    values = []
-    for data in data_list:
-        if isinstance(data, pd.DataFrame):
-            if col is None:
-                raise ValueError("If passing DataFrames, specify `col` to select a column.")
-            values.append(data[col].to_numpy())
-        elif isinstance(data, (pd.Series, np.ndarray, list)):
-            values.append(np.asarray(data))
-        else:
-            raise TypeError("Unsupported type in data_list; must be DataFrame, Series, ndarray, or list.")
+    # --- Normalize xrange ---
+    if xrange is None:
+        xranges = [(v.min(), v.max()) for v in values]
 
-    # --- Plot ---
-    plt.figure(figsize=figsize)
-    for vals, label in zip(values, labels):
-        vals = vals[np.isfinite(vals)]  # ignore NaN/inf
-        plt.hist(vals, bins=bins, range=xrange, alpha=alpha,
-                 edgecolor='black', label=label, density=density)
+    elif isinstance(xrange, tuple) and len(xrange) == 2:
+        xranges = [xrange] * n_series
 
-    # --- Style ---
-    plt.xlabel(xlabel or col or "Value", fontsize=12)
-    plt.ylabel(ylabel, fontsize=12)
-    if log:
-        plt.yscale("log")
-    plt.legend(frameon=False)
+    elif isinstance(xrange, (list, tuple)):
+        if len(xrange) != n_series:
+            raise ValueError("If xrange is a list, its length must match data_list.")
+        xranges = list(xrange)
+
+    else:
+        raise TypeError("xrange must be None, a tuple, or a list of tuples.")
+
+    # --- Resolve None in (min, max) ---
+    xranges_final = []
+    for (xmin, xmax), vals in zip(xranges, values):
+        xmin = vals.min() if xmin is None else xmin
+        xmax = vals.max() if xmax is None else xmax
+        xranges_final.append((xmin, xmax))
+
+    # --- Figure & axes  ---
+    ncols = int(np.ceil(np.sqrt(n_series)))
+    nrows = int(np.ceil(n_series / ncols))
+    base_width = 4
+    base_height = 3
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols,
+        figsize=(base_width * ncols, base_height * nrows),
+        sharey=False)
+    axes = np.atleast_1d(axes).ravel()
+
+    # --- Plot histograms ---
+    for i, (ax, vals, xr) in enumerate(zip(axes, values, xranges_final)):
+        if len(vals) == 0:
+            ax.text(0.5, 0.5, "No valid data",
+                    ha="center", va="center", transform=ax.transAxes)
+            continue
+        bins_i = make_bins(xr[0], xr[1], bins[i] if isinstance(bins, list) else bins)
+        ax.hist(vals, bins=bins_i, range=xr, edgecolor='black', **histkwargs)
+        ax.set_xlim(xr)
+        ax.grid(alpha=0.3)
+        if labels[i] is not None:
+            ax.set_title(labels[i], fontsize=11)
+        if log:
+            ax.set_yscale("log")
+        ax.set_xlabel(xlabel or col[i] or "Value")
+
+    # --- Turn off unused axes ---
+    for ax in axes[n_series:]:
+        ax.axis("off")
+
     plt.tight_layout()
     plt.show()
-
 
 
 def more_chi_stats(x=None, y=None, data=None, x_col='CHI_STAR', y_col='CHI_BEST',
