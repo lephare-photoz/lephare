@@ -365,6 +365,7 @@ def test_confidence_interval():
     assert b == pytest.approx(np.sqrt(2.71), 1.0e-5)
 
 
+@pytest.mark.filterwarnings("ignore:Covariance of the parameters could not be estimated")
 def test_quality_flags():
     pdf = lp.PDF(-5, 5, 10001)
     pdf.setYvals(sp.stats.norm(loc=0, scale=1).pdf(pdf.xaxis), is_chi2=False)

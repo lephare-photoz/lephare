@@ -212,6 +212,7 @@ def test_rm_discrepant():
     assert src.imasmin[0] == pytest.approx(1)
 
 
+@pytest.mark.filterwarnings("ignore:.*is present locally and will not be overwritten.*:UserWarning")
 def test_physicalpara_bc03():
     test_dir = os.path.abspath(os.path.dirname(__file__))
     os.environ["LEPHAREDIR"] = os.path.join(test_dir, "../data")
@@ -391,6 +392,7 @@ def test_physicalpara_bc03():
     assert np.allclose(src.magm, maglib_bc03, atol=1e-3)
 
 
+@pytest.mark.filterwarnings("ignore:.*is present locally and will not be overwritten.*:UserWarning")
 def test_fit_fir():
     test_dir = os.path.abspath(os.path.dirname(__file__))
     os.environ["LEPHAREDIR"] = os.path.join(test_dir, "../data")

@@ -220,19 +220,26 @@ def test_get_auxiliary_data(test_data_dir: str):
     lines = [
         "CWW_KINNEY/CWW_E_ext.sed  NotCosmos",
     ]
-    with open(os.path.join(test_dir, "../data/sed/GAL/COSMOS_SED/COSMOS_MOD.list"), "w") as file:
+    # Use file name that exists remotely to test logic or not overwriting
+    new_list_file_name = "sed/GAL/CHARY_ELBAZ/CHARY_ELBAZ.list"
+    new_list_file_path = os.path.join(test_dir, "../data/", new_list_file_name)
+    path = Path(new_list_file_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(new_list_file_path, "w") as file:
         file.writelines(lines)
-    config.update({"GAL_SED": "sed/GAL/COSMOS_SED/COSMOS_MOD.list"})
+    config.update({"GAL_SED": new_list_file_name})
     with pytest.warns(UserWarning) as record:
         lp.data_retrieval.get_auxiliary_data(
             keymap=config,
         )
     assert str(record[1].message).endswith("will not be overwritten.")
-    with open(os.path.join(test_dir, "../data/sed/GAL/COSMOS_SED/COSMOS_MOD.list"), "r") as f:
+    with open(new_list_file_path, "r") as f:
         first_line = f.readline().rstrip("\n")
     assert first_line == "CWW_KINNEY/CWW_E_ext.sed  NotCosmos"
     # Check file added to list file exists
     new_sed_file_path = os.path.join(test_dir, "../data/sed/GAL/CWW_KINNEY/CWW_E_ext.sed")
     assert os.path.exists(new_sed_file_path)
     os.remove(new_sed_file_path)
+    os.remove(new_list_file_path)
     assert not os.path.exists(new_sed_file_path)
+    assert not os.path.exists(new_list_file_path)
