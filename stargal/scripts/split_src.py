@@ -1,10 +1,5 @@
 """
 Here lies the different classes and functions that are used to run SPLIT.
-
-1 - Packages
-
-2- 
-
 """
 
 #--- Import packages ---
@@ -15,7 +10,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from lephare import statsplot as lsp
+from . import statsplot as lsp
 
 #--- sed grid class ---
 # The class used to organize a sed grid thanks to their physical parameters and their Ids.
@@ -820,7 +815,6 @@ class SAMPLE_ANALYZER:
 
         return self.feature_df
 
-
     def plot_best(self, axis='chi2_best'):
         plt.figure()
         plt.hist(self.sample_df[axis].values, bins=50)
@@ -828,4 +822,333 @@ class SAMPLE_ANALYZER:
         plt.ylabel("N")
         plt.show()
 
-#--- 
+#--- SPLIT ---
+
+from scipy.integrate import quad
+class SPLIT_TRAINING:
+    """
+    Prepare the statistical feature distributions for the classification.
+    """
+    def list_to_pdf(self, data, interp=False, bins=100, recenter_bins=True, xrange=None, smooth_eps=1e-9, normalize=True):
+        """
+        Compute the pdf from a data array.
+
+        Parameters
+        ----------
+        data: list or np.darray
+            Array to compute the pdf from.
+        interp: Bool or str.
+            Interpolation method to build the pdf.
+        bins: int or list or np.darray.
+            Bins used to compute the histogram used in <scipy.interpolate.{interp}> methods.
+        recenter_bins: bool.
+            If True, recenter the bins over the bin edges. Useful when using a list in bins
+        xrange: tuple.
+            Range to compute the pdf within.
+        smooth_eps: float.
+            Zero probability value.
+        
+        Returns
+        -------
+        pdf: pdf function.
+        """
+        if interp in ('scott', 'silverman') or isinstance(interp,(float,int)) and interp!=False:
+            kde = gaussian_kde(data, bw_method=interp)
+            def pdf(x):
+                return kde(x)
+            return pdf
+
+        if recenter_bins==True and not isinstance(bins, int):
+            new_bins = shift_bins(bins)
+            counts, _ = np.histogram(data, bins=new_bins, range=xrange, density=True)
+            x = bins
+        else:
+            counts, bin_edges = np.histogram(data, bins=bins, range=xrange, density=True)
+            x=0.5 * (bin_edges[:-1] + bin_edges[1:])
+        
+        counts = counts + smooth_eps
+        # --- Interpolation ---
+        if interp == 'pchip':
+            pdf_raw = sip.PchipInterpolator(x, counts, extrapolate=False)
+        else:
+            pdf_raw = sip.interp1d(x, counts, kind=interp, bounds_error=False, fill_value=0.0)
+
+        # --- Normalization ---
+        if normalize==True:
+            xmin, xmax = min(x), max(x)
+            Z, _ = quad(pdf_raw, xmin, xmax, limit=1000)
+
+            if Z <= 0 or not np.isfinite(Z):
+                raise ValueError("PDF normalization failed (integral <= 0).")
+
+            def pdf(x):
+                return pdf_raw(x) / Z
+        else:
+            pdf = pdf_raw
+
+        return pdf
+
+    def pdfs_from_arrays(self, arrays, **ltpkwargs):
+        """
+        Return the pdf from two arrays and compute the weight if specified.
+
+        Parameters
+        ----------
+        arrays: tuple of (list or np.darray)
+            Arrays to compute the pdfs from.
+        ltpkwargs: args of <list_to_pdf> method.
+        Returns
+        -------
+        pdfs: list of pdf methods.
+        """
+        pdfs = []
+        for dist in arrays:
+            pdf = self.list_to_pdf(dist, **ltpkwargs)
+            pdfs.append(pdf)
+
+        return pdfs
+
+    def compute_weight(self, source_feats, source_labels, method='f_classif'):
+        """
+        Compute weight by comparing feature distributions between several classes.
+        The weight determine if the feature is relevant to be used to compare the classes.
+
+        Parameters
+        ----------
+        source_feats: list of (list or np.darray)
+            Array of dimension N_sources x N_features.
+            Each element corresponds to a source, and each element of a row is a statistical feature.
+        source_labels: list of (str, int...).
+            The list of label corresponding to each source.
+        method: str.
+            The method to use to compute weight (fisher or f_classic)
+        Returns
+        -------
+        List of weights of length N_features.
+        """
+        source_feats = np.asarray(source_feats)
+        source_labels = np.asarray(source_labels)
+
+        if method == 'fisher':
+            classes = np.unique(source_labels)
+            n_features = source_feats.shape[1]
+            weights = np.zeros(n_features)
+            global_mean = np.mean(source_feats, axis=0)
+            for j in range(n_features):
+                num = 0.0  # inter-class variance
+                den = 0.0  # intra-class variance
+                for c in classes:
+                    mask = source_labels == c
+                    x_c = source_feats[mask, j]
+                    if len(x_c) < 2:
+                        continue
+                    mean_c = np.mean(x_c)
+                    var_c = np.var(x_c)
+                    num += len(x_c) * (mean_c - global_mean[j])**2
+                    den += len(x_c) * var_c
+                weights[j] = num / den if den > 0 else 0.0
+
+        elif method == 'f_classif':
+            f_statistic, _ = f_classif(source_feats, source_labels)
+            weights = f_statistic
+
+        else:
+            raise NotImplementedError(
+                f"Weight method '{method}' not recognized."
+            )
+
+        # --- normalisation ---
+        weights = np.nan_to_num(weights, nan=0.0, posinf=0.0)
+        if np.sum(weights) > 0:
+            weights /= np.sum(weights)
+        return weights
+
+    def pdfs_from_sample(self, training_df, label_column, scols=None, exclude_scols=False, 
+                        compute_weight=False, weight_method='fisher', selectKbest=None, 
+                        custo_bins_interp=None, **ltpkwargs):
+        """
+        Compute the pdf for each class, for each features.
+
+        Parameters
+        ----------
+        dfs: pandas.dataframe.
+            df to compute the pdfs from. It must contain at leats a label column,
+            and the features columns to compute the pdfs from. Each row is a source.
+        label_column: str.
+            Column holding the label attributed to each source. 
+        scols: str or list of.
+            Selected columns to compute the pdfs from is [{col_name}],
+            or to ignore if ~[{col_name}].
+        exclude_scols: bool.
+            If True, scols are now the columns to exclude from the computations.
+        compute_weight: bool.
+            If true, return the weight of each statistical feature.
+        custo_bins_interp: tuple (str, list) or list of.
+            If specified, for each col in custo_bins_interp[0], list_to_pdf uses the bins in custo_bins_interp[1].
+        ltpkwargs: args of <list_to_pdf> method.
+        Returns
+        -------
+        pdfs_dict: Dict
+            pdf functions, with weights if True.
+        """
+
+        # --- Select feature columns ---
+        if scols is not None:
+            if exclude_scols==True:
+                cols = [c for c in training_df.columns
+                            if c not in scols
+                            and c != label_column]
+            elif exclude_scols==False:
+                cols = [c for c in training_df.columns
+                            if c in scols
+                            and c != label_column]
+                
+        else:
+            cols = training_df.drop(columns=[label_column]).columns.tolist()
+        # --- extract features / labels ---
+        features_values = training_df[cols].values.astype(float) # Nsources(rows) x Nfeatures(cols)
+        source_labels = training_df[label_column].values # Nsources
+        unique_labels = np.unique(source_labels)
+        # --- compute weights ---
+        if compute_weight==True:
+            weights = self.compute_weight(features_values, source_labels, method=weight_method)
+            # select the k best weight features from weights
+            if isinstance(selectKbest, int):
+                idx = np.argsort(weights)[::-1][:selectKbest]
+                cols = [cols[i] for i in idx]
+                weights = weights[idx]
+                features_values = features_values[:, idx]
+
+                weights /= np.sum(weights)
+        else:
+            weights = np.ones(len(cols)) / len(cols)
+
+        # --- Build pdf dictionary ---
+        # len(source_labels)*N_features = N_pdfs
+        custo_map = None
+        if custo_bins_interp is not None:
+            custo_map = {}
+            for item in custo_bins_interp:
+                if len(item) != 3:
+                    raise ValueError(
+                        "Each element of custo_bins_interp must be (col, bins, interp)"
+                    )
+                col, bins, interp = item
+                custo_map[col] = {"bins": bins, "interp": interp}
+
+        pdf_dict = {}
+        for i, col in enumerate(cols):
+            pdfs = {}
+
+            for label in unique_labels:
+                mask = source_labels == label
+                data = features_values[mask, i]
+
+                local_kwargs = ltpkwargs
+                # --- Apply custom bins / interp if specified ---
+                if custo_map is not None and col in custo_map:
+                    if custo_map[col]["bins"] is not None:
+                        local_kwargs["bins"] = custo_map[col]["bins"]
+                    if custo_map[col]["interp"] is not None:
+                        local_kwargs["interp"] = custo_map[col]["interp"]
+                pdfs[label] = self.list_to_pdf(data, **local_kwargs)
+            pdf_dict[col] = {"pdfs": pdfs, "weight": weights[i]}
+
+        return pdf_dict
+        
+
+class SPLIT:
+    """
+    Class where appends the main part of split. 
+
+    Init with the pdf dict created with <SPLIT_TRAINING>.
+    """
+    def __init__(self, pdf_dict):
+        self.pdf_dict = pdf_dict
+        self.features = list(pdf_dict.keys())
+        self.classes = list(
+            next(iter(pdf_dict.values()))['pdfs'].keys()
+        )
+
+    def feature_loglikelihood(self, x, feature, eps=1e-12):
+        """
+        Compute log p(x | class) for a given feature.
+        """
+    
+        pdfs = self.pdf_dict[feature]['pdfs']
+
+        logL = []
+
+        for c in self.classes:
+            p = pdfs[c](x)
+            p = np.maximum(p, eps)
+            logL.append(np.log(p))
+
+        return np.array(logL)
+
+    def class_prob(self, onesource, priors=None, use_weights=False, eps=1e-12):
+        """
+        Compute the probability of a source to belong to each class using <self.post_prob>.
+
+        Parameters:
+        -----------
+        onesource: the source to evaluate the class on. Can be a list of features corresponding to the pdfs
+
+        priors: None or list of float of length = len(pdfs).
+            If specified, take priors in account.
+        use_weights: bool
+            If True, uses the feature weights specified in pdfs.
+        
+        Return:
+        -------
+        probs: list of floats
+            List of probabilies to belong to the classes.
+            
+        """
+        n_classes = len(self.classes)
+
+        if priors is None:
+            priors = np.ones(n_classes) / n_classes
+        else:
+            priors = np.asarray(priors)
+
+        log_post = np.log(priors)
+
+        for feature in self.features:
+
+            x = onesource[feature]
+
+            logL_feat = self.feature_loglikelihood(x, feature, eps)
+
+            if use_weights:
+                w = self.pdf_dict[feature]['weight']
+                log_post += w * logL_feat
+            else:
+                log_post += logL_feat
+
+        # softmax stable
+        max_log = np.max(log_post)
+        exp_log = np.exp(log_post - max_log)
+        probs = exp_log / np.sum(exp_log)
+
+        return probs
+
+    def classify_sample(self, df, priors=None, use_weights=False):
+
+        results = []
+
+        for _, row in df.iterrows():
+            probs = self.class_prob(
+                row,
+                priors=priors,
+                use_weights=use_weights
+            )
+            results.append(probs)
+
+        posterior = np.vstack(results)
+        
+        return pd.DataFrame(
+            posterior,
+            columns=[f"P_{c}" for c in self.classes],
+            index=df.index
+        )

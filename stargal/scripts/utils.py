@@ -65,5 +65,5 @@ def join_tables(base_df, tables, how="outer", ignore=None, put_match_first=True,
         front_cols = [c for c in match_columns if c in result.columns]
         other_cols = [c for c in result.columns if c not in front_cols]
         result = result[front_cols + other_cols]
-
+    result = result.loc[:,~result.columns.duplicated()].copy()
     return result
