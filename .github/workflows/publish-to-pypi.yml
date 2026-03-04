@@ -89,8 +89,9 @@ jobs:
           submodules: recursive
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.3.0
+        uses: pypa/cibuildwheel@v3.3.1
         env:
+          CIBUILDWHEEL: 1
           # CIBW_ARCHS_MACOS: auto universal2
           CIBW_BEFORE_ALL_MACOS: brew install llvm libomp
           CIBW_ENVIRONMENT_MACOS: PYTHON_VERSION_REQUIRED=${{ matrix.python_version}} MACOSX_DEPLOYMENT_TARGET="14.0" PATH="$(brew --prefix llvm)/bin:$PATH" CFLAGS="-I /usr/local/include -I/usr/local/opt/llvm/include" CXXFLAGS="-I /usr/local/include -I/usr/local/opt/llvm/include -I/opt/homebrew/opt/libomp/include -I/opt/homebrew/opt/llvm/include -I/usr/local/opt/libomp/include" LDFLAGS="-L/usr/local/opt/libomp/lib -L/opt/homebrew/opt/libomp/lib -L /usr/local/lib -L/usr/local/opt/llvm/lib"
@@ -102,7 +103,7 @@ jobs:
           CIBW_BUILD_VERBOSITY: 3
 
       - name: Upload wheels
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
           path: wheelhouse/*.whl
@@ -120,7 +121,7 @@ jobs:
       run: pipx run build --sdist
 
     - name: Upload SDist
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: cibw-sdist
         path: dist/*.tar.gz
@@ -136,7 +137,7 @@ jobs:
 
     steps:
       - name: Download distribution files
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           # unpacks all CIBW artifacts into dist/
           pattern: cibw-*

@@ -93,13 +93,31 @@ endif()
 # ------------------------------------------------------------------------------
 # AVX2 tuning: dev vs wheels for linux
 # ------------------------------------------------------------------------------
-
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-  option(LEPHARE_ENABLE_AVX2 "Enable AVX2 instructions" ON)
+  if(NOT DEFINED ENV{CIBUILDWHEEL})
+    #check whether avx2 is supported 
+    include(CheckCXXSourceRuns)
+    set(CMAKE_REQUIRED_FLAGS "-mavx2")
+    check_cxx_source_runs("
+       #include <immintrin.h>
+       int main() {
+         __m256i a = _mm256_set1_epi32(1);
+         __m256i b = _mm256_add_epi32(a, a);
+         (void)b;
+         return 0;
+        }
+    " LEPHARE_ENABLE_AVX2)
+
+    if(LEPHARE_ENABLE_AVX2)
+      message(STATUS "AVX2 is supported")
+    else()
+      message(STATUS "AVX2 is NOT supported")
+    endif()
+  endif()
+  #option(LEPHARE_ENABLE_AVX2 "Enable AVX2 instructions" ON)
 
   if(DEFINED ENV{CIBUILDWHEEL})
     set(LEPHARE_ENABLE_AVX2 OFF CACHE BOOL "" FORCE)
-    add_compile_options("-march=x86-64-v2")
   endif()
 
   if(LEPHARE_ENABLE_AVX2)
