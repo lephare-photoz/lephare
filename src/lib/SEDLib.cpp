@@ -1,3 +1,4 @@
+// LCOV_EXCL_START
 /*
 
   27/11/14
@@ -22,17 +23,14 @@
 using namespace std;
 
 // prototypes
-vector<GalSED> readBC03(string sedFile, int nummod, string type,
-                        vector<double> &ageSel);
-vector<GalSED> readPEGASE(string sedFile, int nummod, string type,
-                          vector<double> &ageSel);
+vector<GalSED> readBC03(string sedFile, int nummod, vector<double> &ageSel);
+vector<GalSED> readPEGASE(string sedFile, int nummod, vector<double> &ageSel);
 vector<bool> closeAge(vector<double> ageSel, vector<double> age);
 
 /*
 READ THE SED GENERATED WITH BRUZUAL & CHARLOT
 */
-vector<GalSED> readBC03(string sedFile, int nummod, string type,
-                        vector<double> &ageSel) {
+vector<GalSED> readBC03(string sedFile, int nummod, vector<double> &ageSel) {
   ifstream ssed;
   string lit, id, id2, id3;
   vector<GalSED> outSED;
@@ -50,7 +48,7 @@ vector<GalSED> readBC03(string sedFile, int nummod, string type,
     throw invalid_argument("Can't open the BC03 file " + sedFile);
   }
 
-  // Number of ages and read the ages
+  // Number of ages and read the ages, these are in yr in BC03
   ssed >> nages;
   for (int k = 0; k < nages; k++) {
     ssed >> dage;
@@ -93,7 +91,7 @@ vector<GalSED> readBC03(string sedFile, int nummod, string type,
   // Create an object SED and store it in the output vector
   for (int i = 0; i < nages; i++) {
     // Construct the object SED and store the various relevant informations
-    GalSED oneSED(sedFile, tau, age[i], "BC03", nummod, type, i);
+    GalSED oneSED(sedFile, tau, age[i], "BC03", nummod, i);
 
     // Attribute the metallicity to the SED
     oneSED.zmet = zmett;
@@ -109,11 +107,11 @@ vector<GalSED> readBC03(string sedFile, int nummod, string type,
       ssed >> dh;
       // convolve the flux by Lsun/(4pi*10pc^2)
       dh = dh * convol;
-      oneElLambda litOne(w[k], dh, 1);
+      oneElLambda litOne(w[k], dh);
       // fill the lambda/trans values of the object SED
       (oneSED.lamb_flux).push_back(litOne);
     }
-    oneElLambda litOne(10000000., 0., 1);
+    oneElLambda litOne(10000000., 0.);
     (oneSED.lamb_flux).push_back(litOne);
     // Number of values of ?? and read them
     ssed >> ix;
@@ -189,11 +187,87 @@ vector<GalSED> readBC03(string sedFile, int nummod, string type,
 /*
 READ THE SED GENERATED WITH PEGASE
 */
-vector<GalSED> readPEGASE(string sedFile, int nummod, string type,
-                          vector<double> &ageSel) {
-  vector<GalSED> outSED;
+vector<GalSED> readPEGASE(string sedFile, int nummod, vector<double> &ageSel) {
+  ifstream ssed;
+  string line, dummy;
+  size_t n_ages, n_points, n_lines;
+  double tau = -999.;
 
-  cout << " Need to implement the PEGASE format in SED reading " << endl;
+  // open the SED file
+  ssed.open(sedFile.c_str());
+  if (!ssed) {
+    throw invalid_argument("Can't open the PEGASE2 file " + sedFile);
+  }
+
+  while (getline(ssed, line)) {
+    if (line.substr(0, 5) == "*****") break;
+    if (line.rfind("Type of star formation:", 0) == 0) {
+      int type = -1;
+      istringstream iss(line.substr(23));
+      iss >> type;
+      if (type == 2) {
+        ssed >> dummy >> tau;
+        // empty ssed of the rest of the line until `\n`
+        ssed.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        tau *= 1.e6;
+      }
+    }
+    continue;
+  }
+
+  ssed >> n_ages >> n_points >> n_lines;
+  vector<double> lambdas(n_points);
+  for (double &v : lambdas) {
+    ssed >> v;
+  }
+  vector<double> lines(n_lines);
+  for (double &v : lines) {
+    ssed >> v;
+  }
+
+  // conversion for PEGASE2 from Lum {erg/s/A} to flux {erg/cm2/s/A}
+  //         Fluxconv {1/cm^2}= 1/[4.pi.(10pc)^2{cm^2}]
+  double fluxconv = 1. / (4 * pi * 100 * pow(pc, 2));
+
+  vector<GalSED> outSED;
+  for (int count = 0; count < n_ages; count++) {
+    vector<double> ancillaries(19);
+    for (double &v : ancillaries) {
+      ssed >> v;
+    }
+
+    // PEGASE provides age in Myr, converts to yr in LePHARE
+    double age(ancillaries[0] * 1.e6);
+    bool useAge = ageSel.empty() ? true : closeAge(ageSel, {age}).front();
+    double mass(ancillaries[2]);
+    double zmet(ancillaries[7]);
+    double ltir0(ancillaries[10]);
+    double ltir1(ancillaries[12]);
+    double ltir = log10(ltir0 * ltir1 / Lsol);
+    double sfr = ancillaries[13] / 1.e6;
+
+    GalSED oneSED(sedFile, tau, age, "PEGASE2", nummod, (int)count);
+    oneSED.lamb_flux.reserve(n_points);
+    double val;
+    for (size_t k = 0; k < n_points; k++) {
+      ssed >> val;
+      oneSED.lamb_flux.emplace_back(lambdas[k], val * fluxconv);
+    }
+
+    for (size_t k = 0; k < n_lines; k++) {
+      ssed >> val;
+      // looks like we dont do anything with the lines in the fortran code
+      // oneSED.lamb_flux.emplace_back(lambdas[k], val*fluxconv, 1);
+    }
+
+    oneSED.ltir = ltir;
+    oneSED.sfr = sfr;
+    oneSED.zmet = zmet;
+    oneSED.mass = mass;
+    if (useAge) {
+      outSED.push_back(oneSED);
+    }
+  }
 
   return outSED;
 }
@@ -228,7 +302,7 @@ vector<bool> closeAge(vector<double> ageSel, vector<double> age) {
       // difference between selection and SED ages
       diff = abs(*itj - *iti);
       // keep the one which minimize the difference
-      if (diff < dage && diff < 2.e9 && *itj >= agemin &&
+      if (diff < dage && diff < 1.e6 && *itj >= agemin &&
           (*itj <= agemax || agemax <= 0)) {
         dage = diff;
         kmin = k;
@@ -236,8 +310,9 @@ vector<bool> closeAge(vector<double> ageSel, vector<double> age) {
       k++;
     }
     // The age which minimizes the difference can be used
-    if (kmin > 0) outAge[kmin] = true;
+    if (kmin >= 0) outAge[kmin] = true;
   }
 
   return outAge;
 }
+// LCOV_EXCL_STOP
