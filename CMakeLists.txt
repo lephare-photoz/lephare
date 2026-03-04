@@ -118,7 +118,6 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 
   if(DEFINED ENV{CIBUILDWHEEL})
     set(LEPHARE_ENABLE_AVX2 OFF CACHE BOOL "" FORCE)
-    add_compile_options("-march=x86-64-v2")
   endif()
 
   if(LEPHARE_ENABLE_AVX2)
