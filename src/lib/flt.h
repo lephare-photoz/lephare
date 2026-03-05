@@ -31,11 +31,11 @@ class flt {
    * This transformation leaves the transmission curve integral invariant.
    */
   void trans();
+
+ public:
   /// Sort the filter in lambda, remove the values with a low transmission on
   /// the edge, be sure that the extreme points are ending with 0
   void clean();
-
- public:
   vector<oneElLambda> lamb_trans;
   int id;
   string name;
@@ -81,7 +81,7 @@ class flt {
   /// @param filestream filter file stream
   /// @param transt configuration keyword TRANS_TYPE
   /// @param calibt configuration keyword FILTER_CALIB
-  flt(const int k, ifstream &cname, const int transt, const int calibt)
+  flt(const int k, ifstream& cname, const int transt, const int calibt)
       : flt() {
     id = k;
     transtyp = transt;
@@ -123,9 +123,9 @@ class flt {
   // Prototype of the functions declared in flt.cpp
   /// read a filter ascii file and store its content as a vector of oneElLambda
   /// elements
-  void read(const string &fltFile);
+  void read(const string& fltFile);
   /// build the vector of oneElLambda elements out of a filter stream directly
-  void read(ifstream &sfiltIn);
+  void read(ifstream& sfiltIn);
   /// Mean wavelength of the filter: \f$\lambda_{mean} = \frac{\int
   /// T(\lambda)\lambda d\lambda}{\int T(\lambda) d\lambda}\f$.
   double lambdaMean();
@@ -194,7 +194,7 @@ class flt {
   void compute_all();
 };
 
-void write_output_filter(string &filtfile, string &filtdoc, vector<flt> vecFlt);
+void write_output_filter(string& filtfile, string& filtdoc, vector<flt> vecFlt);
 vector<flt> read_doc_filters(const string filtFile);
 
 #endif
