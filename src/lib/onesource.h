@@ -202,7 +202,8 @@ class onesource {
 
   vector<vector<double>> redden_flux(
       const vector<vector<double>>& flux,
-      const vector<vector<double>>& reddening) const;
+      const vector<vector<double>>& reddening,
+      const vector<double>& band_pass_correction) const;
   /*! Write output in the lephare ascii format
    * @param stout: stream object pointing to the output file
    * @param outkeywords: list of keywords to be output

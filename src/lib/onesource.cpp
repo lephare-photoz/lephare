@@ -335,8 +335,8 @@ void onesource::rescale_flux_errors(const vector<double> min_err,
  redden the fluxes according to the galactic E(B-V) value
  */
 vector<vector<double>> onesource::redden_flux(
-    const vector<vector<double>>& flux,
-    const vector<vector<double>>& reddening) const {
+    const vector<vector<double>>& flux, const vector<vector<double>>& reddening,
+    const vector<double>& band_pass_correction) const {
   // Determine dimensions
   size_t nRows = flux.size();
   size_t nCols = flux.empty() ? 0 : flux[0].size();
@@ -347,7 +347,8 @@ vector<vector<double>> onesource::redden_flux(
   // Apply reddening correction element-wise
   for (size_t i = 0; i < nRows; ++i) {
     for (size_t k = 0; k < nCols; ++k) {
-      double factor = std::pow(10.0, reddening[i][k] * this->galEbv / 2.5);
+      double factor = std::pow(
+          10.0, reddening[i][k] * band_pass_correction[i] * this->galEbv / 2.5);
       // Divide to redden times to deredden
       out[i][k] = flux[i][k] / factor;
     }

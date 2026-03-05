@@ -48,7 +48,7 @@ class PhotoZ {
 
  public:
   vector<vector<double>> flux, fluxIR, reddening;
-  vector<double> zLib, zLibIR;
+  vector<double> zLib, zLibIR, band_pass_correction;
   vector<SED*> fullLib, fullLibIR, lightLib;
   vector<flt> allFilters;
   vector<double> gridz;
