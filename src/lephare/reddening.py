@@ -5,10 +5,7 @@ from scipy.interpolate import interp1d
 
 import lephare as lp
 
-__all__ = [
-    "multiply_on_grids",
-    "compute_model_reddening",
-]
+__all__ = ["multiply_on_grids", "compute_model_reddening", "compute_band_pass_correction"]
 
 
 def multiply_on_grids(x1, f1, x2, f2, x=None):
