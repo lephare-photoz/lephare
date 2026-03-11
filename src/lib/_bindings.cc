@@ -145,6 +145,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("lmax", &flt::lmax)
       .def_readonly("name", &flt::name)
       .def_readonly("lmean", &flt::lmean)
+      .def_readonly("fcorr", &flt::fcorr)
       .def_readonly("dwidth", &flt::dwidth)
       .def_readwrite("lamb_trans", &flt::lamb_trans)
       .def("data", [](const flt& f) {
@@ -303,7 +304,6 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("imagm", &PhotoZ::imagm)
       .def_readonly("fullLib", &PhotoZ::fullLib)
       .def_readonly("zLib", &PhotoZ::zLib)
-      .def_readonly("flux", &PhotoZ::flux)
       .def_readonly("fullLibIR", &PhotoZ::fullLibIR)
       .def_readonly("allFilters", &PhotoZ::allFilters)
       .def_readonly("gridz", &PhotoZ::gridz)
@@ -312,7 +312,6 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("pdftype", &PhotoZ::pdftype)
       .def_readwrite("outputHeader", &PhotoZ::outputHeader)
       .def_readwrite("reddening", &PhotoZ::reddening)
-      .def_readwrite("band_pass_correction", &PhotoZ::band_pass_correction)
       .def(py::init<keymap&>())
       .def("read_autoadapt_sources", &PhotoZ::read_autoadapt_sources)
       .def("read_photoz_sources", &PhotoZ::read_photoz_sources)

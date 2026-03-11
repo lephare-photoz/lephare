@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.ndimage import gaussian_filter1d
 
 import lephare as lp
 
@@ -47,17 +48,21 @@ def multiply_on_grids(x1, f1, x2, f2, x=None):
         xmax = max(x1.max(), x2.max())
         if xmax < xmin:
             # If no overlap return the input filter
-            return np.array([x2, f2])
+            return np.array([x1, f1])
         x = np.linspace(xmin, xmax, len(x2))
     f1i = interp1d(x1, f1, bounds_error=False, fill_value=0.0)(x)
+    f2 = gaussian_filter1d(f2, sigma=10)  # smooth the filter to avoid numerical issues with sharp features
     f2i = interp1d(x2, f2, bounds_error=False, fill_value=0.0)(x)
     prod = f1i * f2i
-    norm = np.max(prod)
+    norm = np.nanmax(prod)
 
     # If there is no overlap simply return f1
     if norm <= 0 or not np.isfinite(norm):
         x = x1
-        y = f1
+        # Allow it to be zero
+        # y = prod
+        # normalize to max of f1 to avoid numerical issues with very small values
+        y = f1 / np.max(f1)
     else:
         y = prod / norm
 
@@ -293,8 +298,8 @@ def compute_band_pass_correction(config, b5_model=15, verbose=False):
                 albd = lp.compute_filter_extinction(one_filt, galactic_ext)
             values[i, j] = albd
 
-    # Replace nans with zeros (probably due to non overlap between filter and SED)
+    # A_B - A_V for the SED, and for the B5 star. The ratio of these
+    # is the band pass correction factor to apply to the model reddening.
     bmv = values.T[0] - values.T[1]
     band_pass_correction = bmv / (values[b5_idx][0] - values[b5_idx][1])
-    values = np.nan_to_num(values, nan=0.0)
     return band_pass_correction

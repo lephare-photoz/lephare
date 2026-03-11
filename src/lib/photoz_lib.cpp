@@ -404,7 +404,6 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
   Done to improve the performance in the fit*/
   flux.resize(fullLib.size(), vector<double>(imagm, 0.));
   reddening.resize(fullLib.size(), vector<double>(imagm, 0.));
-  band_pass_correction.resize(fullLib.size(), 1.0);
   zLib.resize(fullLib.size(), -99.);
   fluxIR.resize(fullLibIR.size(), vector<double>(imagm, 0.));
   zLibIR.resize(fullLibIR.size(), -99.);
@@ -1046,8 +1045,7 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
           oneObj->fit(fullLib, flux, valid, funz0, bp);
         } else {
           // Apply reddening first
-          auto reddened_flux =
-              oneObj->redden_flux(flux, reddening, band_pass_correction);
+          auto reddened_flux = oneObj->redden_flux(flux, reddening);
           oneObj->fit(fullLib, reddened_flux, valid, funz0, bp);
         }
 
@@ -1623,8 +1621,7 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
       oneObj->fit(fullLib, flux, valid, funz0, bp);
     } else {
       // Apply reddening first
-      auto reddened_flux =
-          oneObj->redden_flux(flux, reddening, band_pass_correction);
+      auto reddened_flux = oneObj->redden_flux(flux, reddening);
       oneObj->fit(fullLib, reddened_flux, valid, funz0, bp);
     }
     // Try to remove some bands to improve the chi2, only as long as the chi2 is
@@ -1663,8 +1660,7 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
         oneObj->fit(fullLib, flux, valid, funz0, bp);
       } else {
         // Apply reddening first
-        auto reddened_flux =
-            oneObj->redden_flux(flux, reddening, band_pass_correction);
+        auto reddened_flux = oneObj->redden_flux(flux, reddening);
         oneObj->fit(fullLib, reddened_flux, valid, funz0, bp);
       }
     } else {
