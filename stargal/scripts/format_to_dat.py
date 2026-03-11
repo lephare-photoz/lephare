@@ -122,9 +122,9 @@ def format_to_lephareinput(CAT_IN, CAT_OUT, input_columns, n_filters,
     #--- 3bis. Add missing 'context' column automatically ---
     if CAT_TYPE == 'long' and apply_context.lower() in ['yes', 'null']:
         expected_len = 1 + n_filters * 2 + 2  # Id + (mags+errs) + context + zspec
-        if (len(input_columns) == expected_len - 1 or expected_len - 2) and apply_context!='no':
+        if len(input_columns) in [expected_len - 1, expected_len - 2] and apply_context != 'no':
             df['context'] = 0
-            input_columns.insert(-1, 'context')
+            input_columns.append('context')
             print("[INFO] Added missing 'context' column automatically.")
 
     #--- 4. Validate input columns ---
@@ -134,7 +134,6 @@ def format_to_lephareinput(CAT_IN, CAT_OUT, input_columns, n_filters,
 
     #--- 5. Extract selected columns ---
     selected = df[input_columns].copy()
-
     #--- 6. Handle missing values ---
     if error_value_state not in ['default', 'delete']:
         raise ValueError("error_value_state must be 'default' or 'delete'.")
@@ -153,11 +152,9 @@ def format_to_lephareinput(CAT_IN, CAT_OUT, input_columns, n_filters,
     #--- 7. Check structure for 'long' catalogs ---
     if CAT_TYPE == 'long':
         expected_len = 1 + n_filters * 2 + 2  # Id + (mags+errs) + context + zspec
-        print('number columns:',len(selected.columns))
         if facticious_specz is not None:
             selected['specz'] = facticious_specz
             print(f"[INFO] Added constant spec-z column with value {facticious_specz}")
-        print('number columns:',len(selected.columns))
         if len(selected.columns) != expected_len:
             raise ValueError(
                 f"Column count mismatch ({len(selected.columns)}) ≠ {expected_len} expected "

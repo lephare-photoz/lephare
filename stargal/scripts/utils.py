@@ -1,6 +1,87 @@
 import pandas as pd
+from astropy.io import fits
+from astropy.table import Table
 
-def join_tables(base_df, tables, how="outer", ignore=None, put_match_first=True, drop_unmatched=True, indicator=False):
+def lephare_to_pandas(CAT_OUT):
+    """
+    Convert the output from lephare to a pandas data frame.
+    Parameters
+    ----------
+    CAT_OUT: string.
+        Output catalog from lephare.
+    
+    Returns
+    -------
+    Pandas data frame.
+        Re-organized lephare output.
+    """
+
+    with open(CAT_OUT, "r") as f:
+        lines = f.readlines()
+        header_line = None
+        for line in lines:
+            if line.startswith("# IDENT  Z_BEST"): #line used for the header, always starts like this
+                header_line = line
+                break
+
+    #add header to column names
+    if header_line:
+        column_names = header_line.strip("#").strip().split()
+    
+    zphota = pd.read_csv(CAT_OUT, sep=r'\s+', comment="#", header=None, names=column_names) #zphota dataframe
+    return zphota
+
+
+def table_from_file(path, file_type="fits", hdu=1, output="astropy", **read_kwargs):
+    """
+    Parameters
+    ----------
+    path : str
+        Path to the input file.
+    file_type : {'fits', 'csv', 'txt', 'votable'}
+        Type of the input file.
+    hdu : int or str, optional
+        HDU index or name (only used for FITS, default: 1).
+    output : {'astropy', 'pandas'}
+        Output format.
+    **read_kwargs :
+        Additional keyword arguments passed to Table.read()
+        (useful for csv/txt: delimiter, format, etc.)
+    Returns
+    -------
+    table : astropy.table.Table or pandas.DataFrame
+    """
+
+    file_type = file_type.lower()
+    if file_type == "fits":
+        with fits.open(path, memmap=True) as hdul:
+            hdu_obj = hdul[hdu]
+            xtension = hdu_obj.header.get("XTENSION", "").upper()
+
+            if xtension in ("BINTABLE", "TABLE"):
+                data = Table(hdu_obj.data)
+            else:
+                raise ValueError(f"HDU {hdu} does not contain a FITS table (XTENSION={xtension})")
+
+    elif file_type in ("csv", "txt"):
+        data = Table.read(path, **read_kwargs)
+
+    elif file_type == "votable":
+        votable = parse_single_table(path)
+        data = votable.to_table()
+
+    else:
+        raise ValueError("file_type must be one of {'fits', 'csv', 'txt', 'votable'}")
+
+    if output == "astropy":
+        return data
+    elif output == "pandas":
+        return data.to_pandas()
+    else:
+        raise ValueError("output must be 'astropy' or 'pandas'")
+
+
+def join_tables(base_df, tables, how="left", ignore=None, put_match_first=True, drop_unmatched=True, indicator=False):
     """
     Join multiple dataframes onto a base dataframe using specified column mappings,
     with options to reorder columns and remove unmatched rows.

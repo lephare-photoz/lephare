@@ -10,7 +10,27 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from . import statsplot as lsp
+# from . import statsplot as lsp
+
+
+#--- chi2 comparison ---
+
+def BIC(chi2, k, n):
+    '''
+    Compute BIC from chi2, k (dof) and n (n_bands).
+    '''
+    return chi2 + k*np.log(n)
+
+def model_prob_from_chi(Chi_A, Chi_B, prior_A=0.5, prior_B=0.5):
+    '''
+    Compute the posterior from likelihood parameter.
+    '''
+    wA = prior_A * np.exp(-0.5 * Chi_A)
+    wB = prior_B * np.exp(-0.5 * Chi_B)
+
+    norm = wA + wB
+    return wA / norm, wB / norm
+
 
 #--- sed grid class ---
 # The class used to organize a sed grid thanks to their physical parameters and their Ids.

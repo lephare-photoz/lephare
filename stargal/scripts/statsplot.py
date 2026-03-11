@@ -9,36 +9,6 @@ import statsmodels.api as sm
 from scipy import stats
 
 
-def lephare_to_pandas(CAT_OUT):
-    """
-    Convert the output from lephare to a pandas data frame.
-    Parameters
-    ----------
-    CAT_OUT: string.
-        Output catalog from lephare.
-    
-    Returns
-    -------
-    Pandas data frame.
-        Re-organized lephare output.
-    """
-
-    with open(CAT_OUT, "r") as f:
-        lines = f.readlines()
-        header_line = None
-        for line in lines:
-            if line.startswith("# IDENT  Z_BEST"): #line used for the header, always starts like this
-                header_line = line
-                break
-
-    #add header to column names
-    if header_line:
-        column_names = header_line.strip("#").strip().split()
-    
-    zphota = pd.read_csv(CAT_OUT, sep=r'\s+', comment="#", header=None, names=column_names) #zphota dataframe
-    return zphota
-
-
 def save_masked_df(masked_output_df, original_input_path, new_input_path):
     """
     Filters the INPUT.dat file using the IDENT values from a masked LePhare output DataFrame
@@ -276,8 +246,8 @@ def pit_qqplot(x=None, y=None, data=None, x_col='ZSPEC', y_col='Z_BEST',
     x_df, x_loc, x_scale = stats.chi2.fit(x)
     pit_values = stats.chi2.cdf(y, x_df, loc=x_loc, scale=x_scale)
 
-        # --- Create layout ---
-    fig = plt.figure(figsize=(10, 7))
+    # --- Create layout ---
+    fig = plt.figure(figsize=(9, 6))
     gs = gridspec.GridSpec(2, 2, width_ratios=[1, 1], height_ratios=[1.5, 1.0])
     plt.subplots_adjust(wspace=0.3, hspace=0.35)
 
@@ -491,19 +461,25 @@ def histograms(data_list, col='Z_BEST', labels=None, bins=100,
         if col is None:
             raise ValueError("If passing DataFrames, specify `col`.")
         else:
-            for c in col:
-                arr = data_list[c].to_numpy()
-                arr = arr[np.isfinite(arr)]
-                values.append(arr)
+            if isinstance(col, str):
+                arr = data_list[col].to_numpy()
+            else:
+                for c in col:
+                    arr = data_list[c].to_numpy()
+                    arr = arr[np.isfinite(arr)]
+                    values.append(arr)
         n_series = len(col) if isinstance(col,list) else 1
     else:
         if not isinstance(data_list, (list, tuple)):
             data_list = [data_list]
         n_series = len(data_list)
 
-        for data in data_list:
-            if isinstance(data, (pd.Series, np.ndarray, list)):
-                arr = np.asarray(data)
+        for i, data in enumerate(data_list):
+            if isinstance(data, (pd.Series, pd.DataFrame, np.ndarray, list)):
+                if isinstance(data, pd.DataFrame):
+                    arr = np.asarray(data[col]) if isinstance(col, str) else np.asarray(data[col[i]])
+                else:
+                    arr = np.asarray(data)
             else:
                 raise TypeError("Unsupported type in data_list.")
             arr = arr[np.isfinite(arr)]

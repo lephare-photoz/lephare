@@ -159,7 +159,8 @@ _html/
 
 /fig
 
+# ignore files in sed folder
+/stargal/simulated_sed/*/*
 
-
-simulation_catalogs/
-simulated_star_sed/
+# ignore files in catalogs folder
+/stargal/catalogs/*/*
