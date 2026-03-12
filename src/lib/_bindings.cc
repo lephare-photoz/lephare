@@ -90,6 +90,8 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("add_element", &ext::add_element);
   mod.def("compute_filter_extinction", &compute_filter_extinction,
           "Compute extinction in a filter band.");
+  mod.def("compute_filter_sed_extinction", &compute_filter_sed_extinction,
+          "Compute extinction in a filter band.");
   mod.def("cardelli_ext", &cardelli_ext,
           "Compute galactic extinction in the filter based on Cardelli et "
           "al., 1989, ApJ 345",

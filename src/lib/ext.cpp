@@ -77,7 +77,7 @@ void ext::add_element(double lam, double val, double ori) {
   return;
 }
 
-double compute_filter_extinction(const flt &oneFlt, const ext &oneExt) {
+double compute_filter_extinction(const flt& oneFlt, const ext& oneExt) {
   // work with the original lamb_flux
   vector<oneElLambda> lamb_all = oneFlt.lamb_trans;
 
@@ -124,8 +124,82 @@ double compute_filter_extinction(const flt &oneFlt, const ext &oneExt) {
   return (aint /= fint);
 }
 
+double compute_filter_sed_extinction(const flt& oneFlt, const ext& oneExt,
+                                     const SED& oneSED) {
+  // this function is the same as compute_filter_extinction but the extinction
+  //  is weighted by the SED, which is useful for the computation of the
+  //  effective
+  // wavelength of the filter when extinction is applied
+  //  work with the original lamb_flux
+  vector<oneElLambda> lamb_all = oneFlt.lamb_trans;
+
+  // Concatenate two vectors composed of "oneElLambda" including this spectra
+  // and the one to be added
+  lamb_all.insert(lamb_all.end(), oneExt.lamb_ext.begin(),
+                  oneExt.lamb_ext.end());
+
+  lamb_all.insert(lamb_all.end(), oneSED.lamb_flux.begin(),
+                  oneSED.lamb_flux.end());
+
+  // Sort the vector in increasing lambda
+  sort(lamb_all.begin(), lamb_all.end());
+
+  // Resample the filter into a common lambda range
+  vector<oneElLambda> new_lamb_flt;
+  SED::resample(lamb_all, new_lamb_flt, 0, 0, 1.e50);
+  // Resample the extinction into a common lambda range
+  vector<oneElLambda> new_lamb_ext;
+  SED::resample(lamb_all, new_lamb_ext, 2, 0, 1.e50);
+  // Resample the SED into a common lambda range
+  vector<oneElLambda> new_lamb_sed;
+  SED::resample(lamb_all, new_lamb_sed, 1, 0, 1.e50);
+
+  double last_mid_ext = 0.0;  // track last mid_ext where mid_flt > 0
+  double fint = 0;
+  double aint = 0;
+
+  // integrate the extinction curve through the filter
+  for (size_t i = 0; i < new_lamb_flt.size() - 1; i++) {
+    // Integral of the transmission by the filter
+    oneElLambda flt1 = new_lamb_flt[i];
+    oneElLambda flt2 = new_lamb_flt[i + 1];
+    oneElLambda ext1 = new_lamb_ext[i];
+    oneElLambda ext2 = new_lamb_ext[i + 1];
+    oneElLambda sed1 = new_lamb_sed[i];
+    oneElLambda sed2 = new_lamb_sed[i + 1];
+    if (flt1.ori >= 0 && flt2.ori >= 0 && ext1.ori >= 0 && ext2.ori >= 0 &&
+        sed1.ori >= 0 && sed2.ori >= 0) {
+      double delta = flt2.lamb - flt1.lamb;
+      double mid_flt = (flt1.val + flt2.val) / 2.;
+      double mid_ext = (ext1.val + ext2.val) / 2.;
+      double mid_sed = (sed1.val + sed2.val) / 2.;
+
+      // Remember mid_ext if mid_flt is non-zero
+      if (mid_flt > 0.0) last_mid_ext = mid_ext;
+
+      // Integral of the transmission by the filter x SED
+      fint += mid_flt * mid_sed * delta;
+      // Integral of the transmission by the filter x extinction * SED
+      aint += mid_flt * mid_ext * mid_sed * delta;
+    }
+  }
+
+  // clean
+  lamb_all.clear();
+  new_lamb_flt.clear();
+  new_lamb_ext.clear();
+  new_lamb_sed.clear();
+
+  // If fint is zero, set fallback values
+  if (fint == 0.0) {
+    fint = 1.0;
+    aint = last_mid_ext;
+  }
+  return (aint /= fint);
+}
+
 // Function of the basis class which read all the filters
-vector<flt> read_flt(ifstream &sfiltIn) {
+vector<flt> read_flt(ifstream& sfiltIn) {
   vector<flt> allFlt;
   string bid;
   int imag;
@@ -147,7 +221,7 @@ vector<flt> read_flt(ifstream &sfiltIn) {
 
 // compute galactic extinction in the filter based on Cardelli et al., 1989, ApJ
 // 345
-double cardelli_ext(flt &oneFlt) {
+double cardelli_ext(flt& oneFlt) {
   // Define the limits of this filter
   double lmin = oneFlt.lmin();
   double lmax = oneFlt.lmax();
@@ -164,6 +238,27 @@ double cardelli_ext(flt &oneFlt) {
   }
 
   return compute_filter_extinction(oneFlt, oneExt);
+}
+
+// compute galactic extinction in the filter based on Cardelli et al., 1989, ApJ
+// 345
+double cardelli_ext_sed(flt& oneFlt, const SED& oneSED) {
+  // Define the limits of this filter
+  double lmin = oneFlt.lmin();
+  double lmax = oneFlt.lmax();
+  ext oneExt("CARDELLI", 2);
+
+  double lextg, extg;
+
+  // computes the galactic extinction
+  double dlbd = (lmax - lmin) / 400.;
+  for (size_t i = 0; i < 402; i++) {
+    lextg = lmin + double(i - 1) * dlbd;
+    extg = cardelli_law(lextg);
+    oneExt.add_element(lextg, extg, 2);
+  }
+
+  return compute_filter_sed_extinction(oneFlt, oneExt, oneSED);
 }
 
 //  compute albd/av at a given lambda (A) for the Cardelli law
@@ -218,7 +313,7 @@ double cardelli_law(double lb) {
    lamb_interp= vector with a value in each lambda element, obtained with linear
   interpolation
 */
-void resample(vector<oneElLambda> &lamb_all, vector<oneElLambda> &lamb_interp,
+void resample(vector<oneElLambda>& lamb_all, vector<oneElLambda>& lamb_interp,
               const int origine, const double lmin, const double lmax) {
   // Initialize the previous and next element used for the interpolation
   oneElLambda prevEl(-999, -999, -999);

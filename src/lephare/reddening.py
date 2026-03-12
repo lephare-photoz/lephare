@@ -1,75 +1,10 @@
 import os
 
 import numpy as np
-from scipy.interpolate import interp1d
-from scipy.ndimage import gaussian_filter1d
 
 import lephare as lp
 
-__all__ = ["multiply_on_grids", "compute_model_reddening", "compute_band_pass_correction"]
-
-
-def multiply_on_grids(x1, f1, x2, f2, x=None):
-    """
-    Interpolate two functions onto the same grid and multiply them elementwise.
-
-    If no target grid `x` is provided, a grid spanning the union of `x1` and `x2`
-    is automatically created with the same number of points as `x2`.
-
-    Parameters
-    ----------
-    x1 : array_like
-        Independent variable for the first function.
-    f1 : array_like
-        Function values corresponding to `x1`.
-    x2 : array_like
-        Independent variable for the second function.
-    f2 : array_like
-        Function values corresponding to `x2`.
-    x : array_like, optional
-        Grid on which to interpolate both functions. If None, an automatic grid
-        spanning the min/max of `x1` and `x2` is used.
-
-    Returns
-    -------
-    numpy.ndarray
-        A 2D array with two rows: the first row is the grid `x`, and the second
-        row is the product of the interpolated functions `f1 * f2`.
-
-    Notes
-    -----
-    - Currently uses linear interpolation with `fill_value=0.0` outside the original ranges.
-    - If the functions do not overlap we simply return the first function `f1`.
-    """
-
-    if x is None:
-        print("Using user defined x grid")
-        xmin = min(x1.min(), x2.min())
-        xmax = max(x1.max(), x2.max())
-        if xmax < xmin:
-            # If no overlap return the input filter
-            return np.array([x1, f1])
-        x = np.linspace(xmin, xmax, len(x2))
-    f1i = interp1d(x1, f1, bounds_error=False, fill_value=0.0)(x)
-    f2 = gaussian_filter1d(f2, sigma=10)  # smooth the filter to avoid numerical issues with sharp features
-    f2i = interp1d(x2, f2, bounds_error=False, fill_value=0.0)(x)
-    prod = f1i * f2i
-    norm = np.nanmax(prod)
-
-    # If there is no overlap simply return f1
-    if norm <= 0 or not np.isfinite(norm):
-        x = x1
-        # Allow it to be zero
-        # y = prod
-        # normalize to max of f1 to avoid numerical issues with very small values
-        y = f1 / np.max(f1)
-    else:
-        y = prod / norm
-
-    if not np.isfinite(np.array([x, y])).all():
-        raise ValueError("Array contains NaN or infinite values")
-    return np.array([x, y])
-    # return np.array([x, (f1i * f2i) / np.max(f1i * f2i)])  # fftconvolve(f1i, f2i, mode="same") * dx
+__all__ = ["compute_model_reddening", "compute_band_pass_correction"]
 
 
 def compute_model_reddening(config, verbose=False):
@@ -132,8 +67,8 @@ def compute_model_reddening(config, verbose=False):
     print("Number of filters: ", len(original_filters))
     values = np.empty((len(photz.fullLib), len(original_filters)))
 
-    for i, model in enumerate(photz.fullLib):
-        for j, filt in enumerate(original_filters):
+    for j, _ in enumerate(original_filters):
+        for i, model in enumerate(photz.fullLib):
             if model.is_star():
                 mag = star_mag
             elif model.is_gal():
@@ -144,14 +79,11 @@ def compute_model_reddening(config, verbose=False):
             # observed_sed=observe(photz, i, mag)
             model.lamb_flux = photz.fullLib[model.index_z0].lamb_flux
             model.generate_spectra(photz.zLib[i], 1.0, mag.opaAll)
-            model_filt_product = multiply_on_grids(
-                filt[0], filt[1], model.data()[0], model.data()[1], x=filt[0]
-            )
 
             # make a oneflt instance from the updated
             one_filt = all_filters[j]
-            for n, lt in enumerate(one_filt.lamb_trans):
-                lt.val = model_filt_product[1][n]
+            # for n, lt in enumerate(one_filt.lamb_trans):
+            #     lt.val = model_filt_product[1][n]
             # atmospheric extinction too?
             # returns all_filters, aint, albdav, albd
             if galec == "CARDELLI":
@@ -173,7 +105,8 @@ def compute_model_reddening(config, verbose=False):
                     rv = 4.05
                 if verbose:
                     print(f"assuming Rv={rv} for this Extinction law {galec}")
-                albd = lp.compute_filter_extinction(one_filt, galactic_ext)
+                # albd = lp.compute_filter_sed_extinction(one_filt, galactic_ext)
+                albd = lp.compute_filter_sed_extinction(one_filt, galactic_ext, model)
             values[i, j] = albd
 
     # Replace nans with zeros (probably due to non overlap between filter and SED)
@@ -252,8 +185,8 @@ def compute_band_pass_correction(config, b5_model=15, verbose=False):
     print("Number of filters: ", len(original_filters))
     values = np.empty((len(photz.fullLib), len(original_filters)))
     b5_idx = None
-    for i, model in enumerate(photz.fullLib):
-        for j, filt in enumerate(original_filters):
+    for j, _ in enumerate(original_filters):
+        for i, model in enumerate(photz.fullLib):
             if model.is_star():
                 mag = star_mag
                 if model.nummod == b5_model:
@@ -266,14 +199,11 @@ def compute_band_pass_correction(config, b5_model=15, verbose=False):
             # observed_sed=observe(photz, i, mag)
             model.lamb_flux = photz.fullLib[model.index_z0].lamb_flux
             model.generate_spectra(photz.zLib[i], 1.0, mag.opaAll)
-            model_filt_product = multiply_on_grids(
-                filt[0], filt[1], model.data()[0], model.data()[1], x=filt[0]
-            )
 
             # make a oneflt instance from the updated
             one_filt = all_filters[j]
-            for n, lt in enumerate(one_filt.lamb_trans):
-                lt.val = model_filt_product[1][n]
+            # for n, lt in enumerate(one_filt.lamb_trans):
+            #     lt.val = model_filt_product[1][n]
             # atmospheric extinction too?
             # returns all_filters, aint, albdav, albd
             if galec == "CARDELLI":
@@ -295,11 +225,17 @@ def compute_band_pass_correction(config, b5_model=15, verbose=False):
                     rv = 4.05
                 if verbose:
                     print(f"assuming Rv={rv} for this Extinction law {galec}")
-                albd = lp.compute_filter_extinction(one_filt, galactic_ext)
+                # albd = lp.compute_filter_extinction(one_filt, galactic_ext)
+                albd = lp.compute_filter_sed_extinction(one_filt, galactic_ext, model)
             values[i, j] = albd
 
     # A_B - A_V for the SED, and for the B5 star. The ratio of these
     # is the band pass correction factor to apply to the model reddening.
     bmv = values.T[0] - values.T[1]
     band_pass_correction = bmv / (values[b5_idx][0] - values[b5_idx][1])
+    # zeros = np.isclose(values.T[0], 0.0)
+    # zeros |= np.isclose(values.T[0], 0.0)
+    # band_pass_correction[zeros] = (
+    #     1.0  # If there is no reddening in either filter, set the band pass correction to 1 (no correction)
+    # )
     return band_pass_correction

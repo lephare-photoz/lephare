@@ -16,6 +16,8 @@
 using std::string;
 using std::vector;
 
+class SED;
+
 /*! \brief Class Extinction to store the lambda/value vector from the extinction
  * law read
  *
@@ -45,11 +47,14 @@ class ext {
   void add_element(double lam, double val, double ori);
 };
 
-double compute_filter_extinction(const flt &filter, const ext &extinction);
-double cardelli_ext(flt &oneFlt);
+double compute_filter_extinction(const flt& filter, const ext& extinction);
+double compute_filter_sed_extinction(const flt& filter, const ext& extinction,
+                                     const SED& sed);
+double cardelli_ext(flt& oneFlt);
+double cardelli_ext_sed(flt& oneFlt, const SED& oneSED);
 double cardelli_law(double lb);
-void resample(vector<oneElLambda> &lamb_all, vector<oneElLambda> &lamb_interp,
+void resample(vector<oneElLambda>& lamb_all, vector<oneElLambda>& lamb_interp,
               const int origine, const double lmin, const double lmax);
-vector<flt> read_flt(ifstream &sfiltIn);
+vector<flt> read_flt(ifstream& sfiltIn);
 
 #endif
