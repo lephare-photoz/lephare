@@ -297,8 +297,8 @@ def compute_band_pass_correction(config, b5_model=15, verbose=False):
 
     # A_B - A_V for the SED, and for the B5 star. The ratio of these
     # is the band pass correction factor to apply to the model reddening.
-    bmv = values.T[0] - values.T[1]
-    band_pass_correction = bmv / (values[b5_idx][0] - values[b5_idx][1])
+    ebmv = values.T[0] - values.T[1]
+    band_pass_correction = ebmv / (values[b5_idx][0] - values[b5_idx][1])
     # zeros = np.isclose(values.T[0], 0.0)
     # zeros |= np.isclose(values.T[0], 0.0)
     # band_pass_correction[zeros] = (

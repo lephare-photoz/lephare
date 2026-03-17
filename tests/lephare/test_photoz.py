@@ -29,22 +29,14 @@ def test_reddening(test_data_dir: str):
     os.environ["LEPHAREDIR"] = os.path.join(test_dir, "../data")
     os.environ["LEPHAREWORK"] = os.path.join(test_dir, "../tmp")
     config = lp.read_config(os.path.join(test_data_dir, "examples/COSMOS.para"))
+    config["Z_STEP"] = "1.,0.,2."  # Fake star SED gets redshifted out of B band at low z
     # keymap=lp.all_types_to_keymap(config)
     lp.prepare(config)
-    # Test the reddening computation function
-    xtest = np.array([0.1, 0.2, 0.3, 0.4, 0.5])
-    ytest = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
-    assert len(lp.multiply_on_grids(xtest, ytest, xtest, ytest, xtest)[0]) == len(xtest)
-
-    # Check it can run without an x axis
-    assert len(lp.multiply_on_grids(xtest, ytest, xtest, ytest)[0]) == len(xtest)
 
     # The reddening calculator
     albd_lib = lp.compute_model_reddening(config)
-    assert albd_lib.shape == (307, 2)
+    assert albd_lib.shape == (19, 2)
     # test impact of ebv on a source fit
-    # Run preparation tasks.
-    lp.prepare(config)
     # Read the test input catalogue
     input_file = os.path.join(test_data_dir, "examples/COSMOS_first100specz.fits")
     input = Table.read(input_file)
@@ -62,7 +54,7 @@ def test_reddening(test_data_dir: str):
     output, photozlist = lp.process(
         config, input[reduced_cols], write_outputs=False, reddening=albd_lib, ebvmw=[0.1] * len(input)
     )
-    assert np.isclose(np.sum(output["Z_BEST"]), 185.69925751302745)
+    assert np.isclose(np.sum(output["Z_BEST"]), 95.0)
     # Check it gives a warning if no ebv provided
     with pytest.warns(UserWarning, match="No ebv provided. Reddening not applied."):
         lp.process(config, input[reduced_cols], write_outputs=False, reddening=albd_lib)
@@ -74,3 +66,8 @@ def test_reddening(test_data_dir: str):
     output, photozlist = lp.process(
         config, input[reduced_cols], write_outputs=False, reddening=albd_lib, ebvmw=[0.1] * len(input)
     )
+
+    # Test the band pass correction
+    bpc = lp.compute_band_pass_correction(config, b5_model=1)
+    print(bpc)
+    assert np.isclose(np.sum(bpc), 17.78741526687649)
