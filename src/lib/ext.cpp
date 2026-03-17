@@ -155,6 +155,8 @@ double compute_filter_sed_extinction(const flt& oneFlt, const ext& oneExt,
   SED::resample(lamb_all, new_lamb_sed, 1, 0, 1.e50);
 
   double last_mid_ext = 0.0;  // track last mid_ext where mid_flt > 0
+  double first_mid_ext =
+      -1.0;  // will store the first mid_ext where mid_sed > 0
   double fint = 0;
   double aint = 0;
 
@@ -176,6 +178,10 @@ double compute_filter_sed_extinction(const flt& oneFlt, const ext& oneExt,
 
       // Remember mid_ext if mid_flt is non-zero
       if (mid_flt > 0.0) last_mid_ext = mid_ext;
+      // Remember the first mid_ext where mid_sed is non-zero
+      if (first_mid_ext < 0.0 && mid_sed > 0.0) {
+        first_mid_ext = mid_ext;
+      }
 
       // Integral of the transmission by the filter x SED
       fint += mid_flt * mid_sed * delta;

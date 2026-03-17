@@ -1,10 +1,76 @@
 import os
 
 import numpy as np
+from scipy.interpolate import interp1d
 
 import lephare as lp
 
-__all__ = ["compute_model_reddening", "compute_band_pass_correction"]
+__all__ = ["multiply_on_grids", "compute_model_reddening", "compute_band_pass_correction"]
+
+
+def multiply_on_grids(x1, f1, x2, f2, x=None):
+    """
+    Interpolate two functions onto the same grid and multiply them elementwise.
+
+    If no target grid `x` is provided, a grid spanning the union of `x1` and `x2`
+    is automatically created with the same number of points as `x2`.
+
+    Parameters
+    ----------
+    x1 : array_like
+        Independent variable for the first function.
+    f1 : array_like
+        Function values corresponding to `x1`.
+    x2 : array_like
+        Independent variable for the second function.
+    f2 : array_like
+        Function values corresponding to `x2`.
+    x : array_like, optional
+        Grid on which to interpolate both functions. If None, an automatic grid
+        spanning the min/max of `x1` and `x2` is used.
+
+    Returns
+    -------
+    numpy.ndarray
+        A 2D array with two rows: the first row is the grid `x`, and the second
+        row is the product of the interpolated functions `f1 * f2`.
+
+    Notes
+    -----
+    - Currently uses linear interpolation with `fill_value=0.0` outside the original ranges.
+    - If the functions do not overlap we simply return the first function `f1`.
+    """
+
+    if x is None:
+        print("Using user defined x grid")
+        xmin = min(x1.min(), x2.min())
+        xmax = max(x1.max(), x2.max())
+        if xmax < xmin:
+            # If no overlap return the input filter
+            return np.array([x2, f2])
+            return np.array([x1, f1])
+        x = np.linspace(xmin, xmax, len(x2))
+    f1i = interp1d(x1, f1, bounds_error=False, fill_value=0.0)(x)
+    # f2 = gaussian_filter1d(f2, sigma=10)  # smooth the filter to avoid numerical issues with sharp features
+    f2i = interp1d(x2, f2, bounds_error=False, fill_value=0.0)(x)
+    prod = f1i * f2i
+    norm = np.max(prod)
+    norm = np.nanmax(prod)
+
+    # If there is no overlap simply return f1
+    if norm <= 0 or not np.isfinite(norm):
+        x = x1
+        y = f1
+        # Allow it to be zero
+        # y = prod
+        # normalize to max of f1 to avoid numerical issues with very small values
+        y = f1 / np.max(f1)
+    else:
+        y = prod / norm
+
+    if not np.isfinite(np.array([x, y])).all():
+        raise ValueError("Array contains NaN or infinite values")
+    return np.array([x, y])
 
 
 def compute_model_reddening(config, verbose=False):
