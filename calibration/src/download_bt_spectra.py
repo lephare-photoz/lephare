@@ -32,8 +32,8 @@ def download_bt_spectra(
     ):
 
     if BASE_URL is None:
-        BASE_URL = f"https://svo2.cab.inta-csic.es/theory/newov2/ssap.php?model={MODEL}",
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+        BASE_URL = f"https://svo2.cab.inta-csic.es/theory/newov2/ssap.php?model={MODEL}"
+
     def makeititerable(x):
         if isinstance(x, (list, tuple, np.ndarray)):
             return list(x)
@@ -46,7 +46,7 @@ def download_bt_spectra(
 
     # === DOWNLOAD AND READ VOTABLE ===
     print("Downloading main VOTABLE...")
-    resp = requests.get(BASE_URL)
+    resp = requests.get(BASE_URL, verify=False)
     resp.raise_for_status()
 
     votable_content = resp.text
@@ -164,14 +164,14 @@ def download_bt_spectra(
 
         return wl_new, flux_new
 
-
     # === DOWNLOAD AND CONVERT TO SED ===
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
     for i, (teff, logg, feh, url) in enumerate(spectra_links, 1):
         fname = f"Teff{int(teff)}_logg{logg:.1f}_FeH{feh:.1f}.sed"
         if os.path.exists(os.path.join(OUTPUT_DIR, fname)) and overwrite_seds == False:
             print(f"T_eff={teff}, logg={logg}, Fe/H={feh} already exists. Pass.")
             continue
-        spec = requests.get(url + "&format=ascii")
+        spec = requests.get(url + "&format=ascii", verify=False)
         if spec.status_code != 200:
             print(f"ERROR: {url} not found")
             continue
