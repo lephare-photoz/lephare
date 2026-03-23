@@ -23,6 +23,7 @@ from ._plot_utils import *
 from ._spec import *
 from .data_retrieval import *
 from .default_cosmos_config import *
+from .default_stargal_config import *
 from .filter import *
 from .filter_extinc import *
 from .filterSvc import *
