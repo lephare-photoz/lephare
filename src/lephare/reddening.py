@@ -155,7 +155,7 @@ def compute_model_reddening(config, verbose=False):
             if galec == "CARDELLI":
                 # If cardelli (hardcoded) with Rv=3.1 by  default
                 # output A(lbd)/Av->A(lbd)/(Rv*E(B-V))->A(lbd)/E(B-V)=Rv*A(lbd)/Av
-                albdav = lp.cardelli_ext(one_filt)
+                albdav = lp.cardelli_ext_sed(one_filt, model)
                 albd = albdav * 3.1
             else:
                 if not os.path.isabs(galec):
@@ -275,7 +275,7 @@ def compute_band_pass_correction(config, b5_model=15, verbose=False):
             if galec == "CARDELLI":
                 # If cardelli (hardcoded) with Rv=3.1 by  default
                 # output A(lbd)/Av->A(lbd)/(Rv*E(B-V))->A(lbd)/E(B-V)=Rv*A(lbd)/Av
-                albdav = lp.cardelli_ext(one_filt)
+                albdav = lp.cardelli_ext_sed(one_filt, model)
                 albd = albdav * 3.1
             else:
                 if not os.path.isabs(galec):
