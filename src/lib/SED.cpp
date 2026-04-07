@@ -273,9 +273,6 @@ double SED::integrate(const double lmin, const double lmax) {
     res += dlbd * fmean;
   }
 
-  // Clamp lastidx to valid range - single comparison, negligible cost
-  lastidx = std::min(lastidx, (size_t)(lamb_flux.size() - 1));
-
   // integrate from lamb_flux[lastidx] to lmax
   x1 = lamb_flux[lastidx].lamb;
   x2 = lamb_flux[lastidx + 1].lamb;
