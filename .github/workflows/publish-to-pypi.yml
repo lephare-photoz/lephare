@@ -89,7 +89,7 @@ jobs:
           submodules: recursive
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.3.1
+        uses: pypa/cibuildwheel@v3.4.0
         env:
           CIBUILDWHEEL: 1
           # CIBW_ARCHS_MACOS: auto universal2
