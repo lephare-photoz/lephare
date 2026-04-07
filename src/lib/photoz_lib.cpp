@@ -757,8 +757,9 @@ string PhotoZ::prep_header(vector<string> outkeywords) {
       form += "-" + to_string(numCol - 1);
     }
 
-    for (const string k : {"MOD_QSO", "MOD_STAR", "CHI_QSO", "CHI_STAR", "SCALE_QSO", "SCALE_STAR",
-                           "LIMITS_ZMAX", "LIMITS_MFAINT"}) {
+    for (const string k :
+         {"MOD_QSO", "MOD_STAR", "CHI_QSO", "CHI_STAR", "SCALE_QSO",
+          "SCALE_STAR", "LIMITS_ZMAX", "LIMITS_MFAINT"}) {
       if (outkey == k) {
         form += " " + k + " " + to_string(numCol);
         numCol++;
@@ -849,8 +850,9 @@ string PhotoZ::prep_header(vector<string> outkeywords) {
       for (int l = 0; l < 65; l++) form += " EM_FLUX" + to_string(l) + " ";
     }
 
-    for (const string k : {"MOD_QSO", "MOD_STAR", "CHI_QSO", "CHI_STAR", "SCALE_QSO", "SCALE_STAR",
-                           "LIMITS_ZMAX", "LIMITS_MFAINT"}) {
+    for (const string k :
+         {"MOD_QSO", "MOD_STAR", "CHI_QSO", "CHI_STAR", "SCALE_QSO",
+          "SCALE_STAR", "LIMITS_ZMAX", "LIMITS_MFAINT"}) {
       if (outkey == k) {
         form += " " + k + " ";
       }

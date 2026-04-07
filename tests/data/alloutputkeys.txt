@@ -66,10 +66,8 @@ ZQ_MODE99_LOW		float	      zqmode[5]
 ZQ_MODE99_HIGH		float	      zqmode[6]
 CHI_QSO                 float         chimin[1] 
 MOD_QSO                 int           imasmin[1]
-SCALE_QSO               float         dmmin[1]
 CHI_STAR                float         chimin[2]
 MOD_STAR                int           imasmin[2]
-SCALE_STAR              float         dmmin[2]
 MOD_SEC                 int           zsecMod
 EXTLAW_SEC              int           zsecExtlaw
 Z_SEC                   float         zsec
