@@ -1609,14 +1609,26 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
       imagm, gridz, fullLib, method, magabscont, bapp, bappOp, zbmin, zbmax);
   vector<vector<double>> maxkcol = maxkcolor(gridz, fullLib, goodFlt);
 
+  // check that the offset vector has the correct dimension. Otherwise, offsets
+  // at 0
+  vector<double> a0_checked = a0;
+  if (a0.size() != size_t(imagm)) {
+    a0_checked.assign(imagm, 0.);
+    cout << "Offsets have a size: " << a0.size()
+         << ", different from the filter number:" << imagm << endl;
+    cout << "Offsets changed at 0." << endl;
+  }
+
   // Specify the offsets in the header
   string offsets;
-  for (int k = 0; k < imagm; k++) offsets = offsets + to_string(a0[k]) + ",";
+  for (int k = 0; k < imagm; k++)
+    offsets = offsets + to_string(a0_checked[k]) + ",";
   offsets =
       "# Offsets added to the modeled magnitudes (substracted to the "
       "observed): " +
       offsets + '\n';
   outputHeader += offsets;
+  cout << offsets << endl;
 
   vector<size_t> valid;
   if (!zfix) {
@@ -1632,7 +1644,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
     nobj++;
     // auto-adapt
     // Apply offset anyway (should be 0 if no auto-adapt or no systematic shifts
-    oneObj->adapt_mag(a0);
+    oneObj->adapt_mag(a0_checked);
     // set the prior on the redshift, abs mag, ebv, etc on the object
     oneObj->setPriors(magabsB, magabsF);
     // If ZFIX=YES select the templates with the closest redshift to zs,
