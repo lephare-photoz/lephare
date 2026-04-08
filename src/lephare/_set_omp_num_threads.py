@@ -4,7 +4,10 @@ import os
 
 def _set_omp_num_threads():
     # Check the maximal number of CPUs
-    max_cpus = multiprocessing.cpu_count()
+    try:
+        max_cpus = multiprocessing.cpu_count()
+    except NotImplementedError:  # pragma no cover
+        return
 
     # If the environment variable is not defined
     # Take the max between 1 and max_cpus-1
