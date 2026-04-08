@@ -267,7 +267,7 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
       ((key_analysed["APPLY_MW_EXTINCTION"]).split_bool("NO", 1))[0];
   // MW_EBV_VALS can be NO, single value or ascii file with the E(B-V) values
   // for each source
-  // mw_ebv_vals = ((key_analysed["MW_EBV_VALS"]).split_string("NO", 1));
+  // mw_ebv_vals = (key_analysed["MW_EBV_VALS"]).split_string("NO", 1)[0];
 
   /*
     INFO PARAMETERS ON SCREEN AND DOC

@@ -41,6 +41,7 @@ def compute_model_reddening(config, verbose=False):
     """
     keymap = lp.all_types_to_keymap(config)
     keymap["APPLY_MW_EXTINCTION"] = lp.keyword("APPLY_MW_EXTINCTION", "YES")
+    lp.prepare(keymap)
     photz = lp.PhotoZ(keymap)
     albd_lib = np.array([g.milky_way_extinction for g in photz.fullLib])
     return np.nan_to_num(albd_lib, nan=0.0)
@@ -89,6 +90,7 @@ def compute_band_pass_correction(config, model_number=15, type="star", verbose=F
     keymap["FILTER_LIST"] = lp.keyword("FILTER_LIST", "std/B.pb,std/V.pb")
     keymap["FILTER_FILE"] = lp.keyword("FILTER_FILE", "BV_FILTERS_FOR_BAND_PASS_CORRECTION")
     keymap["FILTER_CALIB"] = lp.keyword("FILTER_CALIB", "0,0")
+    keymap["APPLY_MW_EXTINCTION"] = lp.keyword("APPLY_MW_EXTINCTION", "YES")
     lp.prepare(keymap)
     photz = lp.PhotoZ(keymap)
     albd_lib = np.array([g.milky_way_extinction for g in photz.fullLib])
@@ -96,13 +98,12 @@ def compute_band_pass_correction(config, model_number=15, type="star", verbose=F
     for n, sed in enumerate(photz.fullLib):
         if getattr(sed, f"is_{type}")() and (sed.nummod == model_number):
             b5_idx = n
+    if b5_idx is None:
+        raise ValueError(
+            f"Reference model with type '{type}' and model number '{model_number}' not found in the library."
+        )
     # A_B - A_V for the SED, and for the B5 star. The ratio of these
     # is the band pass correction factor to apply to the model reddening.
     ebmv = albd_lib.T[0] - albd_lib.T[1]
     band_pass_correction = ebmv / (albd_lib[b5_idx][0] - albd_lib[b5_idx][1])
-    # zeros = np.isclose(values.T[0], 0.0)
-    # zeros |= np.isclose(values.T[0], 0.0)
-    # band_pass_correction[zeros] = (
-    #     1.0  # If there is no reddening in either filter, set the band pass correction to 1 (no correction)
-    # )
     return band_pass_correction

@@ -31,6 +31,7 @@ def test_reddening(test_data_dir: str):
     config = lp.read_config(os.path.join(test_data_dir, "examples/COSMOS.para"))
     config["Z_STEP"] = "1.,0.,2."  # Fake star SED gets redshifted out of B band at low z
     # keymap=lp.all_types_to_keymap(config)
+    config["APPLY_MW_EXTINCTION"] = "YES"
     lp.prepare(config)
 
     # The reddening calculator
@@ -54,7 +55,7 @@ def test_reddening(test_data_dir: str):
     output, photozlist = lp.process(
         config, input[reduced_cols], write_outputs=False, reddening=albd_lib, ebvmw=[0.1] * len(input)
     )
-    assert np.isclose(np.sum(output["Z_BEST"]), 95.0)
+    assert np.isclose(np.sum(output["Z_BEST"]), 96.0)
     # Check it gives a warning if no ebv provided
     with pytest.warns(UserWarning, match="No ebv provided. Reddening not applied."):
         lp.process(config, input[reduced_cols], write_outputs=False, reddening=albd_lib)
@@ -68,6 +69,6 @@ def test_reddening(test_data_dir: str):
     )
 
     # Test the band pass correction
-    bpc = lp.compute_band_pass_correction(config, b5_model=1)
+    bpc = lp.compute_band_pass_correction(config, model_number=1)
     print(bpc)
-    assert np.isclose(np.sum(bpc), 17.78741526687649)
+    assert np.isclose(np.sum(bpc), 17.73314154473242)

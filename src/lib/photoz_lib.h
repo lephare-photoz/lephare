@@ -57,7 +57,7 @@ class PhotoZ {
   vector<string> outkeywords, pdftype;
   int imagm;
   time_t ti1;
-  string outputHeader, outpara;
+  string outputHeader, outpara, mw_ebv_vals;
 
   PhotoZ(keymap& key_analysed);
 
