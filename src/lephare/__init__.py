@@ -10,6 +10,10 @@ dm = DataManager()
 dm.configure_directories()  # noqa: F405
 LEPHAREDIR = dm.LEPHAREDIR
 
+from ._set_omp_num_threads import _set_omp_num_threads
+
+_set_omp_num_threads()
+
 from ._lephare import *
 
 # import explicitly the internal variables and functions
