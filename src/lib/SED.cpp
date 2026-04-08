@@ -1880,6 +1880,12 @@ void QSOSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
   for (int k = 0; k < nbFlt; k++)
     ofsBin.write((char*)&(kcorr[k]), sizeof(double));
 
+  // Write the extinction values
+  if (has_mw_extinction) {
+    for (int k = 0; k < nbFlt; k++)
+      ofsBin.write((char*)&(milky_way_extinction[k]), sizeof(double));
+  }
+
   // Write the spectra only if the redshift is 0
   if (red < 1.e-20) {
     int nbLamb = lamb_flux.size();
@@ -1913,6 +1919,12 @@ void QSOSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
       ofsDat << setw(6) << kcorr[k] << " ";
     }
     ofsDat << endl;
+    // Write the extinction values
+    if (has_mw_extinction) {
+      for (int k = 0; k < nbFlt; k++) {
+        ofsDat << setw(6) << milky_way_extinction[k] << " ";
+      }
+    }
   }
 
   return;
@@ -1942,6 +1954,14 @@ void QSOSED::readMagBin(ifstream& ins) {
   kcorr.assign(nbFlt, 0);
   for (auto& k : kcorr) {
     ins.read((char*)&k, sizeof(double));
+  }
+
+  // Read the extinction values
+  if (has_mw_extinction) {
+    milky_way_extinction.resize(nbFlt, 0.);
+    for (auto& mwe : milky_way_extinction) {
+      ins.read((char*)&mwe, sizeof(double));
+    }
   }
 
   // read the spectra only if the redshift is 0
@@ -1983,6 +2003,13 @@ void StarSED::readMagBin(ifstream& ins) {
   for (auto& m : mag) {
     ins.read((char*)&m, sizeof(double));
   }
+  // Read the MW extinction values
+  if (has_mw_extinction) {
+    milky_way_extinction.resize(nbFlt, 0.);
+    for (auto& mwe : milky_way_extinction) {
+      ins.read((char*)&mwe, sizeof(double));
+    }
+  }
 
   // read the spectra only if the redshift is 0
   int nblamb;
@@ -2017,6 +2044,12 @@ void StarSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
   for (int k = 0; k < nbFlt; k++)
     ofsBin.write((char*)&(mag[k]), sizeof(double));
 
+  // Write the extinction values
+  if (has_mw_extinction) {
+    for (int k = 0; k < nbFlt; k++)
+      ofsBin.write((char*)&(milky_way_extinction[k]), sizeof(double));
+  }
+
   // Write the spectra
   int nbLamb = lamb_flux.size();
   ofsBin.write((char*)&(nbLamb), sizeof(int));
@@ -2037,6 +2070,12 @@ void StarSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
     } else {  // VEGA
       for (int k = 0; k < nbFlt; k++) {
         ofsDat << setw(6) << mag[k] + allFilters[k].ab << " ";
+      }
+    }
+    // Write the extinction values
+    if (has_mw_extinction) {
+      for (int k = 0; k < nbFlt; k++) {
+        ofsDat << setw(6) << milky_way_extinction[k] << " ";
       }
     }
     ofsDat << endl;

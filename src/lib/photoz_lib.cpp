@@ -262,6 +262,10 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
   emMod.push_back(((key_analysed["ADD_EMLINES"]).split_int("-9999", 2))[0]);
   emMod.push_back(((key_analysed["ADD_EMLINES"]).split_int("-9999", 2))[1]);
 
+  // MW_EXTINCTION
+  mw_extinction =
+      ((key_analysed["APPLY_MW_EXTINCTION"]).split_bool("NO", 1))[0];
+
   /*
     INFO PARAMETERS ON SCREEN AND DOC
   */
@@ -558,6 +562,11 @@ void PhotoZ::read_lib(vector<SED*>& libFull, int& ind, int nummodpre[3],
     } else {
       throw invalid_argument("There is no such SED type defined: " + valc);
     }
+
+    if (mw_extinction) {
+      oneSED->has_mw_extinction = true;
+    }
+
     // read each SED in the library binary file
     oneSED->readMagBin(slibIn);
 
