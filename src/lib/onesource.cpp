@@ -1230,17 +1230,19 @@ void onesource::write_out(ofstream &stout, const vector<string> &outkeywords) {
     stout.setf(ios::scientific, ios::floatfield);
     stout.precision(5);  // Scientific:
     if (outkey == "CHI_QSO") stout << setw(14) << chimin[1] << " ";
+    if (outkey == "SCALE_QSO") stout << setw(14) << dmmin[1] << " ";
     stout.setf(ios::fixed);
     stout.precision(0);  // Integer:
     if (outkey == "MOD_QSO") stout << setw(12) << imasmin[1] << " ";
 
     // STARS
-    stout.setf(ios::fixed);
-    stout.precision(0);  // Integer:
-    if (outkey == "MOD_STAR") stout << setw(12) << imasmin[2] << " ";
     stout.setf(ios::scientific, ios::floatfield);
     stout.precision(5);  // Scientific:
     if (outkey == "CHI_STAR") stout << setw(14) << chimin[2] << " ";
+    if (outkey == "SCALE_STAR") stout << setw(14) << dmmin[2] << " ";
+    stout.setf(ios::fixed);
+    stout.precision(0);  // Integer:
+    if (outkey == "MOD_STAR") stout << setw(12) << imasmin[2] << " ";
 
     // SECONDARY GALAXY PEAK
     stout.setf(ios::fixed);

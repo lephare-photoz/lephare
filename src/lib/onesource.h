@@ -93,11 +93,13 @@ class onesource {
       indmin[k] = INVALID_INDEX;
       chimin[k] = HIGH_CHI2;
       imasmin[k] = INVALID_INDEX;
+      dmmin[k] = 0.;
     }
     zminIR = INVALID_Z;
     indminIR = INVALID_INDEX;
     chiminIR = HIGH_CHI2;
     imasminIR = INVALID_INDEX;
+    dmminIR = 0.;
     LIRmed.fill(INVALID_PHYS);
     nbused = 0;
     pos = 0;
