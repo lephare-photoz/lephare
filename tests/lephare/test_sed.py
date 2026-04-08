@@ -157,6 +157,25 @@ def test_set_vector():
     assert len(x) == sed.size()
 
 
+def test_integrate():
+    sed = SED()
+    x2 = np.linspace(10, 20, 10)
+    y2 = x2
+    sed.set_vector(x2, y2)
+
+    assert sed.integrate(15, 15) == 0.0
+    # extending beyond sed boundaries is not allowed
+    assert sed.integrate(9, 11) == lp.INVALID_VAL
+    assert sed.integrate(19, 21) == lp.INVALID_VAL
+    # throw error on lmin>lmax
+    with pytest.raises(RuntimeError):
+        sed.integrate(15, 11)
+    # corner cases
+    assert sed.integrate(10, 10.5) == (10.5**2 - 10**2) / 2
+    assert sed.integrate(19, 20) == (20**2 - 19**2) / 2
+    assert sed.integrate(19, 19.5) == (19.5**2 - 19**2) / 2
+
+
 def test_integration():
     sed = SED("toto", 10, "GAL")
     # test on a case of exact computation

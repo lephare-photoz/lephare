@@ -1,5 +1,6 @@
 import lephare as lp
 import numpy as np
+import pytest
 from lephare import blackbody, check_first_char, indexes_in_vec
 
 
@@ -61,4 +62,4 @@ def test_log10pow10():
 def test_mag2flux():
     x = np.random.random() * 24
     zp = np.random.random() * 20
-    assert lp.mag2flux(x, zp) == 10 ** (-0.4 * (x + 48.6 - zp))
+    assert lp.mag2flux(x, zp) == pytest.approx(10 ** (-0.4 * (x + 48.6 - zp)))

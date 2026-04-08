@@ -223,6 +223,10 @@ void SED::warning_integrateSED(const vector<flt> &filters, bool verbose) {
 }
 
 double SED::integrate(const double lmin, const double lmax) {
+  if (lmin == lmax) return 0.;
+  if (lmin > lmax)
+    throw std::runtime_error("Wrong arguments: " + to_string(lmin) + ">" +
+                             to_string(lmax));
   // absurd case, but better safe than sorry
   if (lamb_flux.size() < 2) {
     return INVALID_VAL;
@@ -238,7 +242,7 @@ double SED::integrate(const double lmin, const double lmax) {
   auto up =
       lower_bound(lamb_flux.begin(), lamb_flux.end(), oneElLambda(lmin, 1.));
   size_t dist = std::distance(lamb_flux.begin(), up);
-  // corner case if lmin == lamb_flux[0]
+  // corner case if lmin == lamb_flux.front().lamb, id est dist=0
   size_t j = dist == 0 ? 0 : dist - 1;
 
   // integrate from lmin to lamb_flux[j+1]
@@ -268,6 +272,7 @@ double SED::integrate(const double lmin, const double lmax) {
     double dlbd = (lamb_flux[i + 1].lamb - lamb_flux[i].lamb);
     res += dlbd * fmean;
   }
+
   // integrate from lamb_flux[lastidx] to lmax
   x1 = lamb_flux[lastidx].lamb;
   x2 = lamb_flux[lastidx + 1].lamb;
