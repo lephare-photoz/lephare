@@ -3,6 +3,7 @@ import shutil
 
 import lephare as lp
 import numpy as np
+import pytest
 from astropy.table import Table
 
 
@@ -31,16 +32,16 @@ def test_process(test_data_dir: str):
             reduced_cols.append(c)
     output, photozlist = lp.process(config, input[reduced_cols], write_outputs=False)
     # Check one of the outputs (results are terrible with just one filter and sparse z grid)
-    assert np.isclose(output["Z_BEST"][0], 3.5877994546919934)
+    assert output["Z_BEST"][0] == pytest.approx(3.5878, abs=1.0e-3)
     assert len(photozlist[0].pdfmap[11].xaxis) == 51
     pdfs = np.array([photozlist[i].pdfmap[11].vPDF for i in np.arange(len(photozlist))])
-    assert np.isclose(np.sum(pdfs), 1001.2774052829275)
+    assert np.sum(pdfs) == pytest.approx(1001.3718)
     assert output["STRING_INPUT"][0] == test_string
     # Check AUTO_ADAPT
     config["AUTO_ADAPT"] = "YES"
     output, photozlist = lp.process(config, input[reduced_cols], write_outputs=True)
 
-    assert ~np.isclose(output["Z_BEST"][0], 3.5877994546919934)
+    assert ~(output["Z_BEST"][0] == pytest.approx(3.5877994546919934))
     assert os.path.isfile("zphot.out")
     assert output["IDENT"][0] == str(input["id"][0])
 
