@@ -40,6 +40,7 @@ def compute_model_reddening(config, verbose=False):
       through filter `j`.
     """
     keymap = lp.all_types_to_keymap(config)
+    keymap["APPLY_MW_EXTINCTION"] = lp.keyword("APPLY_MW_EXTINCTION", "YES")
     photz = lp.PhotoZ(keymap)
     albd_lib = np.array([g.milky_way_extinction for g in photz.fullLib])
     return np.nan_to_num(albd_lib, nan=0.0)

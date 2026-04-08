@@ -65,6 +65,8 @@ def process(
         if ebvmw is None:
             warnings.warn("No ebv provided. Reddening not applied.")
             reddening = None
+        if (reddening is not None) and config["APPLY_MW_EXTINCTION"].value == "YES":
+            warnings.warn("Reddening sent to process will override any pre-calculated values.")
     id, flux, flux_err, context, zspec, string_data = table_to_data(
         config, input_table, col_names=col_names, standard_names=standard_names
     )
