@@ -1628,7 +1628,6 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
       "observed): " +
       offsets + '\n';
   outputHeader += offsets;
-  cout << offsets << endl;
 
   vector<size_t> valid;
   if (!zfix) {
