@@ -88,6 +88,11 @@ class Mag {
   virtual void read_SED() = 0;
 
   vector<ext> extAll;
+
+  std::string milkyWayCurve;
+  ext milkyWayExtinction;
+  bool applyMilkyWayExtinction;
+
   vector<flt> allFlt;
   vector<GalSED> B12SED;
   vector<double> gridz;

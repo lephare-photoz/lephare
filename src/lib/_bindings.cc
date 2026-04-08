@@ -185,6 +185,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("nummod", &SED::nummod)
       .def_readonly("mag", &SED::mag)
       .def_readwrite("index_z0", &SED::index_z0)
+      .def_readwrite("milky_way_extinction", &SED::milky_way_extinction)
       .def("string_to_object", &SED::string_to_object)
       .def("is_gal", &SED::is_gal)
       .def("is_star", &SED::is_star)
@@ -202,6 +203,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("set_vector", &SED::set_vector)
       .def("redshift", &SED::redshift)
       .def("applyExt", &SED::applyExt)
+      .def("compute_milky_way_extinction", &SED::compute_milky_way_extinction)
       .def("applyExtLines", &SED::applyExtLines)
       .def("applyOpa", &SED::applyOpa)
       .def("get_data_vector", &SED::get_data_vector)
@@ -261,26 +263,29 @@ PYBIND11_MODULE(_lephare, mod) {
   applySEDLibTemplate<GalSED>(mod, "GalSEDLib");
 
   /******** CLASS MAG *********/
-#define MAGDEFS(c, n)                                     \
-  (py::class_<c>(mod, n)                                  \
-       .def(py::init<keymap&>(), py::arg("key_analysed")) \
-       .def(py::init<>())                                 \
-       .def("open_files", &c::open_files)                 \
-       .def("close_files", &c::close_files)               \
-       .def("open_opa_files", &c::open_opa_files)         \
-       .def("print_info", &c::print_info)                 \
-       .def("read_ext", &c::read_ext)                     \
-       .def("read_opa", &c::read_opa)                     \
-       .def("read_B12", &c::read_B12)                     \
-       .def("read_flt", &c::read_flt)                     \
-       .def("def_zgrid", &c::def_zgrid)                   \
-       .def("set_zgrid", &c::set_zgrid)                   \
-       .def("read_SED", &c::read_SED)                     \
-       .def("write_doc", &c::write_doc)                   \
-       .def("make_maglib", &c::make_maglib)               \
-       .def("write_mag", &c::write_mag)                   \
-       .def_readonly("extAll", &c::extAll)                \
-       .def_readonly("opaAll", &c::opaAll)                \
+#define MAGDEFS(c, n)                                                         \
+  (py::class_<c>(mod, n)                                                      \
+       .def(py::init<keymap&>(), py::arg("key_analysed"))                     \
+       .def(py::init<>())                                                     \
+       .def("open_files", &c::open_files)                                     \
+       .def("close_files", &c::close_files)                                   \
+       .def("open_opa_files", &c::open_opa_files)                             \
+       .def("print_info", &c::print_info)                                     \
+       .def("read_ext", &c::read_ext)                                         \
+       .def("read_opa", &c::read_opa)                                         \
+       .def("read_B12", &c::read_B12)                                         \
+       .def("read_flt", &c::read_flt)                                         \
+       .def("def_zgrid", &c::def_zgrid)                                       \
+       .def("set_zgrid", &c::set_zgrid)                                       \
+       .def("read_SED", &c::read_SED)                                         \
+       .def("write_doc", &c::write_doc)                                       \
+       .def("make_maglib", &c::make_maglib)                                   \
+       .def("write_mag", &c::write_mag)                                       \
+       .def_readwrite("milkyWayCurve", &c::milkyWayCurve)                     \
+       .def_readwrite("milkyWayExtinction", &c::milkyWayExtinction)           \
+       .def_readwrite("applyMilkyWayExtinction", &c::applyMilkyWayExtinction) \
+       .def_readonly("extAll", &c::extAll)                                    \
+       .def_readonly("opaAll", &c::opaAll)                                    \
        .def_readonly("allFlt", &c::allFlt))
   MAGDEFS(StarMag, "StarMag");
   MAGDEFS(QSOMag, "QSOMag");
@@ -331,15 +336,14 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("write_outputs", &PhotoZ::write_outputs)
       .def("validLib", &PhotoZ::validLib)
       .def("compute_offsets", &PhotoZ::compute_offsets);
-  // mod.def("read_lib", [](const string& libName, int ind, vector<int> emMod,
-  // int babs) { 			vector<SED*> libFull;
-  // int nummodpre[3]; 			string filtname;
-  // vector<double> gridz; 			nummodpre[0] = 0;
-  // nummodpre[1] = 0; 			nummodpre[2] = 0;
-  // read_lib(libFull, ind, nummodpre, libName,
-  // filtname, gridz, emMod, babs); 			std::array<int, 3>
-  // nummod_tup = {nummodpre[0], nummodpre[1], nummodpre[2]};
-  // return std::make_tuple(libFull, ind, nummod_tup, filtname, gridz);
+  // mod.def("read_lib", [](const string& libName, int ind, vector<int>
+  // emMod, int babs) { 			vector<SED*> libFull; int
+  // nummodpre[3]; 			string filtname; vector<double>
+  // gridz; 			nummodpre[0] = 0; nummodpre[1] = 0;
+  // nummodpre[2] = 0; read_lib(libFull, ind, nummodpre, libName, filtname,
+  // gridz, emMod, babs); 			std::array<int, 3> nummod_tup =
+  // {nummodpre[0], nummodpre[1], nummodpre[2]}; return
+  // std::make_tuple(libFull, ind, nummod_tup, filtname, gridz);
   // 		      }
   // 	  );
   // mod.def("read_doc_filters", [](const string filtFile) {

@@ -21,7 +21,6 @@ def process(
     write_outputs=False,
     reddening=None,
     ebvmw=None,
-    band_pass_correction=None,
 ):
     """Run all required steps to produce photometric redshift estimates
 
@@ -47,9 +46,6 @@ def process(
     ebvmw : np.array or None
         Array of E(B-V) values for each object in the input catalogue. If None
         no reddening will be applied.
-    band_pass_correction : np.array or None
-        Array of band pass corrections for each model in the model list. If None
-        no band pass correction will be applied.
 
     Returns
     =======
@@ -69,8 +65,6 @@ def process(
         if ebvmw is None:
             warnings.warn("No ebv provided. Reddening not applied.")
             reddening = None
-    if band_pass_correction is not None:
-        photz.band_pass_correction = band_pass_correction
     id, flux, flux_err, context, zspec, string_data = table_to_data(
         config, input_table, col_names=col_names, standard_names=standard_names
     )

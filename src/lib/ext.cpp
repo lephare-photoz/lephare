@@ -169,6 +169,7 @@ double compute_filter_sed_extinction(const flt& oneFlt, const ext& oneExt,
     oneElLambda ext2 = new_lamb_ext[i + 1];
     oneElLambda sed1 = new_lamb_sed[i];
     oneElLambda sed2 = new_lamb_sed[i + 1];
+
     if (flt1.ori >= 0 && flt2.ori >= 0 && ext1.ori >= 0 && ext2.ori >= 0 &&
         sed1.ori >= 0 && sed2.ori >= 0) {
       double delta = flt2.lamb - flt1.lamb;

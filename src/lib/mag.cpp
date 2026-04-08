@@ -15,9 +15,11 @@
 #include <string>
 #include <vector>
 
+#include "ext.h"
+
 // Constructor of the basis class which read the keywords common to the
 // QSO/STARS/GAL
-Mag::Mag(keymap &key_analysed) {
+Mag::Mag(keymap& key_analysed) {
   /*
     ENVIRONMENT VARIABLES LEPHAREDIR and LEPHAREWORK
   */
@@ -79,6 +81,17 @@ Mag::Mag(keymap &key_analysed) {
 
   // Read the extragalactic opacity files into a vector
   opaAll = read_opa();
+
+  // Galametz Milky Way attenuation values
+  milkyWayCurve = (key_analysed["EXT_MW_CURVE"]).split_string("CARDELLI", 1)[0];
+  // milkyWayExtinction = ext(milkyWayCurve);
+  ext milkyWayExtinction(milkyWayCurve, 0);
+  // Name of the extinction law file
+  string extFile = lepharedir + "/ext/" + milkyWayCurve;
+  // read the extinction law file
+  milkyWayExtinction.read(extFile);
+  applyMilkyWayExtinction =
+      ((key_analysed["APPLY_MW_EXTINCTION"]).split_bool("NO", 1))[0];
 }
 
 // destructor of the class Mag cleaning all the vectors
@@ -246,7 +259,7 @@ vector<opa> Mag::read_opa() {
 }
 
 // Function of the basis class which read all the filters
-vector<flt> Mag::read_flt(const string &inputfile) {
+vector<flt> Mag::read_flt(const string& inputfile) {
   vector<flt> flts;
 
   ifstream sfiltIn;
@@ -410,7 +423,7 @@ void Mag::write_doc() {
 
 // constructure of the Galaxy case
 // read the keywords missed by the constructor of the basis class
-GalMag::GalMag(keymap &key_analysed) : Mag(key_analysed) {
+GalMag::GalMag(keymap& key_analysed) : Mag(key_analysed) {
   // Name of the input file, default value "SED"
   lib = ((key_analysed["GAL_LIB_IN"]).split_string("SED", 1))[0];
   // Name of the output file, default value "LIB"
@@ -484,7 +497,7 @@ void GalMag::read_SED() {
   }  // end of while loop
 }
 
-vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
+vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
   vector<GalSED> allSED;
   // build the emission line SED. This changes the state of oneSED
   GalSED oneEm = oneSED.generateEmSED(emlines);
@@ -551,6 +564,18 @@ vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
               // Compute magnitude
               // Loop over the filters
               oneSEDInt.compute_magnitudes(allFlt);
+
+              std::cout << "SED size: " << oneSEDInt.lamb_flux.size()
+                        << std::endl;
+              // std::cout << "Flux sum: " << oneSEDInt.total_flux()
+              // << std::endl;  // or similar
+              // Compute Milky Way extinction
+              if (applyMilkyWayExtinction) {
+                oneSEDInt.compute_milky_way_extinction(milkyWayExtinction,
+                                                       allFlt);
+                oneSEDInt.has_mw_extinction = true;
+              }
+
               // If z>0, no need to keep the spectra
               if (oneSEDInt.red > 1.e-10) oneSEDInt.lamb_flux.clear();
 
@@ -636,9 +661,9 @@ vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
   return allSED;
 }
 
-void GalMag::write_mag(const vector<GalSED> &seds) {
+void GalMag::write_mag(const vector<GalSED>& seds) {
   // write the output files
-  for (const auto &sed : seds) {
+  for (const auto& sed : seds) {
     sed.writeMag(outasc, sbinOut, sdatOut, allFlt, magtyp);
   }
 }
@@ -684,7 +709,7 @@ void GalMag::print_info() {
 
 // constructor for the QSO adding the missing keywords from the basis
 // constructor
-QSOMag::QSOMag(keymap &key_analysed) : Mag(key_analysed) {
+QSOMag::QSOMag(keymap& key_analysed) : Mag(key_analysed) {
   // Name of the input file, default value "SED"
   lib = ((key_analysed["QSO_LIB_IN"]).split_string("SED", 1))[0];
   // Name of the output file, default value "LIB"
@@ -767,7 +792,7 @@ void QSOMag::read_SED() {
   return;
 }
 
-vector<QSOSED> QSOMag::make_maglib(const QSOSED &oneSED) {
+vector<QSOSED> QSOMag::make_maglib(const QSOSED& oneSED) {
   vector<QSOSED> allSED;
 #pragma omp parallel for ordered schedule(dynamic) collapse(3)
   // Loop over each extinction law
@@ -805,6 +830,12 @@ vector<QSOSED> QSOMag::make_maglib(const QSOSED &oneSED) {
 
           // Compute magnitude
           oneSEDInt.compute_magnitudes(allFlt);
+
+          // Compute Milky Way extinction
+          if (applyMilkyWayExtinction) {
+            oneSEDInt.compute_milky_way_extinction(milkyWayExtinction, allFlt);
+            oneSEDInt.has_mw_extinction = true;
+          }
 
           // If z>0, no need to keep the spectra
           if (oneSEDInt.red > 1.e-10) oneSEDInt.lamb_flux.clear();
@@ -847,9 +878,9 @@ vector<QSOSED> QSOMag::make_maglib(const QSOSED &oneSED) {
   return allSED;
 }
 
-void QSOMag::write_mag(const vector<QSOSED> &seds) {
+void QSOMag::write_mag(const vector<QSOSED>& seds) {
   // write the output files
-  for (const auto &sed : seds) {
+  for (const auto& sed : seds) {
     sed.writeMag(outasc, sbinOut, sdatOut, allFlt, magtyp);
   }
 }
@@ -860,7 +891,7 @@ void QSOMag::write_mag(const vector<QSOSED> &seds) {
 
 // Constructor of the stars adding the keywords missing in the basis class
 // constructor
-StarMag::StarMag(keymap &key_analysed) : Mag(key_analysed) {
+StarMag::StarMag(keymap& key_analysed) : Mag(key_analysed) {
   // Name of the input file, default value "SED"
   lib = ((key_analysed["STAR_LIB_IN"]).split_string("SED", 1))[0];
   // Name of the output file, default value "LIB"
@@ -909,21 +940,26 @@ void StarMag::read_SED() {
   }
 }
 
-vector<StarSED> StarMag::make_maglib(const StarSED &sed) {
+vector<StarSED> StarMag::make_maglib(const StarSED& sed) {
   vector<StarSED> allSED;
   StarSED newsed(sed);
   // compute magnitude for the template directly,
   // as for a star no other extinction or redshifting is applied
   newsed.compute_magnitudes(allFlt);
+  // Compute Milky Way extinction
+  if (applyMilkyWayExtinction) {
+    newsed.compute_milky_way_extinction(milkyWayExtinction, allFlt);
+    newsed.has_mw_extinction = true;
+  }
   // return singleton vector in order to have the same structure as for QSO and
   // Gal
   allSED.push_back(newsed);
   return allSED;
 }
 
-void StarMag::write_mag(const vector<StarSED> &seds) {
+void StarMag::write_mag(const vector<StarSED>& seds) {
   // write the output files
-  for (const auto &sed : seds) {
+  for (const auto& sed : seds) {
     sed.writeMag(outasc, sbinOut, sdatOut, allFlt, magtyp);
   }
 }

@@ -32,6 +32,9 @@ class ext {
   double lmax;                   ///< max lambda value read from the file
   int numext;                    ///< id of this extinction law
 
+  // Default constructor
+  ext() : name(""), numext(0), lmin(0.0), lmax(0.0) {}
+
   /// minimal constructor of the ext class, with its name and the id of the
   /// extinction law
   ext(const string nameC, int numextC = 0) {
