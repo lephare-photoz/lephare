@@ -1597,6 +1597,12 @@ void GalSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
     }
   }
 
+  // Write the extinction values
+  if (has_mw_extinction) {
+    for (int k = 0; k < nbFlt; k++)
+      ofsBin.write((char*)&(milky_way_extinction[k]), sizeof(double));
+  }
+
   // Write the spectra only if the redshift is 0, for the output .spec
   if (red < 1.e-20) {
     // Write the continuum spectra
@@ -1607,12 +1613,6 @@ void GalSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
     for (int k = 0; k < nbLamb; k++)
       ofsBin.write((char*)&(lamb_flux[k].val), sizeof(double));
   }
-
-  // Write the extinction values
-  // if (has_mw_extinction) {
-  //   for (int k = 0; k < nbFlt; k++)
-  //     ofsBin.write((char*)&(milky_way_extinction[k]), sizeof(double));
-  // }
 
   // Case with the ascii file
   if (outasc) {
@@ -1719,6 +1719,14 @@ void GalSED::readMagBin(ifstream& ins) {
       for (auto& eml : fac_line) {
         ins.read((char*)&eml.val, sizeof(double));
       }
+    }
+  }
+
+  // Read the extinction values
+  if (has_mw_extinction) {
+    milky_way_extinction.resize(nbFlt, 0.);
+    for (auto& mwe : milky_way_extinction) {
+      ins.read((char*)&mwe, sizeof(double));
     }
   }
 
@@ -2075,7 +2083,11 @@ void SED::compute_milky_way_extinction(const ext& oneExt,
   double val;
   // compute the extinction in each filter and store it
   for (const auto& filter : filters) {
-    val = compute_filter_sed_extinction(filter, oneExt, *this);
+    if (oneExt.name != "CARDELLI") {
+      val = compute_filter_sed_extinction(filter, oneExt, *this);
+    } else {
+      val = cardelli_ext_sed(filter, *this);
+    }
     milky_way_extinction.push_back(val);
   }
 }

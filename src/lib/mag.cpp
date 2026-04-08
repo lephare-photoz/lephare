@@ -19,7 +19,9 @@
 
 // Constructor of the basis class which read the keywords common to the
 // QSO/STARS/GAL
-Mag::Mag(keymap& key_analysed) {
+Mag::Mag(keymap& key_analysed)
+    : milkyWayExtinction(
+          key_analysed["EXT_MW_CURVE"].split_string("CARDELLI", 1)[0]) {
   /*
     ENVIRONMENT VARIABLES LEPHAREDIR and LEPHAREWORK
   */
@@ -83,13 +85,12 @@ Mag::Mag(keymap& key_analysed) {
   opaAll = read_opa();
 
   // Galametz Milky Way attenuation values
-  milkyWayCurve = (key_analysed["EXT_MW_CURVE"]).split_string("CARDELLI", 1)[0];
-  // milkyWayExtinction = ext(milkyWayCurve);
-  ext milkyWayExtinction(milkyWayCurve, 0);
-  // Name of the extinction law file
-  string extFile = lepharedir + "/ext/" + milkyWayCurve;
-  // read the extinction law file
-  milkyWayExtinction.read(extFile);
+  // Milky Way extinction file
+  if (milkyWayExtinction.name != "CARDELLI") {
+    milkyWayExtinction.read(
+        lepharedir + "/ext/" +
+        key_analysed["EXT_MW_CURVE"].split_string("CARDELLI", 1)[0]);
+  }
   applyMilkyWayExtinction =
       ((key_analysed["APPLY_MW_EXTINCTION"]).split_bool("NO", 1))[0];
 }
@@ -565,10 +566,6 @@ vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
               // Loop over the filters
               oneSEDInt.compute_magnitudes(allFlt);
 
-              std::cout << "SED size: " << oneSEDInt.lamb_flux.size()
-                        << std::endl;
-              // std::cout << "Flux sum: " << oneSEDInt.total_flux()
-              // << std::endl;  // or similar
               // Compute Milky Way extinction
               if (applyMilkyWayExtinction) {
                 oneSEDInt.compute_milky_way_extinction(milkyWayExtinction,

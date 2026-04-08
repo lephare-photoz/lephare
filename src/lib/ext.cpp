@@ -249,7 +249,7 @@ double cardelli_ext(flt& oneFlt) {
 
 // compute galactic extinction in the filter based on Cardelli et al., 1989, ApJ
 // 345
-double cardelli_ext_sed(flt& oneFlt, const SED& oneSED) {
+double cardelli_ext_sed(const flt& oneFlt, const SED& oneSED) {
   // Define the limits of this filter
   double lmin = oneFlt.lmin();
   double lmax = oneFlt.lmax();
