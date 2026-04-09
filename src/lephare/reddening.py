@@ -91,6 +91,19 @@ def compute_band_pass_correction(config, model_number=15, type="star", verbose=F
     keymap["FILTER_FILE"] = lp.keyword("FILTER_FILE", "BV_FILTERS_FOR_BAND_PASS_CORRECTION")
     keymap["FILTER_CALIB"] = lp.keyword("FILTER_CALIB", "0,0")
     keymap["APPLY_MW_EXTINCTION"] = lp.keyword("APPLY_MW_EXTINCTION", "YES")
+
+    keymap["QSO_LIB_OUT"] = lp.keyword("QSO_LIB_OUT", "QSO_LIB_OUT_FOR_BAND_PASS_CORRECTION")
+    keymap["STAR_LIB_OUT"] = lp.keyword("QSO_LIB_OUT", "STAR_LIB_OUT_FOR_BAND_PASS_CORRECTION")
+    keymap["GAL_LIB_OUT"] = lp.keyword("QSO_LIB_OUT", "GAL_LIB_OUT_FOR_BAND_PASS_CORRECTION")
+    keymap["ZPHOTLIB"] = lp.keyword(
+        "ZPHOTLIB",
+        (
+            "STAR_LIB_OUT_FOR_BAND_PASS_CORRECTION,"
+            "GAL_LIB_OUT_FOR_BAND_PASS_CORRECTION,"
+            "QSO_LIB_OUT_FOR_BAND_PASS_CORRECTION"
+        ),
+    )
+    # Prepare must be rerun to get the new mag libraries with the B and V values
     lp.prepare(keymap)
     photz = lp.PhotoZ(keymap)
     albd_lib = np.array([g.milky_way_extinction for g in photz.fullLib])
