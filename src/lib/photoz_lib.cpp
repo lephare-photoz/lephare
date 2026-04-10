@@ -1893,7 +1893,7 @@ void PhotoZ::write_outputs(vector<onesource *> sources) {
   ofstream stout;
   stout.open(outf.c_str());
   // Start the header
-  time_t now = time(0);
+  time_t now = time(nullptr);
   stout << "# Creation date: " << asctime(localtime(&now));
   /* Read the output parameter file */
   vector<string> outkeywords = readOutKeywords(outpara);

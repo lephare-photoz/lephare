@@ -217,7 +217,7 @@ void SEDLib<T>::write_SED_lib() {
     // Write the SED in the output binary file
     it->writeSED(sbinOut, sphysOut, sdocOut);
   }
-  time_t now = time(0);
+  time_t now = time(nullptr);
   sdocOut << "CREATION_DATE " << asctime(std::localtime(&now));
 }
 
