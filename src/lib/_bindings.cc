@@ -188,7 +188,7 @@ PYBIND11_MODULE(_lephare, mod) {
            py::arg("name"), py::arg("tau"), py::arg("age"), py::arg("nummod"),
            py::arg("type"), py::arg("idAge"))
       .def(py::init<const SED>())
-      .def_readonly("lamb_flux", &SED::lamb_flux)
+      .def_readwrite("lamb_flux", &SED::lamb_flux)
       .def_readonly("fac_line", &SED::fac_line)
       .def_readonly("extlawId", &SED::extlawId)
       .def_readonly("ebv", &SED::ebv)

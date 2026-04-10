@@ -85,12 +85,12 @@ def compute_band_pass_correction(config, model_number=15, type="star", verbose=F
     - Observed SEDs are modified in place using the `observe` function.
     - The output array `values[i]` corresponds to the band pass correction for model `i`.
     """
-    keymap = lp.all_types_to_keymap(config)
+    # Set to calculate the values if not set
     config["APPLY_MW_EXTINCTION"] = "YES"
-    config["EXT_MW_CURVE"] = "LMC_Fitzpatrick.dat"
-    config["MW_REFERENCE_STAR_MODEL"] = "15"  # not implemented currently"
+    keymap = lp.all_types_to_keymap(config)
     lp.prepare(keymap)
     photz = lp.PhotoZ(keymap)
     band_pass_correction = np.array([g.band_pass_correction for g in photz.fullLib])
+
     # After prepre it is not
     return band_pass_correction

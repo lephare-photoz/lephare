@@ -473,8 +473,12 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
       auto& sed = fullLib[i];
       const auto& mw = sed->milky_way_extinction;
       double bpc_i = sed->band_pass_correction;
+      double scaled_bpc_i = bpc_i / refBPC;  // updated BPC
+
+      sed->band_pass_correction = scaled_bpc_i;
+
       for (size_t j = 0; j < mw.size(); j++) {
-        reddening[i][j] = (mw[j] / bpc_i) * refBPC;
+        reddening[i][j] = mw[j] / scaled_bpc_i;
       }
     }
   }
@@ -1887,7 +1891,7 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
   return;
 }
 
-void PhotoZ::write_outputs(vector<onesource *> sources) {
+void PhotoZ::write_outputs(vector<onesource*> sources) {
   // CAT_OUT output  file -  zphot.out default
   string outf = ((keys["CAT_OUT"]).split_string("zphot.out", 1))[0];
   ofstream stout;
