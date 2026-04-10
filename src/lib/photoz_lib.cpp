@@ -282,7 +282,7 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
   // MW_EXTINCTION
   mw_extinction =
       ((key_analysed["APPLY_MW_EXTINCTION"]).split_bool("NO", 1))[0];
-
+  one_mw_ebv = false;
   // MW_EBV_VALS can be NO, single value or ascii file with the E(B-V) values
   // for each source
   // mw_ebv_vals = (key_analysed["MW_EBV_VALS"]).split_string("NO", 1)[0];
@@ -1491,8 +1491,14 @@ vector<onesource*> PhotoZ::read_photoz_sources() {
   // open the external file with zspec
   ifstream szex;
   string externalzfile = ((keys["EXTERNALZ_FILE"]).split_string("NONE", 1))[0];
+  // MW_EBV file
   ifstream mw_ebv_ifstream;
   string mw_ebv_file = ((keys["MW_EBV_FILE"]).split_string("NONE", 1))[0];
+
+  double global_mw_ebv = 0.0;
+  size_t mw_ebv_nlines = 0;
+  vector<double> mw_ebv_values;
+
   if (externalzfile.substr(0, 4) != "NONE") {
     szex.open(externalzfile.c_str());
     if (!szex) {
@@ -1527,26 +1533,42 @@ vector<onesource*> PhotoZ::read_photoz_sources() {
       cout << "External mw_ebv option, but no file " << mw_ebv_file << endl;
       exit(0);
     }
+
     string linemwebv;
-    // Ignore the comments
-    int nbcomments = 0;
-    while (!(check_first_char(linemwebv))) {
-      getline(mw_ebv_ifstream, linemwebv);
-      nbcomments++;
+
+    // Skip comment/header lines
+    while (getline(mw_ebv_ifstream, linemwebv)) {
+      if (check_first_char(linemwebv)) continue;
+      if (!linemwebv.empty()) break;
     }
-    // back to the beginning of the file
-    mw_ebv_ifstream.seekg(0, ios::beg);
-    ;
-    // Go directly to the right lines, skip commented lines
-    for (int k = 1; k < nbcomments; k++) {
-      getline(mw_ebv_ifstream, linemwebv);
-      cout << "skip comments " << '\n';
-    }  // go to the right starting row of the file
-    // Go directly to the right lines, skipping lines if CAT_LINES
-    for (unsigned int k = 1; k < rowmin; k++) {
-      getline(mw_ebv_ifstream, linemwebv);
-      cout << "done skip " << k << " " << rowmin << '\n';
-    }  // go to the right starting row of the file
+
+    // We already consumed first data line -> store it
+    stringstream ss0(linemwebv);
+    string tmp_id;
+    double tmp_val;
+    ss0 >> tmp_id >> tmp_val;
+
+    mw_ebv_values.push_back(tmp_val);
+    mw_ebv_nlines++;
+
+    // Read rest
+    while (getline(mw_ebv_ifstream, linemwebv)) {
+      if (!check_first_char(linemwebv)) {
+        stringstream ss(linemwebv);
+        string id;
+        double val;
+        ss >> id >> val;
+        mw_ebv_values.push_back(val);
+        mw_ebv_nlines++;
+      }
+    }
+
+    if (mw_ebv_nlines == 1) {
+      one_mw_ebv = true;
+      global_mw_ebv = mw_ebv_values[0];
+      cout << "MW_EBV: single-value mode (" << global_mw_ebv
+           << ") applied to all sources\n";
+    }
   }
 
   // Take the stream line by line
@@ -1588,17 +1610,27 @@ vector<onesource*> PhotoZ::read_photoz_sources() {
         sszex >> oneObj->zs;
       }
 
-      // Do the same for the MW_ebv if needed
+      // Do the same for the MW_ebv if needed. Using the global value for a
+      // single value file
       if (mw_ebv_file.substr(0, 4) != "NONE") {
-        string idmwebv, linemwebv;
-        getline(mw_ebv_ifstream, linemwebv);
-        stringstream ssmwebv(linemwebv);
-        ssmwebv >> idmwebv;
-        if (idmwebv != oneObj->spec)
-          cout << endl
-               << "ERROR: mismatch in the external file " << idmwebv << " "
-               << oneObj->mw_ebv << endl;
-        ssmwebv >> oneObj->mw_ebv;
+        if (one_mw_ebv) {
+          oneObj->mw_ebv = global_mw_ebv;
+        } else {
+          string linemwebv;
+          getline(mw_ebv_ifstream, linemwebv);
+
+          stringstream ssmwebv(linemwebv);
+          string idmwebv;
+          double val;
+
+          ssmwebv >> idmwebv >> val;
+
+          if (idmwebv != oneObj->spec)
+            cout << "\nERROR: mismatch in MW_EBV file " << idmwebv << " "
+                 << oneObj->spec << endl;
+
+          oneObj->mw_ebv = val;
+        }
       }
 
       // Add the source
