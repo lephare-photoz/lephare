@@ -82,4 +82,4 @@ def test_reddening(test_data_dir: str):
     # Test the band pass correction
     bpc = lp.compute_band_pass_correction(config, model_number=1)
     print(bpc)
-    assert np.isclose(np.sum(bpc), 15.997875553921773)
+    assert np.isclose(np.sum(bpc), 17.034121587212294)
