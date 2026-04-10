@@ -442,6 +442,7 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
   and a light structure of SED
   Done to improve the performance in the fit*/
   flux.resize(fullLib.size(), vector<double>(imagm, 0.));
+  reddened_flux.resize(fullLib.size(), vector<double>(imagm, 0.));
   reddening.resize(fullLib.size(), vector<double>(imagm, 0.));
 
   if (mw_extinction) {
@@ -1134,6 +1135,7 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
     // While the convergence is not reached and we have less than 10 iterations
     while (converge == 0 && iteration < 10) {
       // Loop over the sources
+      unsigned int n_adapt_obj = 0;
       for (auto& oneObj : adaptSources) {
         // Correct the observed magnitudes and fluxes with the coefficients
         // found by auto-adapt
@@ -1150,10 +1152,12 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
           oneObj->fit(lightLib, flux, valid, funz0, bp, restrict_rf);
         } else {
           // Apply reddening first
-          auto reddened_flux = oneObj->redden_flux(flux, reddening);
+          if (!one_mw_ebv || n_adapt_obj == 0) {
+            reddened_flux = oneObj->redden_flux(flux, reddening);
+          }
           oneObj->fit(lightLib, reddened_flux, valid, funz0, bp, restrict_rf);
         }
-
+        n_adapt_obj++;
         // Interpolation of the predicted magnitudes, scaling at zs, checking
         // first that the fit was sucessfull
         if (oneObj->indmin[0] >= 0) {
@@ -1792,7 +1796,9 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
       oneObj->fit(lightLib, flux, valid, funz0, bp, restrict_rf);
     } else {
       // Apply reddening first
-      auto reddened_flux = oneObj->redden_flux(flux, reddening);
+      if (!one_mw_ebv || nobj == 0) {
+        reddened_flux = oneObj->redden_flux(flux, reddening);
+      }
       oneObj->fit(lightLib, reddened_flux, valid, funz0, bp, restrict_rf);
     }
 
@@ -1833,7 +1839,9 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
         oneObj->fit(lightLib, flux, validfix, funz0, bp, restrict_rf);
       } else {
         // Apply reddening first
-        auto reddened_flux = oneObj->redden_flux(flux, reddening);
+        if (!one_mw_ebv || nobj == 0) {
+          reddened_flux = oneObj->redden_flux(flux, reddening);
+        }
         oneObj->fit(lightLib, reddened_flux, validfix, funz0, bp, restrict_rf);
       }
 
