@@ -256,7 +256,8 @@ void onesource::adapt_mag(vector<double> a0) {
 /*
  SUBSTRACT THE STELLAR COMPONENT TO THE FIR OBSERVED FLUXES
 */
-void onesource::substellar(const bool substar, vector<flt> allFilters) {
+void onesource::subtract_stellar_component(const bool substar,
+                                           vector<flt> allFilters) {
   double fluxMod;
 
   // Initalize with the observed fluxes and uncertainties
