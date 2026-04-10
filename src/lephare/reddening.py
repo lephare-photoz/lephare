@@ -64,8 +64,6 @@ def compute_band_pass_correction(config):
     config : dict
         Configuration dictionary containing model parameters and file paths
         required to generate the SED library and filters.
-    model_number : int
-        The model number for the reference model. Defaults to 15 in sed/STARS/STAR_MOD_ALL.list
     type : str
         The type of the reference model. Defaults to 'star'.
     verbose : bool, optional
