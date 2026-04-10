@@ -133,10 +133,6 @@ class SEDLib {
   SEDLib(keymap &key_analysed, string config, string typ);
   virtual ~SEDLib();
 
-  /// write time of creation and the number of SED recorded to the doc file
-  void print_time_tofile(time_t result) {
-    sdocOut << "CREATION_DATE " << asctime(std::localtime(&result));
-  }
   /// print config and type onscreen and in the doc file
   virtual void print_info();
   /// open the output files in $LEPHAREWORK/lib_bin
@@ -221,6 +217,8 @@ void SEDLib<T>::write_SED_lib() {
     // Write the SED in the output binary file
     it->writeSED(sbinOut, sphysOut, sdocOut);
   }
+  time_t now = time(0);
+  sdocOut << "CREATION_DATE " << asctime(std::localtime(&now));
 }
 
 template <class T>
