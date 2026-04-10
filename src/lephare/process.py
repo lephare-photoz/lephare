@@ -73,7 +73,7 @@ def process(
     ng = len(id)
     n_filters = len(config["FILTER_LIST"].value.split(","))
     print(f"Processing {ng} objects with {n_filters} bands")
-
+    photz = lp.PhotoZ(config)
     # Compute offsets which will set to zero if AUTO_ADAPT is NO or APPLY_SYSSHIFT
     # is not set. This will be used in the run_photoz method to apply the offsets
     # to the model magnitudes.

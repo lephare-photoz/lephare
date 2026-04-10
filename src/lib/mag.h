@@ -12,7 +12,6 @@
 #include "flt.h"
 #include "globals.h"
 #include "keyword.h"
-#include "opa.h"  // IGM opacity class
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -27,9 +26,7 @@ class Mag {
   string filtFile, magtyp;
   bool outasc, verbose, add_dust;
   vector<string> extlaw;
-  int nextlaw;
   vector<double> ebv;
-  int nebv;
   vector<int> modext;
   double dz, zmin, zmax;
   string lib, colib;
@@ -41,22 +38,22 @@ class Mag {
   ifstream ssedIn;
   ofstream sdocOut, sbinOut, sdatOut;
 
+  // vector<ext> extAll;
+  // vector<flt> allFlt;
+  // vector<GalSED> B12SED;
+  // vector<double> gridz;
+  // vector<double> gridT, gridDM;
+
+  // vector<double> magko;
+
  public:
   Mag(keymap& key_analysed);
   Mag(){};
   virtual ~Mag();
 
-  /// open the IGM opacity files
-  static ifstream open_opa_files();
   /// read the extinction laws into attribute extAll (vector of vectors of type
   /// ext)
   void read_ext();
-  /// read the IGM opacities into attribute opaAll (vector of vectors of type
-  /// opa)
-  static vector<opa> read_opa();
-  /// read the filter curve and build the corresponding vectors stored in
-  /// attribute allFlt
-  static vector<flt> read_flt(const string&);
 
   // Read the long wavelength Bethermin+2012 templates
   // to add the dust emission to the BC03 templates
@@ -107,7 +104,7 @@ class Mag {
 class StarMag : public Mag {
  public:
   StarMag(keymap& key_analysed);
-  StarMag(){};
+  StarMag(){};  // LCOV_EXCL_LINE
   ~StarMag(){};
 
   void print_info();
@@ -120,7 +117,7 @@ class StarMag : public Mag {
 class QSOMag : public Mag {
  public:
   QSOMag(keymap& key_analysed);
-  QSOMag(){};
+  QSOMag(){};  // LCOV_EXCL_LINE
   ~QSOMag(){};
 
   void print_info();
