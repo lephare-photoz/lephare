@@ -353,7 +353,7 @@ vector<vector<double>> onesource::redden_flux(
   // Apply reddening correction element-wise
   for (size_t i = 0; i < nRows; ++i) {
     for (size_t k = 0; k < nCols; ++k) {
-      double factor = std::pow(10.0, reddening[i][k] * this->galEbv / 2.5);
+      double factor = std::pow(10.0, reddening[i][k] * this->mw_ebv / 2.5);
       // Divide to redden times to deredden
       out[i][k] = flux[i][k] / factor;
     }

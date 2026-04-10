@@ -1145,7 +1145,7 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
         // compatible redshift to zs.
         auto valid = validLib(oneObj->zs);
 
-        if (oneObj->galEbv < 0.0) {
+        if (oneObj->mw_ebv < 0.0) {
           // No reddening, use original flux
           oneObj->fit(lightLib, flux, valid, funz0, bp, restrict_rf);
         } else {
@@ -1491,6 +1491,8 @@ vector<onesource*> PhotoZ::read_photoz_sources() {
   // open the external file with zspec
   ifstream szex;
   string externalzfile = ((keys["EXTERNALZ_FILE"]).split_string("NONE", 1))[0];
+  ifstream mw_ebv_ifstream;
+  string mw_ebv_file = ((keys["MW_EBV_FILE"]).split_string("NONE", 1))[0];
   if (externalzfile.substr(0, 4) != "NONE") {
     szex.open(externalzfile.c_str());
     if (!szex) {
@@ -1515,6 +1517,34 @@ vector<onesource*> PhotoZ::read_photoz_sources() {
     // Go directly to the right lines, skipping lines if CAT_LINES
     for (unsigned int k = 1; k < rowmin; k++) {
       getline(szex, linezex);
+      cout << "done skip " << k << " " << rowmin << '\n';
+    }  // go to the right starting row of the file
+  }
+
+  if (mw_ebv_file.substr(0, 4) != "NONE") {
+    mw_ebv_ifstream.open(mw_ebv_file.c_str());
+    if (!mw_ebv_ifstream) {
+      cout << "External mw_ebv option, but no file " << mw_ebv_file << endl;
+      exit(0);
+    }
+    string linemwebv;
+    // Ignore the comments
+    int nbcomments = 0;
+    while (!(check_first_char(linemwebv))) {
+      getline(mw_ebv_ifstream, linemwebv);
+      nbcomments++;
+    }
+    // back to the beginning of the file
+    mw_ebv_ifstream.seekg(0, ios::beg);
+    ;
+    // Go directly to the right lines, skip commented lines
+    for (int k = 1; k < nbcomments; k++) {
+      getline(mw_ebv_ifstream, linemwebv);
+      cout << "skip comments " << '\n';
+    }  // go to the right starting row of the file
+    // Go directly to the right lines, skipping lines if CAT_LINES
+    for (unsigned int k = 1; k < rowmin; k++) {
+      getline(mw_ebv_ifstream, linemwebv);
       cout << "done skip " << k << " " << rowmin << '\n';
     }  // go to the right starting row of the file
   }
@@ -1556,6 +1586,19 @@ vector<onesource*> PhotoZ::read_photoz_sources() {
                << "ERROR: mismatch in the external file " << idzex << " "
                << oneObj->spec << endl;
         sszex >> oneObj->zs;
+      }
+
+      // Do the same for the MW_ebv if needed
+      if (mw_ebv_file.substr(0, 4) != "NONE") {
+        string idmwebv, linemwebv;
+        getline(mw_ebv_ifstream, linemwebv);
+        stringstream ssmwebv(linemwebv);
+        ssmwebv >> idmwebv;
+        if (idmwebv != oneObj->spec)
+          cout << endl
+               << "ERROR: mismatch in the external file " << idmwebv << " "
+               << oneObj->mw_ebv << endl;
+        ssmwebv >> oneObj->mw_ebv;
       }
 
       // Add the source
@@ -1712,7 +1755,7 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
       valid = validLib(oneObj->zs);
     }
     // Core of the program: compute the chi2
-    if (oneObj->galEbv < 0.0) {
+    if (oneObj->mw_ebv < 0.0) {
       // No reddening, use original flux
       oneObj->fit(lightLib, flux, valid, funz0, bp, restrict_rf);
     } else {
@@ -1753,7 +1796,7 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
       // We only work on GAL solutions here
 
       auto validfix = validLib(oneObj->zgmed[0]);
-      if (oneObj->galEbv < 0.0) {
+      if (oneObj->mw_ebv < 0.0) {
         // No reddening, use original flux
         oneObj->fit(lightLib, flux, validfix, funz0, bp, restrict_rf);
       } else {
