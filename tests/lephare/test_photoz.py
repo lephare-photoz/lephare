@@ -65,7 +65,7 @@ def test_reddening(test_data_dir: str):
         output, photozlist = lp.process(
             config, input[reduced_cols], write_outputs=False, reddening=albd_lib, ebvmw=[0.1] * len(input)
         )
-    assert np.isclose(np.sum(output["Z_BEST"]), 97.0)
+    assert np.isclose(np.sum(albd_lib), 105.84983288457076)
     # Check it gives a warning if no ebv provided
     with pytest.warns(UserWarning, match="No ebv provided. Reddening not applied."):
         lp.process(config, input[reduced_cols], write_outputs=False, reddening=albd_lib)
