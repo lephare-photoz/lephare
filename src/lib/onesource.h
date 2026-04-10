@@ -157,6 +157,8 @@ class onesource {
     chibay.clear();
     ab.clear();
     sab.clear();
+    abIR.clear();
+    sabIR.clear();
     mab.clear();
     msab.clear();
     kap.clear();
@@ -238,7 +240,20 @@ class onesource {
   void mode();
   void interp_lib(vector<SED *> &fulllib);
   void adapt_mag(vector<double> a0);
-  void substellar(const bool substar, vector<flt> allFilters);
+  /*! Allow for stellar component substraction before fitting an IR template
+   * When fitting an IR component after the nominal fit, there is an interval
+   * in wavelength where both nominal and IR template would contribute.
+   * In order to correctly fit the IR template in this interval, one may want
+   * to subtract first the nominal stellar component as obtained from the
+   * best fit template. This common interval in lambda (in the rest frame)
+   * is bounded by the hardcoded value of 250 um at the high end, and by the
+   * value set by the FIR_LMIN keyword (in um, default 7 um) at the low end.
+   * @param substar : bool value set by the FIR_SUBSTELLAR keyword, defining
+   * whether to do this subtraction or not.
+   * @param allFilters : the list of filters, needed to discard filters
+   * which have \f$\lambda_{mean}/(1+z)\f>250 \mu m$.
+   */
+  void subtract_stellar_component(const bool substar, vector<flt> allFilters);
   void absmag(const vector<vector<int>> &bestFlt,
               const vector<vector<double>> &maxkcolor, cosmo lcdm,
               const vector<double> gridz);
