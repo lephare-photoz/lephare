@@ -64,7 +64,7 @@ def run_configured_zp(zp, config_file_path):
                 mock_run_photoz.assert_called_once()
                 mock_run_photoz.assert_called_with(mock_sources, ANY)
                 mock_write_outputs.assert_called_once()
-                mock_write_outputs.assert_called_with(mock_sources, ANY)
+                mock_write_outputs.assert_called_with(mock_sources)
 
                 assert os.path.realpath(zp.keymap["c"].value) == os.path.realpath(config_file_path)
 
