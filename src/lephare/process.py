@@ -106,7 +106,7 @@ def process(
     photz.run_photoz(photozlist, a0)
     # Write outputs if requested
     if write_outputs:
-        photz.write_outputs(photozlist, int(time.time()))
+        photz.write_outputs(photozlist)
     output = photz.build_output_tables(photozlist, para_out=None, filename=filename)
     # Return the table and all the onesource objects
     return output, photozlist

@@ -1,5 +1,4 @@
 import os
-import time
 
 import lephare as lp
 import numpy as np
@@ -161,8 +160,7 @@ def test_photoz_cosmos():
     for k in range(0, 3):
         assert np.isclose(allsources[k].magPred, mag_sources[k], atol=0.01).all()
 
-    ti1 = int(time.time())
-    photz.write_outputs(allsources, ti1)
+    photz.write_outputs(allsources)
     print("Done with writting")
 
     for k in range(1, 6):

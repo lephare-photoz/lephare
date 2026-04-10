@@ -33,7 +33,6 @@ void applySEDLibTemplate(modT& m, std::string name) {
       .def("read_model_list", &SEDLib<x>::read_model_list)
       .def("readSED", &SEDLib<x>::readSED)
       .def("write_SED_lib", &SEDLib<x>::write_SED_lib)
-      .def("print_time_tofile", &SEDLib<x>::print_time_tofile)
       .def("close_output_files", &SEDLib<x>::close_output_files);
 }
 

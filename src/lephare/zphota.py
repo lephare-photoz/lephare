@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 
-import time
 from contextlib import suppress
 
 from ._lephare import (
@@ -244,7 +243,7 @@ Need 1 or N values
 
         fit_srcs = photoz.read_photoz_sources()
         photoz.run_photoz(fit_srcs, a0)
-        photoz.write_outputs(fit_srcs, int(time.time()))
+        photoz.write_outputs(fit_srcs)
 
         self.photoz = photoz
         return

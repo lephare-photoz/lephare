@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 
-import time
 from contextlib import suppress
 
 from ._lephare import GalSEDLib, QSOSEDLib, StarSEDLib
@@ -81,7 +80,6 @@ class Sedtolib(Runner):
         sed_library.print_info()
         sed_library.read_model_list()
         sed_library.write_SED_lib()
-        sed_library.print_time_tofile(int(time.time()))
         # we need to call the close method here because run can
         # be called within a python session that stays alive afterwards
         sed_library.close_output_files()

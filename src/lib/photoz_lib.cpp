@@ -1887,13 +1887,14 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
   return;
 }
 
-void PhotoZ::write_outputs(vector<onesource*> sources, const time_t& ti1) {
+void PhotoZ::write_outputs(vector<onesource *> sources) {
   // CAT_OUT output  file -  zphot.out default
   string outf = ((keys["CAT_OUT"]).split_string("zphot.out", 1))[0];
   ofstream stout;
   stout.open(outf.c_str());
   // Start the header
-  stout << "# Creation date: " << asctime(localtime(&ti1));
+  time_t now = time(0);
+  stout << "# Creation date: " << asctime(localtime(&now));
   /* Read the output parameter file */
   vector<string> outkeywords = readOutKeywords(outpara);
   /* Add the format to the header */

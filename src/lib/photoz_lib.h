@@ -1,7 +1,6 @@
 #ifndef PHOTOZ_LIB_H
 #define PHOTOZ_LIB_H
 
-#include <ctime>   // date
 #include <string>  // use string
 #include <vector>  // manipulate vector
 
@@ -101,7 +100,7 @@ class PhotoZ {
 
   string prep_header(vector<string> outkeywords);
 
-  void write_outputs(vector<onesource*> sources, const time_t& ti1);
+  void write_outputs(vector<onesource *> sources);
 
   void read_lib(vector<SED*>& fullLib, int& ind, int nummodpre[3],
                 const string libName, string& filtname, vector<int> emMod,
