@@ -5,7 +5,7 @@ import lephare as lp
 __all__ = ["compute_model_reddening", "compute_band_pass_correction"]
 
 
-def compute_model_reddening(config, verbose=False):
+def compute_model_reddening(config):
     """
     Compute model-dependent reddening following Galametz et al. (2017).
 
@@ -39,15 +39,15 @@ def compute_model_reddening(config, verbose=False):
     - The output array `values[i, j]` corresponds to the reddening for model `i`
       through filter `j`.
     """
+    config["APPLY_MW_EXTINCTION"] = "YES"
     keymap = lp.all_types_to_keymap(config)
-    keymap["APPLY_MW_EXTINCTION"] = lp.keyword("APPLY_MW_EXTINCTION", "YES")
     lp.prepare(keymap)
     photz = lp.PhotoZ(keymap)
     albd_lib = np.array([g.milky_way_extinction for g in photz.fullLib])
     return np.nan_to_num(albd_lib, nan=0.0)
 
 
-def compute_band_pass_correction(config, model_number=15, type="star", verbose=False):
+def compute_band_pass_correction(config):
     """
     Compute model-dependent band pass correction following Galametz et al. (2017).
 
