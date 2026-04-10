@@ -113,32 +113,10 @@ double compute_filter_sed_extinction(const flt& oneFlt, const ext& oneExt,
   // this function is the same as compute_filter_extinction but the extinction
   //  is weighted by the SED, which is useful for the computation of the
   //  effective
-  // wavelength of the filter when extinction is applied
+  //  wavelength of the filter when extinction is applied
   //  work with the original lamb_flux
-  // vector<oneElLambda> lamb_all = oneFlt.lamb_trans;
+  //  vector<oneElLambda> lamb_all = oneFlt.lamb_trans;
 
-  // // Concatenate two vectors composed of "oneElLambda" including this spectra
-  // // and the one to be added
-  // lamb_all.insert(lamb_all.end(), oneExt.lamb_ext.begin(),
-  //                 oneExt.lamb_ext.end());
-
-  // lamb_all.insert(lamb_all.end(), oneSED.lamb_flux.begin(),
-  //                 oneSED.lamb_flux.end());
-
-  // // Sort the vector in increasing lambda
-  // sort(lamb_all.begin(), lamb_all.end());
-
-  // // Resample the filter into a common lambda range
-  // vector<oneElLambda> new_lamb_flt;
-  // SED::resample(lamb_all, new_lamb_flt, 0, 0, 1.e50);
-  // // Resample the extinction into a common lambda range
-  // vector<oneElLambda> new_lamb_ext;
-  // SED::resample(lamb_all, new_lamb_ext, 2, 0, 1.e50);
-  // // Resample the SED into a common lambda range
-  // vector<oneElLambda> new_lamb_sed;
-  // SED::resample(lamb_all, new_lamb_sed, 1, 0, 1.e50);
-
-  // This takes three ElLambda arrays and merges to a new grid based on the
   // Filter limits
   auto [x, newflt, newext, newsed] = restricted_resampling3(
       oneFlt.lamb_trans, oneExt.lamb_ext, oneSED.lamb_flux, -1);

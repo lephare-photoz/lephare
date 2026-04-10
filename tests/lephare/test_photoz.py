@@ -32,6 +32,7 @@ def test_reddening(test_data_dir: str):
     config["Z_STEP"] = "1.,0.,2."  # Fake star SED gets redshifted out of B band at low z
     # keymap=lp.all_types_to_keymap(config)
     config["APPLY_MW_EXTINCTION"] = "YES"
+    config["EXT_MW_CURVE"] = "LMC_Fitzpatrick.dat"
     lp.prepare(config)
 
     # The reddening calculator
@@ -52,9 +53,10 @@ def test_reddening(test_data_dir: str):
             reduced_cols.append(c)
         elif "IB679" in c:
             reduced_cols.append(c)
-    output, photozlist = lp.process(
-        config, input[reduced_cols], write_outputs=False, reddening=albd_lib, ebvmw=[0.1] * len(input)
-    )
+    with pytest.warns(UserWarning, match="Reddening sent to process"):
+        output, photozlist = lp.process(
+            config, input[reduced_cols], write_outputs=False, reddening=albd_lib, ebvmw=[0.1] * len(input)
+        )
     assert np.isclose(np.sum(output["Z_BEST"]), 97.0)
     # Check it gives a warning if no ebv provided
     with pytest.warns(UserWarning, match="No ebv provided. Reddening not applied."):
@@ -64,11 +66,12 @@ def test_reddening(test_data_dir: str):
     albd_lib = lp.compute_model_reddening(config)
     # Check AUTO_ADAPT can run with ebv
     config["AUTO_ADAPT"] = "YES"
-    output, photozlist = lp.process(
-        config, input[reduced_cols], write_outputs=False, reddening=albd_lib, ebvmw=[0.1] * len(input)
-    )
+    with pytest.warns(UserWarning, match="Reddening sent to process"):
+        output, photozlist = lp.process(
+            config, input[reduced_cols], write_outputs=False, reddening=albd_lib, ebvmw=[0.1] * len(input)
+        )
 
     # Test the band pass correction
     bpc = lp.compute_band_pass_correction(config, model_number=1)
     print(bpc)
-    assert np.isclose(np.sum(bpc), 17.73314154473242)
+    assert np.isclose(np.sum(bpc), 17.848819405833066)

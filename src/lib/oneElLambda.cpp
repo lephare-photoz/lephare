@@ -108,6 +108,9 @@ common_interpolate_combined3(const std::vector<double>& x1,
       x3.size() != y3.size())
     throw std::runtime_error("x/y size mismatch");
 
+  if (x1.empty() || x2.empty() || x3.empty())
+    throw std::runtime_error(
+        "Empty input vector in common_interpolate_combined3");
   // determine common interval - unlike for two use the first input
   double lo = x1.front();
   double hi = x1.back();
@@ -115,12 +118,12 @@ common_interpolate_combined3(const std::vector<double>& x1,
 
   // build the grid
   std::vector<double> x_common;
-  if (dx > 0)
+  if (dx > 0) {
     x_common = make_regular_grid(lo, hi, dx);
-  else
+  } else {
     x_common = make_union_grid(x1, x2, lo, hi);
-  x_common = make_union_grid(x2, x3, lo, hi);
-
+    x_common = make_union_grid(x_common, x3, lo, hi);
+  }
   // interpolate
   std::vector<double> y1_interp = interp_linear_vec(x1, y1, x_common);
   std::vector<double> y2_interp = interp_linear_vec(x2, y2, x_common);

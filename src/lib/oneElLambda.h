@@ -9,6 +9,7 @@
 #define ONEEL_H  // define the keyword to be checked
 
 #include <algorithm>
+#include <iostream>
 #include <tuple>
 #include <vector>
 
@@ -148,6 +149,21 @@ restricted_resampling(const oneElVector& v1, const oneElVector& v2, double dx) {
   return common_interpolate_combined(v1_l, v1_v, v2_l, v2_v, dx);
 }
 
+/*! Provide the cross interpolation of (x1, y1) and (x2, y2) and (x3, y3) in the
+ * icoverage of x1.
+ * @param x1 : vector x of first function
+ * @param y1 : vector y of first function
+ * @param x2 : vector x of second function
+ * @param y2 : vector y of second function
+ * @param x3 : vector x of second function
+ * @param y3 : vector y of second function
+ * @param dx : grid interval if positive, else indicates that the grid is
+ * defined by the union of x1 and x2
+ * @return x, y1', y2' : the outputs of the restricted cross interpolation;
+ * x is the common vector of values from x1 and x2, and y1' and y2' are
+ * respectively the interpolated values of  (x1, y1) and (x2, y2) over x.
+ *
+ */
 std::tuple<std::vector<double>, std::vector<double>, std::vector<double>,
            std::vector<double>>
 common_interpolate_combined3(const std::vector<double>& x1,
@@ -160,8 +176,10 @@ common_interpolate_combined3(const std::vector<double>& x1,
  * return the cross interpolation of them restricted to their intersection
  * @param v1 : first vector of oneElLambda
  * @param v2 :  second vector of oneElLambda
- * @return x, y1, y2 : x is the restricted union of the x vectors of v1 and v2
- * and y1, y2 are respectively the interpolated vector of v1 and v2 values at x.
+ * @param v3 :  third vector of oneElLambda
+ * @return x, y1, y2, y3 : x is the restricted union of the x vectors of v1 and
+ * v2 and y1, y2, y3 are respectively the interpolated vector of v1, v2 and v3
+ * values at x.
  */
 inline std::tuple<std::vector<double>, std::vector<double>, std::vector<double>,
                   std::vector<double>>
