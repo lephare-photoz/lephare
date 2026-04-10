@@ -20,8 +20,9 @@
 
 #include "SED.h"        //our own class to read the keywords
 #include "cosmology.h"  // in order to measure the distance modulus
-#include "globals.h"    // global variables
-#include "keyword.h"    //our own class to read the keywords
+#include "flt.h"  //To get BPC of reference model if MW extinction is applied
+#include "globals.h"  // global variables
+#include "keyword.h"  //our own class to read the keywords
 #include "mag.h"  // to create the predicted magnitudes/k-corrections along the grid
 #include "onesource.h"
 #include "photoz_lib.h"
@@ -281,6 +282,7 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
   // MW_EXTINCTION
   mw_extinction =
       ((key_analysed["APPLY_MW_EXTINCTION"]).split_bool("NO", 1))[0];
+
   // MW_EBV_VALS can be NO, single value or ascii file with the E(B-V) values
   // for each source
   // mw_ebv_vals = (key_analysed["MW_EBV_VALS"]).split_string("NO", 1)[0];
@@ -441,6 +443,41 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
   Done to improve the performance in the fit*/
   flux.resize(fullLib.size(), vector<double>(imagm, 0.));
   reddening.resize(fullLib.size(), vector<double>(imagm, 0.));
+
+  if (mw_extinction) {
+    // set the reddening from the albd vals, the bpc, and the target model
+    mw_ref_mod = (key_analysed["MW_REFERENCE_MODEL"])
+                     .split_string("sed/STAR/PICKLES/b5i.sed", 1)[0];
+    mw_ref_type =
+        (key_analysed["MW_REFERENCE_TYPE"]).split_string("STAR", 1)[0];
+    // Get the mw model for the reference obejct
+    string mwExtCurve =
+        (key_analysed["EXT_MW_CURVE"]).split_string("CARDELLI", 1)[0];
+    ext milkyWayExtinction(mwExtCurve);
+    if (milkyWayExtinction.name != "CARDELLI") {
+      milkyWayExtinction.read(
+          lepharedir + "/ext/" +
+          key_analysed["EXT_MW_CURVE"].split_string("CARDELLI", 1)[0]);
+    }
+    // Get the SED
+    SED mw_ref_model_sed("ReferenceModel", -1, std::string(1, mw_ref_type[0]));
+    mw_ref_model_sed.read(lepharedir + "/" + mw_ref_mod);
+    vector<flt> filters;  // Empty but requirement of function
+                          // compute_milky_way_extinction
+    mw_ref_model_sed.compute_milky_way_extinction(milkyWayExtinction, filters);
+    // Compute the bpc
+    int ref_mod_idx = 0;  // Get it from the file!
+    const auto& refBPC = mw_ref_model_sed.band_pass_correction;
+    for (size_t i = 0; i < fullLib.size(); i++) {
+      auto& sed = fullLib[i];
+      const auto& mw = sed->milky_way_extinction;
+      double bpc_i = sed->band_pass_correction;
+      for (size_t j = 0; j < mw.size(); j++) {
+        reddening[i][j] = (mw[j] / bpc_i) * refBPC;
+      }
+    }
+  }
+
   zLib.resize(fullLib.size(), -99.);
   fluxIR.resize(fullLibIR.size(), vector<double>(imagm, 0.));
   zLibIR.resize(fullLibIR.size(), -99.);

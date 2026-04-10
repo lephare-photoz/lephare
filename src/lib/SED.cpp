@@ -1061,8 +1061,10 @@ void GalSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
 
   // Write the extinction values
   if (has_mw_extinction) {
-    for (int k = 0; k < nbFlt; k++)
+    for (int k = 0; k < nbFlt; k++) {
       ofsBin.write((char*)&(milky_way_extinction[k]), sizeof(double));
+    }
+    ofsBin.write((char*)&(band_pass_correction), sizeof(double));
   }
 
   // Write the spectra only if the redshift is 0, for the output .spec
@@ -1110,6 +1112,7 @@ void GalSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
       for (int k = 0; k < nbFlt; k++) {
         ofsDat << setw(6) << milky_way_extinction[k] << " ";
       }
+      ofsDat << setw(6) << band_pass_correction << " ";
     }
     ofsDat << endl;
   }
@@ -1190,6 +1193,7 @@ void GalSED::readMagBin(ifstream& ins) {
     for (auto& mwe : milky_way_extinction) {
       ins.read((char*)&mwe, sizeof(double));
     }
+    ins.read((char*)&band_pass_correction, sizeof(double));
   }
 
   // read the spectra only if the redshift is 0
@@ -1343,8 +1347,10 @@ void QSOSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
 
   // Write the extinction values
   if (has_mw_extinction) {
-    for (int k = 0; k < nbFlt; k++)
+    for (int k = 0; k < nbFlt; k++) {
       ofsBin.write((char*)&(milky_way_extinction[k]), sizeof(double));
+    }
+    ofsBin.write((char*)&(band_pass_correction), sizeof(double));
   }
 
   // Write the spectra only if the redshift is 0
@@ -1385,6 +1391,7 @@ void QSOSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
       for (int k = 0; k < nbFlt; k++) {
         ofsDat << setw(6) << milky_way_extinction[k] << " ";
       }
+      ofsDat << setw(6) << band_pass_correction << " ";
     }
   }
 
@@ -1423,6 +1430,7 @@ void QSOSED::readMagBin(ifstream& ins) {
     for (auto& mwe : milky_way_extinction) {
       ins.read((char*)&mwe, sizeof(double));
     }
+    ins.read((char*)&band_pass_correction, sizeof(double));
   }
 
   // read the spectra only if the redshift is 0
@@ -1469,6 +1477,7 @@ void StarSED::readMagBin(ifstream& ins) {
     for (auto& mwe : milky_way_extinction) {
       ins.read((char*)&mwe, sizeof(double));
     }
+    ins.read((char*)&band_pass_correction, sizeof(double));
   }
 
   // read the spectra only if the redshift is 0
@@ -1505,8 +1514,10 @@ void StarSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
 
   // Write the extinction values
   if (has_mw_extinction) {
-    for (int k = 0; k < nbFlt; k++)
+    for (int k = 0; k < nbFlt; k++) {
       ofsBin.write((char*)&(milky_way_extinction[k]), sizeof(double));
+    }
+    ofsBin.write((char*)&(band_pass_correction), sizeof(double));
   }
 
   // Write the spectra
@@ -1536,6 +1547,7 @@ void StarSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
       for (int k = 0; k < nbFlt; k++) {
         ofsDat << setw(6) << milky_way_extinction[k] << " ";
       }
+      ofsDat << setw(6) << band_pass_correction << " ";
     }
     ofsDat << endl;
   }
@@ -1580,8 +1592,36 @@ vector<double> SED::compute_fluxes(const vector<flt>& filters) {
 
 void SED::compute_milky_way_extinction(const ext& oneExt,
                                        const vector<flt>& filters) {
+  // if reference model ebv not sent use 1.0 as default, so no rescaling of the
+  // extinction
   double val;
-  // compute the extinction in each filter and store it
+  // compute the BPC for the SED using simple B and V band filters
+  // Maybe B and V bands should be constructed once outside in MAG.cpp?
+  std::vector<double> lB = {3800.00, 4000.0, 4200.0, 4400.0, 4700.0, 5450.0};
+  std::vector<double> fB = {0.0, 0.82, 0.97, 1.0, 0.8, 0.0};
+
+  std::vector<double> lV = {4850.00, 5170.0, 5250.0, 5350.0, 5500.0, 6400.0};
+  std::vector<double> fV = {0.0, 0.9, 0.98, 1.0, 0.9, 0.0};
+
+  flt filterB;
+  flt filterV;
+
+  // // optional but recommended
+  filterB.lamb_trans.reserve(lB.size());
+  filterV.lamb_trans.reserve(lV.size());
+
+  for (size_t i = 0; i < lB.size(); i++) {
+    filterB.lamb_trans.emplace_back(lB[i], fB[i]);
+  }
+
+  for (size_t i = 0; i < lV.size(); i++) {
+    filterV.lamb_trans.emplace_back(lV[i], fV[i]);
+  }
+  band_pass_correction = compute_filter_sed_extinction(filterB, oneExt, *this);
+  band_pass_correction -= compute_filter_sed_extinction(
+      filterV, oneExt,
+      *this);  // compute the extinction in each filter and store it
+  // band_pass_correction = 1.;
   for (const auto& filter : filters) {
     if (oneExt.name != "CARDELLI") {
       val = compute_filter_sed_extinction(filter, oneExt, *this);

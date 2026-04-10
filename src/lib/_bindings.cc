@@ -205,6 +205,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readwrite("red", &SED::red)
       .def_readwrite("index_z0", &SED::index_z0)
       .def_readwrite("milky_way_extinction", &SED::milky_way_extinction)
+      .def_readwrite("band_pass_correction", &SED::band_pass_correction)
       .def("string_to_object", &SED::string_to_object)
       .def("redshift", &SED::redshift)
       .def("is_gal", &SED::is_gal)

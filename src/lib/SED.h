@@ -43,7 +43,8 @@ class SED {
   bool has_mw_extinction;         ///< True if the Milky Way extinction has been
                                   ///< computed
   vector<double>
-      milky_way_extinction;  ///< attenuation of the model in each band
+      milky_way_extinction;     ///< attenuation of the model in each band
+  double band_pass_correction;  ///< bpc of the model
   string name;
   bool has_emlines;  ///< True if the emission lines have been computed, false
                      ///< if not
@@ -109,6 +110,7 @@ class SED {
     has_emlines = p.has_emlines;
     has_mw_extinction = p.has_mw_extinction;
     milky_way_extinction = p.milky_way_extinction;
+    band_pass_correction = p.band_pass_correction;
     nummod = p.nummod;
     nlib = p.nlib;
     index = p.index;

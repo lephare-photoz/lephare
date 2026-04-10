@@ -33,6 +33,9 @@ def test_reddening(test_data_dir: str):
     # keymap=lp.all_types_to_keymap(config)
     config["APPLY_MW_EXTINCTION"] = "YES"
     config["EXT_MW_CURVE"] = "LMC_Fitzpatrick.dat"
+    config["MW_REFERENCE_MODEL"] = "sed/STAR/PICKLES/o5v.sed.ext"
+    mw_ebv_test_file = os.path.join(test_data_dir, "examples/mw_ebv.dat")
+    config["MW_EBV_FILE"] = mw_ebv_test_file
     lp.prepare(config)
 
     # The reddening calculator
@@ -42,6 +45,8 @@ def test_reddening(test_data_dir: str):
     # Read the test input catalogue
     input_file = os.path.join(test_data_dir, "examples/COSMOS_first100specz.fits")
     input = Table.read(input_file)
+    ebv_test = np.linspace(0.0, 0.3, len(input))
+    np.savetxt(mw_ebv_test_file, ebv_test)
     test_string = "te s"  # Test with spaces
     input["string_input"][0] = test_string
     # Make a reduced column set for the minimal test
@@ -57,7 +62,7 @@ def test_reddening(test_data_dir: str):
         output, photozlist = lp.process(
             config, input[reduced_cols], write_outputs=False, reddening=albd_lib, ebvmw=[0.1] * len(input)
         )
-    assert np.isclose(np.sum(output["Z_BEST"]), 97.0)
+    assert np.isclose(np.sum(output["Z_BEST"]), 96.0)
     # Check it gives a warning if no ebv provided
     with pytest.warns(UserWarning, match="No ebv provided. Reddening not applied."):
         lp.process(config, input[reduced_cols], write_outputs=False, reddening=albd_lib)
@@ -74,4 +79,4 @@ def test_reddening(test_data_dir: str):
     # Test the band pass correction
     bpc = lp.compute_band_pass_correction(config, model_number=1)
     print(bpc)
-    assert np.isclose(np.sum(bpc), 17.848819405833066)
+    assert np.isclose(np.sum(bpc), 15.997875553921773)

@@ -86,37 +86,11 @@ def compute_band_pass_correction(config, model_number=15, type="star", verbose=F
     - The output array `values[i]` corresponds to the band pass correction for model `i`.
     """
     keymap = lp.all_types_to_keymap(config)
-    # Make sure all the config values will work with just B and V
-    keymap["FILTER_LIST"] = lp.keyword("FILTER_LIST", "std/B.pb,std/V.pb")
-    keymap["FILTER_FILE"] = lp.keyword("FILTER_FILE", "BV_FILTERS_FOR_BAND_PASS_CORRECTION")
-    keymap["FILTER_CALIB"] = lp.keyword("FILTER_CALIB", "0,0")
-    keymap["APPLY_MW_EXTINCTION"] = lp.keyword("APPLY_MW_EXTINCTION", "YES")
-
-    keymap["QSO_LIB_OUT"] = lp.keyword("QSO_LIB_OUT", "QSO_LIB_OUT_FOR_BAND_PASS_CORRECTION")
-    keymap["STAR_LIB_OUT"] = lp.keyword("QSO_LIB_OUT", "STAR_LIB_OUT_FOR_BAND_PASS_CORRECTION")
-    keymap["GAL_LIB_OUT"] = lp.keyword("QSO_LIB_OUT", "GAL_LIB_OUT_FOR_BAND_PASS_CORRECTION")
-    keymap["ZPHOTLIB"] = lp.keyword(
-        "ZPHOTLIB",
-        (
-            "STAR_LIB_OUT_FOR_BAND_PASS_CORRECTION,"
-            "GAL_LIB_OUT_FOR_BAND_PASS_CORRECTION,"
-            "QSO_LIB_OUT_FOR_BAND_PASS_CORRECTION"
-        ),
-    )
-    # Prepare must be rerun to get the new mag libraries with the B and V values
+    config["APPLY_MW_EXTINCTION"] = "YES"
+    config["EXT_MW_CURVE"] = "LMC_Fitzpatrick.dat"
+    config["MW_REFERENCE_STAR_MODEL"] = "15"  # not implemented currently"
     lp.prepare(keymap)
     photz = lp.PhotoZ(keymap)
-    albd_lib = np.array([g.milky_way_extinction for g in photz.fullLib])
-    b5_idx = None
-    for n, sed in enumerate(photz.fullLib):
-        if getattr(sed, f"is_{type}")() and (sed.nummod == model_number):
-            b5_idx = n
-    if b5_idx is None:
-        raise ValueError(
-            f"Reference model with type '{type}' and model number '{model_number}' not found in the library."
-        )
-    # A_B - A_V for the SED, and for the B5 star. The ratio of these
-    # is the band pass correction factor to apply to the model reddening.
-    ebmv = albd_lib.T[0] - albd_lib.T[1]
-    band_pass_correction = ebmv / (albd_lib[b5_idx][0] - albd_lib[b5_idx][1])
+    band_pass_correction = np.array([g.band_pass_correction for g in photz.fullLib])
+    # After prepre it is not
     return band_pass_correction

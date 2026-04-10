@@ -54,6 +54,7 @@ class PhotoZ {
 
  public:
   vector<vector<double>> flux, fluxIR, reddening;
+  string mw_ref_mod, mw_ref_type;
   vector<double> zLib, zLibIR;
   vector<SED*> fullLib, fullLibIR;
   SEDlight lightLib;
@@ -62,7 +63,7 @@ class PhotoZ {
   vector<string> outkeywords, pdftype;
   int imagm;
   time_t ti1;
-  string outputHeader, outpara, mw_ebv_vals;
+  string outputHeader, outpara;
 
   PhotoZ(keymap& key_analysed);
 
