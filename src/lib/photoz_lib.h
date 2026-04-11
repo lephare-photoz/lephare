@@ -58,7 +58,6 @@ class PhotoZ {
   vector<double> gridz;
   vector<string> outkeywords, pdftype;
   int imagm;
-  time_t ti1;
   string outputHeader, outpara;
 
   PhotoZ(keymap &key_analysed);

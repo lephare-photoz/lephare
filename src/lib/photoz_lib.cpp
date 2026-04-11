@@ -1763,7 +1763,7 @@ void PhotoZ::write_outputs(vector<onesource *> sources) {
       oneObj->writeSpec(fullLib, fullLibIR, lcdm, allFilters, outsp);
 
     if ((outpdz.compare(nonestring) != 0) && first_obj)
-      oneObj->write_pdz_header(pdftype, pdf_streams, ti1);
+      oneObj->write_pdz_header(pdftype, pdf_streams);
     if (outpdz.compare(nonestring) != 0)
       oneObj->write_pdz(pdftype, pdf_streams);
     first_obj = false;

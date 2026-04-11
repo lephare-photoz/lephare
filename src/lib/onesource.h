@@ -208,8 +208,7 @@ class onesource {
    */
   void write_out(ofstream &stout, const vector<string> &outkeywords);
   void write_pdz_header(vector<string> pdztype,
-                        unordered_map<string, ofstream> &stpdz,
-                        const time_t &ti1);
+                        unordered_map<string, ofstream> &stpdz);
   void write_pdz(vector<string> pdztype,
                  unordered_map<string, ofstream> &stpdz);
   void convertMag();
