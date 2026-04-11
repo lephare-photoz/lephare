@@ -1,10 +1,12 @@
-import time
+#! /usr/bin/env python
+
 from contextlib import suppress
 
 from ._lephare import (
     PhotoZ,
     keyword,
 )
+from .cli import build_cli
 from .runner import Runner
 
 __all__ = [
@@ -12,7 +14,7 @@ __all__ = [
 ]
 
 config_keys = {
-    "verbose": "increase onscreen verbosity",
+    "VERBOSE": "increase onscreen verbosity",
     "CAT_IN": "input catalog",
     "INP_TYPE": "F if Fluxes, M if magnitudes",
     "CAT_MAG": "AB or VEGA magnitude system of the input catalog (default AB)",
@@ -91,7 +93,8 @@ nonestring = "NONE"
 
 class Zphota(Runner):
     """The specific arguments to the Zphota class are
-    verbose:
+
+    VERBOSE:
            add verbosity
     CAT_IN:
            input catalog
@@ -223,13 +226,14 @@ Need 1 or N values
             self.parser.usage = doc
         self.__doc__ = doc + "\n"  # + inspect.getdoc(Zphota)
 
-    def __init__(self, config_file=None, config_keymap=None, **kwargs):
+    def __init__(self, config_file="", config_keymap=None, **kwargs):
+        self.name = "Zphota"
         super().__init__(config_keys, config_file, **kwargs)
 
     def run(self, **kwargs):
         super().run(**kwargs)
 
-        self.keymap["c"] = keyword("c", self.config)
+        self.keymap["c"] = keyword("c", self.config_file)
 
         photoz = PhotoZ(self.keymap)
 
@@ -239,7 +243,7 @@ Need 1 or N values
 
         fit_srcs = photoz.read_photoz_sources()
         photoz.run_photoz(fit_srcs, a0)
-        photoz.write_outputs(fit_srcs, int(time.time()))
+        photoz.write_outputs(fit_srcs)
 
         self.photoz = photoz
         return
@@ -248,10 +252,13 @@ Need 1 or N values
         super().end()
 
 
+# ---- CLI entry point ----
+
+cli = build_cli(Zphota, config_keys)
+
+
 def main():  # pragma no cover
-    runner = Zphota()
-    runner.run()
-    runner.end()
+    cli()
 
 
 if __name__ == "__main__":  # pragma no cover

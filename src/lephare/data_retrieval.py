@@ -368,7 +368,7 @@ def _check_downloaded_files(file_names, completed_futures):
     return True
 
 
-def config_to_required_files(keymap, base_url=None):
+def config_to_required_files(keymap, base_url=None, lephare_dir=LEPHAREDIR):
     """Take a lephare config and return list of auxiliary files required for run.
 
     For the sed lists these must be present in the auxiliary files directory. If
@@ -385,6 +385,9 @@ def config_to_required_files(keymap, base_url=None):
         The dictionary of config keys containing filters etc required.
     base_url : str
         Url to overwrite default base.
+    lephare_dir : str
+        Path to lephare directory for auxiliary files. This is used to check for
+        local presence of files before downloading.
     """
     keymap = all_types_to_keymap(keymap)
     if base_url is None:
@@ -413,18 +416,32 @@ def config_to_required_files(keymap, base_url=None):
     for key in sed_keys:
         try:
             # If find sed/ in the path, assume the list is present in lephare-data
-            # and try to retreive the files
+            # and try to retreive the files if not present locally.
             list_file = keymap[key].value
             # Remove the beginning of the path before sed/
             if list_file.find("sed/") > 0:
                 list_file = (list_file[list_file.find("sed/") :]).strip()
-            required_files += [list_file]
-            # Add the url to retrieve the files
-            list_file = base_url + list_file
+            # Add the url to retrieve the files if it is not present locally
+            if (not os.path.exists(os.path.join(lephare_dir, list_file))) and (not os.path.exists(list_file)):
+                required_files += [list_file]
+                # Get the files from the list file whether locally present or not
+                # Add url to retireve files
+                list_file = base_url + list_file
+            else:
+                warnings.warn(
+                    f"{os.path.join(lephare_dir, list_file)} is present locally and will not be overwritten."
+                )
+                # If location implied from data directory get full path for
+                # #reading list file, which is needed to get the files in the list file
+                if list_file.startswith("sed/"):
+                    list_file = os.path.join(lephare_dir, list_file)
+            # Get the files from the list file whether locally present or not
             file_names = read_list_file(list_file, prefix=f"sed/{key.split('_')[0]}/")
             required_files += file_names
         except KeyError:
             warnings.warn(f"{key} keyword not set or not present in auxiliary files directory.")
+        except requests.exceptions.HTTPError:
+            warnings.warn(f"Could not retrieve sed list file {list_file}. Continuing without it.")
     # Bethermin12 always required
     bet_list = "sed/GAL/BETHERMIN12/BETHERMIN12_MOD.list"
     required_files += [bet_list]

@@ -18,15 +18,6 @@
 
 using namespace std;
 
-// read a keyword and convert it into a format given by T
-template <typename T>
-T stoT(const string val) {
-  T value;
-  stringstream ss(val);
-  ss >> value;
-  return value;
-}
-
 /// class keyword to store name and value of kweywords from the config file or
 /// the command line
 class keyword {
@@ -49,20 +40,6 @@ class keyword {
   /// expand $HOME and $LEPHAREDIR if they are found in string value
   void expand_path();
 
-  template <typename T>
-  vector<T> split(string default_val, int nbItems) {
-    // split first in string
-    vector<string> skey = split_string(default_val, nbItems);
-    // Convert all the item string into double
-    vector<T> dkey;
-    dkey.reserve(skey.size());
-
-    transform(skey.begin(), skey.end(), back_inserter(dkey),
-              [](const string &val) { return stoT<T>(val); });
-
-    return dkey;
-  }
-
   /*! split keyword value into an array of strings
    *
    * \param default_val: default value to use, if provided
@@ -76,7 +53,7 @@ class keyword {
    * nbItems filled with default_val is returned.
    * If the input is a singleton, the returned array will be of size
    * nbItems filled with the singleton value
-   !*/
+   */
   vector<string> split_string(string default_val, int nbItems);
   /// split into an array of strings, then convert to integer
   vector<int> split_int(string default_val, int nbItems);
