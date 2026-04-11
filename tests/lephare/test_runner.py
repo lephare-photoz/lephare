@@ -26,6 +26,16 @@ def test_runner_base():
     runner = lp.Runner(config_keys=test_keys, cat_in="dummy")
     assert len(runner.keymap)
 
+    for verbose_val in ["yes", "YES", True, 1]:
+        r = lp.runner.Runner(config_keys={}, verbose=verbose_val)
+        assert r.verbose
+        assert r.keymap["VERBOSE"].value == "YES"
+
+    for verbose_val in ["no", "NO", False, 0, "any"]:
+        r = lp.runner.Runner(config_keys={}, verbose=verbose_val)
+        assert not r.verbose
+        assert r.keymap["VERBOSE"].value == "NO"
+
 
 def test_runner_no_config_keys():
     """Expect that a RuntimeError is raised when no config_keys or
