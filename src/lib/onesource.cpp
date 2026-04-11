@@ -1362,11 +1362,11 @@ void onesource::write_out(ofstream &stout, const vector<string> &outkeywords) {
  write the header of the PDF(z)
 */
 void onesource::write_pdz_header(vector<string> pdztype,
-                                 unordered_map<string, ofstream> &stpdz,
-                                 const time_t &ti1) {
+                                 unordered_map<string, ofstream> &stpdz) {
   // Loop over the PDF type wanted in output
+  time_t now = time(nullptr);
   for (const auto &type : pdztype) {
-    stpdz[type] << "# Creation date: " << asctime(localtime(&ti1));
+    stpdz[type] << "# Creation date: " << asctime(localtime(&now));
     stpdz[type] << "# Probability associated to the following steps " << endl
                 << "# Id ";
     for (const auto &xval : pdfmap[maptype[type]].xaxis)
