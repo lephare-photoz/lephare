@@ -38,16 +38,16 @@ class Mag {
   ifstream ssedIn;
   ofstream sdocOut, sbinOut, sdatOut;
 
-  vector<ext> extAll;
-  vector<flt> allFlt;
-  vector<GalSED> B12SED;
-  vector<double> gridz;
-  vector<double> gridT, gridDM;
+  // vector<ext> extAll;
+  // vector<flt> allFlt;
+  // vector<GalSED> B12SED;
+  // vector<double> gridz;
+  // vector<double> gridT, gridDM;
 
-  vector<double> magko;
+  // vector<double> magko;
 
  public:
-  Mag(keymap &key_analysed);
+  Mag(keymap& key_analysed);
   Mag(){};
   virtual ~Mag();
 
@@ -83,32 +83,47 @@ class Mag {
   /// read SED files, apply extinction corrections, and store into a vector of
   /// instances of class SED
   virtual void read_SED() = 0;
+
+  vector<ext> extAll;
+
+  std::string milkyWayCurve;
+  ext milkyWayExtinction;
+  bool applyMilkyWayExtinction;
+
+  vector<flt> allFlt;
+  vector<GalSED> B12SED;
+  vector<double> gridz;
+  vector<double> gridT, gridDM;
+
+  vector<double> magko;
+
+  vector<opa> opaAll;
 };
 
 /// inherited class handling expected magnitudes from star SED
 class StarMag : public Mag {
  public:
-  StarMag(keymap &key_analysed);
+  StarMag(keymap& key_analysed);
   StarMag(){};  // LCOV_EXCL_LINE
   ~StarMag(){};
 
   void print_info();
   void read_SED();
-  vector<StarSED> make_maglib(const StarSED &);
-  void write_mag(const vector<StarSED> &);
+  vector<StarSED> make_maglib(const StarSED&);
+  void write_mag(const vector<StarSED>&);
 };
 
 /// inherited class handling expected magnitudes from QSO SED
 class QSOMag : public Mag {
  public:
-  QSOMag(keymap &key_analysed);
+  QSOMag(keymap& key_analysed);
   QSOMag(){};  // LCOV_EXCL_LINE
   ~QSOMag(){};
 
   void print_info();
   void read_SED();
-  vector<QSOSED> make_maglib(const QSOSED &);
-  void write_mag(const vector<QSOSED> &);
+  vector<QSOSED> make_maglib(const QSOSED&);
+  void write_mag(const vector<QSOSED>&);
 };
 
 /// inherited class handling expected magnitudes from galaxy SED
@@ -117,14 +132,14 @@ class GalMag : public Mag {
   vector<double> fracEm;
 
  public:
-  GalMag(keymap &key_analysed);
+  GalMag(keymap& key_analysed);
   GalMag(){};
   ~GalMag(){};
 
   void print_info();
   void read_SED();
-  vector<GalSED> make_maglib(GalSED &);
-  void write_mag(const vector<GalSED> &);
+  vector<GalSED> make_maglib(GalSED&);
+  void write_mag(const vector<GalSED>&);
 };
 
 #endif /* MAG_H_ */

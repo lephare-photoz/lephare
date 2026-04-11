@@ -16,6 +16,8 @@
 using std::string;
 using std::vector;
 
+class SED;
+
 /*! \brief Class Extinction to store the lambda/value vector from the extinction
  * law read
  *
@@ -29,6 +31,9 @@ class ext {
   double lmin;                   ///< min lambda value read from the file
   double lmax;                   ///< max lambda value read from the file
   int numext;                    ///< id of this extinction law
+
+  // Default constructor
+  ext() : name(""), numext(0), lmin(0.0), lmax(0.0) {}
 
   /// minimal constructor of the ext class, with its name and the id of the
   /// extinction law
@@ -48,7 +53,7 @@ class ext {
    * @param x: ordered vector of lambda value
    * @param y: vector of ext values at each lambda of x
    */
-  inline void set_vector(const vector<double> &x, const vector<double> &y) {
+  inline void set_vector(const vector<double>& x, const vector<double>& y) {
     if (x.size() != y.size()) throw runtime_error("vector sizes are different");
     lamb_ext.clear();
     for (size_t k = 0; k < x.size(); k++) {
@@ -59,8 +64,11 @@ class ext {
   }
 };
 
-double compute_filter_extinction(const flt &filter, const ext &extinction);
-double cardelli_ext(flt &oneFlt);
+double compute_filter_extinction(const flt& filter, const ext& extinction);
+double compute_filter_sed_extinction(const flt& filter, const ext& extinction,
+                                     const SED& sed);
+double cardelli_ext(flt& oneFlt);
+double cardelli_ext_sed(const flt& oneFlt, const SED& oneSED);
 double cardelli_law(double lb);
 
 #endif

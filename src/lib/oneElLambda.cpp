@@ -94,3 +94,40 @@ common_interpolate_combined(const std::vector<double>& x1,
 
   return {x_common, y1_interp, y2_interp};
 }
+
+// We want to take the first grid for the lo and high (filter)
+std::tuple<std::vector<double>, std::vector<double>, std::vector<double>,
+           std::vector<double>>
+common_interpolate_combined3(const std::vector<double>& x1,
+                             const std::vector<double>& y1,
+                             const std::vector<double>& x2,
+                             const std::vector<double>& y2,
+                             const std::vector<double>& x3,
+                             const std::vector<double>& y3, double dx) {
+  if (x1.size() != y1.size() || x2.size() != y2.size() ||
+      x3.size() != y3.size())
+    throw std::runtime_error("x/y size mismatch");
+
+  if (x1.empty() || x2.empty() || x3.empty())
+    throw std::runtime_error(
+        "Empty input vector in common_interpolate_combined3");
+  // determine common interval - unlike for two use the first input
+  double lo = x1.front();
+  double hi = x1.back();
+  if (lo >= hi) return {{}, {}, {}, {}};  // pas de recouvrement
+
+  // build the grid
+  std::vector<double> x_common;
+  if (dx > 0) {
+    x_common = make_regular_grid(lo, hi, dx);
+  } else {
+    x_common = make_union_grid(x1, x2, lo, hi);
+    x_common = make_union_grid(x_common, x3, lo, hi);
+  }
+  // interpolate
+  std::vector<double> y1_interp = interp_linear_vec(x1, y1, x_common);
+  std::vector<double> y2_interp = interp_linear_vec(x2, y2, x_common);
+  std::vector<double> y3_interp = interp_linear_vec(x3, y3, x_common);
+
+  return {x_common, y1_interp, y2_interp, y3_interp};
+}

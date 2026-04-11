@@ -1,5 +1,7 @@
 import os
 import shutil
+import time
+import warnings
 
 import numpy as np
 
@@ -17,6 +19,8 @@ def process(
     standard_names=False,
     filename=None,
     write_outputs=False,
+    reddening=None,
+    ebvmw=None,
 ):
     """Run all required steps to produce photometric redshift estimates
 
@@ -36,6 +40,12 @@ def process(
     write_outputs : bool
         Whether to write the output spectra, PDF, and ascii file if specified
         in the config. By default these are not written to save space.
+    reddening : np.array or None
+        Array of reddening values to apply to each model and filter. If None the
+        reddening will not be applied.
+    ebvmw : np.array or None
+        Array of E(B-V) values for each object in the input catalogue. If None
+        no reddening will be applied.
 
     Returns
     =======
@@ -47,6 +57,16 @@ def process(
     # ensure that all values in the keymap are keyword objects
     config = lp.all_types_to_keymap(config)
 
+    photz = lp.PhotoZ(config)
+    # Apply reddening if provided
+    if reddening is not None:
+        photz.reddening = reddening
+        # If reddening is provided but no ebv warn the user
+        if ebvmw is None:
+            warnings.warn("No ebv provided. Reddening not applied.")
+            reddening = None
+        if (reddening is not None) and config["APPLY_MW_EXTINCTION"].value == "YES":
+            warnings.warn("Reddening sent to process will override any pre-calculated values.")
     id, flux, flux_err, context, zspec, string_data = table_to_data(
         config, input_table, col_names=col_names, standard_names=standard_names
     )
@@ -79,6 +99,9 @@ def process(
         photz.prep_data(one_obj)
         photozlist.append(one_obj)
 
+    if reddening is not None:
+        for i in range(ng):
+            photozlist[i].galEbv = ebvmw[i]
     # Perform the main run
     photz.run_photoz(photozlist, a0)
     # Write outputs if requested

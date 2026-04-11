@@ -40,6 +40,11 @@ class SED {
   vector<double> kcorr,           ///< k-correction term
       mag_z0;                     ///< magnitude at z=0
   vector<double> mag;             ///< magnitude and flux of the model
+  bool has_mw_extinction;         ///< True if the Milky Way extinction has been
+                                  ///< computed
+  vector<double>
+      milky_way_extinction;     ///< attenuation of the model in each band
+  double band_pass_correction;  ///< bpc of the model
   string name;
   bool has_emlines;  ///< True if the emission lines have been computed, false
                      ///< if not
@@ -96,13 +101,16 @@ class SED {
   SED(const string name, int nummod = 0, string type = "G");
   SED(const string nameC, double tauC, double ageC, int nummodC, string typeC,
       int idAgeC);
-  SED(SED const &p) {
+  SED(SED const& p) {
     idAge = p.idAge;
     lamb_flux = p.lamb_flux;
     kcorr = p.kcorr;
     mag = p.mag;
     name = p.name;
     has_emlines = p.has_emlines;
+    has_mw_extinction = p.has_mw_extinction;
+    milky_way_extinction = p.milky_way_extinction;
+    band_pass_correction = p.band_pass_correction;
     nummod = p.nummod;
     nlib = p.nlib;
     index = p.index;
@@ -128,7 +136,7 @@ class SED {
    *
    * @return object_type corresponding to input, if valid.
    */
-  inline static object_type string_to_object(const string &type) {
+  inline static object_type string_to_object(const string& type) {
     char t = toupper(type[0]);
     if (t == 'S') {
       return STAR;
@@ -161,8 +169,8 @@ class SED {
   /// filled iteratively with each line of
   /// the file, and is finally sorted by ascending lambda. More complex input
   /// types are treated in inherited class methods.
-  void read(const string &sedFile);
-  void warning_integrateSED(const vector<flt> &filters, bool verbose = false);
+  void read(const string& sedFile);
+  void warning_integrateSED(const vector<flt>& filters, bool verbose = false);
 
   /*! integrate the SED between bounds
    * @param lmin : lower lambda bound
@@ -173,7 +181,7 @@ class SED {
    */
   double integrate(const double lmin, const double lmax);
 
-  vector<double> integrateSED(const flt &filter);
+  vector<double> integrateSED(const flt& filter);
 
   /*! \brief Generate a calibration SED based on the argument calib
    *
@@ -196,9 +204,12 @@ class SED {
   /// rescale the lamb_flux.val as val *= scaleFac
   void rescale(double scaleFac);
   /// compute magnitude from filters
-  void compute_magnitudes(const vector<flt> &filters);
+  void compute_magnitudes(const vector<flt>& filters);
   /// compute fluxed from filters
-  vector<double> compute_fluxes(const vector<flt> &filters);
+  vector<double> compute_fluxes(const vector<flt>& filters);
+  /// compute extinction from filters
+  void compute_milky_way_extinction(const ext& oneExt,
+                                    const vector<flt>& filters);
   double trapzd();
   void sumSpectra(SED addSED, const double rescal);
   void reduce_memory(vector<flt> allFlt);
@@ -206,9 +217,9 @@ class SED {
   /*
    * These functions are different depending on the type of SED
    */
-  virtual void writeSED(ofstream &ofs, ofstream &ofsPhys, ofstream &ofsDoc);
-  inline void writeSED(const string &binFile, const string &physFile,
-                       const string &docFile) {
+  virtual void writeSED(ofstream& ofs, ofstream& ofsPhys, ofstream& ofsDoc);
+  inline void writeSED(const string& binFile, const string& physFile,
+                       const string& docFile) {
     ofstream sdocOut, sphysOut, sbinOut;
     sdocOut.open(docFile.c_str());
     if (!sdocOut) {
@@ -230,10 +241,10 @@ class SED {
     writeSED(sbinOut, sphysOut, sdocOut);
   };
 
-  virtual void writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
+  virtual void writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
                         vector<flt> allFilters, string magtyp) {};
 
-  inline void readSEDBin(const string &fname) {
+  inline void readSEDBin(const string& fname) {
     ifstream sbinIn;
     sbinIn.open(fname.c_str(), ios::binary);
     if (!sbinIn) {
@@ -243,11 +254,11 @@ class SED {
     readSEDBin(sbinIn);
   }
   /// read the SED library when it is in binary format
-  virtual void readSEDBin(ifstream &ins);
-  virtual void readMagBin(ifstream &ins) {};
+  virtual void readSEDBin(ifstream& ins);
+  virtual void readMagBin(ifstream& ins) {};
   virtual void sumEmLines() {};
   /// for each magnitude \a #mag[k] compute kcorr = mag[k] - mag_z0[k] - distMod
-  virtual void kcorrec(const vector<double> &magz0) {};
+  virtual void kcorrec(const vector<double>& magz0) {};
 
   virtual void compute_luminosities() {};
 
@@ -273,7 +284,7 @@ class SED {
    * equality of the following attributes are compared:
    * `nummod`, `ebv`, and `age`
    */
-  inline bool is_same_model(const SED &other) const {
+  inline bool is_same_model(const SED& other) const {
     return ((*this).nummod == other.nummod && (*this).ebv == other.ebv &&
             (*this).age == other.age);
   }
@@ -299,20 +310,20 @@ class SED {
    * \param ebv value of E(B-V)
    * \param obj instance of class ext
    */
-  void apply_extinction(const double ebv, const ext &obj);
+  void apply_extinction(const double ebv, const ext& obj);
 
   /*! Apply dust extinction to the emission lines (stored in `fac_line`)
    * Only for galaxies and QSO
    * \param ebv value of E(B-V)
    * \param obj instance of class `ext`
    */
-  void apply_extinction_to_lines(double ebv, const ext &obj);
+  void apply_extinction_to_lines(double ebv, const ext& obj);
 
   /*! Apply extinction due to intergalactic medium (only for GAL and QSO)
    * \param opaAll Vector of opacities to compute extinction
    * along the line of sight
    */
-  void applyOpa(const vector<opa> &opaAll);
+  void applyOpa(const vector<opa>& opaAll);
 
   /// Helper function to append the oneElLambda(lambda, value) object to the sed
   /// vector
@@ -324,7 +335,7 @@ class SED {
    * @param x: vector of lambda value
    * @param y: vector of SED values at each lambda of x
    */
-  inline void set_vector(const vector<double> &x, const vector<double> &y) {
+  inline void set_vector(const vector<double>& x, const vector<double>& y) {
     if (x.size() != y.size()) throw runtime_error("vector sizes are different");
     lamb_flux.clear();
     for (size_t k = 0; k < x.size(); k++) {
@@ -342,9 +353,9 @@ class GalSED : public SED {
       fracEm;  //< fraction of the emmission line considered
 
   /// Copy constructor from base class
-  GalSED(SED const &p) : SED(p) { nlib = GAL; };
+  GalSED(SED const& p) : SED(p) { nlib = GAL; };
   /// Copy constructor
-  GalSED(GalSED const &p) : SED(p) {
+  GalSED(GalSED const& p) : SED(p) {
     flEm = p.flEm;
     format = p.format;
     tau = p.tau;
@@ -378,7 +389,7 @@ class GalSED : public SED {
    */
   void compute_luminosities();
   vector<double> add_neb_cont(double);
-  GalSED generateEmSED(const string &emtype);
+  GalSED generateEmSED(const string& emtype);
   void generateEmEmpUV(double MNUV_int, double NUVR);
   void generateEmEmpSFR(double MNUV_int, double NUVR);
   void generateEmPhys(double zmet, double qi);
@@ -387,7 +398,7 @@ class GalSED : public SED {
 
   /// Compute the k-correction in each filter as :
   /// \f$k = mag(z) - mag(z=0) - \mu\f$
-  void kcorrec(const vector<double> &magz0);
+  void kcorrec(const vector<double>& magz0);
   void rescaleEmLines();
   void zdepEmLines(int flag);
   /*!
@@ -406,12 +417,12 @@ class GalSED : public SED {
    */
   void calc_ph();
 
-  void writeSED(ofstream &ofs, ofstream &ofsPhys, ofstream &ofsDoc);
-  void readSEDBin(ifstream &ins);
+  void writeSED(ofstream& ofs, ofstream& ofsPhys, ofstream& ofsDoc);
+  void readSEDBin(ifstream& ins);
 
-  void writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
+  void writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
                 vector<flt> allFilters, string magtyp) const;
-  void readMagBin(ifstream &ins);
+  void readMagBin(ifstream& ins);
 
   ///< clean content of class
   void clean() {
@@ -423,24 +434,24 @@ class GalSED : public SED {
 /// concrete SED implementation for AGN/QSO objects (object_type QSO)
 class QSOSED : public SED {
  public:
-  QSOSED(SED const &p) : SED(p) { nlib = QSO; };
-  QSOSED(QSOSED const &p) : SED(p){};
+  QSOSED(SED const& p) : SED(p) { nlib = QSO; };
+  QSOSED(QSOSED const& p) : SED(p){};
   QSOSED(const string nameC, int nummodC = 0) : SED(nameC, nummodC, "QSO"){};
   ~QSOSED(){};
 
-  void writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
+  void writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
                 vector<flt> allFilters, string magtyp) const;
 
-  void readMagBin(ifstream &ins);
+  void readMagBin(ifstream& ins);
 };
 
 /// concrete SED implementation for star objects (object_type Star)
 class StarSED : public SED {
  public:
   /// copy constructor from `SED` class
-  StarSED(SED const &p) : SED(p) { nlib = STAR; };
+  StarSED(SED const& p) : SED(p) { nlib = STAR; };
   /// copy constructor from `StarSED` class
-  StarSED(StarSED const &p) : SED(p){};
+  StarSED(StarSED const& p) : SED(p){};
   /*! constructor
    * @param name: name given to the SED object
    * @param nummod: identity number given to the SED object
@@ -449,9 +460,9 @@ class StarSED : public SED {
   /// destructor (does nothing)
   ~StarSED() { ; }
 
-  void writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
+  void writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
                 vector<flt> allFilters, string magtyp) const;
-  void readMagBin(ifstream &ins);
+  void readMagBin(ifstream& ins);
 };
 
 /*! \brief Structure with a light SED vector
@@ -466,7 +477,7 @@ struct SEDlight {
   vector<double> ebv, lgage, lgmass, lgsfr, lgssfr, ltir;
   vector<array<double, 3>> colRF;
 
-  void push_sed(SED const &src, const array<double, 3> &colRFin) {
+  void push_sed(SED const& src, const array<double, 3>& colRFin) {
     nlib.push_back(src.nlib);
     index.push_back(src.index);
     nummod.push_back(src.nummod);
