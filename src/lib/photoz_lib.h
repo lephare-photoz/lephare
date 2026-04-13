@@ -61,7 +61,6 @@ class PhotoZ {
   vector<double> gridz;
   vector<string> outkeywords, pdftype;
   int imagm;
-  time_t ti1;
   string outputHeader, outpara;
   bool one_mw_ebv;  ///< Whether or not a single MW E(B-V) value is applied to
                     ///< all sources, as opposed to a different value for each
