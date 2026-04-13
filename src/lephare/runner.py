@@ -120,12 +120,6 @@ class Runner:
         if DEBUG:  # pragma no cover
             print(f"# timer {self.timer}")
 
-        if "VERBOSE" in kwargs:
-            val = kwargs.pop("VERBOSE")
-            self.verbose = bool(val.upper() == "YES")
-        if DEBUG:  # pragma no cover
-            print(f"# verbose {self.verbose}")
-
         if "typ" in self.config_keys:
             if "typ" in kwargs:
                 self.typ = kwargs.pop("typ", self.typ)
@@ -133,11 +127,11 @@ class Runner:
             if DEBUG:  # pragma no cover
                 print(f"# typ {self.typ}")
 
-        for k, v in kwargs.items():
-            if k.upper() in self.config_keys:
-                self.keymap[k.upper()] = keyword(k.upper(), str(v))
+        self._load_kwargs(**kwargs)
+
         # for debugging only
         if DEBUG:  # pragma no cover
+            print(f"# verbose {self.verbose}")
             for k in self.config_keys:
                 if k.name not in ["VERBOSE", "typ"]:
                     key = self.keymap[k.upper()]
