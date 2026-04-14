@@ -102,6 +102,8 @@ class Runner:
         for k, v in kwargs.items():
             uk = k.upper()
             if uk == "VERBOSE":
+                if v.__class__ is str:
+                    v = v.upper() == "YES"
                 self.verbose = bool(v)
                 v = "YES" if v else "NO"
             self.keymap[uk] = keyword(uk, str(v))
@@ -149,6 +151,8 @@ class Runner:
 
     def validate_config_dict(self, input_dict, no_raise=True):
         for key in input_dict:
+            if key.upper() == "VERBOSE":
+                continue
             if key == "TYP" and "typ" in self.config_keys:
                 continue
             if key.upper() not in self.config_keys and not no_raise:
