@@ -67,7 +67,6 @@ class PhotoZ {
   bool one_mw_ebv;  ///< Whether or not a single MW E(B-V) value is applied to
                     ///< all sources, as opposed to a different value for each
                     ///< source read from a file
-  double global_mw_ebv = 0.0;  // Value of the single MW E(B-V) value
   vector<double>
       mw_classic_extinction_values;  ///< If mw_classic_extinction is true, this
                                      ///< vector contains the extinction values
@@ -130,6 +129,7 @@ class PhotoZ {
 
   vector<onesource*> read_autoadapt_sources();
   vector<onesource*> read_photoz_sources();
+  void read_mw_ebv(vector<onesource*> sources);
   void prep_data(vector<onesource*> sources);
   void prep_data(onesource* oneObj);
 

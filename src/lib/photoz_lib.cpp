@@ -289,7 +289,7 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
   } else {
     mw_galametz = false;
   }
-  // If it is CLASSIC we correct the observed magnitude, without considering
+  // If it is CLASSIC we correct the observed magnitudes, without considering
   // model dependence
   if (red_type == "CLASSIC") {
     mw_classic_extinction = true;
@@ -315,6 +315,11 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
     mw_ref_type =
         (key_analysed["MW_REFERENCE_TYPE"]).split_string("STAR", 1)[0];
   }
+  // Could decide to apply a single MW E(B-V) to the full catalogue rather than
+  // one per source
+  double mw_global_ebv =
+      ((key_analysed["MW_GLOBAL_EBV"]).split_double("-1", 1))[0];
+  if (mw_global_ebv >= 0) one_mw_ebv = true;
 
   /*
     INFO PARAMETERS ON SCREEN AND DOC
@@ -555,7 +560,7 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
         flux_no_mw[i][k] = flux[i][k];
         // If Galametz with one MW value, correct the lib once
         if (one_mw_ebv) {
-          double factor = std::pow(10.0, reddening[i][k] * global_mw_ebv / 2.5);
+          double factor = std::pow(10.0, reddening[i][k] * mw_global_ebv / 2.5);
           flux[i][k] = flux_no_mw[i][k] / factor;
         }
       }
@@ -1539,12 +1544,6 @@ vector<onesource*> PhotoZ::read_photoz_sources() {
   // open the external file with zspec
   ifstream szex;
   string externalzfile = ((keys["EXTERNALZ_FILE"]).split_string("NONE", 1))[0];
-  // MW_EBV file
-  ifstream mw_ebv_ifstream;
-  string mw_ebv_file = ((keys["MW_EBV_FILE"]).split_string("NONE", 1))[0];
-
-  size_t mw_ebv_nlines = 0;
-  vector<double> mw_ebv_values;
 
   if (externalzfile.substr(0, 4) != "NONE") {
     szex.open(externalzfile.c_str());
@@ -1572,50 +1571,6 @@ vector<onesource*> PhotoZ::read_photoz_sources() {
       getline(szex, linezex);
       cout << "done skip " << k << " " << rowmin << '\n';
     }  // go to the right starting row of the file
-  }
-
-  if (mw_ebv_file.substr(0, 4) != "NONE") {
-    mw_ebv_ifstream.open(mw_ebv_file.c_str());
-    if (!mw_ebv_ifstream) {
-      cout << "External mw_ebv option, but no file " << mw_ebv_file << endl;
-      exit(0);
-    }
-
-    string linemwebv;
-
-    // Skip comment/header lines
-    while (getline(mw_ebv_ifstream, linemwebv)) {
-      if (check_first_char(linemwebv)) continue;
-      if (!linemwebv.empty()) break;
-    }
-
-    // We already consumed first data line -> store it
-    stringstream ss0(linemwebv);
-    string tmp_id;
-    double tmp_val;
-    ss0 >> tmp_id >> tmp_val;
-
-    mw_ebv_values.push_back(tmp_val);
-    mw_ebv_nlines++;
-
-    // Read rest
-    while (getline(mw_ebv_ifstream, linemwebv)) {
-      if (!check_first_char(linemwebv)) {
-        stringstream ss(linemwebv);
-        string id;
-        double val;
-        ss >> id >> val;
-        mw_ebv_values.push_back(val);
-        mw_ebv_nlines++;
-      }
-    }
-
-    if (mw_ebv_nlines == 1) {
-      one_mw_ebv = true;
-      global_mw_ebv = mw_ebv_values[0];
-      cout << "MW_EBV: single-value mode (" << global_mw_ebv
-           << ") applied to all sources\n";
-    }
   }
 
   // Take the stream line by line
@@ -1657,34 +1612,63 @@ vector<onesource*> PhotoZ::read_photoz_sources() {
         sszex >> oneObj->zs;
       }
 
-      // Do the same for the MW_ebv if needed. Using the global value for a
-      // single value file
-      if (mw_ebv_file.substr(0, 4) != "NONE") {
-        if (one_mw_ebv) {
-          oneObj->mw_ebv = global_mw_ebv;
-        } else {
-          string linemwebv;
-          getline(mw_ebv_ifstream, linemwebv);
-
-          stringstream ssmwebv(linemwebv);
-          string idmwebv;
-          double val;
-
-          ssmwebv >> idmwebv >> val;
-
-          if (idmwebv != oneObj->spec)
-            cout << "\nERROR: mismatch in MW_EBV file " << idmwebv << " "
-                 << oneObj->spec << endl;
-
-          oneObj->mw_ebv = val;
-        }
-      }
-
       // Add the source
       photoz_sources.push_back(oneObj);
     }
   }
   return photoz_sources;
+}
+
+/*
+  Read the file with the MW E(B-V)
+  One value per source is expected
+  The E(B-V) should be sorted as the source list
+ */
+void PhotoZ::read_mw_ebv(vector<onesource*> sources) {
+  // MW_EBV file
+  ifstream mw_ebv_ifstream;
+  string mw_ebv_file = ((keys["MW_EBV_FILE"]).split_string("NONE", 1))[0];
+
+  size_t mw_ebv_nlines = 0;
+  vector<double> mw_ebv_values;
+
+  // If a file name is defined
+  if (mw_ebv_file.substr(0, 4) != "NONE") {
+    // Check if the file exist
+    mw_ebv_ifstream.open(mw_ebv_file.c_str());
+    if (!mw_ebv_ifstream) {
+      cout << "External MW_EBV_FILE indicated, but no existing file "
+           << mw_ebv_file << endl;
+      exit(0);
+    }
+
+    // Read ebv stream
+    string linemwebv;
+    while (getline(mw_ebv_ifstream, linemwebv)) {
+      if (check_first_char(linemwebv)) {
+        stringstream ss(linemwebv);
+        string id;
+        double val;
+        ss >> id >> val;
+
+        // Store when the id of the ebv file
+        // match the id of the first source
+        if (id == sources[mw_ebv_nlines]->spec) {
+          sources[mw_ebv_nlines]->mw_ebv = val;
+          mw_ebv_nlines++;
+        }
+      }
+    }
+
+    // If the number of read MW E(B-V) does not match the number of sources
+    if (mw_ebv_nlines != sources.size()) {
+      cout << "\nERROR: mismatch in MW_EBV file " << mw_ebv_nlines << " "
+           << sources.size() << endl;
+    } else {
+      cout << "One MW E(B-V) per source as expected " << endl;
+    }
+  }
+  return;
 }
 
 /*
