@@ -228,7 +228,7 @@ Need 1 or N values
 
     def __init__(self, config_file="", config_keymap=None, **kwargs):
         self.name = "Zphota"
-        super().__init__(config_keys, config_file, **kwargs)
+        super().__init__(config_keys, config_file, config_keymap, **kwargs)
 
     def run(self, **kwargs):
         super().run(**kwargs)
