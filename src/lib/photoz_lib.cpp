@@ -286,15 +286,13 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
   // If it is GALAMETZ we compute per model values
   if (red_type == "GALAMETZ") {
     mw_extinction = true;
-    mw_classic_extinction = false;
     // If it is CLASSIC we apply that in photzlib stage
-  } else if (red_type == "CLASSIC") {
-    mw_extinction = false;
-    mw_classic_extinction = true;
-    // need to call it here so that it is guaranteed
-    // Compute the standard values and update the fullLib
   } else {
     mw_extinction = false;
+  }
+  if (red_type == "CLASSIC") {
+    mw_classic_extinction = true;
+  } else {
     mw_classic_extinction = false;
   }
   one_mw_ebv = false;
@@ -1835,12 +1833,15 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
       valid = validLib(oneObj->zs);
     }
     // Core of the program: compute the chi2
-    if (oneObj->mw_ebv < 0.0) {
+    if (oneObj->mw_ebv < 0.0 || !mw_extinction) {
       // No reddening, use original flux
+      if (mw_classic_extinction) {
+        oneObj->deredden_observed_mag(mw_classic_extinction_values);
+      }
       oneObj->fit(lightLib, flux, valid, funz0, bp, restrict_rf);
     } else {
       // Apply reddening first
-      if (!one_mw_ebv || nobj == 0) {
+      if (!one_mw_ebv || nobj == 1) {
         reddened_flux = oneObj->redden_flux(flux, reddening);
       }
       oneObj->fit(lightLib, reddened_flux, valid, funz0, bp, restrict_rf);
@@ -1878,15 +1879,18 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
       // We only work on GAL solutions here
 
       auto validfix = validLib(oneObj->zgmed[0]);
-      if (oneObj->mw_ebv < 0.0) {
+      if (oneObj->mw_ebv < 0.0 || !mw_extinction) {
         // No reddening, use original flux
-        oneObj->fit(lightLib, flux, validfix, funz0, bp, restrict_rf);
+        if (mw_classic_extinction) {
+          oneObj->deredden_observed_mag(mw_classic_extinction_values);
+        }
+        oneObj->fit(lightLib, flux, valid, funz0, bp, restrict_rf);
       } else {
         // Apply reddening first
-        if (!one_mw_ebv || nobj == 0) {
+        if (!one_mw_ebv || nobj == 1) {
           reddened_flux = oneObj->redden_flux(flux, reddening);
         }
-        oneObj->fit(lightLib, reddened_flux, validfix, funz0, bp, restrict_rf);
+        oneObj->fit(lightLib, reddened_flux, valid, funz0, bp, restrict_rf);
       }
 
     } else {
