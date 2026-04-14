@@ -31,7 +31,7 @@ def test_reddening(test_data_dir: str):
     config = lp.read_config(os.path.join(test_data_dir, "examples/COSMOS.para"))
     config["Z_STEP"] = "1.,0.,2."  # Fake star SED gets redshifted out of B band at low z
     # keymap=lp.all_types_to_keymap(config)
-    config["APPLY_MW_EXTINCTION"] = "YES"
+    config["APPLY_MW_EXTINCTION"] = "GALAMETZ"
     config["EXT_MW_CURVE"] = "LMC_Fitzpatrick.dat"
     config["MW_REFERENCE_MODEL"] = "sed/STAR/PICKLES/o5v.sed.ext"
     mw_ebv_test_file = os.path.join(test_data_dir, "examples/mw_ebv.dat")

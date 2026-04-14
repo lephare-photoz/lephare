@@ -90,8 +90,16 @@ Mag::Mag(keymap& key_analysed)
         lepharedir + "/ext/" +
         key_analysed["EXT_MW_CURVE"].split_string("CARDELLI", 1)[0]);
   }
-  applyMilkyWayExtinction =
-      ((key_analysed["APPLY_MW_EXTINCTION"]).split_bool("NO", 1))[0];
+
+  string red_type =
+      key_analysed["APPLY_MW_EXTINCTION"].split_string("NO", 1)[0];
+  // If it is GALAMETZ we compute per model values
+  if (red_type == "GALAMETZ") {
+    applyMilkyWayExtinction = true;
+    // If it is CLASSIC we apply that in photzlib stage
+  } else {
+    applyMilkyWayExtinction = false;
+  }
   // need to call it here so that it is guaranteed
   // that the vector has been created before each thread in make_maglib
   // uses it.

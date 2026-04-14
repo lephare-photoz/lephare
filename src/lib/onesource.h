@@ -205,6 +205,7 @@ class onesource {
                      const vector<size_t>& valid, const double funz0,
                      const array<int, 2> bp, double thresholdChi2,
                      const bool restrict);
+  void deredden_observed_mag(const vector<double>& ext_values);
 
   vector<vector<double>> redden_flux(
       const vector<vector<double>>& flux,
@@ -216,7 +217,7 @@ class onesource {
    */
   void write_out(ofstream& stout, const vector<string>& outkeywords);
   void write_pdz_header(vector<string> pdztype,
-                        unordered_map<string, ofstream> &stpdz);
+                        unordered_map<string, ofstream>& stpdz);
   void write_pdz(vector<string> pdztype,
                  unordered_map<string, ofstream>& stpdz);
   void convertMag();
@@ -261,8 +262,8 @@ class onesource {
    * which have \f$\lambda_{mean}/(1+z)\f>250 \mu m$.
    */
   void subtract_stellar_component(const bool substar, vector<flt> allFilters);
-  void absmag(const vector<vector<int>> &bestFlt,
-              const vector<vector<double>> &maxkcolor, cosmo lcdm,
+  void absmag(const vector<vector<int>>& bestFlt,
+              const vector<vector<double>>& maxkcolor, cosmo lcdm,
               const vector<double> gridz);
   void writeSpec(vector<SED*>& fulllib, vector<SED*>& fulllibIR, cosmo lcdm,
                  const vector<flt>& allFilters, const string outspdir) const;

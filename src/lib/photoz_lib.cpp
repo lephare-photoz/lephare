@@ -20,6 +20,7 @@
 
 #include "SED.h"        //our own class to read the keywords
 #include "cosmology.h"  // in order to measure the distance modulus
+#include "ext.h"  // to read the extinction curves and apply them to the SEDs when adding dust emission
 #include "flt.h"  //To get BPC of reference model if MW extinction is applied
 #include "globals.h"  // global variables
 #include "keyword.h"  //our own class to read the keywords
@@ -280,8 +281,22 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
   }
 
   // MW_EXTINCTION
-  mw_extinction =
-      ((key_analysed["APPLY_MW_EXTINCTION"]).split_bool("NO", 1))[0];
+  string red_type =
+      key_analysed["APPLY_MW_EXTINCTION"].split_string("NO", 1)[0];
+  // If it is GALAMETZ we compute per model values
+  if (red_type == "GALAMETZ") {
+    mw_extinction = true;
+    mw_classic_extinction = false;
+    // If it is CLASSIC we apply that in photzlib stage
+  } else if (red_type == "CLASSIC") {
+    mw_extinction = false;
+    mw_classic_extinction = true;
+    // need to call it here so that it is guaranteed
+    // Compute the standard values and update the fullLib
+  } else {
+    mw_extinction = false;
+    mw_classic_extinction = false;
+  }
   one_mw_ebv = false;
   // MW_EBV_VALS can be NO, single value or ascii file with the E(B-V) values
   // for each source
@@ -444,6 +459,7 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
   flux.resize(fullLib.size(), vector<double>(imagm, 0.));
   reddened_flux.resize(fullLib.size(), vector<double>(imagm, 0.));
   reddening.resize(fullLib.size(), vector<double>(imagm, 0.));
+  mw_classic_extinction_values.resize(allFilters.size(), 0.);
 
   if (mw_extinction) {
     // set the reddening from the albd vals, the bpc, and the target model
@@ -480,6 +496,26 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
 
       for (size_t j = 0; j < mw.size(); j++) {
         reddening[i][j] = mw[j] / scaled_bpc_i;
+      }
+    }
+  } else if (mw_classic_extinction) {
+    // If we apply the MW extinction in a classic way, we need to compute the
+    // extinction curve for each filter and apply it to the observations prior
+    // to the fit.
+    string mwExtCurve =
+        (key_analysed["EXT_MW_CURVE"]).split_string("CARDELLI", 1)[0];
+    ext milkyWayExtinction(mwExtCurve);
+    if (milkyWayExtinction.name != "CARDELLI") {
+      milkyWayExtinction.read(
+          lepharedir + "/ext/" +
+          key_analysed["EXT_MW_CURVE"].split_string("CARDELLI", 1)[0]);
+      for (size_t j = 0; j < allFilters.size(); j++) {
+        mw_classic_extinction_values[j] =
+            compute_filter_extinction(allFilters[j], milkyWayExtinction);
+      }
+    } else {
+      for (size_t j = 0; j < allFilters.size(); j++) {
+        mw_classic_extinction_values[j] = cardelli_ext(allFilters[j]);
       }
     }
   }
@@ -1152,8 +1188,11 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
         // compatible redshift to zs.
         auto valid = validLib(oneObj->zs);
 
-        if (oneObj->mw_ebv < 0.0) {
+        if (oneObj->mw_ebv < 0.0 || !mw_extinction) {
           // No reddening, use original flux
+          if (mw_classic_extinction) {
+            oneObj->deredden_observed_mag(mw_classic_extinction_values);
+          }
           oneObj->fit(lightLib, flux, valid, funz0, bp, restrict_rf);
         } else {
           // Apply reddening first

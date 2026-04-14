@@ -1387,10 +1387,10 @@ void onesource::write_out(ofstream& stout, const vector<string>& outkeywords) {
  write the header of the PDF(z)
 */
 void onesource::write_pdz_header(vector<string> pdztype,
-                                 unordered_map<string, ofstream> &stpdz) {
+                                 unordered_map<string, ofstream>& stpdz) {
   // Loop over the PDF type wanted in output
   time_t now = time(nullptr);
-  for (const auto &type : pdztype) {
+  for (const auto& type : pdztype) {
     stpdz[type] << "# Creation date: " << asctime(localtime(&now));
     stpdz[type] << "# Probability associated to the following steps " << endl
                 << "# Id ";
@@ -2290,4 +2290,14 @@ void onesource::writeFullChi(const SEDlight& lightLib) {
     stochi << lightLib.chi2[k] << endl;
   }
   return;
+}
+
+void onesource::deredden_observed_mag(const vector<double>& extinction_values) {
+  // Loop over the observed fluxes and apply the dereddening
+  for (size_t k = 0; k < mab.size(); k++) {
+    if (mab[k] > -90 && msab[k] > 0) {
+      // derreden the observed magnitude by subtracting the extinction value
+      mab[k] -= extinction_values[k];
+    }
+  }
 }

@@ -35,10 +35,12 @@ class PhotoZ {
                 /// true/spectro z
       methz,    /// If true, set z to the MEDIAN solution rather than the BEST
                 /// solution, when computing physical parameters.
-      mw_extinction,  /// Whether or not to apply a Milky Way extinction
-                      /// correction to the SEDs
-      colAnalysis;    /// if true, measure the PDF to get unceratinties
-                      /// associated to the rest-frame colors.
+      mw_extinction,          /// Whether or not to apply a Milky Way extinction
+                              /// correction to the SEDs
+      mw_classic_extinction,  /// apply equal extinction to all SEDs, as opposed
+                              /// to a different value for each SED
+      colAnalysis;            /// if true, measure the PDF to get unceratinties
+                              /// associated to the rest-frame colors.
 
   string cat, typm, catmag, cattyp, zmulti, outf, outsp, outpdz, outpdm;
   vector<double> shifts0, min_err, fac_err, int_pdz, zbmin, zbmax;
@@ -65,6 +67,14 @@ class PhotoZ {
   bool one_mw_ebv;  ///< Whether or not a single MW E(B-V) value is applied to
                     ///< all sources, as opposed to a different value for each
                     ///< source read from a file
+  vector<double>
+      mw_classic_extinction_values;  ///< If mw_classic_extinction is true, this
+                                     ///< vector contains the extinction values
+                                     ///< to apply to each filter for all SEDs.
+                                     ///< It is computed once at the beginning
+                                     ///< of the code, based on the selected
+                                     ///< Milky Way extinction curve and the
+                                     ///< filter transmission curves.
   PhotoZ(keymap& key_analysed);
 
   // LCOV_EXCL_START
@@ -99,7 +109,7 @@ class PhotoZ {
 
   string prep_header(vector<string> outkeywords);
 
-  void write_outputs(vector<onesource *> sources);
+  void write_outputs(vector<onesource*> sources);
 
   void read_lib(vector<SED*>& fullLib, int& ind, int nummodpre[3],
                 const string libName, string& filtname, vector<int> emMod,

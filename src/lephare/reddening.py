@@ -39,7 +39,7 @@ def compute_model_reddening(config):
     - The output array `values[i, j]` corresponds to the reddening for model `i`
       through filter `j`.
     """
-    config["APPLY_MW_EXTINCTION"] = "YES"
+    config["APPLY_MW_EXTINCTION"] = "GALAMETZ"
     keymap = lp.all_types_to_keymap(config)
     lp.prepare(keymap)
     photz = lp.PhotoZ(keymap)
@@ -84,7 +84,7 @@ def compute_band_pass_correction(config):
     - The output array `values[i]` corresponds to the band pass correction for model `i`.
     """
     # Set to calculate the values if not set
-    config["APPLY_MW_EXTINCTION"] = "YES"
+    config["APPLY_MW_EXTINCTION"] = "GALAMETZ"
     keymap = lp.all_types_to_keymap(config)
     lp.prepare(keymap)
     photz = lp.PhotoZ(keymap)
