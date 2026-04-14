@@ -34,7 +34,7 @@ SED::SED(const string nameC, int nummodC, string type) {
   nlib = string_to_object(type);
 
   has_emlines = false;
-  has_mw_extinction = false;
+  has_mw_galametz = false;
   idAge = 0;     // index of the age into the SED
   age = -999;    // Age  (yr)
   red = 0.;      // redshift considered for the SED
@@ -1060,7 +1060,7 @@ void GalSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
   }
 
   // Write the extinction values
-  if (has_mw_extinction) {
+  if (has_mw_galametz) {
     for (int k = 0; k < nbFlt; k++) {
       ofsBin.write((char*)&(milky_way_extinction[k]), sizeof(double));
     }
@@ -1108,7 +1108,7 @@ void GalSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
       }
     }
     // Write the extinction values
-    if (has_mw_extinction) {
+    if (has_mw_galametz) {
       for (int k = 0; k < nbFlt; k++) {
         ofsDat << setw(6) << milky_way_extinction[k] << " ";
       }
@@ -1188,7 +1188,7 @@ void GalSED::readMagBin(ifstream& ins) {
   }
 
   // Read the extinction values
-  if (has_mw_extinction) {
+  if (has_mw_galametz) {
     milky_way_extinction.resize(nbFlt, 0.);
     for (auto& mwe : milky_way_extinction) {
       ins.read((char*)&mwe, sizeof(double));
@@ -1346,7 +1346,7 @@ void QSOSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
     ofsBin.write((char*)&(kcorr[k]), sizeof(double));
 
   // Write the extinction values
-  if (has_mw_extinction) {
+  if (has_mw_galametz) {
     for (int k = 0; k < nbFlt; k++) {
       ofsBin.write((char*)&(milky_way_extinction[k]), sizeof(double));
     }
@@ -1387,7 +1387,7 @@ void QSOSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
     }
     ofsDat << endl;
     // Write the extinction values
-    if (has_mw_extinction) {
+    if (has_mw_galametz) {
       for (int k = 0; k < nbFlt; k++) {
         ofsDat << setw(6) << milky_way_extinction[k] << " ";
       }
@@ -1425,7 +1425,7 @@ void QSOSED::readMagBin(ifstream& ins) {
   }
 
   // Read the extinction values
-  if (has_mw_extinction) {
+  if (has_mw_galametz) {
     milky_way_extinction.resize(nbFlt, 0.);
     for (auto& mwe : milky_way_extinction) {
       ins.read((char*)&mwe, sizeof(double));
@@ -1472,7 +1472,7 @@ void StarSED::readMagBin(ifstream& ins) {
     ins.read((char*)&m, sizeof(double));
   }
   // Read the MW extinction values
-  if (has_mw_extinction) {
+  if (has_mw_galametz) {
     milky_way_extinction.resize(nbFlt, 0.);
     for (auto& mwe : milky_way_extinction) {
       ins.read((char*)&mwe, sizeof(double));
@@ -1513,7 +1513,7 @@ void StarSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
     ofsBin.write((char*)&(mag[k]), sizeof(double));
 
   // Write the extinction values
-  if (has_mw_extinction) {
+  if (has_mw_galametz) {
     for (int k = 0; k < nbFlt; k++) {
       ofsBin.write((char*)&(milky_way_extinction[k]), sizeof(double));
     }
@@ -1543,7 +1543,7 @@ void StarSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
       }
     }
     // Write the extinction values
-    if (has_mw_extinction) {
+    if (has_mw_galametz) {
       for (int k = 0; k < nbFlt; k++) {
         ofsDat << setw(6) << milky_way_extinction[k] << " ";
       }

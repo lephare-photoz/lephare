@@ -503,7 +503,7 @@ vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
               if (applyMilkyWayExtinction) {
                 oneSEDInt.compute_milky_way_extinction(milkyWayExtinction,
                                                        allFlt);
-                oneSEDInt.has_mw_extinction = true;
+                oneSEDInt.has_mw_galametz = true;
               }
 
               // If z>0, no need to keep the spectra
@@ -763,7 +763,7 @@ vector<QSOSED> QSOMag::make_maglib(const QSOSED& oneSED) {
           // Compute Milky Way extinction
           if (applyMilkyWayExtinction) {
             oneSEDInt.compute_milky_way_extinction(milkyWayExtinction, allFlt);
-            oneSEDInt.has_mw_extinction = true;
+            oneSEDInt.has_mw_galametz = true;
           }
 
           // If z>0, no need to keep the spectra
@@ -878,7 +878,7 @@ vector<StarSED> StarMag::make_maglib(const StarSED& sed) {
   // Compute Milky Way extinction
   if (applyMilkyWayExtinction) {
     newsed.compute_milky_way_extinction(milkyWayExtinction, allFlt);
-    newsed.has_mw_extinction = true;
+    newsed.has_mw_galametz = true;
   }
   // return singleton vector in order to have the same structure as for QSO and
   // Gal

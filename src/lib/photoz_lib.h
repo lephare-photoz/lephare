@@ -35,8 +35,8 @@ class PhotoZ {
                 /// true/spectro z
       methz,    /// If true, set z to the MEDIAN solution rather than the BEST
                 /// solution, when computing physical parameters.
-      mw_extinction,          /// Whether or not to apply a Milky Way extinction
-                              /// correction to the SEDs
+      mw_galametz,            /// Whether or not to apply a Milky Way extinction
+                              /// correction to the SEDs with Galametz method
       mw_classic_extinction,  /// apply equal extinction to all SEDs, as opposed
                               /// to a different value for each SED
       colAnalysis;            /// if true, measure the PDF to get unceratinties

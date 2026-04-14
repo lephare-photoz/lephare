@@ -280,25 +280,41 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
     fltREF--;
   }
 
-  // MW_EXTINCTION
+  // EXTINCTION OF THE MILKY WAY
   string red_type =
       key_analysed["APPLY_MW_EXTINCTION"].split_string("NO", 1)[0];
   // If it is GALAMETZ we compute per model values
   if (red_type == "GALAMETZ") {
-    mw_extinction = true;
-    // If it is CLASSIC we apply that in photzlib stage
+    mw_galametz = true;
   } else {
-    mw_extinction = false;
+    mw_galametz = false;
   }
+  // If it is CLASSIC we correct the observed magnitude, without considering
+  // model dependence
   if (red_type == "CLASSIC") {
     mw_classic_extinction = true;
   } else {
     mw_classic_extinction = false;
   }
-  one_mw_ebv = false;
-  // MW_EBV_VALS can be NO, single value or ascii file with the E(B-V) values
-  // for each source
-  // mw_ebv_vals = (key_analysed["MW_EBV_VALS"]).split_string("NO", 1)[0];
+  // read the kweywords associated to these two both options
+  string mwExtCurve =
+      (key_analysed["EXT_MW_CURVE"]).split_string("CARDELLI", 1)[0];
+  ext milkyWayExtinction(mwExtCurve);
+  if (mw_galametz || mw_classic_extinction) {
+    if (milkyWayExtinction.name != "CARDELLI") {
+      milkyWayExtinction.read(
+          lepharedir + "/ext/" +
+          key_analysed["EXT_MW_CURVE"].split_string("CARDELLI", 1)[0]);
+    }
+  }
+  // Additional information only for Galametz
+  if (mw_galametz) {
+    // set the reddening from the albd vals, the bpc, and the target model
+    mw_ref_mod = (key_analysed["MW_REFERENCE_MODEL"])
+                     .split_string("sed/STAR/PICKLES/b5i.sed", 1)[0];
+    mw_ref_type =
+        (key_analysed["MW_REFERENCE_TYPE"]).split_string("STAR", 1)[0];
+  }
 
   /*
     INFO PARAMETERS ON SCREEN AND DOC
@@ -317,6 +333,7 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
     outputHeader += colib[k] + ' ';
   };
   outputHeader += '\n';
+  outputHeader += "# APPLY_MW_EXTINCTION : " + red_type + '\n';
   outputHeader += "# FIR_LIB                : ";
   for (size_t k = 0; k < nlibext; k++) {
     outputHeader += libext[k] + ' ';
@@ -445,6 +462,50 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
     allFiltersAdd = read_doc_filters(filtNameAdd);
   }
 
+  /*
+    Reddening of the Milky Way depending on the options
+  */
+  reddening.resize(fullLib.size(), vector<double>(imagm, 0.));
+  mw_classic_extinction_values.resize(allFilters.size(), 0.);
+  // Define the reddening correction to be applied model by model in case of
+  // Galametz method
+  if (mw_galametz) {
+    // Get the SED
+    SED mw_ref_model_sed("ReferenceModel", -1, std::string(1, mw_ref_type[0]));
+    mw_ref_model_sed.read(lepharedir + "/" + mw_ref_mod);
+    mw_ref_model_sed.compute_milky_way_extinction(milkyWayExtinction,
+                                                  allFilters);
+    // Compute the ebv for the reference model to scale the Band-Pass
+    // Corrections
+    const auto& refBPC = mw_ref_model_sed.band_pass_correction;
+    for (size_t i = 0; i < fullLib.size(); i++) {
+      // Scale every SED BPC by the reference model BPC, and compute the
+      // reddening in each band
+      auto& sed = fullLib[i];
+      const auto& mw = sed->milky_way_extinction;
+      double bpc_i = sed->band_pass_correction;
+      double scaled_bpc_i = bpc_i / refBPC;  // updated BPC
+      sed->band_pass_correction = scaled_bpc_i;
+      for (size_t j = 0; j < mw.size(); j++) {
+        reddening[i][j] = mw[j] / scaled_bpc_i;
+      }
+    }
+  } else if (mw_classic_extinction) {
+    // If we apply the MW extinction in a classic way, we need to compute the
+    // extinction curve for each filter and apply it to the observations prior
+    // to the fit.
+    if (milkyWayExtinction.name != "CARDELLI") {
+      for (size_t j = 0; j < allFilters.size(); j++) {
+        mw_classic_extinction_values[j] =
+            compute_filter_extinction(allFilters[j], milkyWayExtinction);
+      }
+    } else {
+      for (size_t j = 0; j < allFilters.size(); j++) {
+        mw_classic_extinction_values[j] = cardelli_ext(allFilters[j]);
+      }
+    }
+  }
+
   // Decide if the uncertainties on the rest-frame colors should be analysed
   colAnalysis =
       ((fltColRF[0] >= 0) && (fltColRF[1] >= 0) && (fltColRF[2] >= 0) &&
@@ -456,67 +517,6 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
   Done to improve the performance in the fit*/
   flux.resize(fullLib.size(), vector<double>(imagm, 0.));
   reddened_flux.resize(fullLib.size(), vector<double>(imagm, 0.));
-  reddening.resize(fullLib.size(), vector<double>(imagm, 0.));
-  mw_classic_extinction_values.resize(allFilters.size(), 0.);
-
-  if (mw_extinction) {
-    // set the reddening from the albd vals, the bpc, and the target model
-    mw_ref_mod = (key_analysed["MW_REFERENCE_MODEL"])
-                     .split_string("sed/STAR/PICKLES/b5i.sed", 1)[0];
-    mw_ref_type =
-        (key_analysed["MW_REFERENCE_TYPE"]).split_string("STAR", 1)[0];
-    // Get the mw model for the reference obejct
-    string mwExtCurve =
-        (key_analysed["EXT_MW_CURVE"]).split_string("CARDELLI", 1)[0];
-    ext milkyWayExtinction(mwExtCurve);
-    if (milkyWayExtinction.name != "CARDELLI") {
-      milkyWayExtinction.read(
-          lepharedir + "/ext/" +
-          key_analysed["EXT_MW_CURVE"].split_string("CARDELLI", 1)[0]);
-    }
-    // Get the SED
-    SED mw_ref_model_sed("ReferenceModel", -1, std::string(1, mw_ref_type[0]));
-    mw_ref_model_sed.read(lepharedir + "/" + mw_ref_mod);
-    vector<flt> filters;  // Empty but requirement of function
-                          // compute_milky_way_extinction
-    mw_ref_model_sed.compute_milky_way_extinction(milkyWayExtinction, filters);
-    // Compute the ebv for the reference model to scale the BPV values
-    const auto& refBPC = mw_ref_model_sed.band_pass_correction;
-    for (size_t i = 0; i < fullLib.size(); i++) {
-      // Scale every SED BPC by the reference model BPC, and compute the
-      // reddening in each band
-      auto& sed = fullLib[i];
-      const auto& mw = sed->milky_way_extinction;
-      double bpc_i = sed->band_pass_correction;
-      double scaled_bpc_i = bpc_i / refBPC;  // updated BPC
-
-      sed->band_pass_correction = scaled_bpc_i;
-
-      for (size_t j = 0; j < mw.size(); j++) {
-        reddening[i][j] = mw[j] / scaled_bpc_i;
-      }
-    }
-  } else if (mw_classic_extinction) {
-    // If we apply the MW extinction in a classic way, we need to compute the
-    // extinction curve for each filter and apply it to the observations prior
-    // to the fit.
-    string mwExtCurve =
-        (key_analysed["EXT_MW_CURVE"]).split_string("CARDELLI", 1)[0];
-    ext milkyWayExtinction(mwExtCurve);
-    if (milkyWayExtinction.name != "CARDELLI") {
-      milkyWayExtinction.read(
-          lepharedir + "/ext/" +
-          key_analysed["EXT_MW_CURVE"].split_string("CARDELLI", 1)[0]);
-      for (size_t j = 0; j < allFilters.size(); j++) {
-        mw_classic_extinction_values[j] =
-            compute_filter_extinction(allFilters[j], milkyWayExtinction);
-      }
-    } else {
-      for (size_t j = 0; j < allFilters.size(); j++) {
-        mw_classic_extinction_values[j] = cardelli_ext(allFilters[j]);
-      }
-    }
-  }
 
   zLib.resize(fullLib.size(), -99.);
   fluxIR.resize(fullLibIR.size(), vector<double>(imagm, 0.));
@@ -697,8 +697,8 @@ void PhotoZ::read_lib(vector<SED*>& libFull, int& ind, int nummodpre[3],
       throw invalid_argument("There is no such SED type defined: " + valc);
     }
 
-    if (mw_extinction) {
-      oneSED->has_mw_extinction = true;
+    if (mw_galametz) {
+      oneSED->has_mw_galametz = true;
     }
 
     // read each SED in the library binary file
@@ -1186,7 +1186,7 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
         // compatible redshift to zs.
         auto valid = validLib(oneObj->zs);
 
-        if (oneObj->mw_ebv < 0.0 || !mw_extinction) {
+        if (oneObj->mw_ebv < 0.0 || !mw_galametz) {
           // No reddening, use original flux
           if (mw_classic_extinction) {
             oneObj->deredden_observed_mag(mw_classic_extinction_values);
@@ -1833,7 +1833,7 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
       valid = validLib(oneObj->zs);
     }
     // Core of the program: compute the chi2
-    if (oneObj->mw_ebv < 0.0 || !mw_extinction) {
+    if (oneObj->mw_ebv < 0.0 || !mw_galametz) {
       // No reddening, use original flux
       if (mw_classic_extinction) {
         oneObj->deredden_observed_mag(mw_classic_extinction_values);
@@ -1879,7 +1879,7 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
       // We only work on GAL solutions here
 
       auto validfix = validLib(oneObj->zgmed[0]);
-      if (oneObj->mw_ebv < 0.0 || !mw_extinction) {
+      if (oneObj->mw_ebv < 0.0 || !mw_galametz) {
         // No reddening, use original flux
         if (mw_classic_extinction) {
           oneObj->deredden_observed_mag(mw_classic_extinction_values);

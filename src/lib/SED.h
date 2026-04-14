@@ -40,7 +40,7 @@ class SED {
   vector<double> kcorr,           ///< k-correction term
       mag_z0;                     ///< magnitude at z=0
   vector<double> mag;             ///< magnitude and flux of the model
-  bool has_mw_extinction;         ///< True if the Milky Way extinction has been
+  bool has_mw_galametz;           ///< True if the Milky Way extinction has been
                                   ///< computed
   vector<double>
       milky_way_extinction;     ///< attenuation of the model in each band
@@ -108,7 +108,7 @@ class SED {
     mag = p.mag;
     name = p.name;
     has_emlines = p.has_emlines;
-    has_mw_extinction = p.has_mw_extinction;
+    has_mw_galametz = p.has_mw_galametz;
     milky_way_extinction = p.milky_way_extinction;
     band_pass_correction = p.band_pass_correction;
     nummod = p.nummod;
