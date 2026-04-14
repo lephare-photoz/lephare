@@ -693,12 +693,12 @@ vista/K                0.100            0.118    0.364
 ====================== ================ ======== ============
 
 | 
-| Col 2 : Mean atmospheric extinction (mag/airmass) using (EXT_CURVE):
+| Col 2 : Mean atmospheric extinction (mag/airmass) using (EXT_ATMOS_CURVE):
   :math:`A_{\lambda}= \int R_{\lambda} Ext(\lambda) d\lambda / \int R_{\lambda} d\lambda`
 | :math:`Ext(\lambda)` comes from any atmospheric extinction curve that
   is put in $\ *LEPHAREDIR*/ext/.
 | Col 3 : Mean galactic attenuation (in :math:`A(\lambda)/A_V`) using
-  the galactic extinction law (GAL_CURVE). Col 4 : Mean galactic
+  the galactic extinction law (EXT_MW_CURVE). Col 4 : Mean galactic
   attenuation (in :math:`A(\lambda)//E(B-V)`) as a function of color
   excess (E(B-V)) assuming :math:`A_V=R_V\times E(B-V)`.
 | For :math:`R_V` coefficients, we assume :math:`R_V=3.1` for most

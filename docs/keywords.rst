@@ -137,6 +137,12 @@ mag_gal
    * - ADD_DUSTEM
      - NO[def] or YES
      - Add the dust emission in templates when missing (using energy balance).
+   * - EXT_MW_CURVE
+     - CARDELLI[def] or NONE
+     - Extinction curve for the Milky Way extinction (used for the energy balance when adding dust emission). Should be in $LEPHAREDIR/ext if relative.
+   * - EXT_ATMOS_CURVE
+     - NONE[def] or e.g. SB_calzetti.dat
+     - Extinction curve for the atmospheric extinction (used for the energy balance when adding dust emission). Should be in $LEPHAREDIR/ext if relative.
 
 zphota
 ------

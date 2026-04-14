@@ -14,8 +14,8 @@ def test_filter_extinc():
     out_file = os.path.join(test_dir, "../tmp", "filter_extinc.dat")
     options = {
         "FILTER_FILE": os.path.join(test_dir, "../data", "filt", "LSST_FILTERS.dat"),
-        "EXT_CURVE": "SB_calzetti.dat",
-        "GAL_CURVE": "CARDELLI",
+        "EXT_ATMOS_CURVE": "SB_calzetti.dat",
+        "EXT_MW_CURVE": "CARDELLI",
         "OUTPUT": out_file,
     }
     runner = lp.FiltExt(config_keymap=lp.all_types_to_keymap(lp.default_cosmos_config), **options)

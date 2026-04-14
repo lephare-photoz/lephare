@@ -466,10 +466,11 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
     vector<flt> filters;  // Empty but requirement of function
                           // compute_milky_way_extinction
     mw_ref_model_sed.compute_milky_way_extinction(milkyWayExtinction, filters);
-    // Compute the bpc
-    int ref_mod_idx = 0;  // Get it from the file!
+    // Compute the ebv for the reference model to scale the BPV values
     const auto& refBPC = mw_ref_model_sed.band_pass_correction;
     for (size_t i = 0; i < fullLib.size(); i++) {
+      // Scale every SED BPC by the reference model BPC, and compute the
+      // reddening in each band
       auto& sed = fullLib[i];
       const auto& mw = sed->milky_way_extinction;
       double bpc_i = sed->band_pass_correction;
