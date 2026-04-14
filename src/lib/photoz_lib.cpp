@@ -516,6 +516,7 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
   and a light structure of SED
   Done to improve the performance in the fit*/
   flux.resize(fullLib.size(), vector<double>(imagm, 0.));
+  flux_no_mw.resize(fullLib.size(), vector<double>(imagm, 0.));
 
   zLib.resize(fullLib.size(), -99.);
   fluxIR.resize(fullLibIR.size(), vector<double>(imagm, 0.));
@@ -549,6 +550,15 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
     // Loop over the filters
     for (size_t k = 0; k < allFilters.size(); k++) {
       flux[i][k] = mag2flux(fullLib[i]->mag[k]);
+      // In case of Galametz method, save the unreddedned MW flux
+      if (mw_galametz) {
+        flux_no_mw[i][k] = flux[i][k];
+        // If Galametz with one MW value, correct the lib once
+        if (one_mw_ebv) {
+          double factor = std::pow(10.0, reddening[i][k] * global_mw_ebv / 2.5);
+          flux[i][k] = flux_no_mw[i][k] / factor;
+        }
+      }
       // Switch the predicted flux at -1 to dismiss the band in the chi2
       // computation
       if (restrict_rf && (allFilters[k].lmean / (1 + redin)) > fir_lmin)
@@ -558,10 +568,6 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
     zLib[i] = redin;
   }
 #ifdef _OPENMP
-
-  // In case of Galametz method, save the unreddedned MW flux
-  if (mw_galametz) flux_no_mw = flux;
-
 #pragma omp parallel for schedule(static)
 #endif
   for (size_t i = 0; i < fullLibIR.size(); i++) {
@@ -1189,8 +1195,8 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
         // compatible redshift to zs.
         auto valid = validLib(oneObj->zs);
 
-        // Apply MW reddening first if necessary
-        if ((!one_mw_ebv || n_adapt_obj == 0) && mw_galametz) {
+        // Apply MW reddening if Galametz option on
+        if (!one_mw_ebv && mw_galametz) {
           flux = oneObj->redden_flux(flux_no_mw, reddening);
         }
         oneObj->fit(lightLib, flux, valid, funz0, bp, restrict_rf);
@@ -1537,7 +1543,6 @@ vector<onesource*> PhotoZ::read_photoz_sources() {
   ifstream mw_ebv_ifstream;
   string mw_ebv_file = ((keys["MW_EBV_FILE"]).split_string("NONE", 1))[0];
 
-  double global_mw_ebv = 0.0;
   size_t mw_ebv_nlines = 0;
   vector<double> mw_ebv_values;
 
@@ -1829,8 +1834,8 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
       valid = validLib(oneObj->zs);
     }
 
-    // Apply MW reddening first if necessary, with a lib modification
-    if ((!one_mw_ebv || nobj == 0) && mw_galametz) {
+    // Apply MW reddening first if Galametz option on
+    if (!one_mw_ebv && mw_galametz) {
       flux = oneObj->redden_flux(flux_no_mw, reddening);
     }
 
