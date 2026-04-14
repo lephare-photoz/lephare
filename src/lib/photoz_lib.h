@@ -54,7 +54,7 @@ class PhotoZ {
   vector<opa> opaOut;
 
  public:
-  vector<vector<double>> flux, fluxIR, reddening, reddened_flux;
+  vector<vector<double>> flux, flux_no_mw, fluxIR, reddening;
   string mw_ref_mod, mw_ref_type;
   vector<double> zLib, zLibIR;
   vector<SED*> fullLib, fullLibIR;

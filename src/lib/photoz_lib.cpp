@@ -516,7 +516,6 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
   and a light structure of SED
   Done to improve the performance in the fit*/
   flux.resize(fullLib.size(), vector<double>(imagm, 0.));
-  reddened_flux.resize(fullLib.size(), vector<double>(imagm, 0.));
 
   zLib.resize(fullLib.size(), -99.);
   fluxIR.resize(fullLibIR.size(), vector<double>(imagm, 0.));
@@ -559,6 +558,10 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
     zLib[i] = redin;
   }
 #ifdef _OPENMP
+
+  // In case of Galametz method, save the unreddedned MW flux
+  if (mw_galametz) flux_no_mw = flux;
+
 #pragma omp parallel for schedule(static)
 #endif
   for (size_t i = 0; i < fullLibIR.size(); i++) {
@@ -1186,19 +1189,12 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
         // compatible redshift to zs.
         auto valid = validLib(oneObj->zs);
 
-        if (oneObj->mw_ebv < 0.0 || !mw_galametz) {
-          // No reddening, use original flux
-          if (mw_classic_extinction) {
-            oneObj->deredden_observed_mag(mw_classic_extinction_values);
-          }
-          oneObj->fit(lightLib, flux, valid, funz0, bp, restrict_rf);
-        } else {
-          // Apply reddening first
-          if (!one_mw_ebv || n_adapt_obj == 0) {
-            reddened_flux = oneObj->redden_flux(flux, reddening);
-          }
-          oneObj->fit(lightLib, reddened_flux, valid, funz0, bp, restrict_rf);
+        // Apply MW reddening first if necessary
+        if ((!one_mw_ebv || n_adapt_obj == 0) && mw_galametz) {
+          flux = oneObj->redden_flux(flux_no_mw, reddening);
         }
+        oneObj->fit(lightLib, flux, valid, funz0, bp, restrict_rf);
+
         n_adapt_obj++;
         // Interpolation of the predicted magnitudes, scaling at zs, checking
         // first that the fit was sucessfull
@@ -1832,20 +1828,14 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
     if (zfix) {
       valid = validLib(oneObj->zs);
     }
-    // Core of the program: compute the chi2
-    if (oneObj->mw_ebv < 0.0 || !mw_galametz) {
-      // No reddening, use original flux
-      if (mw_classic_extinction) {
-        oneObj->deredden_observed_mag(mw_classic_extinction_values);
-      }
-      oneObj->fit(lightLib, flux, valid, funz0, bp, restrict_rf);
-    } else {
-      // Apply reddening first
-      if (!one_mw_ebv || nobj == 1) {
-        reddened_flux = oneObj->redden_flux(flux, reddening);
-      }
-      oneObj->fit(lightLib, reddened_flux, valid, funz0, bp, restrict_rf);
+
+    // Apply MW reddening first if necessary, with a lib modification
+    if ((!one_mw_ebv || nobj == 0) && mw_galametz) {
+      flux = oneObj->redden_flux(flux_no_mw, reddening);
     }
+
+    // Core of the program: compute the chi2
+    oneObj->fit(lightLib, flux, valid, funz0, bp, restrict_rf);
 
     // Try to remove some bands to improve the chi2, only as long as the chi2 is
     // above a threshold
@@ -1877,21 +1867,8 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
       oneObj->chimin[0] = 1.e9;
       // Select the index of the templates that have a redshift closest to zgmed
       // We only work on GAL solutions here
-
       auto validfix = validLib(oneObj->zgmed[0]);
-      if (oneObj->mw_ebv < 0.0 || !mw_galametz) {
-        // No reddening, use original flux
-        if (mw_classic_extinction) {
-          oneObj->deredden_observed_mag(mw_classic_extinction_values);
-        }
-        oneObj->fit(lightLib, flux, valid, funz0, bp, restrict_rf);
-      } else {
-        // Apply reddening first
-        if (!one_mw_ebv || nobj == 1) {
-          reddened_flux = oneObj->redden_flux(flux, reddening);
-        }
-        oneObj->fit(lightLib, reddened_flux, valid, funz0, bp, restrict_rf);
-      }
+      oneObj->fit(lightLib, flux, valid, funz0, bp, restrict_rf);
 
     } else {
       oneObj->consiz = oneObj->zmin[0];
