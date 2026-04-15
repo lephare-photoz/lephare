@@ -351,14 +351,22 @@ vector<vector<double>> onesource::redden_flux(
   // Allocate output array with same size
   vector<vector<double>> out(nRows, vector<double>(nCols, 0.0));
 
-  // Apply reddening correction element-wise
-  for (size_t i = 0; i < nRows; ++i) {
-    for (size_t k = 0; k < nCols; ++k) {
-      double factor = std::pow(10.0, reddening[i][k] * this->mw_ebv / 2.5);
-      // Divide to redden times to deredden
-      out[i][k] = flux[i][k] / factor;
+#ifdef _OPENMP
+#pragma omp parallel
+  {
+#pragma omp for
+#endif
+    // Apply reddening correction element-wise
+    for (size_t i = 0; i < nRows; ++i) {
+      for (size_t k = 0; k < nCols; ++k) {
+        double factor = pow(10.0, reddening[i][k] * this->mw_ebv / 2.5);
+        // Divide to redden times to deredden
+        out[i][k] = flux[i][k] / factor;
+      }
     }
+#ifdef _OPENMP
   }
+#endif
 
   return out;
 }
@@ -2290,14 +2298,4 @@ void onesource::writeFullChi(const SEDlight& lightLib) {
     stochi << lightLib.chi2[k] << endl;
   }
   return;
-}
-
-void onesource::deredden_observed_mag(const vector<double>& extinction_values) {
-  // Loop over the observed fluxes and apply the dereddening
-  for (size_t k = 0; k < mab.size(); k++) {
-    if (mab[k] > -90 && msab[k] > 0) {
-      // derreden the observed magnitude by subtracting the extinction value
-      mab[k] -= extinction_values[k];
-    }
-  }
 }
