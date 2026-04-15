@@ -560,8 +560,8 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
         flux_no_mw[i][k] = flux[i][k];
         // If Galametz with one MW value, correct the lib once
         if (one_mw_ebv) {
-          double factor = std::pow(10.0, reddening[i][k] * mw_global_ebv / 2.5);
-          flux[i][k] = flux_no_mw[i][k] / factor;
+          flux[i][k] = flux_no_mw[i][k] /
+                       pow(10.0, reddening[i][k] * mw_global_ebv * 0.4);
         }
       }
       // Switch the predicted flux at -1 to dismiss the band in the chi2
