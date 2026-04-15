@@ -506,7 +506,7 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
       }
     } else {
       for (size_t j = 0; j < allFilters.size(); j++) {
-        mw_classic_extinction_values[j] = cardelli_ext(allFilters[j]);
+        mw_classic_extinction_values[j] = 3.1 * cardelli_ext(allFilters[j]);
       }
     }
   }
