@@ -1192,7 +1192,8 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
       for (auto& oneObj : adaptSources) {
         // Apply the milky way ebv correction to the observed mag if CLASSIC
         // method
-        oneObj->correct_classic_mw(mw_classic_extinction_values);
+        if (mw_classic_extinction)
+          oneObj->correct_classic_mw(mw_classic_extinction_values);
 
         // Correct the observed magnitudes and fluxes with the coefficients
         // found by auto-adapt
@@ -1813,7 +1814,8 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
            << flush;
     nobj++;
     // Apply the milky way ebv correction to the observed mag if CLASSIC method
-    oneObj->correct_classic_mw(mw_classic_extinction_values);
+    if (mw_classic_extinction)
+      oneObj->correct_classic_mw(mw_classic_extinction_values);
     // auto-adapt
     // Apply offset anyway (should be 0 if no auto-adapt or no systematic shifts
     oneObj->adapt_mag(a0_checked);
