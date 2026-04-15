@@ -248,7 +248,8 @@ class onesource {
   void mode();
   void interp_lib(vector<SED*>& fulllib);
   void adapt_mag(vector<double> a0);
-  void correct_classic_mw(const vector<double> Alamb_corr);
+  void correct_classic_mw(const vector<double> Alamb_corr,
+                          const double mw_global_ebv);
   /*! Allow for stellar component substraction before fitting an IR template
    * When fitting an IR component after the nominal fit, there is an interval
    * in wavelength where both nominal and IR template would contribute.

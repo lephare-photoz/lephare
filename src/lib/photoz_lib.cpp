@@ -317,9 +317,10 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
   }
   // Could decide to apply a single MW E(B-V) to the full catalogue rather than
   // one per source
-  double mw_global_ebv =
-      ((key_analysed["MW_GLOBAL_EBV"]).split_double("-1", 1))[0];
-  if (mw_global_ebv >= 0) one_mw_ebv = true;
+  mw_global_ebv = ((key_analysed["MW_GLOBAL_EBV"]).split_double("-1", 1))[0];
+  if (mw_global_ebv >= 0) {
+    one_mw_ebv = true;
+  }
 
   /*
     INFO PARAMETERS ON SCREEN AND DOC
@@ -338,7 +339,11 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
     outputHeader += colib[k] + ' ';
   };
   outputHeader += '\n';
-  outputHeader += "# APPLY_MW_EXTINCTION : " + red_type + '\n';
+  outputHeader += "# APPLY_MW_EXTINCTION    : " + red_type + '\n';
+  if (mw_galametz) {
+    outputHeader +=
+        "# MW_GLOBAL_EBV          : " + to_string(mw_global_ebv) + '\n';
+  }
   outputHeader += "# FIR_LIB                : ";
   for (size_t k = 0; k < nlibext; k++) {
     outputHeader += libext[k] + ' ';
@@ -555,15 +560,6 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
     // Loop over the filters
     for (size_t k = 0; k < allFilters.size(); k++) {
       flux[i][k] = mag2flux(fullLib[i]->mag[k]);
-      // In case of Galametz method, save the unreddedned MW flux
-      if (mw_galametz) {
-        flux_no_mw[i][k] = flux[i][k];
-        // If Galametz with one MW value, correct the lib once
-        if (one_mw_ebv) {
-          flux[i][k] = flux_no_mw[i][k] /
-                       pow(10.0, reddening[i][k] * mw_global_ebv * 0.4);
-        }
-      }
       // Switch the predicted flux at -1 to dismiss the band in the chi2
       // computation
       if (restrict_rf && (allFilters[k].lmean / (1 + redin)) > fir_lmin)
@@ -572,6 +568,27 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
     // create a vector with the redshift of the library
     zLib[i] = redin;
   }
+
+  // Preparation for Galametz
+  if (mw_galametz) {
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    // Initialize the chi2
+    for (size_t i = 0; i < fullLib.size(); i++) {
+      // Loop over the filters
+      for (size_t k = 0; k < allFilters.size(); k++) {
+        // In case of Galametz method, save the unreddedned MW flux
+        flux_no_mw[i][k] = flux[i][k];
+        // If Galametz with one MW value, correct the lib once
+        if (one_mw_ebv) {
+          flux[i][k] = flux_no_mw[i][k] /
+                       pow(10.0, reddening[i][k] * mw_global_ebv * 0.4);
+        }
+      }
+    }
+  }
+
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
@@ -1193,7 +1210,8 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
         // Apply the milky way ebv correction to the observed mag if CLASSIC
         // method
         if (mw_classic_extinction)
-          oneObj->correct_classic_mw(mw_classic_extinction_values);
+          oneObj->correct_classic_mw(mw_classic_extinction_values,
+                                     mw_global_ebv);
 
         // Correct the observed magnitudes and fluxes with the coefficients
         // found by auto-adapt
@@ -1815,7 +1833,7 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
     nobj++;
     // Apply the milky way ebv correction to the observed mag if CLASSIC method
     if (mw_classic_extinction)
-      oneObj->correct_classic_mw(mw_classic_extinction_values);
+      oneObj->correct_classic_mw(mw_classic_extinction_values, mw_global_ebv);
     // auto-adapt
     // Apply offset anyway (should be 0 if no auto-adapt or no systematic shifts
     oneObj->adapt_mag(a0_checked);

@@ -52,6 +52,7 @@ class PhotoZ {
   vector<int> bapp, bappOp, pdz_fabs, emMod;
   cosmo lcdm;
   vector<opa> opaOut;
+  double mw_global_ebv;
 
  public:
   vector<vector<double>> flux, flux_no_mw, fluxIR, reddening;
@@ -64,9 +65,10 @@ class PhotoZ {
   vector<string> outkeywords, pdftype;
   int imagm;
   string outputHeader, outpara;
-  bool one_mw_ebv;  ///< Whether or not a single MW E(B-V) value is applied to
-                    ///< all sources, as opposed to a different value for each
-                    ///< source read from a file
+  bool one_mw_ebv =
+      false;  ///< Whether or not a single MW E(B-V) value is applied to
+              ///< all sources, as opposed to a different value for each
+              ///< source read from a file
   vector<double>
       mw_classic_extinction_values;  ///< If mw_classic_extinction is true, this
                                      ///< vector contains the extinction values
