@@ -317,9 +317,10 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
   }
   // Could decide to apply a single MW E(B-V) to the full catalogue rather than
   // one per source
-  double mw_global_ebv =
-      ((key_analysed["MW_GLOBAL_EBV"]).split_double("-1", 1))[0];
-  if (mw_global_ebv >= 0) one_mw_ebv = true;
+  mw_global_ebv = ((key_analysed["MW_GLOBAL_EBV"]).split_double("-1", 1))[0];
+  if (mw_global_ebv >= 0) {
+    one_mw_ebv = true;
+  }
 
   /*
     INFO PARAMETERS ON SCREEN AND DOC
@@ -1209,7 +1210,8 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
         // Apply the milky way ebv correction to the observed mag if CLASSIC
         // method
         if (mw_classic_extinction)
-          oneObj->correct_classic_mw(mw_classic_extinction_values);
+          oneObj->correct_classic_mw(mw_classic_extinction_values,
+                                     mw_global_ebv);
 
         // Correct the observed magnitudes and fluxes with the coefficients
         // found by auto-adapt
@@ -1831,7 +1833,7 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
     nobj++;
     // Apply the milky way ebv correction to the observed mag if CLASSIC method
     if (mw_classic_extinction)
-      oneObj->correct_classic_mw(mw_classic_extinction_values);
+      oneObj->correct_classic_mw(mw_classic_extinction_values, mw_global_ebv);
     // auto-adapt
     // Apply offset anyway (should be 0 if no auto-adapt or no systematic shifts
     oneObj->adapt_mag(a0_checked);

@@ -52,6 +52,7 @@ class PhotoZ {
   vector<int> bapp, bappOp, pdz_fabs, emMod;
   cosmo lcdm;
   vector<opa> opaOut;
+  double mw_global_ebv;
 
  public:
   vector<vector<double>> flux, flux_no_mw, fluxIR, reddening;
