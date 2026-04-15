@@ -33,7 +33,7 @@ def test_reddening(test_data_dir: str):
     # keymap=lp.all_types_to_keymap(config)
     config["APPLY_MW_EXTINCTION"] = "GALAMETZ"
     config["EXT_MW_CURVE"] = "LMC_Fitzpatrick.dat"
-    config["MW_REFERENCE_MODEL"] = "sed/STAR/PICKLES/o5v.sed.ext"
+    config["MW_REFERENCE_MODEL"] = "sed/STAR/PICKLES/b5i.sed"
     mw_ebv_test_file = os.path.join(test_data_dir, "examples/mw_ebv.dat")
     config["MW_EBV_FILE"] = mw_ebv_test_file
     # the traditional file must be written later
@@ -49,8 +49,10 @@ def test_reddening(test_data_dir: str):
     input_file = os.path.join(test_data_dir, "examples/COSMOS_first100specz.fits")
     input = Table.read(input_file)
     ebv_test = np.linspace(0.0, 0.3, len(input))
-    out = np.column_stack([input[input.colnames[0]], ebv_test])
-    np.savetxt(mw_ebv_test_file, out, fmt=["%d", "%.8f"])
+    out = Table()
+    out["id"] = input[input.colnames[0]]
+    out["ebv"] = ebv_test
+    out.write(mw_ebv_test_file, format="ascii.no_header", overwrite=True)
 
     test_string = "te s"  # Test with spaces
     input["string_input"][0] = test_string
@@ -80,9 +82,8 @@ def test_reddening(test_data_dir: str):
     photz.read_mw_ebv(sources)
     # This is not working at the moment as the sources are not being read in
     # # with the ebv values, but this should be tested eventually
-    # for n, s in enumerate(sources):
-    #     pass
-    #     assert np.isclose(s.mw_ebv, ebv_test[n])
+    for n, s in enumerate(sources):
+        assert np.isclose(s.mw_ebv, ebv_test[n])
 
     # Check it gives a warning if no ebv provided
     with pytest.warns(UserWarning, match="No ebv provided. Reddening not applied."):
@@ -100,4 +101,4 @@ def test_reddening(test_data_dir: str):
     # Test the band pass correction
     bpc = lp.compute_band_pass_correction(config)
     print(bpc)
-    assert np.isclose(np.sum(bpc), 17.034121587212294)
+    assert np.isclose(np.sum(bpc), 17.5817920745359)

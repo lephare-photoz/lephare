@@ -1616,6 +1616,7 @@ vector<onesource*> PhotoZ::read_photoz_sources() {
       photoz_sources.push_back(oneObj);
     }
   }
+
   return photoz_sources;
 }
 
