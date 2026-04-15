@@ -31,7 +31,8 @@ def test_mw_classic():
             "CAT_MAG": "AB",
             "CAT_TYPE": "LONG",
             "GLB_CONTEXT": "-1",
-            "AUTO_ADAPT": "NO",
+            "AUTO_ADAPT": "YES",
+            "ADAPT_LIM": "1.5,26.0",
             "Z_STEP": "0.05,0,1",
             "ZFIX": "NO",
             "EB_V": "0.,0.1,0.2,0.3",
@@ -56,18 +57,18 @@ def test_mw_classic():
         }
     )
 
-    keymap = lp.all_types_to_keymap(config)
-
     # Run preparation tasks (libraries)
     lp.prepare(config)
     print("Done reading libraries")
 
     # Instantiate the photoz object with no MW attenuation
+    keymap = lp.all_types_to_keymap(config)
     photz = lp.PhotoZ(keymap)
     print("Instantiate photoz with APPLY_MW_EXTINCTION at none")
 
     # check that nothing change if NONE
     assert len(photz.mw_classic_extinction_values) == 6
+    # No correction proposed for the MW since none
     assert np.isclose(photz.mw_classic_extinction_values, 0.0, atol=0.001).all()
 
     # Instantiate the photo-z with classic and Cardelli
@@ -114,10 +115,10 @@ def test_mw_classic():
     ]
     print(mag_sources[0])
     emag_sources = [0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
-    mw_ebv_sources = [0.01, 0.05, 0.1, 0.2, 0.3, 0.4]
+    mw_ebv_sources = [0.01, 0.05, 0.1, 0.2, 0.3]
     zs_in = [0.65, 0.1, 0.9, 0.000, 0.5]
 
-    # Temprary input file with the observed magnitudes
+    # Temporary input file with the observed magnitudes
     fil = os.path.expandvars("$LEPHAREWORK/mag.in")
     with open(fil, "w") as f:
         for idline in range(1, 6):
@@ -137,6 +138,26 @@ def test_mw_classic():
         for idline in range(1, 6):
             line = f"{idline}  " f"{str(mw_ebv_sources[idline - 1])} \n"
             f.write(line)
+
+    # Compute offsets depending on the AUTO_ADAPT and APPLY_SYSSHIFT options (0 if none)
+    adapt_srcs = photz.read_autoadapt_sources()
+    # Only 2 sources satisfy the mag/redshift criteria
+    assert len(adapt_srcs) == 2
+    photz.read_mw_ebv(adapt_srcs)
+    a0 = photz.compute_offsets(adapt_srcs)
+    assert len(a0) == 6
+
+    # Check that the observed magnitudes have been correctly changed in the auto-adapt
+    # First source
+    assert adapt_srcs[0].mw_ebv == pytest.approx(0.05)
+    expected_corr = -1.0 * np.array(alambda_fitzpatrick) * 0.05
+    applied_corr = adapt_srcs[0].mab - np.array([24.5493, 23.1701, 22.5265, 22.2859, 22.1366, 22.0255])
+    assert np.isclose(expected_corr, applied_corr, atol=0.01).all()
+    # Second source
+    assert adapt_srcs[1].mw_ebv == pytest.approx(0.3)
+    expected_corr = -1.0 * np.array(alambda_fitzpatrick) * 0.3
+    applied_corr = adapt_srcs[1].mab - np.array([23.3172, 22.7789, 22.4013, 21.9102, 21.7947, 21.0578])
+    assert np.isclose(expected_corr, applied_corr, atol=0.01).all()
 
     # read ascii table with sources
     allsources = photz.read_photoz_sources()
