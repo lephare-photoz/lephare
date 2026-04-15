@@ -61,9 +61,6 @@ def process(
     if reddening is not None:
         photz.reddening = reddening
         # If reddening is provided but no ebv warn the user
-        if ebvmw is None:
-            warnings.warn("No ebv provided. Reddening not applied.")
-            reddening = None
         if (reddening is not None) and config["APPLY_MW_EXTINCTION"].value != "NO":
             warnings.warn("Reddening sent to process will override any pre-calculated values.")
     id, flux, flux_err, context, zspec, string_data = table_to_data(
@@ -98,9 +95,13 @@ def process(
         photz.prep_data(one_obj)
         photozlist.append(one_obj)
 
-    if reddening is not None:
+    if ebvmw is not None:
+        warnings.warn("Milky Way E(B-V) values provided to process. Overriding FILE or global value if set.")
         for i in range(ng):
             photozlist[i].galEbv = ebvmw[i]
+    elif config["MW_EBV_FILE"].split_string("NONE", 1)[0] != "NONE":
+        photz.read_mw_ebv(photozlist)
+
     # Perform the main run
     photz.run_photoz(photozlist, a0)
     # Write outputs if requested
