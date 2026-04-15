@@ -199,6 +199,9 @@ void onesource::convertFlux(const string& catmag,
  CONVERT THE FLUX INTO MAG
 */
 void onesource::convertMag() {
+  mab.clear();
+  msab.clear();
+
   // Loop over each filter
   for (size_t k = 0; k < ab.size(); k++) {
     // Case with everything positive
@@ -257,18 +260,25 @@ void onesource::adapt_mag(vector<double> a0) {
  APPLY THE MILKY WAY EBV COORECTION WITH A CLASSIC METHOD (NO MODEL DEPENDENCY)
 */
 void onesource::correct_classic_mw(const vector<double> Alamb_corr) {
-  double corr;
+  double corr = 1.;
 
-  // Loop over each filter
-  for (size_t k = 0; k < ab.size(); k++) {
-    // Define the correction to be applied to the observed fluxes
-    // 10**(0.4*"+Alambda[k]*ebv
-    corr = pow(10., 0.4 * Alamb_corr[k] * this->mw_ebv);
-    // Correct the fluxes
-    if (ab[k] > 0 || sab[k] > 0) {
-      ab[k] = ab[k] * corr;
-      sab[k] = sab[k] * corr;
+  // If the MW EBV correction makes sense
+  if (this->mw_ebv > 0) {
+    // Loop over each filter
+    for (size_t k = 0; k < ab.size(); k++) {
+      // Define the correction to be applied to the observed fluxes
+      // 10**(0.4*"+Alambda[k]*ebv
+      corr = pow(10., 0.4 * Alamb_corr[k] * this->mw_ebv);
+      // Correct the fluxes
+      if (ab[k] > 0 || sab[k] > 0) {
+        ab[k] = ab[k] * corr;
+        sab[k] = sab[k] * corr;
+      }
     }
+    // change also the associated magnitudes
+    this->convertMag();
+    // Consider that the original magnitudes should include the correction
+    this->keepOri();
   }
   return;
 }
