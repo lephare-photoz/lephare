@@ -19,7 +19,7 @@ def process(
     filename=None,
     write_outputs=False,
     reddening=None,
-    ebvmw=None,
+    mw_ebv=None,
 ):
     """Run all required steps to produce photometric redshift estimates
 
@@ -42,7 +42,7 @@ def process(
     reddening : np.array or None
         Array of reddening values to apply to each model and filter. If None the
         reddening will not be applied.
-    ebvmw : np.array or None
+    mw_ebv: np.array or None
         Array of E(B-V) values for each object in the input catalogue. If None
         no reddening will be applied.
 
@@ -63,6 +63,11 @@ def process(
         # If reddening is provided but no ebv warn the user
         if (reddening is not None) and config["APPLY_MW_EXTINCTION"].value != "NO":
             warnings.warn("Reddening sent to process will override any pre-calculated values.")
+        if (reddening is not None) and config["APPLY_MW_EXTINCTION"].value == "NO":
+            warnings.warn(
+                "Reddening sent to process but MW extinction will not be applied."
+                "Set APPLY_MW_EXTINCTION to apply the reddening."
+            )
     id, flux, flux_err, context, zspec, string_data = table_to_data(
         config, input_table, col_names=col_names, standard_names=standard_names
     )
@@ -95,11 +100,12 @@ def process(
         photz.prep_data(one_obj)
         photozlist.append(one_obj)
 
-    if ebvmw is not None:
+    if mw_ebv is not None:
         warnings.warn("Milky Way E(B-V) values provided to process. Overriding FILE or global value if set.")
         for i in range(ng):
-            photozlist[i].galEbv = ebvmw[i]
+            photozlist[i].mw_ebv = mw_ebv[i]
     elif config["MW_EBV_FILE"].split_string("NONE", 1)[0] != "NONE":
+        print(f'Reading offsets from file {config["MW_EBV_FILE"].split_string("NONE", 1)[0]}')
         photz.read_mw_ebv(photozlist)
 
     # Perform the main run

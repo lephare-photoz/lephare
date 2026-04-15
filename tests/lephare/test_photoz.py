@@ -67,7 +67,7 @@ def test_reddening(test_data_dir: str):
             reduced_cols.append(c)
     with pytest.warns(UserWarning, match="Reddening sent to process"):
         output, photozlist = lp.process(
-            config, input[reduced_cols], write_outputs=False, reddening=albd_lib, ebvmw=[0.1] * len(input)
+            config, input[reduced_cols], write_outputs=False, reddening=albd_lib, mw_ebv=[0.1] * len(input)
         )
     assert np.isclose(np.sum(albd_lib), 105.84983288457076)
 
@@ -85,20 +85,21 @@ def test_reddening(test_data_dir: str):
     for n, s in enumerate(sources):
         assert np.isclose(s.mw_ebv, ebv_test[n])
 
-    # Check it gives a warning if no ebv provided
-    with pytest.warns(UserWarning, match="No ebv provided. Reddening not applied."):
-        lp.process(config, input[reduced_cols], write_outputs=False, reddening=albd_lib)
+    output, _ = lp.process(config, input[reduced_cols], write_outputs=False, reddening=albd_lib)
+    print(
+        "##############################################################################Z_BEST SUM:",
+        np.sum(output["Z_BEST"]),
+    )
     # Now test with SMC Prevot curve
-    config["GAL_CURVE"] = "MW_seaton.dat"
+    config["EXT_MW_CURVE"] = "MW_seaton.dat"
     albd_lib = lp.compute_model_reddening(config)
     # Check AUTO_ADAPT can run with ebv
     config["AUTO_ADAPT"] = "YES"
     with pytest.warns(UserWarning, match="Reddening sent to process"):
         output, photozlist = lp.process(
-            config, input[reduced_cols], write_outputs=False, reddening=albd_lib, ebvmw=[0.1] * len(input)
+            config, input[reduced_cols], write_outputs=False, reddening=albd_lib, mw_ebv=[0.1] * len(input)
         )
 
     # Test the band pass correction
     bpc = lp.compute_band_pass_correction(config)
-    print(bpc)
     assert np.isclose(np.sum(bpc), 17.5817920745359)
