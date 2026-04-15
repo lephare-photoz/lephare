@@ -36,6 +36,8 @@ def test_reddening(test_data_dir: str):
     config["MW_REFERENCE_MODEL"] = "sed/STAR/PICKLES/o5v.sed.ext"
     mw_ebv_test_file = os.path.join(test_data_dir, "examples/mw_ebv.dat")
     config["MW_EBV_FILE"] = mw_ebv_test_file
+    # the traditional file must be written later
+    config["CAT_IN"] = os.path.join(test_data_dir, "examples/COSMOS_first100specz_reduced.in")
 
     lp.prepare(config)
 
@@ -66,6 +68,22 @@ def test_reddening(test_data_dir: str):
             config, input[reduced_cols], write_outputs=False, reddening=albd_lib, ebvmw=[0.1] * len(input)
         )
     assert np.isclose(np.sum(albd_lib), 105.84983288457076)
+
+    # Check it can read the ebv values from the file and apply them to the sources
+    input[reduced_cols].write(
+        os.path.join(test_data_dir, "examples/COSMOS_first100specz_reduced.in"),
+        format="ascii.no_header",
+        overwrite=True,
+    )
+    photz = lp.PhotoZ(lp.all_types_to_keymap(config))
+    sources = photz.read_photoz_sources()
+    photz.read_mw_ebv(sources)
+    # This is not working at the moment as the sources are not being read in
+    # # with the ebv values, but this should be tested eventually
+    # for n, s in enumerate(sources):
+    #     pass
+    #     assert np.isclose(s.mw_ebv, ebv_test[n])
+
     # Check it gives a warning if no ebv provided
     with pytest.warns(UserWarning, match="No ebv provided. Reddening not applied."):
         lp.process(config, input[reduced_cols], write_outputs=False, reddening=albd_lib)

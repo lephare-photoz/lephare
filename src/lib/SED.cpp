@@ -1617,11 +1617,16 @@ void SED::compute_milky_way_extinction(const ext& oneExt,
   for (size_t i = 0; i < lV.size(); i++) {
     filterV.lamb_trans.emplace_back(lV[i], fV[i]);
   }
-  band_pass_correction = compute_filter_sed_extinction(filterB, oneExt, *this);
-  band_pass_correction -= compute_filter_sed_extinction(
-      filterV, oneExt,
-      *this);  // compute the extinction in each filter and store it
-  // band_pass_correction = 1.;
+  if (oneExt.name != "CARDELLI") {
+    band_pass_correction =
+        compute_filter_sed_extinction(filterB, oneExt, *this) -
+        compute_filter_sed_extinction(
+            filterV, oneExt,
+            *this);  // compute the extinction in each filter and store it
+  } else {
+    band_pass_correction =
+        cardelli_ext_sed(filterB, *this) - cardelli_ext_sed(filterV, *this);
+  }
   for (const auto& filter : filters) {
     if (oneExt.name != "CARDELLI") {
       val = compute_filter_sed_extinction(filter, oneExt, *this);
