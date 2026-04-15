@@ -254,6 +254,26 @@ void onesource::adapt_mag(vector<double> a0) {
 }
 
 /*
+ APPLY THE MILKY WAY EBV COORECTION WITH A CLASSIC METHOD (NO MODEL DEPENDENCY)
+*/
+void onesource::correct_classic_mw(const vector<double> Alamb_corr) {
+  double corr;
+
+  // Loop over each filter
+  for (size_t k = 0; k < ab.size(); k++) {
+    // Define the correction to be applied to the observed fluxes
+    // 10**(0.4*"+Alambda[k]*ebv
+    corr = pow(10., 0.4 * Alamb_corr[k] * this->mw_ebv);
+    // Correct the fluxes
+    if (ab[k] > 0 || sab[k] > 0) {
+      ab[k] = ab[k] * corr;
+      sab[k] = sab[k] * corr;
+    }
+  }
+  return;
+}
+
+/*
  SUBSTRACT THE STELLAR COMPONENT TO THE FIR OBSERVED FLUXES
 */
 void onesource::subtract_stellar_component(const bool substar,
@@ -359,7 +379,7 @@ vector<vector<double>> onesource::redden_flux(
     // Apply reddening correction element-wise
     for (size_t i = 0; i < nRows; ++i) {
       for (size_t k = 0; k < nCols; ++k) {
-        double factor = pow(10.0, reddening[i][k] * this->mw_ebv / 2.5);
+        double factor = pow(10.0, reddening[i][k] * this->mw_ebv * 0.4);
         // Divide to redden times to deredden
         out[i][k] = flux[i][k] / factor;
       }

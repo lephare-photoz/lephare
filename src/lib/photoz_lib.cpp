@@ -1681,6 +1681,8 @@ void PhotoZ::prep_data(onesource* oneObj) {
   if (typm[0] == 'M') oneObj->convertFlux(catmag, allFilters);
   // Rescale the flux errors if needed
   oneObj->rescale_flux_errors(min_err, fac_err);
+  // Apply the milky way ebv correction to the observed mag if CLASSIC method
+  oneObj->correct_classic_mw(mw_classic_extinction_values);
   // turn fluxes and possibly rescaled flux errors into magnitudes
   oneObj->convertMag();
   // Keep original magnitudes
