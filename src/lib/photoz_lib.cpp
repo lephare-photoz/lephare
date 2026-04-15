@@ -338,7 +338,11 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
     outputHeader += colib[k] + ' ';
   };
   outputHeader += '\n';
-  outputHeader += "# APPLY_MW_EXTINCTION : " + red_type + '\n';
+  outputHeader += "# APPLY_MW_EXTINCTION    : " + red_type + '\n';
+  if (mw_galametz) {
+    outputHeader +=
+        "# MW_GLOBAL_EBV          : " + to_string(mw_global_ebv) + '\n';
+  }
   outputHeader += "# FIR_LIB                : ";
   for (size_t k = 0; k < nlibext; k++) {
     outputHeader += libext[k] + ' ';
