@@ -381,6 +381,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def(py::init<keymap&>())
       .def("read_autoadapt_sources", &PhotoZ::read_autoadapt_sources)
       .def("read_photoz_sources", &PhotoZ::read_photoz_sources)
+      .def("read_mw_ebv", &PhotoZ::read_mw_ebv)
       .def("prep_data", static_cast<void (PhotoZ::*)(vector<onesource*>)>(
                             &PhotoZ::prep_data))
       .def("prep_data",
