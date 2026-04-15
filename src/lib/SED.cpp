@@ -1041,6 +1041,15 @@ void GalSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
   // Write the k-correction
   for (int k = 0; k < nbFlt; k++)
     ofsBin.write((char*)&(kcorr[k]), sizeof(double));
+
+  // Write the extinction values
+  if (has_mw_galametz) {
+    for (int k = 0; k < nbFlt; k++) {
+      ofsBin.write((char*)&(milky_way_extinction[k]), sizeof(double));
+    }
+    ofsBin.write((char*)&(band_pass_correction), sizeof(double));
+  }
+
   // Write the emission lines
   if (has_emlines) {
     // Write the flux predicted into the filters
@@ -1057,14 +1066,6 @@ void GalSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
       for (int k = 0; k < nbEm; k++)
         ofsBin.write((char*)&(fac_line[k].val), sizeof(double));
     }
-  }
-
-  // Write the extinction values
-  if (has_mw_galametz) {
-    for (int k = 0; k < nbFlt; k++) {
-      ofsBin.write((char*)&(milky_way_extinction[k]), sizeof(double));
-    }
-    ofsBin.write((char*)&(band_pass_correction), sizeof(double));
   }
 
   // Write the spectra only if the redshift is 0, for the output .spec
@@ -1165,6 +1166,15 @@ void GalSED::readMagBin(ifstream& ins) {
     ins.read((char*)&k, sizeof(double));
   }
 
+  // Read the extinction values
+  if (has_mw_galametz) {
+    milky_way_extinction.resize(nbFlt, 0.);
+    for (auto& mwe : milky_way_extinction) {
+      ins.read((char*)&mwe, sizeof(double));
+    }
+    ins.read((char*)&band_pass_correction, sizeof(double));
+  }
+
   // Read the emission lines fluxes integrated into filters
   if (has_emlines) {
     flEm.resize(nbFlt, 0.);
@@ -1185,15 +1195,6 @@ void GalSED::readMagBin(ifstream& ins) {
         ins.read((char*)&eml.val, sizeof(double));
       }
     }
-  }
-
-  // Read the extinction values
-  if (has_mw_galametz) {
-    milky_way_extinction.resize(nbFlt, 0.);
-    for (auto& mwe : milky_way_extinction) {
-      ins.read((char*)&mwe, sizeof(double));
-    }
-    ins.read((char*)&band_pass_correction, sizeof(double));
   }
 
   // read the spectra only if the redshift is 0
@@ -1393,6 +1394,7 @@ void QSOSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
       }
       ofsDat << setw(6) << band_pass_correction << " ";
     }
+    ofsDat << endl;
   }
 
   return;

@@ -555,15 +555,6 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
     // Loop over the filters
     for (size_t k = 0; k < allFilters.size(); k++) {
       flux[i][k] = mag2flux(fullLib[i]->mag[k]);
-      // In case of Galametz method, save the unreddedned MW flux
-      if (mw_galametz) {
-        flux_no_mw[i][k] = flux[i][k];
-        // If Galametz with one MW value, correct the lib once
-        if (one_mw_ebv) {
-          flux[i][k] = flux_no_mw[i][k] /
-                       pow(10.0, reddening[i][k] * mw_global_ebv * 0.4);
-        }
-      }
       // Switch the predicted flux at -1 to dismiss the band in the chi2
       // computation
       if (restrict_rf && (allFilters[k].lmean / (1 + redin)) > fir_lmin)
@@ -572,6 +563,27 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
     // create a vector with the redshift of the library
     zLib[i] = redin;
   }
+
+  // Preparation for Galametz
+  if (mw_galametz) {
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    // Initialize the chi2
+    for (size_t i = 0; i < fullLib.size(); i++) {
+      // Loop over the filters
+      for (size_t k = 0; k < allFilters.size(); k++) {
+        // In case of Galametz method, save the unreddedned MW flux
+        flux_no_mw[i][k] = flux[i][k];
+        // If Galametz with one MW value, correct the lib once
+        if (one_mw_ebv) {
+          flux[i][k] = flux_no_mw[i][k] /
+                       pow(10.0, reddening[i][k] * mw_global_ebv * 0.4);
+        }
+      }
+    }
+  }
+
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif

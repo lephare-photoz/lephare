@@ -78,7 +78,7 @@ def test_mw_classic():
             "EXT_MW_CURVE": "CARDELLI",
         }
     )
-    alambda_cardelli = [1.540, 1.182, 0.869, 0.661, 0.512, 0.420]
+    alambda_cardelli = [4.774, 3.666, 2.694, 2.050, 1.587, 1.304]
 
     # Instantiate the photoz object
     photz = lp.PhotoZ(lp.all_types_to_keymap(config))
@@ -179,3 +179,81 @@ def test_mw_classic():
         print("expected corr ", expected_corr)
         applied_corr = allsources[k].mab - np.array(mag_sources[k])
         assert np.isclose(expected_corr, applied_corr, atol=0.01).all()
+
+
+def test_mw_galametz_single_ebv():
+    test_dir = os.path.abspath(os.path.dirname(__file__))
+    os.environ["LEPHAREDIR"] = os.path.join(test_dir, "../data")
+    os.environ["LEPHAREWORK"] = os.path.join(test_dir, "../tmp")
+    print(test_dir)
+
+    # Read the config file.
+    config_file = os.path.expandvars("$LEPHAREDIR/examples/COSMOS.para")
+    config = lp.read_config(config_file)
+    print(config_file)
+    fltstr = "lsst/total_u.pb,lsst/total_g.pb,lsst/total_r.pb,lsst/total_i.pb,lsst/total_z.pb,lsst/total_y.pb"
+    config.update(
+        {
+            "VERBOSE": "NO",
+            "FILTER_LIST": fltstr,
+            "FILTER_FILE": "filters_lsst",
+            "STAR_SED": "$LEPHAREDIR/sed/STAR/STAR_MOD_ALL.list",
+            "QSO_SED": "$LEPHAREDIR/sed/QSO/SALVATO09/AGN_MOD.list",
+            "GAL_SED": "$LEPHAREDIR/sed/GAL/COSMOS_SED/COSMOS_MOD.list",
+            "LIB_ASCII": "YES",
+            "CAT_IN": str(os.path.expandvars("$LEPHAREWORK/mag.in")),
+            "CAT_FMT": "MMEE",
+            "INP_TYPE": "M",
+            "CAT_MAG": "AB",
+            "CAT_TYPE": "LONG",
+            "GLB_CONTEXT": "-1",
+            "AUTO_ADAPT": "YES",
+            "ADAPT_LIM": "1.5,26.0",
+            "Z_STEP": "0.05,0,1",
+            "ZFIX": "NO",
+            "EB_V": "0.,0.1,0.2,0.3",
+            "MOD_EXTINC": "0,100",
+            "ADD_EMLINES": "0,0",
+            "EM_DISPERSION": "1.",
+            "ERR_SCALE": " 0.0",
+            "ERR_FACTOR": " 1.",
+            "Z_INTERP": "NO",
+            "MAG_ABS": "-24,-5",
+            "MAG_REF": "2",
+            "MABS_METHOD": "0",
+            "MABS_CONTEXT": "0",
+            "ADDITIONAL_MAG": "filters_lsst",
+            "SPEC_OUT": str(os.path.expandvars("$LEPHAREWORK/spec")),
+            "APPLY_MW_EXTINCTION": "NONE",
+            "EXT_MW_CURVE": "LMC_Fitzpatrick.dat",
+            "MW_EBV_FILE": str(os.path.expandvars("$LEPHAREWORK/mw_ebv.in")),
+            "MW_GLOBAL_EBV": "0.1",
+            "MW_REFERENCE_MODEL": "sed/STAR/PICKLES/b5i.sed",
+            "MW_REFERENCE_TYPE": "STAR",
+        }
+    )
+
+    # Run preparation tasks (libraries)
+    lp.prepare(config)
+    print("Done reading libraries")
+
+    print("Instantiate photoz with no MW attenuation")
+    photz = lp.PhotoZ(lp.all_types_to_keymap(config))
+
+    no_mw_flux = photz.flux[0][0]
+
+    print("Instantiate photoz with GALAMETZ + single MW EBV")
+    config.update(
+        {
+            "APPLY_MW_EXTINCTION": "GALAMETZ",
+            "EXT_MW_CURVE": "LMC_Fitzpatrick.dat",
+            "MW_GLOBAL_EBV": "0.1",
+        }
+    )
+    lp.prepare(config)
+    print("Done reading libraries")
+    photz = lp.PhotoZ(lp.all_types_to_keymap(config))
+
+    # Value taken for the first QSO, first redshift and band (first item of the library)
+    mw_flux = photz.flux[0][0]
+    assert no_mw_flux == pytest.approx(10 ** (0.4 * (4.7932 / 0.7906 * 0.9099) * 0.1) * mw_flux)
