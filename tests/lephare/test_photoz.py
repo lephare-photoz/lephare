@@ -86,10 +86,7 @@ def test_reddening(test_data_dir: str):
         assert np.isclose(s.mw_ebv, ebv_test[n])
 
     output, _ = lp.process(config, input[reduced_cols], write_outputs=False, reddening=albd_lib)
-    print(
-        "##############################################################################Z_BEST SUM:",
-        np.sum(output["Z_BEST"]),
-    )
+    assert np.isclose(np.sum(output["Z_BEST"]), 91.0)
     # Now test with SMC Prevot curve
     config["EXT_MW_CURVE"] = "MW_seaton.dat"
     albd_lib = lp.compute_model_reddening(config)
