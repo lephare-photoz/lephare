@@ -1624,14 +1624,14 @@ void SED::compute_milky_way_extinction(const ext& oneExt,
             filterV, oneExt,
             *this);  // compute the extinction in each filter and store it
   } else {
-    band_pass_correction =
-        cardelli_ext_sed(filterB, *this) - cardelli_ext_sed(filterV, *this);
+    band_pass_correction = 3.1 * (cardelli_ext_sed(filterB, *this) -
+                                  cardelli_ext_sed(filterV, *this));
   }
   for (const auto& filter : filters) {
     if (oneExt.name != "CARDELLI") {
       val = compute_filter_sed_extinction(filter, oneExt, *this);
     } else {
-      val = cardelli_ext_sed(filter, *this);
+      val = 3.1 * cardelli_ext_sed(filter, *this);
     }
     milky_way_extinction.push_back(val);
   }

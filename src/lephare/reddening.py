@@ -1,8 +1,10 @@
+import os
+
 import numpy as np
 
 import lephare as lp
 
-__all__ = ["compute_model_reddening", "compute_band_pass_correction"]
+__all__ = ["compute_model_reddening", "compute_band_pass_correction", "classic_extinction_values"]
 
 
 def compute_model_reddening(config):
@@ -92,3 +94,40 @@ def compute_band_pass_correction(config):
 
     # After prepre it is not
     return band_pass_correction
+
+
+def classic_extinction_values(config, verbose=False):
+    """Calculate the extinction values for a set of filters using the classic method
+
+    Parameters
+    ==========
+
+    config : dict
+        Configuration dictionary containing model parameters and file paths
+        required to generate the SED library and filters.
+
+    verbose : bool
+        Increase onscreen verbosity
+
+    Returns
+    =======
+
+    all_filters : list of lephare.flt
+        The list of filter objects
+    aint : np.array
+        Atmospheric extinction in each filter (mag/airmass)
+    albdav : np.array
+        Galactic extinction in each filter A(lbd)/Av
+    albd : np.array
+        Galactic extinction in each filter A(lbd)/E(B-V)
+    """
+    keymap = lp.all_types_to_keymap(config)
+    # Get the parameters
+    filters = keymap["FILTER_FILE"].split_string("unknown", 1)[0]
+    if not os.path.isabs(filters):  # pragma no cover
+        filters = os.path.join(os.environ["LEPHAREWORK"], "filt", filters + ".dat")
+    atmec = keymap["EXT_ATMOS_CURVE"].split_string("NONE", 1)[0]
+    galec = keymap["EXT_MW_CURVE"].split_string("CARDELLI", 1)[0]
+
+    all_filters, aint, albdav, albd = lp.calculate_extinction_values(filters, atmec, galec, verbose=verbose)
+    return all_filters, aint, albdav, albd
