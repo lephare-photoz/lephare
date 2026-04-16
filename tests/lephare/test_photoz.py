@@ -2,7 +2,6 @@ import os
 
 import lephare as lp
 import numpy as np
-import pytest
 from astropy.table import Table
 
 
@@ -65,10 +64,10 @@ def test_reddening(test_data_dir: str):
             reduced_cols.append(c)
         elif "IB679" in c:
             reduced_cols.append(c)
-    with pytest.warns(UserWarning, match="Reddening sent to process"):
-        output, photozlist = lp.process(
-            config, input[reduced_cols], write_outputs=False, reddening=albd_lib, mw_ebv=[0.1] * len(input)
-        )
+
+    output, photozlist = lp.process(
+        config, input[reduced_cols], write_outputs=False, mw_ebv=[0.1] * len(input)
+    )
     assert np.isclose(np.sum(albd_lib), 105.84983288457076)
 
     # Check it can read the ebv values from the file and apply them to the sources
@@ -85,17 +84,18 @@ def test_reddening(test_data_dir: str):
     for n, s in enumerate(sources):
         assert np.isclose(s.mw_ebv, ebv_test[n])
 
-    output, _ = lp.process(config, input[reduced_cols], write_outputs=False, reddening=albd_lib)
+    # This is getting the ebv values from the file.
+    output, _ = lp.process(config, input[reduced_cols], write_outputs=False)
     assert np.isclose(np.sum(output["Z_BEST"]), 91.0)
     # Now test with SMC Prevot curve
     config["EXT_MW_CURVE"] = "MW_seaton.dat"
     albd_lib = lp.compute_model_reddening(config)
     # Check AUTO_ADAPT can run with ebv
     config["AUTO_ADAPT"] = "YES"
-    with pytest.warns(UserWarning, match="Reddening sent to process"):
-        output, photozlist = lp.process(
-            config, input[reduced_cols], write_outputs=False, reddening=albd_lib, mw_ebv=[0.1] * len(input)
-        )
+
+    output, photozlist = lp.process(
+        config, input[reduced_cols], write_outputs=False, mw_ebv=[0.1] * len(input)
+    )
 
     # Test the band pass correction
     bpc = lp.compute_band_pass_correction(config)

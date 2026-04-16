@@ -18,7 +18,6 @@ def process(
     standard_names=False,
     filename=None,
     write_outputs=False,
-    reddening=None,
     mw_ebv=None,
 ):
     """Run all required steps to produce photometric redshift estimates
@@ -39,12 +38,9 @@ def process(
     write_outputs : bool
         Whether to write the output spectra, PDF, and ascii file if specified
         in the config. By default these are not written to save space.
-    reddening : np.array or None
-        Array of reddening values to apply to each model and filter. If None the
-        reddening will not be applied.
     mw_ebv: np.array or None
-        Array of E(B-V) values for each object in the input catalogue. If None
-        no reddening will be applied.
+        Array of E(B-V) values for each object in the input catalogue. This
+        will override the file or global value if set in the config.
 
     Returns
     =======
@@ -55,26 +51,8 @@ def process(
     """
     # ensure that all values in the keymap are keyword objects
     config = lp.all_types_to_keymap(config)
-    apply_mw = config.get("APPLY_MW_EXTINCTION", None)
 
     photz = lp.PhotoZ(config)
-
-    # Apply reddening if provided
-    if reddening is not None:
-        photz.reddening = reddening
-
-        apply_mw = config.get("APPLY_MW_EXTINCTION", None)
-
-        if apply_mw is not None:
-            value = apply_mw.value
-
-            if value != "NO":
-                warnings.warn("Reddening sent to process will override any pre-calculated values.")
-            else:
-                warnings.warn(
-                    "Reddening sent to process but MW extinction will not be applied."
-                    " Set APPLY_MW_EXTINCTION to apply the reddening."
-                )
 
     id, flux, flux_err, context, zspec, string_data = table_to_data(
         config, input_table, col_names=col_names, standard_names=standard_names
@@ -138,7 +116,6 @@ def calculate_offsets_from_input(
     input_table,
     col_names=None,
     standard_names=False,
-    reddening=None,
     mw_ebv=None,
 ):
     """Calculate the zero point offsets for objects with spectroscopic redshifts
@@ -157,12 +134,9 @@ def calculate_offsets_from_input(
         Input catalogue column names. We will use ordering to determine meaning
     standard_names : bool
         If true we assume standard names.
-    reddening : np.array or None
-        Array of reddening values to apply to each model and filter. If None the
-        reddening will not be applied.
     mw_ebv: np.array or None
-        Array of E(B-V) values for each object in the input catalogue. If None
-        no reddening will be applied.
+        Array of E(B-V) values for each object in the input catalogue. This
+        will override the file or global value if set in the config.
 
     Returns
     =======
@@ -177,23 +151,6 @@ def calculate_offsets_from_input(
     n_filters = len(config["FILTER_LIST"].value.split(","))
     print(f"Processing {ng} objects with {n_filters} bands")
     photz = lp.PhotoZ(config)
-
-    # Apply reddening if provided
-    if reddening is not None:
-        photz.reddening = reddening
-
-        apply_mw = config.get("APPLY_MW_EXTINCTION", None)
-
-        if apply_mw is not None:
-            value = apply_mw.value
-
-            if value != "NO":
-                warnings.warn("Reddening sent to process will override any pre-calculated values.")
-            else:
-                warnings.warn(
-                    "Reddening sent to process but MW extinction will not be applied."
-                    " Set APPLY_MW_EXTINCTION to apply the reddening."
-                )
 
     # Loop over all ng galaxies!
     srclist = []
