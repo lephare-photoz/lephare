@@ -53,7 +53,6 @@ def test_mw_classic():
             "MW_EBV_FILE": str(os.path.expandvars("$LEPHAREWORK/mw_ebv.in")),
             "MW_GLOBAL_EBV": "-99",
             "MW_REFERENCE_MODEL": "sed/STAR/PICKLES/b5i.sed",
-            "MW_REFERENCE_TYPE": "STAR",
         }
     )
 
@@ -229,7 +228,6 @@ def test_mw_galametz_single_ebv():
             "MW_EBV_FILE": str(os.path.expandvars("$LEPHAREWORK/mw_ebv.in")),
             "MW_GLOBAL_EBV": "0.1",
             "MW_REFERENCE_MODEL": "sed/STAR/PICKLES/b5i.sed",
-            "MW_REFERENCE_TYPE": "STAR",
         }
     )
 
@@ -307,7 +305,6 @@ def test_mw_galametz_multiple_ebv():
             "MW_GLOBAL_EBV": "-1.",
             "MW_EBV_FILE": str(os.path.expandvars("$LEPHAREWORK/mw_ebv.in")),
             "MW_REFERENCE_MODEL": "sed/STAR/PICKLES/b5i.sed",
-            "MW_REFERENCE_TYPE": "STAR",
         }
     )
 

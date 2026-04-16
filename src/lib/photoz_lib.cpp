@@ -312,8 +312,6 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
     // set the reddening from the albd vals, the bpc, and the target model
     mw_ref_mod = (key_analysed["MW_REFERENCE_MODEL"])
                      .split_string("sed/STAR/PICKLES/b5i.sed", 1)[0];
-    mw_ref_type =
-        (key_analysed["MW_REFERENCE_TYPE"]).split_string("STAR", 1)[0];
   }
   // Could decide to apply a single MW E(B-V) to the full catalogue rather than
   // one per source
@@ -481,7 +479,7 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
   // Galametz method
   if (mw_galametz) {
     // Get the SED
-    SED mw_ref_model_sed("ReferenceModel", -1, std::string(1, mw_ref_type[0]));
+    SED mw_ref_model_sed("ReferenceModel", -1, "S");
     mw_ref_model_sed.read(lepharedir + "/" + mw_ref_mod);
     mw_ref_model_sed.compute_milky_way_extinction(milkyWayExtinction,
                                                   allFilters);
