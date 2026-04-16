@@ -239,11 +239,9 @@ Need 1 or N values
 
         # Compute offsets depending on the AUTO_ADAPT and APPLY_SYSSHIFT options (0 if none)
         adapt_srcs = photoz.read_autoadapt_sources()
-        photoz.read_mw_ebv(adapt_srcs)
         a0 = photoz.compute_offsets(adapt_srcs)
 
         fit_srcs = photoz.read_photoz_sources()
-        photoz.read_mw_ebv(fit_srcs)
         photoz.run_photoz(fit_srcs, a0)
         photoz.write_outputs(fit_srcs)
 

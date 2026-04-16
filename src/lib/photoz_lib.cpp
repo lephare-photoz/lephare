@@ -1146,6 +1146,13 @@ vector<onesource*> PhotoZ::read_autoadapt_sources() {
       }
     }
   }
+
+  // If MW should be corrected with different EBV vlue, try to read a file with
+  // thiese values
+  if ((mw_galametz || mw_classic_extinction) && !one_mw_ebv) {
+    this->read_mw_ebv(adaptSources);
+  }
+
   return adaptSources;
 }
 
@@ -1638,6 +1645,12 @@ vector<onesource*> PhotoZ::read_photoz_sources() {
       // Add the source
       photoz_sources.push_back(oneObj);
     }
+  }
+
+  // If MW should be corrected with different EBV vlue, try to read a file with
+  // thiese values
+  if ((mw_galametz || mw_classic_extinction) && !one_mw_ebv) {
+    this->read_mw_ebv(photoz_sources);
   }
 
   return photoz_sources;

@@ -1598,13 +1598,13 @@ void SED::compute_milky_way_extinction(const ext& oneExt,
   // extinction
   double val;
   // compute the BPC for the SED using simple B and V band filters
-  // Maybe B and V bands should be constructed once outside in MAG.cpp?
-  std::vector<double> lB = {3800.00, 4000.0, 4200.0, 4400.0, 4700.0, 5450.0};
-  std::vector<double> fB = {0.0, 0.82, 0.97, 1.0, 0.8, 0.0};
 
-  std::vector<double> lV = {4850.00, 5170.0, 5250.0, 5350.0, 5500.0, 6400.0};
-  std::vector<double> fV = {0.0, 0.9, 0.98, 1.0, 0.9, 0.0};
-
+  //  B and V bands should be constructed once outside in MAG.cpp?at low
+  //  resolution
+  vector<double> lB = {3800.00, 4000.0, 4200.0, 4400.0, 4700.0, 5450.0};
+  vector<double> fB = {0.0, 0.82, 0.97, 1.0, 0.8, 0.0};
+  vector<double> lV = {4850.00, 5170.0, 5250.0, 5350.0, 5500.0, 6400.0};
+  vector<double> fV = {0.0, 0.9, 0.98, 1.0, 0.9, 0.0};
   flt filterB;
   flt filterV;
 
