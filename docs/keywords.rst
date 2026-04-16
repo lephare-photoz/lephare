@@ -143,6 +143,19 @@ mag_gal
    * - EXT_ATMOS_CURVE
      - NONE[def] or e.g. SB_calzetti.dat
      - Extinction curve for the atmospheric extinction (used for the energy balance when adding dust emission). Should be in $LEPHAREDIR/ext if relative.
+   * - APPLY_MW_EXTINCTION
+     - NONE[DEF], CLASSIC, GALAMETZ
+     - Method to apply the Milky Way extinction to the templates. If CLASSIC, the extinction is applied using the E(B-V) value and the extinction curve. If GALAMETZ, the extinction is applied using the E(B-V) value and the extinction curve, but also taking into account the SED dependence of the extinction (see Galametz et al. 2013). In this case, the MW_REFERENCE_MODEL keyword must be set to define the reference SED for which the E(B-V) value is defined.
+   * - MW_REFERENCE_MODEL
+     - sed/STAR/PICKLES/b5i.sed[DEF]
+     - Reference SED for which the E(B-V) value is defined when using the GALAMETZ method to apply the Milky Way extinction. Should be in $LEPHAREDIR if relative.
+   * - MW_GLOBAL_EBV
+     - NONE[def] or float 
+     - Global E(B-V) value to apply to all templates when using the GALAMETZ method to apply the Milky Way extinction. If 0, the E(B-V) value is read from the file defined by MW_EBV_FILE.
+   * - MW_EBV_FILE
+     - NONE[def] or string 
+     - Name of the file containing the E(B-V) values to apply to each template when using the GALAMETZ method to apply the Milky Way extinction. The file should have two columns: source ID and E(B-V) value. Should be absolute path.
+
 
 zphota
 ------

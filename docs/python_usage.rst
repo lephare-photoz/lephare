@@ -32,9 +32,11 @@ They should all be able to run independently following installation.
     Typical use case <notebooks/Typical_use_case>
     Typical use case: physical parameters <notebooks/Typical_use_case_physicalParameters>
     Detailed run <notebooks/Detailed_run>
+    SED dependent reddening <notebooks/Galametz_reddening>
     Developer example: Building a list of onesources <notebooks/Building_list_of_onesources>
     Developer example: Example of usage of magSvc <notebooks/Example_of_usage_of_magSvc>
     Developer example: Data retrieval <notebooks/Data_retrieval>
     Developer example: Testing fit of one object of the catalogue <notebooks/Testing_fit_of_one_object_of_the_catalogue>
     Developer example: Example of the cosmology class <notebooks/Example_cosmo>
     Developer example: Demonstration of SED objects <notebooks/Example_SED_manipulation>
+
