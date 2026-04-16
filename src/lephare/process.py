@@ -55,19 +55,27 @@ def process(
     """
     # ensure that all values in the keymap are keyword objects
     config = lp.all_types_to_keymap(config)
+    apply_mw = config.get("APPLY_MW_EXTINCTION", None)
 
     photz = lp.PhotoZ(config)
+
     # Apply reddening if provided
     if reddening is not None:
         photz.reddening = reddening
-        # If reddening is provided but no ebv warn the user
-        if (reddening is not None) and config["APPLY_MW_EXTINCTION"].value != "NO":
-            warnings.warn("Reddening sent to process will override any pre-calculated values.")
-        if (reddening is not None) and config["APPLY_MW_EXTINCTION"].value == "NO":
-            warnings.warn(
-                "Reddening sent to process but MW extinction will not be applied."
-                "Set APPLY_MW_EXTINCTION to apply the reddening."
-            )
+
+        apply_mw = config.get("APPLY_MW_EXTINCTION", None)
+
+        if apply_mw is not None:
+            value = apply_mw.value
+
+            if value != "NO":
+                warnings.warn("Reddening sent to process will override any pre-calculated values.")
+            else:
+                warnings.warn(
+                    "Reddening sent to process but MW extinction will not be applied."
+                    " Set APPLY_MW_EXTINCTION to apply the reddening."
+                )
+
     id, flux, flux_err, context, zspec, string_data = table_to_data(
         config, input_table, col_names=col_names, standard_names=standard_names
     )
@@ -104,9 +112,16 @@ def process(
         warnings.warn("Milky Way E(B-V) values provided to process. Overriding FILE or global value if set.")
         for i in range(ng):
             photozlist[i].mw_ebv = mw_ebv[i]
-    elif config["MW_EBV_FILE"].split_string("NONE", 1)[0] != "NONE":
-        print(f'Reading offsets from file {config["MW_EBV_FILE"].split_string("NONE", 1)[0]}')
-        photz.read_mw_ebv(photozlist)
+    else:
+        mw_ebv_cfg = config.get("MW_EBV_FILE")
+
+        file_value = None
+        if mw_ebv_cfg is not None:
+            file_value = mw_ebv_cfg.split_string("NONE", 1)[0]
+
+        if file_value and file_value != "NONE":
+            print(f"Reading offsets from file {file_value}")
+            photz.read_mw_ebv(photozlist)
 
     # Perform the main run
     photz.run_photoz(photozlist, a0)
@@ -118,7 +133,14 @@ def process(
     return output, photozlist
 
 
-def calculate_offsets_from_input(config, input_table, col_names=None, standard_names=False):
+def calculate_offsets_from_input(
+    config,
+    input_table,
+    col_names=None,
+    standard_names=False,
+    reddening=None,
+    mw_ebv=None,
+):
     """Calculate the zero point offsets for objects with spectroscopic redshifts
 
     We want to have this available as an independent method so that it can be
@@ -135,6 +157,12 @@ def calculate_offsets_from_input(config, input_table, col_names=None, standard_n
         Input catalogue column names. We will use ordering to determine meaning
     standard_names : bool
         If true we assume standard names.
+    reddening : np.array or None
+        Array of reddening values to apply to each model and filter. If None the
+        reddening will not be applied.
+    mw_ebv: np.array or None
+        Array of E(B-V) values for each object in the input catalogue. If None
+        no reddening will be applied.
 
     Returns
     =======
@@ -149,6 +177,24 @@ def calculate_offsets_from_input(config, input_table, col_names=None, standard_n
     n_filters = len(config["FILTER_LIST"].value.split(","))
     print(f"Processing {ng} objects with {n_filters} bands")
     photz = lp.PhotoZ(config)
+
+    # Apply reddening if provided
+    if reddening is not None:
+        photz.reddening = reddening
+
+        apply_mw = config.get("APPLY_MW_EXTINCTION", None)
+
+        if apply_mw is not None:
+            value = apply_mw.value
+
+            if value != "NO":
+                warnings.warn("Reddening sent to process will override any pre-calculated values.")
+            else:
+                warnings.warn(
+                    "Reddening sent to process but MW extinction will not be applied."
+                    " Set APPLY_MW_EXTINCTION to apply the reddening."
+                )
+
     # Loop over all ng galaxies!
     srclist = []
     for i in range(ng):
@@ -156,6 +202,21 @@ def calculate_offsets_from_input(config, input_table, col_names=None, standard_n
         one_obj.readsource(str(id[i]), flux[i], flux_err[i], context[i], zspec[i], str(string_data[i]))
         photz.prep_data(one_obj)
         srclist.append(one_obj)
+
+    if mw_ebv is not None:
+        warnings.warn("Milky Way E(B-V) values provided to process. Overriding FILE or global value if set.")
+        for i in range(ng):
+            srclist[i].mw_ebv = mw_ebv[i]
+    else:
+        mw_ebv_cfg = config.get("MW_EBV_FILE")
+
+        file_value = None
+        if mw_ebv_cfg is not None:
+            file_value = mw_ebv_cfg.split_string("NONE", 1)[0]
+
+        if file_value and file_value != "NONE":
+            print(f"Reading offsets from file {file_value}")
+            photz.read_mw_ebv(srclist)
 
     a0 = photz.compute_offsets(srclist)
     offsets = ",".join(np.array(a0).astype(str))
