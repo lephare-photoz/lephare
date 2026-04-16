@@ -352,6 +352,7 @@ def test_mw_galametz_multiple_ebv():
             line = f"{idline}  " f"{str(mw_ebv_sources[idline - 1])} \n"
             f.write(line)
 
+    # create the library with the right MW extnction option for Galametz
     config.update(
         {
             "APPLY_MW_EXTINCTION": "GALAMETZ",
@@ -361,6 +362,7 @@ def test_mw_galametz_multiple_ebv():
         }
     )
     lp.prepare(config)
+
     print("Done reading libraries")
     photz = lp.PhotoZ(lp.all_types_to_keymap(config))
 

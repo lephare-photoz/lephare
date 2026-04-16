@@ -53,10 +53,11 @@ class PhotoZ {
   cosmo lcdm;
   vector<opa> opaOut;
   double mw_global_ebv;
+  string mwExtCurve;
 
  public:
   vector<vector<double>> flux, flux_no_mw, fluxIR, reddening;
-  string mw_ref_mod, mw_ref_type;
+  string mw_ref_mod;
   vector<double> zLib, zLibIR;
   vector<SED*> fullLib, fullLibIR;
   SEDlight lightLib;

@@ -297,8 +297,7 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
     mw_classic_extinction = false;
   }
   // read the kweywords associated to these two both options
-  string mwExtCurve =
-      (key_analysed["EXT_MW_CURVE"]).split_string("CARDELLI", 1)[0];
+  mwExtCurve = (key_analysed["EXT_MW_CURVE"]).split_string("CARDELLI", 1)[0];
   ext milkyWayExtinction(mwExtCurve);
   if (mw_galametz || mw_classic_extinction) {
     if (milkyWayExtinction.name != "CARDELLI") {
@@ -654,6 +653,23 @@ void PhotoZ::check_consistency(keymap& keys) {
       }
     }
   }
+  // Check consistency between MW galametz options for library and photoz
+  bool mw_galametz_lib = keys["MW_GALAMETZ"].split_bool("NO", 1)[0];
+  string mw_curve_lib = ((keys["EXT_MW_CURVE"]).split_string("NONE", 1))[0];
+  // Check that GALAMETZ can be applied
+  if (mw_galametz) {
+    if (!mw_galametz_lib) {
+      throw runtime_error(
+          "Galametz MW option not used during building library "
+          "Can not be use now!");
+    } else if (strncasecmp(mw_curve_lib.c_str(), mwExtCurve.c_str(), 4) != 0) {
+      cout << "Library MW extinction curve " << mw_curve_lib << endl;
+      cout << "Photoz MW extinction curve " << mwExtCurve << endl;
+      throw runtime_error(
+          "Not the same EXT_MW_CURVE used during building library "
+          "And the one you want to use now!");
+    }
+  }
 }
 
 /*
@@ -679,7 +695,11 @@ void PhotoZ::read_lib(vector<SED*>& libFull, int& ind, int nummodpre[3],
   filtname = ((key_analysed["FILTER_FILE"]).split_string("filters.dat", 1))[0];
   // EM_LINES
   string emlines = ((key_analysed["EM_LINES"]).split_string("NO", 1))[0];
-
+  // MW GALAMETZ
+  bool mw_galametz_lib = key_analysed["MW_GALAMETZ"].split_bool("NO", 1)[0];
+  // MW EXTINCTION CURVE
+  string mw_curve_lib =
+      ((key_analysed["EXT_MW_CURVE"]).split_string("NONE", 1))[0];
   // EXTINC_LAW"
   vector<string> extlaw =
       (key_analysed["EXTINC_LAW"]).split_string("calzetti.dat", -1);
@@ -726,7 +746,7 @@ void PhotoZ::read_lib(vector<SED*>& libFull, int& ind, int nummodpre[3],
       throw invalid_argument("There is no such SED type defined: " + valc);
     }
 
-    if (mw_galametz) {
+    if (mw_galametz_lib) {
       oneSED->has_mw_galametz = true;
     }
 
