@@ -176,16 +176,22 @@ void Mag::open_files() {
       case object_type::GAL:
         sdatOut
             << "# model ext_law E(B-V) frac_EmLines redshift dist_modulus age "
-               "N_filt magnitude[N_filt] kcorr[N_filt] em_lines_fluxes[N_filt] "
-            << endl;
+               "N_filt magnitude[N_filt] kcorr[N_filt] ";
+        if (applyMilkyWayExtinction)
+          sdatOut << " MW_extinction[N_filt] Band-pass-correct ";
+        sdatOut << endl;
         break;
       case object_type::QSO:
         sdatOut << "# model ext_law E(B-V) redshift dist_modulus "
-                   "N_filt magnitude[N_filt] kcorr[N_filt] "
-                << endl;
+                   "N_filt magnitude[N_filt] kcorr[N_filt] ";
+        if (applyMilkyWayExtinction)
+          sdatOut << " MW_extinction[N_filt] Band-pass-correct ";
+        sdatOut << endl;
         break;
       case object_type::STAR:
         sdatOut << "# model N_filt magnitude[N_filt]" << endl;
+        if (applyMilkyWayExtinction)
+          sdatOut << " MW_extinction[N_filt] Band-pass-correct ";
         break;
     }
   }
@@ -339,6 +345,8 @@ void Mag::write_doc() {
     sdocOut << tmp << ",";
   };
   sdocOut << endl << "EM_LINES   " << emlines << endl;
+  sdocOut << "MW_GALAMETZ   " << applyMilkyWayExtinction << endl;
+  sdocOut << "EXT_MW_CURVE   " << milkyWayExtinction.name << endl;
   sdocOut << "LIB_ASCII   " << (outasc ? "YES" : "NO") << endl;
   time_t result = time(nullptr);
   sdocOut << "CREATION_DATE " << asctime(std::localtime(&result));
@@ -626,7 +634,9 @@ void GalMag::print_info() {
   for (auto& tmp : fracEm) {
     cout << tmp << ",";
   };
-  cout << endl << "# LIB_ASCII   " << (outasc ? "YES" : "NO") << endl;
+  cout << "endl << # MW_GALAMETZ   " << applyMilkyWayExtinction << endl;
+  cout << "# EXT_MW_CURVE   " << milkyWayExtinction.name << endl;
+  cout << "# LIB_ASCII   " << (outasc ? "YES" : "NO") << endl;
   time_t result = time(nullptr);
   cout << "# CREATION_DATE " << asctime(std::localtime(&result));
   cout << "#############################################" << endl;
@@ -669,6 +679,8 @@ void QSOMag::print_info() {
   for (auto& tmp : ebv) {
     cout << tmp << " ";
   };
+  cout << endl << "# MW_GALAMETZ   " << applyMilkyWayExtinction << endl;
+  cout << "# EXT_MW_CURVE   " << milkyWayExtinction.name << endl;
   cout << "# LIB_ASCII   " << (outasc ? "YES" : "NO") << endl;
   time_t result = time(nullptr);
   cout << "# CREATION_DATE " << asctime(std::localtime(&result));
@@ -837,6 +849,8 @@ void StarMag::print_info() {
   cout << "# STAR_LIB_OUT   :"
        << lepharework + "/lib_mag/" + colib + "(.doc & .bin)" << endl;
   cout << "# LIB_ASCII   " << (outasc ? "YES" : "NO") << endl;
+  cout << "# MW_GALAMETZ   " << applyMilkyWayExtinction << endl;
+  cout << "# EXT_MW_CURVE   " << milkyWayExtinction.name << endl;
   time_t result = time(nullptr);
   cout << "# CREATION_DATE " << asctime(std::localtime(&result));
   cout << "#############################################" << endl;

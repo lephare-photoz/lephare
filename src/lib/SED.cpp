@@ -1103,11 +1103,6 @@ void GalSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
     for (int k = 0; k < nbFlt; k++) {
       ofsDat << setw(6) << kcorr[k] << " ";
     }
-    if (has_emlines) {
-      for (int k = 0; k < nbFlt; k++) {
-        ofsDat << setw(6) << flEm[k] << " ";
-      }
-    }
     // Write the extinction values
     if (has_mw_galametz) {
       for (int k = 0; k < nbFlt; k++) {
