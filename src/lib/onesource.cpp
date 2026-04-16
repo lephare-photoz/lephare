@@ -271,7 +271,7 @@ void onesource::correct_classic_mw(const vector<double> Alamb_corr,
       // 10**(0.4*"+Alambda[k]*ebv
       if (mw_global_ebv >= 0) {
         corr = pow(10., 0.4 * Alamb_corr[k] * mw_global_ebv);
-      } else {
+      } else if (this->mw_ebv > 0) {
         corr = pow(10., 0.4 * Alamb_corr[k] * this->mw_ebv);
       }
       // Correct the fluxes
