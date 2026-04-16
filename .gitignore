@@ -156,4 +156,7 @@ _html/
 
 # Project initialization script
 .initialize_new_project.sh
-calibration/data/tests
+calibration/data
+# calibration/data/tests
+# calibration/data/bt_spectra
+# calibration/data/interpolated_bt_spectra

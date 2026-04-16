@@ -4,19 +4,18 @@
 import requests
 import xml.etree.ElementTree as ET
 import numpy as np
-from scipy.interpolate import interp1d
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 import sys
 import warnings
+from io import StringIO
 warnings.filterwarnings("ignore")
-
-
 
 def download_bt_spectra(
     # === DATABASE & DL DIRECTORY ===
     MODEL = "bt-nextgen-agss2009",
     BASE_URL = None,
-    OUTPUT_DIR = os.path.abspath(os.path.join(os.getcwd(), 'stargal/simulated_sed/bt_spectra')), # replace by you output directory
+    OUTPUT_DIR = os.path.abspath(os.path.join(os.getcwd(), 'stargal/simulated_sed/bt_spectra')),
 
     # === PHYSICAL VALUES SPECTRUM GRID  ===
     teff_values = [20000],
@@ -24,13 +23,17 @@ def download_bt_spectra(
     metallicity_values = [0.0],
 
     # Optional resampling parameters
-    LMIN = 1145.0,   # Å, set to None to keep full range
-    LMAX = 25005.0,  # Å
-    DL   = 5.0,     # Å, set to None to keep original sampling
+    LMIN = 1145.0,
+    LMAX = 25005.0,
+    DL   = 5.0,
     wl_norm = 10000,
     make_sed_list = True,
     overwrite_seds = False,
     list_name = "bt_star_sed_full",
+    list_folder = None,
+
+    # Parallelization
+    max_workers = 8
     ):
 
     if BASE_URL is None:
@@ -46,13 +49,17 @@ def download_bt_spectra(
     logg_values = makeititerable(logg_values)
     metallicity_values = makeititerable(metallicity_values)
 
+    teff_set = set(teff_values)
+    logg_set = set(round(g, 3) for g in logg_values)
+    feh_set  = set(round(z, 3) for z in metallicity_values)
+
     # === DOWNLOAD AND READ VOTABLE ===
     print("Downloading main VOTABLE...")
-    resp = requests.get(BASE_URL, verify=False)
+    session = requests.Session()
+    resp = session.get(BASE_URL, verify=False)
     resp.raise_for_status()
 
-    votable_content = resp.text
-    root = ET.fromstring(votable_content)
+    root = ET.fromstring(resp.text)
 
     ns = ""
     if root.tag.startswith("{"):
@@ -62,7 +69,7 @@ def download_bt_spectra(
     print(f"{len(rows)} <TR> lines found in VOTABLE.")
 
     # === RETRIEVE INDIVIDUAL SPECTRUM LINKS ===
-    spectra_dict = {}  # key = (teff, logg, feh), value = (alpha, url)
+    spectra_dict = {}
 
     for row in rows:
         cells = [td.text.strip() if td.text else "" for td in row.findall(f"{ns}TD")]
@@ -78,53 +85,23 @@ def download_bt_spectra(
         except Exception:
             continue
 
-        # Filtrage selon la grille cible
-        if (round(teff) in teff_values
-            and any(abs(logg - g) < 1e-3 for g in logg_values)
-            and any(abs(feh - z) < 1e-3 for z in metallicity_values)):
+        if (round(teff) in teff_set
+            and round(logg, 3) in logg_set
+            and round(feh, 3) in feh_set):
 
             key = (round(teff), round(logg, 2), round(feh, 2))
-            # Si ce triplet n’existe pas encore ou si ce nouveau alpha est plus proche de 0 → on remplace
             if key not in spectra_dict or abs(alpha) < abs(spectra_dict[key][0]):
                 spectra_dict[key] = (alpha, url)
 
-    # Conversion finale en liste
     spectra_links = [(teff, logg, feh, url) for (teff, logg, feh), (alpha, url) in spectra_dict.items()]
 
     print(f"{len(spectra_links)} spectra found matching with the chosen grid.")
 
     # === FUNCTION TO LOWER THE SAMPLING OF A SED FLUX = f(WL) ===
+    def resample_spectrum(wl, flux, lmin=None, lmax=None, dl=None):
+        wl = np.asarray(wl)
+        flux = np.asarray(flux)
 
-    def resample_spectrum(wl, flux, lmin=None, lmax=None, dl=None, tol=1e-5):
-        """
-        Crop and/or resample a spectrum to a uniform wavelength grid.
-        Exact wavelength matches (within tol) use the original flux value.
-        Otherwise, flux is linearly interpolated.
-
-        Parameters
-        ----------
-        wl : array-like
-            Original wavelength array (Å)
-        flux : array-like
-            Original flux array
-        lmin, lmax : float, optional
-            Min/max wavelength limits for cropping
-        dl : float, optional
-            Step size for the new wavelength grid (Å)
-        tol : float, optional
-            Tolerance (Å) to consider a wavelength as matching an original one
-
-        Returns
-        -------
-        wl_new, flux_new : np.ndarray
-            Resampled wavelength and flux arrays
-        """
-        # Sort arrays just in case
-        order = np.argsort(wl)
-        wl = np.array(wl)[order]
-        flux = np.array(flux)[order]
-
-        # Crop to limits
         if lmin is not None:
             mask = wl >= lmin
             wl, flux = wl[mask], flux[mask]
@@ -132,86 +109,83 @@ def download_bt_spectra(
             mask = wl <= lmax
             wl, flux = wl[mask], flux[mask]
 
-        # If no resampling requested, just return cropped data
         if dl is None:
             return wl, flux
 
-        # Build uniform wavelength grid
         wl_new = np.arange(wl[0], wl[-1] + dl/2, dl)
-
-        # Prepare interpolation function for missing points
-        interp_func = interp1d(
-            wl, flux,
-            kind="linear",
-            bounds_error=False,
-            fill_value=np.nan
-        )
-
-        # Allocate flux array
-        flux_new = np.empty_like(wl_new)
-
-        # Efficient matching loop
-        j = 0
-        n = len(wl)
-        for i, lam in enumerate(wl_new):
-            # Advance j until wl[j] >= lam - tol
-            while j < n - 1 and wl[j] < lam - tol:
-                j += 1
-            # Check for direct match
-            if abs(wl[j] - lam) <= tol:
-                flux_new[i] = flux[j]
-            else:
-                # Interpolate
-                flux_new[i] = interp_func(lam)
+        flux_new = np.interp(wl_new, wl, flux)
 
         return wl_new, flux_new
 
-    # === DOWNLOAD AND CONVERT TO SED ===
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    for i, (teff, logg, feh, url) in enumerate(spectra_links, 1):
+    # === PROCESS ONE SPECTRUM (parallel worker) ===
+    def process_spectrum(args):
+        teff, logg, feh, url = args
+
         fname = f"Teff{int(teff)}_logg{logg:.1f}_FeH{feh:.1f}.sed"
-        if os.path.exists(os.path.join(OUTPUT_DIR, fname)) and overwrite_seds == False:
-            print(f"T_eff={teff}, logg={logg}, Fe/H={feh} already exists. Pass.")
-            continue
-        spec = requests.get(url + "&format=ascii", verify=False)
-        if spec.status_code != 200:
-            print(f"ERROR: {url} not found")
-            continue
+        outpath = os.path.join(OUTPUT_DIR, fname)
 
-        print(f"Downloading [{i}/{len(spectra_links)}]... T_eff={teff}, logg={logg}, Fe/H={feh}")
+        if os.path.exists(outpath) and not overwrite_seds:
+            return f"Skipping existing: {fname}"
 
-        lines = [l.strip() for l in spec.text.splitlines() if l.strip() and not l.startswith("#")]
-        data = np.loadtxt(lines)
+        try:
+            r = session.get(url + "&format=ascii", verify=False, timeout=30)
+            r.raise_for_status()
 
-        # Norm to wl_norm (in A)
-        wl = data[:, 0]
-        flux = data[:, 1]
-        flux = flux / np.interp(wl_norm, wl, flux)
+            data = np.loadtxt(StringIO(r.text))
 
-        # Resample
-        wl_proc, flux_proc = resample_spectrum(wl, flux, LMIN, LMAX, DL)
+            wl = data[:, 0]
+            flux = data[:, 1]
 
-        # Export
-        print(os.path.join(OUTPUT_DIR, fname))
-        with open(os.path.join(OUTPUT_DIR, fname), "w") as f:
-            f.write(f"#SED {MODEL}\n#wl(AA) flux (normed at {wl_norm}AA)\n")
-            for w, fl in zip(wl_proc, flux_proc):
-                f.write(f"{w:.3f} {fl:.7f}\n")
+            flux = flux / np.interp(wl_norm, wl, flux)
+
+            wl_proc, flux_proc = resample_spectrum(wl, flux, LMIN, LMAX, DL)
+
+            np.savetxt(
+                outpath,
+                np.column_stack([wl_proc, flux_proc]),
+                fmt="%.3f %.7f",
+                header=f"#SED {MODEL}\n#wl(AA) flux (normed at {wl_norm}AA)",
+                comments=""
+            )
+
+            return f"Done: T_eff={teff}, logg={logg}, Fe/H={feh}"
+
+        except Exception as e:
+            return f"ERROR: {url} ({e})"
+
+    # === DOWNLOAD AND CONVERT TO SED (PARALLEL) ===
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    fname_list = [os.path.join(OUTPUT_DIR,
+                    f"Teff{int(teff)}_logg{logg:.1f}_FeH{feh:.1f}.sed")
+        for (teff, logg, feh, _) in spectra_links
+    ]
+    print(f"Starting parallel download with {max_workers} workers...")
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [executor.submit(process_spectrum, args) for args in spectra_links]
+
+        for i, future in enumerate(as_completed(futures), 1):
+            print(f"[{i}/{len(futures)}] {future.result()}")
 
     print("All available spectrum have been downloaded and formated.")
 
-    # Make sed.list, mandatory for lephare if requested
-    if make_sed_list == True:
-        SED_list_path = os.path.join(OUTPUT_DIR, f'{list_name}.list')
-        
+    # === MAKE SED LIST ===
+    if make_sed_list:
+        if list_folder is not None:
+            os.makedirs(list_folder, exist_ok=True)
+            SED_list_path = os.path.join(list_folder, f'{list_name}.list')
+        else:
+            SED_list_path = os.path.join(OUTPUT_DIR, f'{list_name}.list')
+
         bt_sed_list = sorted([
             f for f in os.listdir(OUTPUT_DIR)
-            if os.path.isfile(os.path.join(OUTPUT_DIR, f)) and f.endswith(".sed")
+            if (os.path.isfile(os.path.join(OUTPUT_DIR, f))
+                and f.endswith(".sed")
+                and os.path.join(OUTPUT_DIR, f) in fname_list)
         ])
 
-
-        #save to file.list because we must do it like this
         with open(SED_list_path, "w") as f:
             for sed_file in bt_sed_list:
                 f.write(OUTPUT_DIR + "/" + sed_file + "\n")
 
+        print('sed list written to ', SED_list_path)

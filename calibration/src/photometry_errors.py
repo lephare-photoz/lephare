@@ -257,35 +257,47 @@ class PhotometricErrorModel:
     # 2. Prediction
     def predict(self, x, statistic="mean"):
         x = np.asarray(x)
+        out = np.full_like(x, np.nan, dtype=float)
+        valid = np.isfinite(x)
+        if not np.any(valid):
+            return out
+        x = x[valid]
 
         df = np.maximum(self.smooth_df(x), 1e-8)
         loc = self.smooth_loc(x)
         scale = np.maximum(self.smooth_scale(x), 1e-12)
 
         if statistic == "mean":
-            return loc + df * scale
-
+            out[valid] = loc + df * scale
         elif statistic == "median":
-            return sc.gamma.median(a=df, loc=loc, scale=scale)
-
+            out[valid] = sc.gamma.median(a=df, loc=loc, scale=scale)
         elif statistic == "mode":
             mode = loc + (df - 1) * scale
-            mode[df <= 1] = loc[df <= 1]  # mode non défini si df ≤ 1
-            return mode
-
+            mode[df <= 1] = loc[df <= 1]
+            out[valid] = mode
         else:
             raise ValueError("statistic must be 'mean', 'median', or 'mode'")
+        return out
 
     # 3. Sampling
     def sample(self, x, size=None, random_state=None):
+
         rng = np.random.default_rng(random_state)
         x = np.asarray(x)
+        out = np.full_like(x, np.nan, dtype=float)
+        valid = np.isfinite(x)
+        if not np.any(valid):
+            return out
+        xv = x[valid]
 
-        df = np.maximum(self.smooth_df(x), 1e-6)
-        loc = self.smooth_loc(x)
-        scale = np.maximum(self.smooth_scale(x), 1e-12)
+        df = np.maximum(self.smooth_df(xv), 1e-6)
+        loc = self.smooth_loc(xv)
+        scale = np.maximum(self.smooth_scale(xv), 1e-12)
+        idx_valid = np.where(valid)[0]
 
-        return sc.gamma.rvs(a=df, loc=loc, scale=scale, size=size, random_state=rng)
+        out[idx_valid] = sc.gamma.rvs(a=df, loc=loc, scale=scale, size=size, random_state=rng)
+        
+        return out
 
     # 4. Store models in a collection for re-use
     def model_collection(self, x_lists, sigma_lists, model_names, fit_ends=True,
@@ -457,7 +469,6 @@ class PhotometricErrorModel:
         # --- Reorder columns if needed
         columns = list(cat_out.columns)
         first_mag_index = columns.index(mag_columns[0])
-
         cols_before = columns[:first_mag_index]
         remaining_cols = [c for c in columns if c not in cols_before]
 
@@ -465,22 +476,16 @@ class PhotometricErrorModel:
             return cat_out
 
         if format == "MMEE":
-
             ordered_main = mag_columns + error_columns
             other_cols = [c for c in remaining_cols if c not in ordered_main]
-
             final_cols = cols_before + ordered_main + other_cols
             return cat_out[final_cols]
 
-
         if format == "MEME":
-
             paired = []
             for m, e in zip(mag_columns, error_columns):
                 paired.extend([m, e])
-
             other_cols = [c for c in remaining_cols if c not in paired]
-
             final_cols = cols_before + paired + other_cols
             return cat_out[final_cols]
 

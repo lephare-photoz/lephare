@@ -7,6 +7,33 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize, LogNorm
 from matplotlib.gridspec import GridSpec
 
+def plot_r_stats(r, rrange=None, log=False, bins=30, density=True):
+    from scipy.stats import norm, probplot
+
+    if rrange is not None:
+        rmin = rrange[0]
+        rmax = rrange[1]
+        r = r[(r>rmin) & (r<rmax)]
+    r = r[r!=0]
+    fig, (ax0,ax1,ax2) = plt.subplots(1,3, figsize=(11,3.5))
+
+    #residus
+    ax0.hist(r,80, range=(rmin,rmax) if rrange is not None else None, log=log, density=density)
+    x = np.linspace(rmin, rmax, 500) if rrange is not None else np.linspace(r.min(), r.max(), 500)
+    ax0.plot(x, norm.pdf(x), c='r')
+    ax0.set_title("Residus")
+
+    #qq-plot
+    probplot(r, dist="norm", plot=ax1)
+
+    #pit
+    ax2.hist(norm.cdf(r), bins=bins, density=density)
+    ax2.set_title("PIT")
+
+    plt.tight_layout()
+    plt.show()
+
+
 def plot_cmd(x, y, color_value=None, cmap="gnuplot", xlabel=None, ylabel=None, title=None, cbar_label=None,
             show_cbar=True, log_cbar=False, show_nocolor_value=True, **scatterkwargs):
 
