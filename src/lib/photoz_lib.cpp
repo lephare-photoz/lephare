@@ -1225,6 +1225,10 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
          << endl;
   // Adaptation only if some sources selected for auto-adapt
   if (adaptSources.size() > 0) {
+    // Apply the milky way ebv correction to the observed mag if CLASSIC method
+    if (mw_classic_extinction)
+      oneObj->correct_classic_mw(mw_classic_extinction_values, mw_global_ebv);
+
     int iteration = 0;
     int converge = 0;
     // While the convergence is not reached and we have less than 10 iterations
@@ -1232,12 +1236,6 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
       // Loop over the sources
       unsigned int n_adapt_obj = 0;
       for (auto& oneObj : adaptSources) {
-        // Apply the milky way ebv correction to the observed mag if CLASSIC
-        // method
-        if (mw_classic_extinction)
-          oneObj->correct_classic_mw(mw_classic_extinction_values,
-                                     mw_global_ebv);
-
         // Correct the observed magnitudes and fluxes with the coefficients
         // found by auto-adapt
         oneObj->adapt_mag(a0);
