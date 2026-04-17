@@ -276,12 +276,13 @@ void onesource::correct_classic_mw(const vector<double> Alamb_corr,
     // Correct the fluxes (only case without correction is the negative error)
     ab[k] = ab[k] * corr;
     if (sab[k] > 0) sab[k] = sab[k] * corr;
-
-    // change also the associated magnitudes
-    this->convertMag();
-    // Consider that the original magnitudes should include the correction
-    this->keepOri();
   }
+
+  // change also the associated magnitudes
+  this->convertMag();
+  // Consider that the original magnitudes should include the correction
+  this->keepOri();
+
   return;
 }
 
