@@ -1381,7 +1381,6 @@ void QSOSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
     for (int k = 0; k < nbFlt; k++) {
       ofsDat << setw(6) << kcorr[k] << " ";
     }
-    ofsDat << endl;
     // Write the extinction values
     if (has_mw_galametz) {
       for (int k = 0; k < nbFlt; k++) {
