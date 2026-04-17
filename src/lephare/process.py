@@ -52,8 +52,6 @@ def process(
     # ensure that all values in the keymap are keyword objects
     config = lp.all_types_to_keymap(config)
 
-    photz = lp.PhotoZ(config)
-
     id, flux, flux_err, context, zspec, string_data = table_to_data(
         config, input_table, col_names=col_names, standard_names=standard_names
     )
