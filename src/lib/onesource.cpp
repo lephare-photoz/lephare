@@ -263,23 +263,20 @@ void onesource::correct_classic_mw(const vector<double> Alamb_corr,
                                    const double mw_global_ebv) {
   double corr = 1.;
 
-  // If the MW EBV correction makes sense
-  if (this->mw_ebv > 0) {
-    // Loop over each filter
-    for (size_t k = 0; k < ab.size(); k++) {
-      // Define the correction to be applied to the observed fluxes
-      // 10**(0.4*"+Alambda[k]*ebv
-      if (mw_global_ebv >= 0) {
-        corr = pow(10., 0.4 * Alamb_corr[k] * mw_global_ebv);
-      } else if (this->mw_ebv > 0) {
-        corr = pow(10., 0.4 * Alamb_corr[k] * this->mw_ebv);
-      }
-      // Correct the fluxes
-      if (ab[k] > 0 || sab[k] > 0) {
-        ab[k] = ab[k] * corr;
-        sab[k] = sab[k] * corr;
-      }
+  // Loop over each filter
+  for (size_t k = 0; k < ab.size(); k++) {
+    // Define the correction to be applied to the observed fluxes
+    // 10**(0.4*"+Alambda[k]*ebv
+    // The global correction is the one by defaut if defined
+    if (mw_global_ebv >= 0) {
+      corr = pow(10., 0.4 * Alamb_corr[k] * mw_global_ebv);
+    } else if (this->mw_ebv > 0) {
+      corr = pow(10., 0.4 * Alamb_corr[k] * this->mw_ebv);
     }
+    // Correct the fluxes (only case without correction is the negative error)
+    ab[k] = ab[k] * corr;
+    if (sab[k] > 0) sab[k] = sab[k] * corr;
+
     // change also the associated magnitudes
     this->convertMag();
     // Consider that the original magnitudes should include the correction
