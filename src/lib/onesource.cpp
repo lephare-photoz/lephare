@@ -394,7 +394,8 @@ vector<vector<double>> onesource::redden_flux(
       for (size_t k = 0; k < nCols; ++k) {
         double factor = 1.;
         // Do the correction only when MW E(B-V) is positive
-        if (this->mw_ebv > 0) pow(10.0, reddening[i][k] * this->mw_ebv * 0.4);
+        if (this->mw_ebv > 0)
+          factor = pow(10.0, reddening[i][k] * this->mw_ebv * 0.4);
         // Divide to redden times to deredden
         out[i][k] = flux[i][k] / factor;
       }
