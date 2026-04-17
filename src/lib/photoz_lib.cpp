@@ -1708,9 +1708,11 @@ void PhotoZ::read_mw_ebv(vector<onesource*> sources) {
 
         // Store when the id of the ebv file
         // match the id of the first source
-        if (id == sources[mw_ebv_nlines]->spec) {
-          sources[mw_ebv_nlines]->mw_ebv = val;
-          mw_ebv_nlines++;
+        if (mw_ebv_nlines <= sources.size()) {
+          if (id == sources[mw_ebv_nlines]->spec) {
+            sources[mw_ebv_nlines]->mw_ebv = val;
+            mw_ebv_nlines++;
+          }
         }
       }
     }
