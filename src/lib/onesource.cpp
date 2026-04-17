@@ -1464,7 +1464,8 @@ void onesource::write_pdz(vector<string> pdztype,
  INTERPOLATE LINEARILY IN THE LIBRARY
  Do it only for GAL
 */
-void onesource::interp_lib(vector<SED*>& fulllib) {
+void onesource::interp_lib(vector<SED*>& fulllib,
+                           const vector<vector<double>>& flux) {
   magm.clear();
   // all the sizes in in the fulllib SED should be identical to the
   // bands saved in the onesource object
@@ -1498,6 +1499,18 @@ void onesource::interp_lib(vector<SED*>& fulllib) {
     // Store in two SED around zs
     const SED& SEDa = *fulllib[indmin[0]];
     const SED& SEDb = *fulllib[indmin[0] + deca];
+    vector<double> magma(imagm), magmb(imagm);
+    for (int k = 0; k < imagm; k++) {
+      // Use the flux from the lib which could change with MW extinction
+      if (flux[indmin[0]][k] > 0 && flux[indmin[0] + deca][k] > 0) {
+        magma[k] = flux2mag(flux[indmin[0]][k]);
+        magmb[k] = flux2mag(flux[indmin[0] + deca][k]);
+      } else {
+        // Case of negative predicted flux (occurs in FIR fit)
+        magma[k] = SEDa.mag[k];
+        magmb[k] = SEDb.mag[k];
+      }
+    }
 
     // Check that the interpolation can be done
     // same model in the library around zs
@@ -1512,7 +1525,7 @@ void onesource::interp_lib(vector<SED*>& fulllib) {
         // Check if the interpolation if possible
         if (SEDb.mag[k] > 90) a = 0.0;
         // Interpolation of the predicted magnitudes.
-        magm.push_back(a * SEDb.mag[k] + (1. - a) * SEDa.mag[k]);
+        magm.push_back(a * magmb[k] + (1. - a) * magma[k]);
         // Check if the interpolation if possible
         if (SEDb.kcorr[k] > 90) a = 0.0;
         // Interpolation of the k-corrections

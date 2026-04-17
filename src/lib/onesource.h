@@ -246,7 +246,7 @@ class onesource {
                    const bool colAnalysis, const bool zfix);
   void generatePDF_IR(vector<SED*>& fulllib);
   void mode();
-  void interp_lib(vector<SED*>& fulllib);
+  void interp_lib(vector<SED*>& fulllib, const vector<vector<double>>& flux);
   void adapt_mag(vector<double> a0);
   void correct_classic_mw(const vector<double> Alamb_corr,
                           const double mw_global_ebv);

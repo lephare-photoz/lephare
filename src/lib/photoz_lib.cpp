@@ -579,8 +579,8 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
         flux_no_mw[i][k] = flux[i][k];
         // If Galametz with one MW value, correct the lib once
         if (one_mw_ebv) {
-          flux[i][k] = flux_no_mw[i][k] /
-                       pow(10.0, reddening[i][k] * mw_global_ebv * 0.4);
+          double factor = pow(10.0, reddening[i][k] * mw_global_ebv * 0.4);
+          flux[i][k] = flux_no_mw[i][k] / factor;
         }
       }
     }
@@ -1232,11 +1232,16 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
       // Loop over the sources
       unsigned int n_adapt_obj = 0;
       for (auto& oneObj : adaptSources) {
-        // Apply the milky way ebv correction to the observed mag if CLASSIC
-        // method
-        if (mw_classic_extinction && iteration == 0)
-          oneObj->correct_classic_mw(mw_classic_extinction_values,
-                                     mw_global_ebv);
+        // Correction for MW attenuation only the first time
+        if (iteration == 0) {
+          // Apply the milky way ebv correction to the observed mag if CLASSIC
+          if (mw_classic_extinction) {
+            oneObj->correct_classic_mw(mw_classic_extinction_values,
+                                       mw_global_ebv);
+          } else if (!one_mw_ebv && mw_galametz) {
+            flux = oneObj->redden_flux(flux_no_mw, reddening);
+          }
+        }
 
         // Correct the observed magnitudes and fluxes with the coefficients
         // found by auto-adapt
@@ -1248,10 +1253,6 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
         // compatible redshift to zs.
         auto valid = validLib(oneObj->zs);
 
-        // Apply MW reddening if Galametz option on
-        if (!one_mw_ebv && mw_galametz) {
-          flux = oneObj->redden_flux(flux_no_mw, reddening);
-        }
         oneObj->fit(lightLib, flux, valid, funz0, bp, restrict_rf);
 
         n_adapt_obj++;
@@ -1260,7 +1261,7 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
         if (oneObj->indmin[0] >= 0) {
           // interp_lib uses consiz to define the position of interpolation
           oneObj->consiz = oneObj->zs;
-          oneObj->interp_lib(fullLib);
+          oneObj->interp_lib(fullLib, flux);
         }
         if (verbose)
           cout << " Fit source for adapt " << oneObj->spec << "  \r " << flush;
@@ -1924,7 +1925,7 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
     }
 
     // Interpolation at the new redshift  (only gal for the moment)
-    oneObj->interp_lib(fullLib);
+    oneObj->interp_lib(fullLib, flux);
     // Compute absolute magnitudes
     oneObj->absmag(goodFlt, maxkcol, lcdm, gridz);
     // Compute zmax and M_faint
@@ -2163,7 +2164,7 @@ void PhotoZ::physpara_onesource(onesource& src) {
   }
 
   // Interpolation at the new redshift  (only gal for the moment)
-  src.interp_lib(fullLib);
+  src.interp_lib(fullLib, flux);
 
   // Compute absolute magnitudes
   src.absmag(goodFlt, maxkcol, lcdm, gridz);
