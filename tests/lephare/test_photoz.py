@@ -68,7 +68,7 @@ def test_reddening(test_data_dir: str):
     output, photozlist = lp.process(
         config, input[reduced_cols], write_outputs=False, mw_ebv=[0.1] * len(input)
     )
-    assert np.isclose(np.sum(albd_lib), 105.84983288457076)
+    assert np.isclose(np.sum(albd_lib), 105.84491378690295)
 
     # Check it can read the ebv values from the file and apply them to the sources
     input[reduced_cols].write(
@@ -86,7 +86,7 @@ def test_reddening(test_data_dir: str):
 
     # This is getting the ebv values from the file.
     output, _ = lp.process(config, input[reduced_cols], write_outputs=False)
-    assert np.isclose(np.sum(output["Z_BEST"]), 91.0)
+    assert np.isclose(np.sum(output["Z_BEST"]), 84.0)
     # Now test with SMC Prevot curve
     config["EXT_MW_CURVE"] = "MW_seaton.dat"
     albd_lib = lp.compute_model_reddening(config)
@@ -99,4 +99,4 @@ def test_reddening(test_data_dir: str):
 
     # Test the band pass correction
     bpc = lp.compute_band_pass_correction(config)
-    assert np.isclose(np.sum(bpc), 17.5817920745359)
+    assert np.isclose(np.sum(bpc), 12.141620831207208)

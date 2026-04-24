@@ -65,10 +65,7 @@ class ext {
 };
 
 double compute_filter_extinction(const flt& filter, const ext& extinction);
-double compute_filter_sed_extinction(const flt& filter, const ext& extinction,
-                                     const SED& sed);
 double cardelli_ext(flt& oneFlt);
-double cardelli_ext_sed(const flt& oneFlt, const SED& oneSED);
 double cardelli_law(double lb);
 
 #endif

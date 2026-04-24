@@ -502,6 +502,32 @@ void SED::apply_extinction(const double ebv, const ext& oneext) {
   return;
 }
 
+void SED::apply_mw_extinction(const double mw_ebv, const ext& oneext) {
+  //(*this).ebv = ebv;
+  // No need to loose time if E(b-V)~0
+  if (mw_ebv <= 1.e-20) return;
+  // if empty spectrum return
+  if (lamb_flux.empty()) return;
+
+  // the extinction is the (x,y) curve
+  auto [x, y] = to_tuple(oneext.lamb_ext);
+  auto [z, t] = to_tuple(lamb_flux);
+  // interpolate the extinction curve at the position of the SED lambdas
+  // extrapolations set to 0 so that the exponent in the for loop is 1
+  auto newext_val = fast_interpolate(x, y, z, 0);
+
+  for (size_t k = 0; k < z.size(); ++k) {
+    double val = t[k];
+    double ext_val = newext_val[k];
+    // Change the value of the flux according to the dust extinction
+    lamb_flux[k].val *= pow(10., -0.4 * mw_ebv * ext_val);
+  }
+
+  // Indicate what is the value of the ebv and the index of the extinction law
+  // extlawId = oneext.numext;
+  return;
+}
+
 /*
   Apply dust extinction on the emission lines (fac_line)
   Only for galaxies and QSO
@@ -1586,50 +1612,119 @@ vector<double> SED::compute_fluxes(const vector<flt>& filters) {
   return result;
 }
 
+double interpolate(const std::vector<double>& x, const std::vector<double>& y,
+                   double xq) {
+  auto it = std::lower_bound(x.begin(), x.end(), xq);
+
+  if (it == x.begin()) return y.front();
+  if (it == x.end()) return y.back();
+
+  size_t i = std::distance(x.begin(), it);
+
+  double x1 = x[i - 1], x2 = x[i];
+  double y1 = y[i - 1], y2 = y[i];
+
+  return y1 + (y2 - y1) * (xq - x1) / (x2 - x1);
+}
+
 void SED::compute_milky_way_extinction(const ext& oneExt,
                                        const vector<flt>& filters) {
+  // we use an example pD/EBV value assuming linear relations as in Galametz
+  // Appendix A
+  double reference_ebv = 0.1;
   // if reference model ebv not sent use 1.0 as default, so no rescaling of the
   // extinction
   double val;
+  for (const auto& filter : filters) {
+    // val = compute_filter_sed_extinction(filter, oneExt, *this);
+    // firt get the unreddened values
+    auto result = this->integrateSED(filter);
+    val = result[3];
+    // Use 0.3 as a default value for the extinction, to be able to rescale it
+
+    milky_way_extinction.push_back(val);
+  }
+
+  // B and V filters (constructed once, reused forever)
+  static flt filterB;
+  static flt filterV;
+
+  static const std::vector<double> lB = {
+      3600., 3700., 3800., 3900., 4000., 4100., 4200.,
+      4300., 4400., 4500., 4600., 4700., 4800., 4900.,
+      5000., 5100., 5200., 5300., 5400., 5500., 5600.};
+
+  static const std::vector<double> fB = {
+      0.000, 0.030, 0.134, 0.567, 0.920, 0.978, 1.000,
+      0.978, 0.935, 0.853, 0.740, 0.640, 0.536, 0.424,
+      0.325, 0.235, 0.150, 0.095, 0.043, 0.009, 0.000};
+
+  static const std::vector<double> lV = {
+      4700., 4800., 4900., 5000., 5100., 5200., 5300., 5400.,
+      5500., 5600., 5700., 5800., 5900., 6000., 6100., 6200.,
+      6300., 6400., 6500., 6600., 6700., 6800., 6900., 7000.};
+
+  static const std::vector<double> fV = {
+      0.000, 0.030, 0.163, 0.458, 0.780, 0.967, 1.000, 0.973,
+      0.898, 0.792, 0.684, 0.574, 0.461, 0.359, 0.270, 0.197,
+      0.135, 0.081, 0.045, 0.025, 0.017, 0.013, 0.009, 0.000};
+
+  // initialise only once
+  static bool initialised = false;
+  if (!initialised) {
+    filterB.lamb_trans.reserve(lB.size());
+    filterV.lamb_trans.reserve(lV.size());
+
+    for (size_t i = 0; i < lB.size(); i++)
+      filterB.lamb_trans.emplace_back(lB[i], fB[i]);
+
+    for (size_t i = 0; i < lV.size(); i++)
+      filterV.lamb_trans.emplace_back(lV[i], fV[i]);
+
+    initialised = true;
+  }
+
   // compute the BPC for the SED using simple B and V band filters
 
-  //  B and V bands should be constructed once outside in MAG.cpp?at low
-  //  resolution
-  vector<double> lB = {3800.00, 4000.0, 4200.0, 4400.0, 4700.0, 5450.0};
-  vector<double> fB = {0.0, 0.82, 0.97, 1.0, 0.8, 0.0};
-  vector<double> lV = {4850.00, 5170.0, 5250.0, 5350.0, 5500.0, 6400.0};
-  vector<double> fV = {0.0, 0.9, 0.98, 1.0, 0.9, 0.0};
-  flt filterB;
-  flt filterV;
+  auto resultB = this->integrateSED(filterB);
+  auto resultV = this->integrateSED(filterV);
 
-  // // optional but recommended
-  filterB.lamb_trans.reserve(lB.size());
-  filterV.lamb_trans.reserve(lV.size());
+  // Use 0.1 as a default value for the extinction, to be able to rescale it
+  this->apply_mw_extinction(reference_ebv, oneExt);
 
-  for (size_t i = 0; i < lB.size(); i++) {
-    filterB.lamb_trans.emplace_back(lB[i], fB[i]);
-  }
-
-  for (size_t i = 0; i < lV.size(); i++) {
-    filterV.lamb_trans.emplace_back(lV[i], fV[i]);
-  }
-  if (oneExt.name != "CARDELLI") {
-    band_pass_correction =
-        compute_filter_sed_extinction(filterB, oneExt, *this) -
-        compute_filter_sed_extinction(
-            filterV, oneExt,
-            *this);  // compute the extinction in each filter and store it
+  auto resultB_red = this->integrateSED(filterB);
+  auto resultV_red = this->integrateSED(filterV);
+  float eb;
+  float ev;
+  // If the integral fails take the extinction at the upper limit of the filter.
+  if (!(resultB_red[3] > 0)) {
+    auto [x, y] = to_tuple(oneExt.lamb_ext);
+    eb = reference_ebv * interpolate(x, y, 5600.0);
   } else {
-    band_pass_correction = 3.1 * (cardelli_ext_sed(filterB, *this) -
-                                  cardelli_ext_sed(filterV, *this));
+    eb = -2.5 * LOG10D(resultB_red[3] / resultB[3]);
   }
-  for (const auto& filter : filters) {
-    if (oneExt.name != "CARDELLI") {
-      val = compute_filter_sed_extinction(filter, oneExt, *this);
+  if (!(resultV[3] > 0)) {
+    auto [x, y] = to_tuple(oneExt.lamb_ext);
+    ev = reference_ebv * interpolate(x, y, 7000.0);
+  } else {
+    ev = -2.5 * LOG10D(resultV_red[3] / resultV[3]);
+  }
+  band_pass_correction = eb - ev;
+
+  for (size_t i = 0; i < filters.size(); ++i) {
+    auto result = integrateSED(filters[i]);
+
+    if (!(result[3] > 0)) {
+      // decide what “do something” means:
+      auto [x, y] = to_tuple(oneExt.lamb_ext);
+      double filt_max = filters[i].lmax();
+      milky_way_extinction[i] = interpolate(x, y, filt_max);
+
     } else {
-      val = 3.1 * cardelli_ext_sed(filter, *this);
+      milky_way_extinction[i] =
+          -2.5 * LOG10D(result[3] / milky_way_extinction[i]) / reference_ebv;
+      // or just = new_val, depending on what you want
     }
-    milky_way_extinction.push_back(val);
   }
 }
 

@@ -108,61 +108,6 @@ double compute_filter_extinction(const flt& oneFlt, const ext& oneExt) {
   return (aint /= fint);
 }
 
-double compute_filter_sed_extinction(const flt& oneFlt, const ext& oneExt,
-                                     const SED& oneSED) {
-  // this function is the same as compute_filter_extinction but the extinction
-  //  is weighted by the SED, which is useful for the computation of the
-  //  effective
-  //  wavelength of the filter when extinction is applied
-  //  work with the original lamb_flux
-  //  vector<oneElLambda> lamb_all = oneFlt.lamb_trans;
-
-  // Filter limits
-  auto [x, newflt, newext, newsed] = restricted_resampling3(
-      oneFlt.lamb_trans, oneExt.lamb_ext, oneSED.lamb_flux, -1);
-
-  double last_mid_ext = 0.0;  // track last mid_ext where mid_flt > 0
-  double first_mid_ext =
-      -1.0;  // will store the first mid_ext where mid_sed > 0
-  double fint = 0;
-  double aint = 0;
-
-  // integrate the extinction curve AND SED through the filter
-  for (size_t i = 0; i < newflt.size() - 1; i++) {
-    // Integral of the transmission by the filter
-    double flt1 = newflt[i];
-    double flt2 = newflt[i + 1];
-    double ext1 = newext[i];
-    double ext2 = newext[i + 1];
-    double sed1 = newsed[i];
-    double sed2 = newsed[i + 1];
-
-    double delta = x[i + 1] - x[i];
-    double mid_flt = (flt1 + flt2) / 2.;
-    double mid_ext = (ext1 + ext2) / 2.;
-    double mid_sed = (sed1 + sed2) / 2.;
-
-    // Remember mid_ext if mid_flt is non-zero
-    if (mid_flt > 0.0) last_mid_ext = mid_ext;
-    // Remember the first mid_ext where mid_sed is non-zero
-    if (first_mid_ext < 0.0 && mid_sed > 0.0) {
-      first_mid_ext = mid_ext;
-    }
-
-    // Integral of the transmission by the filter x SED
-    fint += mid_flt * mid_sed * delta;
-    // Integral of the transmission by the filter x extinction * SED
-    aint += mid_flt * mid_ext * mid_sed * delta;
-  }
-
-  // If fint is zero, set fallback values
-  if (fint == 0.0) {
-    fint = 1.0;
-    aint = last_mid_ext;
-  }
-  return (aint /= fint);
-}
-
 // compute galactic extinction in the filter based on Cardelli et al., 1989, ApJ
 // 345
 double cardelli_ext(flt& oneFlt) {
@@ -183,27 +128,6 @@ double cardelli_ext(flt& oneFlt) {
   }
 
   return compute_filter_extinction(oneFlt, oneExt);
-}
-
-// compute galactic extinction in the filter based on Cardelli et al., 1989, ApJ
-// 345
-double cardelli_ext_sed(const flt& oneFlt, const SED& oneSED) {
-  // Define the limits of this filter
-  double lmin = oneFlt.lmin();
-  double lmax = oneFlt.lmax();
-  ext oneExt("CARDELLI", 2);
-
-  double lextg, extg;
-
-  // computes the galactic extinction
-  double dlbd = (lmax - lmin) / 400.;
-  for (size_t i = 0; i < 402; i++) {
-    lextg = lmin + double(i - 1) * dlbd;
-    extg = cardelli_law(lextg);
-    oneExt.add_element(lextg, extg);
-  }
-
-  return compute_filter_sed_extinction(oneFlt, oneExt, oneSED);
 }
 
 //  compute albd/av at a given lambda (A) for the Cardelli law

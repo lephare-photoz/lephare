@@ -99,17 +99,10 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("set_vector", &ext::set_vector);
   mod.def("compute_filter_extinction", &compute_filter_extinction,
           "Compute extinction in a filter band.");
-  mod.def("compute_filter_sed_extinction", &compute_filter_sed_extinction,
-          "Compute extinction in a filter band.");
   mod.def("cardelli_ext", &cardelli_ext,
           "Compute galactic extinction in the filter based on Cardelli et "
           "al., 1989, ApJ 345",
           py::arg("oneFlt"));
-  mod.def("cardelli_ext_sed", &cardelli_ext_sed,
-          "Compute galactic extinction in the filter and model based on "
-          "Cardelli et "
-          "al., 1989, ApJ 345",
-          py::arg("oneFlt"), py::arg("oneSED"));
   mod.def("cardelli_law", &cardelli_law,
           "compute albd/av at a given lambda (A) for the Cardelli law",
           py::arg("lb"));

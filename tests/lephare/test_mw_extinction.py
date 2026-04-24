@@ -254,6 +254,7 @@ def test_mw_galametz_single_ebv():
 
     # Value taken for the first QSO, first redshift and band (first item of the library)
     mw_flux = photz.flux[0][0]
+
     assert no_mw_flux == pytest.approx(10 ** (0.4 * (4.7932 / 0.7906 * 0.9099) * 0.1) * mw_flux)
 
 
@@ -387,4 +388,12 @@ def test_mw_galametz_multiple_ebv():
     # Value taken for the first QSO, first redshift and band (first item of the library)
     # flux should contain the value for the last mw ebv
     mw_flux = photz.flux[0][0]
-    assert (no_mw_flux / mw_flux) == pytest.approx(10 ** (0.4 * (4.7932 / 0.7906 * 0.9099) * 0.3), abs=1e-3)
+
+    assert (no_mw_flux / mw_flux) == pytest.approx(
+        10
+        ** (0.4 * (photz.fullLib[0].milky_way_extinction[0] / photz.fullLib[0].band_pass_correction) * 0.3),
+        abs=1e-3,
+    )
+    assert (no_mw_flux / mw_flux) == pytest.approx(
+        10 ** (0.4 * (4.792184385440961 / 0.888567968744059) * 0.3), abs=1e-3
+    )

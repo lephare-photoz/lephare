@@ -311,6 +311,11 @@ class SED {
    * \param obj instance of class ext
    */
   void apply_extinction(const double ebv, const ext& obj);
+  /*! Apply Milky Way extinction to the SED after redshifting
+   * \param ebv value of E(B-V)
+   * \param obj instance of class ext
+   */
+  void apply_mw_extinction(const double ebv, const ext& obj);
 
   /*! Apply dust extinction to the emission lines (stored in `fac_line`)
    * Only for galaxies and QSO
