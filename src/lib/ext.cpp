@@ -102,10 +102,10 @@ double compute_filter_extinction(const flt& oneFlt, const ext& oneExt) {
     double mid_ext = (ext1 + ext2) / 2.;
     fint += mid_flt * delta;
     // Integral of the transmission by the filter x extinction
-    aint += mid_flt * mid_ext * delta;
+    aint += mid_flt * pow(10., -0.4 * mid_ext) * delta;
   }
 
-  return (aint /= fint);
+  return -2.5 * LOG10D(aint /= fint);
 }
 
 // compute galactic extinction in the filter based on Cardelli et al., 1989, ApJ

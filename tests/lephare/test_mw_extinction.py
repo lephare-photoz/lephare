@@ -77,7 +77,14 @@ def test_mw_classic():
             "EXT_MW_CURVE": "CARDELLI",
         }
     )
-    alambda_cardelli = [4.774, 3.666, 2.694, 2.050, 1.587, 1.304]
+    alambda_cardelli = [
+        4.772189766252086,
+        3.6404811186521955,
+        2.6871412361662865,
+        2.0451859743218983,
+        1.5856515588476243,
+        1.3031196298112115,
+    ]
 
     # Instantiate the photoz object
     photz = lp.PhotoZ(lp.all_types_to_keymap(config))
@@ -94,7 +101,14 @@ def test_mw_classic():
             "EXT_MW_CURVE": "LMC_Fitzpatrick.dat",
         }
     )
-    alambda_fitzpatrick = [4.814, 3.681, 2.611, 1.962, 1.546, 1.245]
+    alambda_fitzpatrick = [
+        4.799999095502983,
+        3.6141216261289912,
+        2.5769763666839705,
+        1.952479494624873,
+        1.539942640849565,
+        1.2430880718463235,
+    ]
 
     # Instantiate the photoz object
     photz = lp.PhotoZ(lp.all_types_to_keymap(config))
