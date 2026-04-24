@@ -12,6 +12,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <map>
 
 #include "PDF.h"
 #include "cosmology.h"
@@ -80,6 +81,8 @@ class onesource {
   unordered_map<int, PDF> pdfmap;
   double zsec, zsecChi2, zsecEbv, zsecScale, zsecProb, zsecAge;
   int zsecMod, zsecExtlaw;
+  std::map<int, double> chi2_star_models;
+  vector<double> vPDF_star;
 
   // Minimal constructor of the source
   onesource() {
@@ -206,6 +209,10 @@ class onesource {
                         const time_t &ti1);
   void write_pdz(vector<string> pdztype,
                  unordered_map<string, ofstream> &stpdz);
+
+  void write_pdf_header_stars(ofstream &starpdf, const time_t &ti1);
+  void write_pdf_stars(ofstream &starpdf);
+
   void convertMag();
   void keepOri();
 
@@ -229,6 +236,7 @@ class onesource {
                   const double min_thres);
   void generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
                    const vector<int> fltColRF, int fltREF, const bool zfix);
+  void generatePDF_stars();
   void generatePDF_IR(vector<SED *> &fulllib);
   void mode();
   void interp_lib(vector<SED *> &fulllib, const int imagm, cosmo lcdm);

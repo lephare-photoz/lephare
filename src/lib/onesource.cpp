@@ -337,6 +337,8 @@ void onesource::rescale_flux_errors(const vector<double> min_err,
 void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
                     const vector<size_t> &va, const double &funz0,
                     const array<int, 2> &bp) {
+  // clear chi2 list for star model
+  chi2_star_models.clear();
   int number_threads = 1, thread_id = 0;
   size_t imagm = ab.size();
 
@@ -456,6 +458,9 @@ void onesource::fit(vector<SED *> &fulllib, const vector<vector<double>> &flux,
       // Write the chi2
       sed->chi2 = chi2loc;
       sed->dm = dmloc;
+      if (sed->is_star()) {
+          chi2_star_models[i] = sed->chi2;
+        }
     }
 
 #ifdef _OPENMP
@@ -1038,6 +1043,51 @@ void onesource::generatePDF(vector<SED *> &fulllib, const vector<size_t> &va,
   return;
 }
 
+void onesource::generatePDF_stars() {
+  if (chi2_star_models.empty()) return;
+
+  // std::cout << "CHISTAR :\n";
+  // for (const auto& [index, chi2] : chi2_star_models) {
+  //     std::cout <<  chi2 << ", ";
+  // }
+  // std::cout << " " << endl;
+
+  vPDF_star.clear();
+  vPDF_star.reserve(chi2_star_models.size());
+
+  double sum_chi2 = 0.0;
+  double sum_pdf = 0.0;
+
+  // Normalize Chi2 because too high
+  for (const auto& kv : chi2_star_models) {
+    double val = kv.second;
+    sum_chi2 += val;
+  }
+  
+  // Seeking for maximum, for a test
+  // auto max_it = std::max_element(
+  //     chi2_star_models.begin(), chi2_star_models.end(),
+  //     [](const auto& a, const auto& b) {
+  //         return a.second < b.second;
+  //     }
+  // );
+  // double max_chi2_star = max_it->second;
+
+
+  // Convert to PDF
+  for (const auto& kv : chi2_star_models) {
+    double pdf_val = kv.second; //std::exp(-0.5 * kv.second);///sum_chi2);
+    // double pdf_val = kv.second/max_chi2_star;// just a test
+    vPDF_star.push_back(pdf_val);
+    sum_pdf += pdf_val;
+  }
+  // // Normalize
+  // for (auto& val : vPDF_star) {
+  //   val /= sum_pdf;
+  // }
+}
+
+
 /*
  Generate PDF marginalized over LIR
  based on the chi2 stored in the SED class
@@ -1412,6 +1462,29 @@ void onesource::write_pdz(vector<string> pdztype,
   }
   return;
 }
+
+/*
+ write the header and the PDF(spectral_type) for stars
+*/
+void onesource::write_pdf_header_stars(ofstream &starpdf, const time_t &ti1) {
+  starpdf << "# Creation date: " << asctime(localtime(&ti1));
+  starpdf << "# Probability associated to star spectral types" << endl;
+  starpdf << "# Id ";
+  for (size_t i = 0; i < vPDF_star.size(); ++i) {
+    starpdf << "P" << i << " ";
+  }
+  starpdf << endl;
+}
+
+// Write the star PDF
+void onesource::write_pdf_stars(ofstream &starpdf) {
+  starpdf << setw(15) << std::fixed << setprecision(4) << spec << " ";
+  for (const auto &val : vPDF_star) {
+    starpdf << setw(16) << std::scientific << val << " ";
+  }
+  starpdf << endl;
+}
+
 
 /*
  INTERPOLATE LINEARILY IN THE LIBRARY

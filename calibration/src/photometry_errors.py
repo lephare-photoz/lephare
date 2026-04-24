@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from astropy.io import fits
 from astropy.wcs import WCS
@@ -489,6 +490,267 @@ class PhotometricErrorModel:
             final_cols = cols_before + paired + other_cols
             return cat_out[final_cols]
 
+#--- Class to sample sources and apply errors ---
+class MockPhotometry:        
+    @staticmethod
+    def _get_rng(random_state=None):
+        """Return a numpy random Generator."""
+        if isinstance(random_state, np.random.Generator):
+            return random_state
+        return np.random.default_rng(random_state)
+    
+    @staticmethod
+    def generate_sources_from_magabs(mags, ref_index, mag_min, mag_max, N,
+        method="uniform", return_dm=False, random_state=None):
+        """
+        Generates N sources from a SED in magnitudes, with the reference band
+        uniformly distributed between mag_min and mag_max. The other bands are
+        shifted to preserve colors.
+        """
+        rng = MockPhotometry._get_rng(random_state)
+        mags = np.array(mags)
+        Nband = len(mags)
+
+        if method == 'uniform':
+            ref_mags = rng.uniform(low=mag_min, high=mag_max, size=N)
+            delta_M = ref_mags - mags[ref_index]
+            sources = mags[None, :] + delta_M[:, None]
+        else:
+            raise NotImplementedError(f"Method '{method}' not implemented yet")
+        if return_dm:
+            return sources, delta_M[:, None]
+        else:
+            return sources
+
+    @staticmethod
+    def generate_sources_from_table(table, mag_cols, ref_index, mag_min, mag_max, N_per_star,
+        method="uniform", return_full_table=False, return_dm=False, random_state=None):
+        """
+        Generates mock sources for each source from a Pandas table.
+        """
+        rng = MockPhotometry._get_rng(random_state)
+
+        mock_list = []
+
+        for i, (_, row) in enumerate(table.iterrows()):
+            mags = row[mag_cols].values
+            mock_mags = MockPhotometry.generate_sources_from_magabs(
+                mags, ref_index, mag_min, mag_max, N_per_star,
+                method, return_dm, random_state=rng)
+
+            if return_dm:
+                sources = mock_mags[0]
+                sources_dm = mock_mags[1]
+                df_sources = pd.DataFrame(np.concatenate((sources, sources_dm), axis=1),
+                    columns=np.concatenate((mag_cols, ["mag_dm"])))
+            else:
+                sources = mock_mags
+                df_sources = pd.DataFrame(sources, columns=mag_cols)
+
+            if return_full_table:
+                other_cols = row.drop(labels=mag_cols)
+                df_other = pd.DataFrame([other_cols.values] * N_per_star, columns=other_cols.index)
+                df_sources = pd.concat([df_other.reset_index(drop=True), df_sources.reset_index(drop=True)], axis=1)
+
+            mock_list.append(df_sources)
+
+        df_mock = pd.concat(mock_list, ignore_index=True)
+        return df_mock
+    
+    @staticmethod
+    def sample_obs_mags_empiricalmodel(table, mag_cols, models=None, model_names=None, suffix="_err_sim", nsr_cut=None, error_factor=1,
+                resample_errors=True, random_state=None, format="MMEE", add_errors=True, keep_true_mags=True, default_error_value=None):
+        """ 
+        Generate photometric errors using PhotometricErrorModel and optionally
+        add Gaussian noise to magnitudes.
+        """
+        if error_factor is not None:
+            error_factor = np.array(error_factor) if isinstance(error_factor, list) else error_factor
+            
+        if default_error_value is not None:
+            table_with_errs = table.copy()
+            for col in mag_cols:
+                table_with_errs[col + suffix] = np.full(len(table_with_errs), default_error_value)
+                
+            if add_errors:
+                #sample noisy cols
+                rng = np.random.default_rng(random_state)
+                mags = table_with_errs[mag_cols].to_numpy(dtype=float)
+                err_cols = [c + suffix for c in mag_cols]
+                sigmas = table_with_errs[err_cols].to_numpy(dtype=float)
+                noise = rng.normal(loc=0.0, scale=sigmas)
+                mags_obs = mags + noise
+                #add to table
+                table_with_errs[mag_cols] = mags_obs
+                table_with_errs[err_cols] = sigmas
+
+            if keep_true_mags:
+                true_cols = [c + "_true" for c in mag_cols]
+                table_with_errs[true_cols] = mags
+
+            return table_with_errs
+
+        # Generate errors
+        table_with_errs = pe.PhotometricErrorModel().sample_errors_on_catalog(table, 
+            mag_columns=mag_cols, models=models, model_names=model_names, format=format, suffix=suffix)
+        if add_errors==False:
+            return table_with_errs
+
+        rng = np.random.default_rng(random_state)
+        mags = table_with_errs[mag_cols].to_numpy(dtype=float)
+        err_cols = [c + suffix for c in mag_cols]
+        sigmas = table_with_errs[err_cols].to_numpy(dtype=float)*error_factor
+
+        # Gaussian noise
+        # convert to flux before adding gaussian noise
+        fluxes = 10**(-0.4*mags)
+        f_err = np.log(10)/2.5*fluxes*sigmas
+        noise = rng.normal(loc=0.0, scale=f_err)
+        f_obs = fluxes + noise
+        mags_obs = -2.5*np.log10(f_obs)
+        
+        if nsr_cut is not None:
+            mask_low_snr = nsr_cut < sigmas/mags_obs
+            mags_obs[mask_low_snr] = np.nan
+            sigmas[mask_low_snr] = np.nan
+            
+        table_with_errs[mag_cols] = mags_obs
+        table_with_errs[err_cols] = sigmas
+
+        if resample_errors ==True:
+            table_with_errs = table_with_errs.drop(columns=err_cols)
+            table_with_errs = pe.PhotometricErrorModel().sample_errors_on_catalog(table_with_errs, 
+                mag_columns=mag_cols, models=models, model_names=model_names, format=format, suffix=suffix)
+            if nsr_cut is not None:
+                mask = (table_with_errs[err_cols]/table_with_errs[mag_cols] > nsr_cut).any(axis=1)
+                table_with_errs.loc[mask, mag_cols + err_cols] = np.nan
+
+
+        if keep_true_mags:
+            true_cols = [c + "_true" for c in mag_cols]
+            table_with_errs[true_cols] = mags
+
+        return table_with_errs
+
+    @staticmethod
+    def sample_gaussian_errors(table, columns, sigmas, floors, suffix="_err_sim", err_columns=None, 
+                            format="MMEE", random_state=None, inp_type="mag"):
+        """
+        Sample photometric errors for each specified column.
+        """
+
+        rng = np.random.default_rng(random_state)
+        table = table.copy()
+        n_cols = len(columns)
+        n_rows = len(table)
+
+        # --- format ---
+        if np.isscalar(sigmas):
+            sigmas = [sigmas] * n_cols
+        if np.isscalar(floors):
+            floors = [floors] * n_cols
+        sigmas = np.array(sigmas, dtype=float)
+        floors = np.array(floors, dtype=float)
+
+        # --- error model ---
+        f_err = np.broadcast_to(floors, (n_rows, n_cols))
+        fluct = rng.normal(loc=0, scale=sigmas, size=f_err.shape)
+        f_err = f_err + np.abs(fluct)
+        # f_err = np.clip(f_err + fluct, f_err, None)
+
+        # --- convert ---
+        mags = table[columns].to_numpy(dtype=float)
+        fluxes = 10**(-0.4 * mags)
+        if inp_type == "mag":
+            errors = 2.5 / np.log(10) * f_err / fluxes
+        elif inp_type == "flux":
+            for i, col in enumerate(columns):
+                table[col] = fluxes[:, i]
+            errors = f_err
+        else:
+            raise NotImplementedError("inp_type must be 'flux' or 'mag'")
+
+        # --- add columns ---
+        if suffix is not None:
+            err_cols = [c + suffix for c in columns]
+            if err_columns is not None:
+                table = table.drop(columns=err_columns)
+                Warning.warn("suffix and err_cols are specified. Overwriting err_cols.")
+        elif err_columns is not None and suffix is None:
+            err_cols = err_columns
+        else: 
+            raise ValueError("At least suffix or err_cols must be specified")
+            
+        for i, col in enumerate(err_cols):
+            table[col] = errors[:, i]
+
+        # --- gestion du format de sortie ---
+        if format == "MMEE":
+            ordered_cols = (columns + err_cols + [c for c in table.columns if c not in columns + err_cols] )
+            out = table[ordered_cols]
+        elif format == "MEME":
+            interleaved = []
+            for m, e in zip(columns, err_cols):
+                interleaved += [m, e]
+            other = [c for c in table.columns if c not in interleaved]
+            out = table[interleaved + other]
+        elif format == "end":
+            out = table
+        else:
+            raise ValueError("format must be 'MMEE', 'MEME' or 'end'")
+
+        return out
+
+    @staticmethod
+    def sample_obs_mags_gaussianmodel(table, mag_cols, sigmas, floors=0, suffix="_err_sim", err_columns=None, inp_type="mag", nsr_cut=None,
+        error_factor=1, random_state=None, format="MMEE", add_errors=True, keep_true_mags=True, default_error_value=None, resample_errors=True):
+        """ 
+        Generate photometric errors using PhotometricErrorModel and optionally
+        add Gaussian noise to magnitudes.
+        """
+        if error_factor is not None:
+            error_factor = np.array(error_factor) if isinstance(error_factor, list) else error_factor
+
+        # Generate errors
+        table_with_errs = MockPhotometry.sample_gaussian_errors(table, mag_cols, sigmas, floors, 
+            suffix=suffix, err_columns=err_columns, format=format, random_state=random_state, inp_type=inp_type)
+        if not add_errors:
+            return table_with_errs
+
+        rng = np.random.default_rng(random_state)
+        mags = table_with_errs[mag_cols].to_numpy(dtype=float)
+        err_cols = [c + suffix for c in mag_cols]
+        mags_err = table_with_errs[err_cols].to_numpy(dtype=float)*error_factor
+        # Gaussian noise
+        # convert to flux before adding gaussian noise
+        fluxes = 10**(-0.4*mags)
+        f_err = np.log(10)/2.5*fluxes*mags_err
+        noise = rng.normal(loc=0.0, scale=f_err)
+        f_obs = fluxes + noise
+
+        mags_obs = -2.5*np.log10(f_obs)
+
+        if nsr_cut is not None:
+            mask_low_snr = nsr_cut < mags_err/mags_obs
+            mags_obs[mask_low_snr] = np.nan
+            mags_err[mask_low_snr] = np.nan
+
+        table_with_errs[mag_cols] = mags_obs
+        
+        if resample_errors ==True:
+            table_with_errs = MockPhotometry.sample_gaussian_errors(table_with_errs, mag_cols, sigmas, floors, 
+            suffix=None, err_columns=err_cols, format=format, random_state=random_state, inp_type=inp_type)
+            if nsr_cut is not None:
+                mask = (table_with_errs[err_cols]/table_with_errs[mag_cols] > nsr_cut).any(axis=1)
+                table_with_errs.loc[mask, mag_cols + err_cols] = np.nan
+        else:
+            table_with_errs[err_cols] = mags_err
+
+        if keep_true_mags:
+            true_cols = [c + "_true" for c in mag_cols]
+            table_with_errs[true_cols] = mags
+
+        return table_with_errs
 
 
 ### TRASH ###
