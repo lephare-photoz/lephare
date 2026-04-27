@@ -190,12 +190,17 @@ def table_to_data(config, input_table, col_names=None, standard_names=False):
         col_names += ["zspec"]
         col_names += ["string_input"]
     else:
-        print("Using user columns from input table assuming they are in the standard order.")
+        cat_fmt = config.get("CAT_FMT", lp.keyword("CAT_FMT", "MEME"))
+        print(f"Using user columns from input table assuming they are in the standard {cat_fmt.value} order.")
         assert len(input_table.colnames) == 2 * n_filters + 4
         col_names = list(np.full(2 * n_filters + 4, ""))
         col_names[0] = input_table.colnames[0]
-        col_names[1 : 2 * n_filters : 2] = input_table.colnames[1 : 2 * n_filters : 2]
-        col_names[2 : 2 * n_filters + 1 : 2] = input_table.colnames[2 : 2 * n_filters + 1 : 2]
+        if cat_fmt.value == "MEME":
+            col_names[1 : 2 * n_filters : 2] = input_table.colnames[1 : 2 * n_filters : 2]
+            col_names[2 : 2 * n_filters + 1 : 2] = input_table.colnames[2 : 2 * n_filters + 1 : 2]
+        elif cat_fmt.value == "MMEE":
+            col_names[1 : 2 * n_filters : 2] = input_table.colnames[1 : n_filters + 1]
+            col_names[2 : 2 * n_filters + 1 : 2] = input_table.colnames[n_filters + 1 : 2 * n_filters + 1]
         col_names[-3] = input_table.colnames[-3]
         col_names[-2] = input_table.colnames[-2]
         col_names[-1] = input_table.colnames[-1]

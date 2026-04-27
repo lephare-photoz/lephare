@@ -61,6 +61,41 @@ def test_process(test_data_dir: str):
     assert len(zspec) == 100
 
 
+def test_table_to_data_meme_mmme(test_data_dir):
+    # Test that we can load tables in MEME and MMEE formats
+    config = lp.default_cosmos_config.copy()
+    config["FILTER_LIST"] = "DUMMY1,DUMMY2"
+    input_table = Table()
+    input_table["id"] = [1, 2, 3]
+    input_table["f1"] = [10, 20, 30]
+    input_table["f2"] = [0.1, 0.2, 0.3]
+    input_table["f1_err"] = [1, 2, 3]
+    input_table["f2_err"] = [0.01, 0.02, 0.03]
+    input_table["context"] = [0, 0, 0]
+    input_table["zspec"] = [0.1, 0.2, 0.3]
+    input_table["string_input"] = ["a", "b", "c"]
+    config["CAT_FMT"] = "MMEE"
+    id, flux, flux_err, context, zspec, string_data = lp.table_to_data(
+        config,
+        input_table=input_table,
+    )
+    assert np.array_equal(id, [str(i) for i in input_table["id"]])
+    assert np.array_equal(flux, np.array([input_table["f1"], input_table["f2"]]).T)
+
+    # get current column order
+    cols = list(input_table.colnames)
+
+    # swap columns at index 2 and 3 (i.e. 3rd and 4th)
+    cols[2], cols[3] = cols[3], cols[2]
+    config["CAT_FMT"] = "MEME"
+    id, flux, flux_err, context, zspec, string_data = lp.table_to_data(
+        config,
+        input_table=input_table[cols],
+    )
+    assert np.array_equal(id, [str(i) for i in input_table["id"]])
+    assert np.array_equal(flux, np.array([input_table["f1"], input_table["f2"]]).T)
+
+
 def test_load_sed_list(test_data_dir):
     test_dir = os.path.abspath(os.path.dirname(__file__))
     # Move one of the example sed folders
