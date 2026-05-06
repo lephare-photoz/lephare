@@ -207,7 +207,8 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("size", &SED::size)
       .def("sumSpectra", &SED::sumSpectra)
       .def("integrateSED", &SED::integrateSED)
-      .def("apply_extinction", &SED::apply_extinction)
+      .def("apply_extinction", &SED::apply_extinction, py::arg("ebv"),
+           py::arg("oneext"), py::arg("update_ebv") = true)
       .def("apply_extinction_to_lines", &SED::apply_extinction_to_lines)
       .def("applyOpa", &SED::applyOpa)
       .def("integrate", &SED::integrate)

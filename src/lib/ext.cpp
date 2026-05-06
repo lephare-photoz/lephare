@@ -110,7 +110,7 @@ double compute_filter_extinction(const flt& oneFlt, const ext& oneExt) {
   // we use an example pD/EBV value assuming linear relations as in Galametz
   // Appendix A
   double reference_ebv = 0.1;
-  flatSED.apply_mw_extinction(reference_ebv, oneExt);
+  flatSED.apply_extinction(reference_ebv, oneExt);
 
   // Compute integrals afterextinction
   auto result_after_extinction = flatSED.integrateSED(oneFlt);

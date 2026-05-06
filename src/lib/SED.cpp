@@ -476,8 +476,12 @@ void SED::redshift() {
   return;
 }
 
-void SED::apply_extinction(const double ebv, const ext& oneext) {
-  (*this).ebv = ebv;
+void SED::apply_extinction(const double ebv, const ext& oneext,
+                           bool update_ebv) {
+  // Optionally update stored ebv
+  if (update_ebv) {
+    (*this).ebv = ebv;
+  }
   // No need to loose time if E(b-V)~0
   if (ebv <= 1.e-20) return;
   // if empty spectrum return
@@ -499,32 +503,6 @@ void SED::apply_extinction(const double ebv, const ext& oneext) {
 
   // Indicate what is the value of the ebv and the index of the extinction law
   extlawId = oneext.numext;
-  return;
-}
-
-void SED::apply_mw_extinction(const double mw_ebv, const ext& oneext) {
-  //(*this).ebv = ebv;
-  // No need to loose time if E(b-V)~0
-  if (mw_ebv <= 1.e-20) return;
-  // if empty spectrum return
-  if (lamb_flux.empty()) return;
-
-  // the extinction is the (x,y) curve
-  auto [x, y] = to_tuple(oneext.lamb_ext);
-  auto [z, t] = to_tuple(lamb_flux);
-  // interpolate the extinction curve at the position of the SED lambdas
-  // extrapolations set to 0 so that the exponent in the for loop is 1
-  auto newext_val = fast_interpolate(x, y, z, 0);
-
-  for (size_t k = 0; k < z.size(); ++k) {
-    double val = t[k];
-    double ext_val = newext_val[k];
-    // Change the value of the flux according to the dust extinction
-    lamb_flux[k].val *= pow(10., -0.4 * mw_ebv * ext_val);
-  }
-
-  // Indicate what is the value of the ebv and the index of the extinction law
-  // extlawId = oneext.numext;
   return;
 }
 
@@ -1690,7 +1668,7 @@ void SED::compute_milky_way_extinction(const ext& oneExt,
   auto resultV = this->integrateSED(filterV);
 
   // Use 0.1 as a default value for the extinction, to be able to rescale it
-  this->apply_mw_extinction(reference_ebv, oneExt);
+  this->apply_extinction(reference_ebv, oneExt, false);
 
   auto resultB_red = this->integrateSED(filterB);
   auto resultV_red = this->integrateSED(filterV);

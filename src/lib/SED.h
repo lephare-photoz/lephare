@@ -309,13 +309,10 @@ class SED {
   /*! Apply dust extinction to the SED (GAL and GSO only)
    * \param ebv value of E(B-V)
    * \param obj instance of class ext
+   * \param update_ebv: if true, update the stored value of ebv in the SED
    */
-  void apply_extinction(const double ebv, const ext& obj);
-  /*! Apply Milky Way extinction to the SED after redshifting
-   * \param ebv value of E(B-V)
-   * \param obj instance of class ext
-   */
-  void apply_mw_extinction(const double ebv, const ext& obj);
+  void apply_extinction(const double ebv, const ext& oneext,
+                        bool update_ebv = true);
 
   /*! Apply dust extinction to the emission lines (stored in `fac_line`)
    * Only for galaxies and QSO
