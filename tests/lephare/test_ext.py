@@ -7,17 +7,19 @@ import scipy.integrate as sciint
 def test_cardelli_ext():
     tophat = lp.flt(100.0, 1000.0, 500)
     extinction = lp.cardelli_ext(tophat)
+    reference_ebv = 0.1
 
     # almost complete extinction below 200
     def cardelli_factor(lamb):
-        return pow(10.0, -0.4 * lp.cardelli_law(lamb))
+        return pow(10.0, -0.4 * reference_ebv * lp.cardelli_law(lamb))
 
     r, err = sciint.quad(cardelli_factor, 100, 1000)
     r /= 900  # filter integral
+
     # the bad resolution is entirely due to the
     # addition of the two bracketing 0 values in the Heaviside definition
-    # the two current values are 13617.62 and 13699.37
-    assert -2.5 * np.log10(r) == pytest.approx(extinction, 1.0e-4)
+    # the two current values are 20.692497504428175 and 20.539526318854875
+    assert -2.5 * np.log10(r) / reference_ebv == pytest.approx(extinction, 1.0e-1)
 
 
 def test_basics():

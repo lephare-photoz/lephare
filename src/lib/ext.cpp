@@ -84,28 +84,41 @@ double compute_filter_extinction(const flt& oneFlt, const ext& oneExt) {
     return INVALID_VAL;
   }
 
-  auto [x, newext, newflt] =
-      restricted_resampling(oneExt.lamb_ext, oneFlt.lamb_trans, -1);
+  SED flatSED("flatSED", 0, "GAL");
 
-  double fint = 0;
-  double aint = 0;
+  // Clear anything just in case
+  flatSED.lamb_flux.clear();
 
-  // integrate the extinction curve through the filter
-  for (size_t i = 0; i < x.size() - 1; i++) {
-    // Integral of the transmission by the filter
-    double flt1 = newflt[i];
-    double flt2 = newflt[i + 1];
-    double ext1 = newext[i];
-    double ext2 = newext[i + 1];
-    double delta = x[i + 1] - x[i];
-    double mid_flt = (flt1 + flt2) / 2.;
-    double mid_ext = (ext1 + ext2) / 2.;
-    fint += mid_flt * delta;
-    // Integral of the transmission by the filter x extinction
-    aint += mid_flt * pow(10., -0.4 * mid_ext) * delta;
+  // Make the flat SED with a constant flux of 1.0 across the wavelength range
+  // of interest
+  double lmin = 0.0;
+  double lmax = 200000.0;
+  int N = 20000;
+
+  for (int i = 0; i < N; ++i) {
+    double l = lmin + (lmax - lmin) * i / (N - 1);
+    flatSED.lamb_flux.emplace_back(l, 1.0);
   }
 
-  return -2.5 * LOG10D(aint /= fint);
+  // Ensure sorted order (probably already fine, but consistent with read())
+  std::sort(flatSED.lamb_flux.begin(), flatSED.lamb_flux.end());
+
+  // Compute integrals prior to extinction
+  auto result_before_extinction = flatSED.integrateSED(oneFlt);
+
+  // Apply extinction to the SED
+  // we use an example pD/EBV value assuming linear relations as in Galametz
+  // Appendix A
+  double reference_ebv = 0.1;
+  flatSED.apply_mw_extinction(reference_ebv, oneExt);
+
+  // Compute integrals afterextinction
+  auto result_after_extinction = flatSED.integrateSED(oneFlt);
+
+  return -2.5 *
+         LOG10D(result_after_extinction[3] / result_before_extinction[3]) /
+         reference_ebv;
+  ;
 }
 
 // compute galactic extinction in the filter based on Cardelli et al., 1989, ApJ

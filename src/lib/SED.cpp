@@ -1715,7 +1715,8 @@ void SED::compute_milky_way_extinction(const ext& oneExt,
     auto result = integrateSED(filters[i]);
 
     if (!(result[3] > 0)) {
-      // decide what “do something” means:
+      // If the integral fails take the extinction at the upper limit of the
+      // filter.:
       auto [x, y] = to_tuple(oneExt.lamb_ext);
       double filt_max = filters[i].lmax();
       milky_way_extinction[i] = interpolate(x, y, filt_max);
