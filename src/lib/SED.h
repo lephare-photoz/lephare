@@ -207,7 +207,19 @@ class SED {
   void compute_magnitudes(const vector<flt>& filters);
   /// compute fluxed from filters
   vector<double> compute_fluxes(const vector<flt>& filters);
-  /// compute extinction from filters
+  /**
+   * @brief Compute Milky Way extinction coefficients for a set of filters.
+   *
+   * Computes the extinction correction associated with a Milky Way
+   * extinction law for each input filter.
+   *
+   * @param oneExt
+   *    Extinction law to apply.
+   *
+   * @param filters
+   *    Collection of filters for which the extinction coefficients
+   *    will be computed.
+   */
   void compute_milky_way_extinction(const ext& oneExt,
                                     const vector<flt>& filters);
   double trapzd();

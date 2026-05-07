@@ -1610,24 +1610,18 @@ double interpolate(const std::vector<double>& x, const std::vector<double>& y,
 
 void SED::compute_milky_way_extinction(const ext& oneExt,
                                        const vector<flt>& filters) {
-  // we use an example pD/EBV value assuming linear relations as in Galametz
-  // Appendix A
+  // Reference E(B-V) value used to estimate extinction coefficients
+  // assuming the extinction scales linearly with reddening.
+  // Following the approach described in Galametz Appendix A.
   double reference_ebv = 0.1;
-  // if reference model ebv not sent use 1.0 as default, so no rescaling of the
-  // extinction
-  double val;
-  for (const auto& filter : filters) {
-    // val = compute_filter_sed_extinction(filter, oneExt, *this);
-    // firt get the unreddened values
-    auto result = this->integrateSED(filter);
-    val = result[3];
-    // Use 0.3 as a default value for the extinction, to be able to rescale it
 
-    milky_way_extinction.push_back(val);
+  // Store the unreddened integrated flux for each filter.
+  for (const auto& filter : filters) {
+    auto result = this->integrateSED(filter);
+    milky_way_extinction.push_back(result[3]);
   }
 
-  // compute the BPC for the SED using simple B and V band filters
-
+  // compute the BPC for the SED using  B and V band filters
   auto resultB = this->integrateSED(filterB);
   auto resultV = this->integrateSED(filterV);
 
@@ -1636,8 +1630,10 @@ void SED::compute_milky_way_extinction(const ext& oneExt,
 
   auto resultB_red = this->integrateSED(filterB);
   auto resultV_red = this->integrateSED(filterV);
+
   float eb;
   float ev;
+
   // If the integral fails take the extinction at the upper limit of the filter.
   if (!(resultB_red[3] > 0)) {
     auto [x, y] = to_tuple(oneExt.lamb_ext);
@@ -1645,14 +1641,18 @@ void SED::compute_milky_way_extinction(const ext& oneExt,
   } else {
     eb = -2.5 * LOG10D(resultB_red[3] / resultB[3]);
   }
+
   if (!(resultV_red[3] > 0)) {
     auto [x, y] = to_tuple(oneExt.lamb_ext);
     ev = reference_ebv * interpolate(x, y, 7000.0);
   } else {
     ev = -2.5 * LOG10D(resultV_red[3] / resultV[3]);
   }
+
+  // Band-pass correction term E(B-V).
   band_pass_correction = eb - ev;
 
+  // Convert flux attenuation into extinction coefficients for each filter.
   for (size_t i = 0; i < filters.size(); ++i) {
     auto result = integrateSED(filters[i]);
 
