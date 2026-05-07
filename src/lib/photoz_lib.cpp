@@ -1235,7 +1235,7 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
         // Correction for MW attenuation only the first time
 
         // Apply the milky way ebv correction to the observed mag if CLASSIC
-        if (mw_classic_extinction) {
+        if (iteration == 0 && mw_classic_extinction) {
           oneObj->correct_classic_mw(mw_classic_extinction_values,
                                      mw_global_ebv);
         } else if (!one_mw_ebv && mw_galametz) {
