@@ -50,6 +50,9 @@ SED::SED(const string nameC, int nummodC, string type) {
   dm = -999.;        // Rescaling of the template
   distMod = 0;
   qi = {0., 0., 0., 0.};
+
+  // Initialise the B and V filters for the band pass correction
+  initialise_filters();
 }
 
 /*
@@ -1623,45 +1626,6 @@ void SED::compute_milky_way_extinction(const ext& oneExt,
     milky_way_extinction.push_back(val);
   }
 
-  // B and V filters (constructed once, reused forever)
-  static flt filterB;
-  static flt filterV;
-
-  static const std::vector<double> lB = {
-      3600., 3700., 3800., 3900., 4000., 4100., 4200.,
-      4300., 4400., 4500., 4600., 4700., 4800., 4900.,
-      5000., 5100., 5200., 5300., 5400., 5500., 5600.};
-
-  static const std::vector<double> fB = {
-      0.000, 0.030, 0.134, 0.567, 0.920, 0.978, 1.000,
-      0.978, 0.935, 0.853, 0.740, 0.640, 0.536, 0.424,
-      0.325, 0.235, 0.150, 0.095, 0.043, 0.009, 0.000};
-
-  static const std::vector<double> lV = {
-      4700., 4800., 4900., 5000., 5100., 5200., 5300., 5400.,
-      5500., 5600., 5700., 5800., 5900., 6000., 6100., 6200.,
-      6300., 6400., 6500., 6600., 6700., 6800., 6900., 7000.};
-
-  static const std::vector<double> fV = {
-      0.000, 0.030, 0.163, 0.458, 0.780, 0.967, 1.000, 0.973,
-      0.898, 0.792, 0.684, 0.574, 0.461, 0.359, 0.270, 0.197,
-      0.135, 0.081, 0.045, 0.025, 0.017, 0.013, 0.009, 0.000};
-
-  // initialise only once
-  static bool initialised = false;
-  if (!initialised) {
-    filterB.lamb_trans.reserve(lB.size());
-    filterV.lamb_trans.reserve(lV.size());
-
-    for (size_t i = 0; i < lB.size(); i++)
-      filterB.lamb_trans.emplace_back(lB[i], fB[i]);
-
-    for (size_t i = 0; i < lV.size(); i++)
-      filterV.lamb_trans.emplace_back(lV[i], fV[i]);
-
-    initialised = true;
-  }
-
   // compute the BPC for the SED using simple B and V band filters
 
   auto resultB = this->integrateSED(filterB);
@@ -1681,7 +1645,7 @@ void SED::compute_milky_way_extinction(const ext& oneExt,
   } else {
     eb = -2.5 * LOG10D(resultB_red[3] / resultB[3]);
   }
-  if (!(resultV[3] > 0)) {
+  if (!(resultV_red[3] > 0)) {
     auto [x, y] = to_tuple(oneExt.lamb_ext);
     ev = reference_ebv * interpolate(x, y, 7000.0);
   } else {
