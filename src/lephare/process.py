@@ -82,6 +82,8 @@ def process(
         warnings.warn("Milky Way E(B-V) values provided to process. Overriding FILE or global value if set.")
         for i in range(ng):
             photozlist[i].mw_ebv = mw_ebv[i]
+            # Repeat for autoadapt sources
+            srclist[i].mw_ebv = mw_ebv[i]
     else:
         mw_ebv_cfg = config.get("MW_EBV_FILE")
 
@@ -92,6 +94,8 @@ def process(
         if file_value and file_value != "NONE":
             print(f"Reading offsets from file {file_value}")
             photz.read_mw_ebv(photozlist)
+            # Repeat for autoadapt sources
+            photz.read_mw_ebv(srclist)
 
     # compute the offset, depending on the option in the code (AUTO_ADAPT, or APPLY_SYSSHIFT
     a0 = photz.compute_offsets(srclist)
