@@ -70,12 +70,6 @@ def process(
         photz.prep_data(one_obj)
         srclist.append(one_obj)
 
-    # compute the offset, depending on the option in the code (AUTO_ADAPT, or APPLY_SYSSHIFT
-    a0 = photz.compute_offsets(srclist)
-    offsets = ",".join(np.array(a0).astype(str))
-    offsets = "# Offsets added to the modeled magnitudes (or substracted to the observed): " + offsets + "\n"
-    print(offsets)
-
     # create the onesource objects
     photozlist = []
     for i in range(ng):
@@ -98,6 +92,12 @@ def process(
         if file_value and file_value != "NONE":
             print(f"Reading offsets from file {file_value}")
             photz.read_mw_ebv(photozlist)
+
+    # compute the offset, depending on the option in the code (AUTO_ADAPT, or APPLY_SYSSHIFT
+    a0 = photz.compute_offsets(srclist)
+    offsets = ",".join(np.array(a0).astype(str))
+    offsets = "# Offsets added to the modeled magnitudes (or substracted to the observed): " + offsets + "\n"
+    print(offsets)
 
     # Perform the main run
     photz.run_photoz(photozlist, a0)

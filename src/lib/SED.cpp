@@ -486,7 +486,7 @@ void SED::apply_extinction(const double ebv, const ext& oneext,
     (*this).ebv = ebv;
   }
   // No need to loose time if E(b-V)~0
-  if (ebv <= 1.e-20) return;
+  if (std::abs(ebv) <= 1.e-20) return;
   // if empty spectrum return
   if (lamb_flux.empty()) return;
 
