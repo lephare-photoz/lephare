@@ -51,7 +51,10 @@ class PhotoZ:  # noqa: F811
                 is_array = True
             outputs[key] = []
             for src in srclist:
-                if is_array is False:
+                # here since we are only computing the flag in python
+                if key == 'Z_FLAG':
+                    outputs[key].append(src.compute_quality_flag())
+                elif is_array is False:
                     outputs[key].append(getattr(src, attr))
                 else:
                     outputs[key].append(getattr(src, attr)[index])
