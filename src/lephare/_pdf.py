@@ -140,7 +140,7 @@ class PDF:  # noqa
         sigma = self.approximate_gaussian(estimate)
 
         # Bit 0: error
-        if error > error_thresh and error < (np.max(self.xaxis) - np.max(self.xaxis))/ 2:
+        if error > error_thresh and error < (np.max(self.xaxis) - np.min(self.xaxis))/ 2:
             score += 1
         # Bit 2: peak_ratio
         if peak_ratio > peak_ratio_thresh:
