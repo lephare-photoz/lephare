@@ -228,6 +228,7 @@ class PlotUtils:
         self.lr = t["LUM_R_BEST"]
         self.lk = t["LUM_K_BEST"]
         self.pdfs = np.array(t[pdf_col])
+        self.zflag = t["Z_FLAG"]
 
         # Define the panels with the binning in redshift an magnitude
         if len(range_z) <= 1:
@@ -2768,6 +2769,39 @@ class PlotUtils:
             ax.scatter(self.sfrb[condb], self.mabsu[condb], s=1, color="r", alpha=0.2, marker="s")
 
             ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(-3, -23), color="black", fontsize=15)
+    
+    def zz_plot_flag(self, fbounds = (0,31)):
+        """
+        Create a Z_BEST VS ZSPEC, Z_FLAG color coded scatter plot.
+
+
+        Notes
+        -----
+        - Uses Z_BEST, ZSPEC and Z_FLAG outputs.
+        - Boundaries can be set on the flag.
+        Examples
+        --------
+        >>> utils = lp.PlotUtils(t, sel_filt=3)
+        >>> utils.zz_plot_flag(flag_bound=(8,15))
+        """
+
+        plt.clf()
+        ### First look at photometric redshift from output file
+        mask = (self.zflag>=fbounds[0]) & (self.zflag<=fbounds[1])
+        z_photo = self.zp[mask]
+        z_spec = self.zs[mask]
+        stat = np.array(self.zflag[mask])
+
+        ### z_spec vs z_phota
+        plt.figure(figsize=(5, 4))
+        plt.scatter(z_spec, z_photo, linewidth=0.3, s=10, alpha=0.5, c=stat, cmap='plasma_r') #zz-plot
+        plt.plot([0, 2], [0, 2], 'r--')
+    
+        plt.xlabel("z_spec")
+        plt.ylabel("z_photo")
+        plt.colorbar()
+        plt.tight_layout()
+        plt.show()
 
         return
 
