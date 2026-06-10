@@ -1,4 +1,5 @@
 import numpy as np
+import warnings
 from matplotlib import pylab as plt
 from scipy.integrate import trapezoid
 from scipy.optimize import curve_fit
@@ -52,12 +53,12 @@ class PDF:  # noqa
 
         p0 = [np.max(pdz_local), estimate, error]
         try:
-            popt, _ = curve_fit(gauss, z_local, pdz_local, p0=p0)
-            _, mu_fit, siga_fit = popt
-            return abs(siga_fit)
-        except RuntimeError:
-            # Fallback in case fit fails
-            return error
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                popt, _ = curve_fit(gauss, z_local, pdz_local, p0=p0)
+    
+            _, mu_fit, sigma_fit = popt
+            return abs(sigma_fit)
 
     def number_mod(self, threshold=0.75):
         """Count significant local maxima"""
@@ -66,7 +67,10 @@ class PDF:  # noqa
 
     def peak_ratio(self):
         """Ratio of max(pdz) to the mean"""
-        return np.mean(self.vPDF) / max(self.vPDF)
+        if max(self.vPDF) != 0:
+            return np.mean(self.vPDF) / max(self.vPDF)
+        else:
+            return 0
 
     def tail_mass(self, estimate, n_window=2, good_sigma=0.01):
         """
