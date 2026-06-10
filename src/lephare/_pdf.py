@@ -59,6 +59,9 @@ class PDF:  # noqa
     
             _, mu_fit, sigma_fit = popt
             return abs(sigma_fit)
+        except (RuntimeError, ValueError):
+            # Return error if fitting fails
+            return error
 
     def number_mod(self, threshold=0.75):
         """Count significant local maxima"""
