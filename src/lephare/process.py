@@ -47,9 +47,12 @@ def process(
     """
     # ensure that all values in the keymap are keyword objects
     config = lp.all_types_to_keymap(config)
-
+    # retrieve catalog rows to process on
+    cat_lines = config["CAT_LINES"].value.split(',')
+    cat_lines = int(cat_lines[0]), int(cat_lines[1])
+    #convert astropy table to data arrays
     id, flux, flux_err, context, zspec, string_data = table_to_data(
-        config, input, col_names=col_names, standard_names=standard_names
+        config, input, col_names=col_names, standard_names=standard_names, cat_lines=cat_lines
     )
     ng = len(id)
     n_filters = len(config["FILTER_LIST"].value.split(","))
@@ -137,7 +140,7 @@ def calculate_offsets_from_input(config, input, col_names=None, standard_names=F
     return a0
 
 
-def table_to_data(config, input, col_names=None, standard_names=False):
+def table_to_data(config, input, col_names=None, standard_names=False, cat_lines=None):
     """Take an astropy table and return the arrays required for a run.
 
     We assume that either the columns are in the standard LePHARE order or
@@ -178,6 +181,7 @@ def table_to_data(config, input, col_names=None, standard_names=False):
     n_filters = len(config["FILTER_LIST"].value.split(","))
     if col_names is not None:
         print("Using user defined column names based on ordering.")
+        input = input[col_names]
         assert len(input.colnames) == 2 * n_filters + 4
 
     elif standard_names:
@@ -222,6 +226,12 @@ def table_to_data(config, input, col_names=None, standard_names=False):
     mask |= np.isnan(flux_err)
     flux[mask] = -99.0
     flux_err[mask] = -99.0
+    if cat_lines is not None:
+        inf = cat_lines[0]
+        sup = cat_lines[1]
+        id, flux, flux_err, context, zspec, string_data = (id[inf:sup], 
+        flux[inf:sup], flux_err[inf:sup], context[inf:sup], zspec[inf:sup], string_data[inf:sup])
+
     return id, flux, flux_err, context, zspec, string_data
 
 
