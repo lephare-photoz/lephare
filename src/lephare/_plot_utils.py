@@ -228,7 +228,7 @@ class PlotUtils:
         self.lr = t["LUM_R_BEST"]
         self.lk = t["LUM_K_BEST"]
         self.pdfs = np.array(t[pdf_col])
-        self.zflag = t.get("Z_FLAG")
+        self.zflag = t['Z_FLAG'] if 'Z_FLAG' in t.colnames else 0
 
         # Define the panels with the binning in redshift an magnitude
         if len(range_z) <= 1:
@@ -2797,8 +2797,8 @@ class PlotUtils:
         plt.scatter(z_spec, z_photo, linewidth=0.3, s=10, alpha=0.5, c=stat, cmap='plasma_r') #zz-plot
         plt.plot([0, 2], [0, 2], 'r--')
     
-        plt.xlabel("z_spec")
-        plt.ylabel("z_photo")
+        plt.xlabel(r"$z_{spec}$")
+        plt.ylabel(r"$z_{phot}$")
         plt.colorbar()
         plt.tight_layout()
         plt.show()
