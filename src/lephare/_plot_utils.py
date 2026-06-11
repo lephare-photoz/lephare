@@ -228,7 +228,7 @@ class PlotUtils:
         self.lr = t["LUM_R_BEST"]
         self.lk = t["LUM_K_BEST"]
         self.pdfs = np.array(t[pdf_col])
-        self.zflag = t["Z_FLAG"]
+        self.zflag = t.get("Z_FLAG")
 
         # Define the panels with the binning in redshift an magnitude
         if len(range_z) <= 1:
