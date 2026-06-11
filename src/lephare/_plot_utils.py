@@ -228,7 +228,7 @@ class PlotUtils:
         self.lr = t["LUM_R_BEST"]
         self.lk = t["LUM_K_BEST"]
         self.pdfs = np.array(t[pdf_col])
-        self.zflag = t['Z_FLAG'] if 'Z_FLAG' in t.colnames else 0
+        self.zflag = t['Z_FLAG'] if 'Z_FLAG' in t.colnames else np.zeros(len(t))
 
         # Define the panels with the binning in redshift an magnitude
         if len(range_z) <= 1:
@@ -318,6 +318,7 @@ class PlotUtils:
             self.errormag,
             self.errorz,
             self.pit_qq,
+            self.zz_plot_flag,
         ]
 
         with PdfPages(filename) as pdf:
@@ -2770,7 +2771,7 @@ class PlotUtils:
 
             ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(-3, -23), color="black", fontsize=15)
     
-    def zz_plot_flag(self, fbounds = (0,31)):
+    def zz_plot_flag(self, fbounds=(0,31), show=False):        
         """
         Create a Z_BEST VS ZSPEC, Z_FLAG color coded scatter plot.
 
@@ -2786,24 +2787,33 @@ class PlotUtils:
         """
 
         plt.clf()
-        ### First look at photometric redshift from output file
-        mask = (self.zflag>=fbounds[0]) & (self.zflag<=fbounds[1])
+
+        fig, ax = plt.subplots(figsize=(5,4))
+
+        mask = (self.zflag >= fbounds[0]) & (self.zflag <= fbounds[1])
+
         z_photo = self.zp[mask]
-        z_spec = self.zs[mask]
-        stat = np.array(self.zflag[mask])
+        z_spec  = self.zs[mask]
+        stat    = np.array(self.zflag[mask])
+        sc = ax.scatter(
+            z_spec,
+            z_photo,
+            linewidth=0.3,
+            s=10,
+            alpha=0.5,
+            c=stat,
+            cmap="plasma_r")
 
-        ### z_spec vs z_phota
-        plt.figure(figsize=(5, 4))
-        plt.scatter(z_spec, z_photo, linewidth=0.3, s=10, alpha=0.5, c=stat, cmap='plasma_r') #zz-plot
-        plt.plot([0, 2], [0, 2], 'r--')
-    
-        plt.xlabel(r"$z_{spec}$")
-        plt.ylabel(r"$z_{phot}$")
-        plt.colorbar()
-        plt.tight_layout()
-        plt.show()
+        ax.plot([0, max(np.max(z_spec),np.max(z_photo))], [0, max(np.max(z_spec),np.max(z_photo))], "r--")
 
-        return
+        ax.set_xlabel(r"$z_{spec}$")
+        ax.set_ylabel(r"$z_{phot}$")
+
+        fig.colorbar(sc, ax=ax)
+        fig.tight_layout()
+
+        if show == True:
+            plt.show()
 
 
 def integrate_pdfs_to_ztrue(pdfs, zgrid, ztrue):
