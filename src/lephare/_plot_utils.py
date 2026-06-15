@@ -2788,7 +2788,7 @@ class PlotUtils:
 
         plt.clf()
 
-        fig, ax = plt.subplots(figsize=(5,4))
+        fig, ax = plt.subplots(figsize=(6,5))
 
         mask = (self.zflag >= fbounds[0]) & (self.zflag <= fbounds[1])
 
@@ -2799,7 +2799,7 @@ class PlotUtils:
             z_spec,
             z_photo,
             linewidth=0.3,
-            s=10,
+            s=8,
             alpha=0.5,
             c=stat,
             cmap="plasma_r")
