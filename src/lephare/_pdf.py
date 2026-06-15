@@ -42,11 +42,13 @@ class PDF:  # noqa
         var = trapezoid((np.array(self.xaxis) - estimate) ** 2 * self.vPDF, self.xaxis)
         return np.sqrt(var)
 
-    def approximate_gaussian(self, estimate):
+    def approximate_gaussian(self, estimate, error=None):
+
         def gauss(z, a, mu, sigma):
             return a * np.exp(-((z - mu) ** 2) / (2 * sigma**2))
-
-        error = self.variance(estimate)
+            
+        if error is None:
+            error = self.variance(estimate)
         mask = (self.xaxis >= estimate - error) & (self.xaxis <= estimate + error)
         z_local = self.xaxis
         pdz_local = np.where(mask, self.vPDF, 0.0)
@@ -75,18 +77,21 @@ class PDF:  # noqa
         else:
             return 0
 
-    def tail_mass(self, estimate, n_window=2, good_sigma=0.01):
+    def tail_mass(self, estimate, sigma=None, n_window=2, good_sigma=0.01):
         """
         Compute the total probability mass in the tails,
         outside a window around z_best.
         """
-        window = self.approximate_gaussian(estimate)
-        bound = n_window * window
+        if sigma is None:
+            sigma = self.approximate_gaussian(estimate)
+
+        bound = n_window * sigma
         mask = (self.xaxis < estimate - bound) | (self.xaxis > estimate + bound)
-        if window <= good_sigma:
+
+        if sigma <= good_sigma:
             return 0.0
-        else:
-            return trapezoid(np.where(mask, self.vPDF, 0.0), self.xaxis)
+
+        return trapezoid(np.where(mask, self.vPDF, 0.0), self.xaxis)
 
     def compute_pdz_flag(
         self,
@@ -138,13 +143,13 @@ class PDF:  # noqa
         - The score is cumulative: multiple conditions may be triggered simultaneously.
         """
         score = 0
-
+        good_sigma = self.xaxis[1] - self.xaxis[0]
         # Compute parameters from PDZSTats
-        number_mod = self.number_mod(threshold=height_thresh)
-        tail_mass = self.tail_mass(estimate)
-        peak_ratio = self.peak_ratio()
         error = self.variance(estimate)
-        sigma = self.approximate_gaussian(estimate)
+        sigma = self.approximate_gaussian(estimate, error=error)
+        tail_mass = self.tail_mass(estimate, sigma=sigma, good_sigma=good_sigma)
+        number_mod = self.number_mod(threshold=height_thresh)
+        peak_ratio = self.peak_ratio()
 
         # Bit 0: error
         if error > error_thresh and error < (np.max(self.xaxis) - np.min(self.xaxis))/ 2:
