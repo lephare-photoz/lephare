@@ -178,6 +178,7 @@ def table_to_data(config, input, col_names=None, standard_names=False):
     n_filters = len(config["FILTER_LIST"].value.split(","))
     if col_names is not None:
         print("Using user defined column names based on ordering.")
+        input = input[col_names]
         assert len(input.colnames) == 2 * n_filters + 4
 
     elif standard_names:

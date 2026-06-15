@@ -88,7 +88,7 @@ class PDF:  # noqa
         else:
             return trapezoid(np.where(mask, self.vPDF, 0.0), self.xaxis)
 
-    def compute_quality_flag(
+    def compute_pdz_flag(
         self,
         estimate,
         nb_peak_thresh=2,
