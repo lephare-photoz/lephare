@@ -65,9 +65,9 @@ class PDF:  # noqa
             # Return error if fitting fails
             return error
 
-    def number_mod(self, threshold=0.75):
+    def number_mod(self, threshold=0.43, distance=10):
         """Count significant local maxima"""
-        peaks, _ = find_peaks(self.vPDF, height=threshold * max(self.vPDF))
+        peaks, _ = find_peaks(self.vPDF, height=threshold * max(self.vPDF), distance=distance)
         return len(peaks)
 
     def peak_ratio(self):
@@ -97,7 +97,7 @@ class PDF:  # noqa
         self,
         estimate,
         nb_peak_thresh=2,
-        height_thresh=0.25,
+        height_thresh=0.43,
         tail_thresh=0.23,
         peak_ratio_thresh=0.1,
         error_thresh=0.1):
