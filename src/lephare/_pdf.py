@@ -67,8 +67,11 @@ class PDF:  # noqa
 
     def number_mod(self, threshold=0.43, distance=10):
         """Count significant local maxima"""
-        peaks, _ = find_peaks(self.vPDF, height=threshold * max(self.vPDF), distance=distance)
-        return len(peaks)
+        if max(self.vPDF) != 0:
+            peaks, _ = find_peaks(self.vPDF, height=threshold * max(self.vPDF), distance=distance)
+            return len(peaks)
+        else:
+            return 0
 
     def peak_ratio(self):
         """Ratio of max(pdz) to the mean"""
