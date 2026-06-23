@@ -228,7 +228,7 @@ class PlotUtils:
         self.lr = t["LUM_R_BEST"]
         self.lk = t["LUM_K_BEST"]
         self.pdfs = np.array(t[pdf_col])
-        self.zflag = t['Z_FLAG'] if 'Z_FLAG' in t.colnames else np.zeros(len(t))
+        self.zflag = t["Z_FLAG"] if "Z_FLAG" in t.colnames else np.zeros(len(t))
 
         # Define the panels with the binning in redshift an magnitude
         if len(range_z) <= 1:
@@ -2770,8 +2770,8 @@ class PlotUtils:
             ax.scatter(self.sfrb[condb], self.mabsu[condb], s=1, color="r", alpha=0.2, marker="s")
 
             ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(-3, -23), color="black", fontsize=15)
-    
-    def zz_plot_flag(self, fbounds=(0,31), show=False):        
+
+    def zz_plot_flag(self, fbounds=(0, 31), show=False):
         """
         Create a Z_BEST VS ZSPEC, Z_FLAG color coded scatter plot.
 
@@ -2788,23 +2788,16 @@ class PlotUtils:
 
         plt.clf()
 
-        fig, ax = plt.subplots(figsize=(6,5))
+        fig, ax = plt.subplots(figsize=(6, 5))
 
         mask = (self.zflag >= fbounds[0]) & (self.zflag <= fbounds[1])
 
         z_photo = self.zp[mask]
-        z_spec  = self.zs[mask]
-        stat    = np.array(self.zflag[mask])
-        sc = ax.scatter(
-            z_spec,
-            z_photo,
-            linewidth=0.3,
-            s=8,
-            alpha=0.5,
-            c=stat,
-            cmap="plasma_r")
+        z_spec = self.zs[mask]
+        stat = np.array(self.zflag[mask])
+        sc = ax.scatter(z_spec, z_photo, linewidth=0.3, s=8, alpha=0.5, c=stat, cmap="plasma_r")
 
-        ax.plot([0, max(np.max(z_spec),np.max(z_photo))], [0, max(np.max(z_spec),np.max(z_photo))], "r--")
+        ax.plot([0, max(np.max(z_spec), np.max(z_photo))], [0, max(np.max(z_spec), np.max(z_photo))], "r--")
 
         ax.set_xlabel(r"$z_{spec}$")
         ax.set_ylabel(r"$z_{phot}$")
@@ -2812,7 +2805,7 @@ class PlotUtils:
         fig.colorbar(sc, ax=ax)
         fig.tight_layout()
 
-        if show == True:
+        if show:
             plt.show()
 
 
