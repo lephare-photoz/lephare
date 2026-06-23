@@ -1,7 +1,5 @@
-import numpy as np
-import lephare as lp
-from ._utils import continueClass
 from ._lephare import onesource
+from ._utils import continueClass
 
 __all__ = [
     "onesource",
@@ -13,7 +11,7 @@ class onesource:  # noqa
     def compute_pdz_flag(self):
         """
         Compute and return the quality flag for the bayesian PDF and center.
-        
+
         This method retrieves the PDF object from `self.pdfmap[1]`, uses the first
         element of `self.zgmode` as the center value, and computes a quality flag
         using the PDF's `compute_pdz_flag` method.

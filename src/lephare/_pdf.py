@@ -1,5 +1,6 @@
-import numpy as np
 import warnings
+
+import numpy as np
 from matplotlib import pylab as plt
 from scipy.integrate import trapezoid
 from scipy.optimize import curve_fit
@@ -43,10 +44,9 @@ class PDF:  # noqa
         return np.sqrt(var)
 
     def approximate_gaussian(self, estimate, error=None):
-
         def gauss(z, a, mu, sigma):
             return a * np.exp(-((z - mu) ** 2) / (2 * sigma**2))
-            
+
         if error is None:
             error = self.variance(estimate)
         mask = (self.xaxis >= estimate - error) & (self.xaxis <= estimate + error)
@@ -58,7 +58,7 @@ class PDF:  # noqa
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 popt, _ = curve_fit(gauss, z_local, pdz_local, p0=p0)
-    
+
             _, mu_fit, sigma_fit = popt
             return abs(sigma_fit)
         except (RuntimeError, ValueError):
@@ -103,7 +103,8 @@ class PDF:  # noqa
         height_thresh=0.43,
         tail_thresh=0.23,
         peak_ratio_thresh=0.1,
-        error_thresh=0.1):
+        error_thresh=0.1,
+    ):
         """
         Compute a 4-bit quality score (0–15) based on PDF shape characteristics.
 
@@ -155,7 +156,7 @@ class PDF:  # noqa
         peak_ratio = self.peak_ratio()
 
         # Bit 0: error
-        if error > error_thresh and error < (np.max(self.xaxis) - np.min(self.xaxis))/ 2:
+        if error > error_thresh and error < (np.max(self.xaxis) - np.min(self.xaxis)) / 2:
             score += 1
         # Bit 2: peak_ratio
         if peak_ratio > peak_ratio_thresh:
