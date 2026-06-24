@@ -157,4 +157,4 @@ LUM_K_BEST
 # Predicted magnitudes in a spare filter set
 # ABSMAG_PRED()
 MAG_PRED()
-ZFLAG
+

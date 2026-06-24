@@ -17,6 +17,7 @@ __all__ = [
 @continueClass
 class PDF:  # noqa
     def setYvals(self, yvals, is_chi2=False):  # noqa: N802
+        yvals = np.array(yvals)
         if is_chi2:
             yvals[yvals >= HIGH_CHI2] = HIGH_CHI2
             self.chi2 = yvals
