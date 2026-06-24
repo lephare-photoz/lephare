@@ -370,7 +370,7 @@ def test_quality_flags():
     pdf = lp.PDF(-5, 5, 10001)
     pdf.setYvals(sp.stats.norm(loc=0, scale=1).pdf(pdf.xaxis), is_chi2=False)
     assert pdf.variance(0) == pytest.approx(1.0, 1.0e-5)
-    assert pdf.approximate_gaussian(0, n_window=5) == pytest.approx(1, 1.0e-5)
+    assert pdf.approximate_gaussian(0, error=5) == pytest.approx(1, 1.0e-5)
     assert pdf.peak_ratio() == pytest.approx(0.250662, 1.0e-3)
     assert pdf.number_mod() == 1
     assert pdf.tail_mass(0, n_window=6) == pytest.approx(1.0e-4, 1.0e-2)

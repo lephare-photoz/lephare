@@ -55,7 +55,10 @@ class PhotoZ:  # noqa: F811
             outputs[key] = []
             # Loop over all sources
             for src in srclist:
-                if is_array is False:
+                # computing the flag on the redshit if requested
+                if key == "Z_FLAG":
+                    outputs[key].append(src.compute_pdz_flag())
+                elif is_array is False:
                     outputs[key].append(getattr(src, attr))
                 else:
                     getarr = getattr(src, attr)
