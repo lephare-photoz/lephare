@@ -129,3 +129,4 @@ K_COR()                 float         kap
 MAG_ABS()               float         mabs
 EMAG_ABS()              float         emabs
 STRING_INPUT            str           str_inp
+Z_FLAG                  int           zflag

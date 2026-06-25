@@ -70,6 +70,7 @@ def test_all_plots():
         "LUM_R_BEST": np.random.uniform(low, high, n_rows),
         "LUM_K_BEST": np.random.uniform(low, high, n_rows),
         "PDF_BAY_ZG()": np.random.uniform(low, high, (n_rows, n_z)),
+        "Z_FLAG": np.random.uniform(low, high, n_rows),
     }
 
     # Create Astropy Table

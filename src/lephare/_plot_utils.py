@@ -230,6 +230,7 @@ class PlotUtils:
         self.lr = t["LUM_R_BEST"]
         self.lk = t["LUM_K_BEST"]
         self.pdfs = np.array(t[pdf_col])
+        self.zflag = t["Z_FLAG"] if "Z_FLAG" in t.colnames else np.zeros(len(t))
 
         # Define the panels with the binning in redshift an magnitude
         if len(range_z) <= 1:
@@ -317,6 +318,7 @@ class PlotUtils:
             self.errormag,
             self.errorz,
             self.pit_qq,
+            self.zz_plot_flag,
         ]
 
         with PdfPages(filename) as pdf:
@@ -2846,7 +2848,45 @@ class PlotUtils:
 
             ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(-3, -23), color="black", fontsize=15)
 
-        return
+    def zz_plot_flag(self, fbounds=(0, 31), show=False):
+        """
+        Create a Z_BEST VS ZSPEC, Z_FLAG color coded scatter plot.
+
+
+        Notes
+        -----
+        - Uses Z_BEST, ZSPEC and Z_FLAG outputs.
+        - Boundaries can be set on the flag.
+        Examples
+        --------
+        >>> utils = lp.PlotUtils(t, sel_filt=3)
+        >>> utils.zz_plot_flag(flag_bound=(8,15))
+        """
+
+        plt.clf()
+
+        fig, ax = plt.subplots(figsize=(6, 5))
+
+        mask = (self.zflag >= fbounds[0]) & (self.zflag <= fbounds[1])
+
+        z_photo = self.zp[mask]
+        z_spec = self.zs[mask]
+        if z_photo.size == 0 or z_spec.size == 0:
+            print(f"the fbounds argument discarded all zphot or/and zspec values:{fbounds}")
+            return
+        stat = np.array(self.zflag[mask])
+        sc = ax.scatter(z_spec, z_photo, linewidth=0.3, s=8, alpha=0.5, c=stat, cmap="plasma_r")
+
+        ax.plot([0, max(np.max(z_spec), np.max(z_photo))], [0, max(np.max(z_spec), np.max(z_photo))], "r--")
+
+        ax.set_xlabel(r"$z_{spec}$")
+        ax.set_ylabel(r"$z_{phot}$")
+
+        fig.colorbar(sc, ax=ax)
+        fig.tight_layout()
+
+        if show:
+            plt.show()
 
 
 def integrate_pdfs_to_ztrue(pdfs, zgrid, ztrue):
