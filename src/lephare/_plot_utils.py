@@ -2871,6 +2871,9 @@ class PlotUtils:
 
         z_photo = self.zp[mask]
         z_spec = self.zs[mask]
+        if z_photo.size == 0 or z_spec.size == 0:
+            print(f"the fbounds argument discarded all zphot or/and zspec values:{fbounds}")
+            return
         stat = np.array(self.zflag[mask])
         sc = ax.scatter(z_spec, z_photo, linewidth=0.3, s=8, alpha=0.5, c=stat, cmap="plasma_r")
 
