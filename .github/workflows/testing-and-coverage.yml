@@ -17,7 +17,7 @@ jobs:
       INCLUDE_COVERAGE: TRUE
     strategy:
       matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
 
     steps:
     - uses: actions/checkout@v6
@@ -41,7 +41,7 @@ jobs:
         $PWD/scripts/run_coverage.sh ci
 
     - name: Upload coverage report to codecov
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@v6
       with:
         files: coverage.txt
         token: ${{ secrets.CODECOV_TOKEN }}

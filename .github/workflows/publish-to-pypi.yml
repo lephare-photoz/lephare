@@ -17,96 +17,116 @@ permissions:
   contents: read
 
 jobs:
-  build_wheels:
-    name: Build wheels on ${{ matrix.os }}-${{ matrix.python_version}}
+  build_wheels_linux:
+    name: Build wheels on ${{ matrix.os }}-${{ matrix.python_version }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-24.04]
+        python: [310, 311, 312, 313, 314]
         include:
-
-          # Linux 64 bit manylinux2014
-          - os: ubuntu-22.04
-            python: 310
-            platform_id: manylinux_x86_64
-            manylinux_image: manylinux2014
+          - python: 310
             python_version: "3.10"
-          - os: ubuntu-22.04
-            python: 311
-            platform_id: manylinux_x86_64
-            manylinux_image: manylinux2014
+          - python: 311
             python_version: "3.11"
-          - os: ubuntu-22.04
-            python: 312
-            platform_id: manylinux_x86_64
-            manylinux_image: manylinux2014
+          - python: 312
             python_version: "3.12"
-          - os: ubuntu-22.04
-            python: 313
-            platform_id: manylinux_x86_64
-            manylinux_image: manylinux2014
+          - python: 313
             python_version: "3.13"
+          - python: 314
+            python_version: "3.14"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v3.4.1
+        env:
+          CIBUILDWHEEL: 1
+          CIBW_ENVIRONMENT_LINUX: PYTHON_VERSION_REQUIRED=${{ matrix.python_version }}
+          CIBW_BUILD: cp${{ matrix.python }}-manylinux_x86_64
+          CIBW_ARCHS: all
+          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+          CIBW_MANYLINUX_I686_IMAGE: manylinux2014
+          CIBW_BUILD_VERBOSITY: 3
+      - uses: actions/upload-artifact@v7
+        with:
+          name: cibw-wheels-${{ matrix.os }}-${{ matrix.python }}
+          path: wheelhouse/*.whl
 
-          # MacOS x86_64
-          - os: macos-15-intel
-            python: 310
-            platform_id: macosx_x86_64
+  build_wheels_macos_x86:
+    name: Build wheels on macos-15-intel-${{ matrix.python_version }}
+    runs-on: macos-15-intel
+    strategy:
+      matrix:
+        python: [310, 311, 312, 313, 314]
+        include:
+          - python: 310
             python_version: "3.10"
-          - os: macos-15-intel
-            python: 311
-            platform_id: macosx_x86_64
+          - python: 311
             python_version: "3.11"
-          - os: macos-15-intel
-            python: 312
-            platform_id: macosx_x86_64
+          - python: 312
             python_version: "3.12"
-          - os: macos-15-intel
-            python: 313
-            platform_id: macosx_x86_64
+          - python: 313
             python_version: "3.13"
+          - python: 314
+            python_version: "3.14"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v3.4.1
+        env:
+          CIBUILDWHEEL: 1
+          CIBW_BEFORE_ALL_MACOS: brew install llvm libomp
+          CIBW_ENVIRONMENT_MACOS: PYTHON_VERSION_REQUIRED=${{ matrix.python_version }} MACOSX_DEPLOYMENT_TARGET="14.0" PATH="$(brew --prefix llvm)/bin:$PATH" CFLAGS="-I /usr/local/include -I/usr/local/opt/llvm/include" CXXFLAGS="-I /usr/local/include -I/usr/local/opt/llvm/include -I/opt/homebrew/opt/libomp/include -I/opt/homebrew/opt/llvm/include -I/usr/local/opt/libomp/include" LDFLAGS="-L/usr/local/opt/libomp/lib -L/opt/homebrew/opt/libomp/lib -L /usr/local/lib -L/usr/local/opt/llvm/lib"
+          CIBW_BUILD: cp${{ matrix.python }}-macosx_x86_64
+          CIBW_ARCHS: all
+          CIBW_BUILD_VERBOSITY: 3
+      - uses: actions/upload-artifact@v7
+        with:
+          name: cibw-wheels-macos-intel-${{ matrix.python }}
+          path: wheelhouse/*.whl
 
-          # MacOS arm64
-          - os: macos-14
-            python: 310
-            platform_id: macosx_arm64
+  build_wheels_macos_arm64:
+    name: Build wheels on macos-14-${{ matrix.python_version }}
+    runs-on: macos-14
+    strategy:
+      matrix:
+        python: [310, 311, 312, 313, 314]
+        include:
+          - python: 310
             python_version: "3.10"
-          - os: macos-14
-            python: 311
-            platform_id: macosx_arm64
+          - python: 311
             python_version: "3.11"
-          - os: macos-14
-            python: 312
-            platform_id: macosx_arm64
+          - python: 312
             python_version: "3.12"
-          - os: macos-14
-            python: 313
-            platform_id: macosx_arm64
+          - python: 313
             python_version: "3.13"
-
+          - python: 314
+            python_version: "3.14"
     steps:
       - name: Checkout LePhare
         uses: actions/checkout@v6
         with:
           submodules: recursive
-
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.3.1
+        uses: pypa/cibuildwheel@v3.4.1
         env:
           CIBUILDWHEEL: 1
-          # CIBW_ARCHS_MACOS: auto universal2
           CIBW_BEFORE_ALL_MACOS: brew install llvm libomp
-          CIBW_ENVIRONMENT_MACOS: PYTHON_VERSION_REQUIRED=${{ matrix.python_version}} MACOSX_DEPLOYMENT_TARGET="14.0" PATH="$(brew --prefix llvm)/bin:$PATH" CFLAGS="-I /usr/local/include -I/usr/local/opt/llvm/include" CXXFLAGS="-I /usr/local/include -I/usr/local/opt/llvm/include -I/opt/homebrew/opt/libomp/include -I/opt/homebrew/opt/llvm/include -I/usr/local/opt/libomp/include" LDFLAGS="-L/usr/local/opt/libomp/lib -L/opt/homebrew/opt/libomp/lib -L /usr/local/lib -L/usr/local/opt/llvm/lib"
-          CIBW_ENVIRONMENT_LINUX: PYTHON_VERSION_REQUIRED=${{ matrix.python_version}}
-          CIBW_BUILD: cp${{ matrix.python }}-${{ matrix.platform_id }}
+          CIBW_ENVIRONMENT_MACOS: PYTHON_VERSION_REQUIRED=${{ matrix.python_version }} MACOSX_DEPLOYMENT_TARGET="14.0" PATH="$(brew --prefix llvm)/bin:$PATH" CFLAGS="-I /usr/local/include -I/usr/local/opt/llvm/include" CXXFLAGS="-I /usr/local/include -I/usr/local/opt/llvm/include -I/opt/homebrew/opt/libomp/include -I/opt/homebrew/opt/llvm/include -I/usr/local/opt/libomp/include" LDFLAGS="-L/usr/local/opt/libomp/lib -L/opt/homebrew/opt/libomp/lib -L /usr/local/lib -L/usr/local/opt/llvm/lib"
+          CIBW_BUILD: cp${{ matrix.python }}-macosx_arm64
           CIBW_ARCHS: all
-          CIBW_MANYLINUX_X86_64_IMAGE: ${{ matrix.manylinux_image }}
-          CIBW_MANYLINUX_I686_IMAGE: ${{ matrix.manylinux_image }}
           CIBW_BUILD_VERBOSITY: 3
 
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
-          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          name: cibw-wheels-macos-arm64-${{ matrix.python }}
           path: wheelhouse/*.whl
+
 
   build_sdist:
     name: Make SDist
@@ -128,7 +148,7 @@ jobs:
 
   upload_pypi:
     name: Upload to pypi
-    needs: [build_wheels, build_sdist]
+    needs: [build_wheels_linux, build_wheels_macos_x86, build_wheels_macos_arm64, build_sdist]
     runs-on: ubuntu-latest
     environment:
       name: pypi
