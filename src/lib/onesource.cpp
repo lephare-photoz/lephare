@@ -1964,7 +1964,7 @@ void onesource::limits(vector<SED *> &fulllib, vector<double> &limits_zbin,
   return;
 }
 
-// Used for the python interface in the notebook
+
 pair<vector<double>, vector<double>> onesource::best_spec_vec(
     short sol, vector<SED *> &fulllib, cosmo lcdm, double minl,
     double maxl) const {

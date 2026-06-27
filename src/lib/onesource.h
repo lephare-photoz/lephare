@@ -38,8 +38,25 @@ static unordered_map<string, int> maptype = {
 represents an object from a catalogue, and manages its fitting to an SED.
 */
 class onesource {
+ // Allow PhotoZ to access protected members of onesource
+ friend class PhotoZ;
+    
  private:
   bool verbose;
+
+ protected:
+  /*! Helper function to extract spectra after a fit
+    @param sol: 0 [best GAL], 1 [2nd best GAL], 2 [best FIR GAL], 3 [best QSO], 4 [best STAR]
+    @param fullib: the full SED library
+    @param lcdm: the cosmology to be used
+    @param minl: minimum lambda to be returned (Angstrom)
+    @param maxl: maximum lambda to be returned (Angstrom)
+    @return pair of vectors (x,y) that captures the SED curve
+   */
+  pair<vector<double>, vector<double>> best_spec_vec(short sol,
+                                                     vector<SED *> &fulllib,
+                                                     cosmo lcdm, double minl,
+                                                     double maxl) const;
 
  public:
   //{"MASS_BEST","SFR_BEST","SSFR_BEST","LDUST_BEST","LUM_TIR_BEST","AGE_BEST","EBV_BEST","EXTLAW_BEST","LUM_NUV_BEST","LUM_R_BEST","LUM_K_BEST",}
@@ -271,10 +288,6 @@ class onesource {
   void limits(vector<SED *> &fulllib, vector<double> &limits_zbin,
               int limits_ref, vector<int> &limits_sel,
               vector<double> &limits_cut);
-  pair<vector<double>, vector<double>> best_spec_vec(short sol,
-                                                     vector<SED *> &fulllib,
-                                                     cosmo lcdm, double minl,
-                                                     double maxl) const;
 
   void compute_best_fit_physical_quantities(vector<SED *> &fulllib);
 };

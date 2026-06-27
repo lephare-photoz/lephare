@@ -429,7 +429,6 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("write_out", &onesource::write_out)
       .def("writeSpec", &onesource::writeSpec)
       .def("writeFullChi", &onesource::writeFullChi)
-      .def("best_spec_vec", &onesource::best_spec_vec)
       .def_readwrite("spec", &onesource::spec)
       .def_readwrite("consiz", &onesource::consiz)
       .def_readonly("pos", &onesource::pos)
