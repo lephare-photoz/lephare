@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from unittest.mock import mock_open, patch
 
+import lephare as lp
 import pooch
 import pytest
 from lephare.data_retrieval import (
@@ -167,3 +168,78 @@ def test_download_all_files_non_default_retry(mock_download_file, data_registry_
     mock_download_file.assert_any_call(retriever, "file1.txt", ignore_registry=False)
     mock_download_file.assert_any_call(retriever, "file2.txt", ignore_registry=False)
     assert mock_download_file.call_count == len(file_names)
+
+
+@pytest.mark.filterwarnings("ignore:.*is present locally and will not be overwritten.*:UserWarning")
+def test_get_auxiliary_data(test_data_dir: str):
+    """Check the file downloader works for a new filter file."""
+    test_dir = os.path.abspath(os.path.dirname(__file__))
+    os.environ["LEPHAREDIR"] = os.path.join(test_dir, "../data")
+    os.environ["LEPHAREWORK"] = os.path.join(test_dir, "../tmp")
+    config = lp.default_cosmos_config.copy()
+    # Set to a filter that is not in the test directory
+    config["FILTER_LIST"] = "lsst/total_g.dat"
+    # Check the downloader runs
+    lp.data_retrieval.get_auxiliary_data(keymap=config)
+    filter_file_path = os.path.join(test_dir, "../data/filt/lsst/total_g.dat")
+    # Check it was downloaded
+    assert os.path.exists(filter_file_path)
+    os.remove(filter_file_path)
+    # Check it was deleted
+    assert not os.path.exists(filter_file_path)
+    # Check a wildcard and additional files
+    lp.data_retrieval.get_auxiliary_data(
+        keymap=config,
+        additional_files=[
+            "sed/GAL/BC03_CHAB/*.ised_ASCII",
+            "sed/GAL/MAGDIS",
+            "examples/config_svo_filters.yml",
+        ],
+    )
+    # Check some examples
+    for f in [
+        "sed/GAL/BC03_CHAB/bc2003_lr_m42_chab_tau01_dust00.ised_ASCII",
+        "sed/GAL/MAGDIS/sed_z2_U2.dat",
+        "examples/config_svo_filters.yml",
+    ]:
+        file_path = os.path.join(test_dir, "../data", f)
+        assert os.path.exists(file_path)
+        os.remove(file_path)
+        assert not os.path.exists(file_path)
+
+    # Check it continues with a missing file and throws a warning
+    config.update({"GAL_SED": "sed/does_not_exist.list"})
+    with pytest.warns(UserWarning) as record:
+        lp.data_retrieval.get_auxiliary_data(
+            keymap=config,
+        )
+
+    assert str(record[1].message).startswith("Could not retrieve sed list file")
+
+    # Test that a local file that differs from the remote is not itself overwritten
+    lines = [
+        "CWW_KINNEY/CWW_E_ext.sed  NotCosmos",
+    ]
+    # Use file name that exists remotely to test logic or not overwriting
+    new_list_file_name = "sed/GAL/CHARY_ELBAZ/CHARY_ELBAZ.list"
+    new_list_file_path = os.path.join(test_dir, "../data/", new_list_file_name)
+    path = Path(new_list_file_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(new_list_file_path, "w") as file:
+        file.writelines(lines)
+    config.update({"GAL_SED": new_list_file_name})
+    with pytest.warns(UserWarning) as record:
+        lp.data_retrieval.get_auxiliary_data(
+            keymap=config,
+        )
+    assert str(record[1].message).endswith("will not be overwritten.")
+    with open(new_list_file_path, "r") as f:
+        first_line = f.readline().rstrip("\n")
+    assert first_line == "CWW_KINNEY/CWW_E_ext.sed  NotCosmos"
+    # Check file added to list file exists
+    new_sed_file_path = os.path.join(test_dir, "../data/sed/GAL/CWW_KINNEY/CWW_E_ext.sed")
+    assert os.path.exists(new_sed_file_path)
+    os.remove(new_sed_file_path)
+    os.remove(new_list_file_path)
+    assert not os.path.exists(new_sed_file_path)
+    assert not os.path.exists(new_list_file_path)

@@ -210,7 +210,7 @@ zphota
      - Reference filter for the prior in abs. mag. (start at 1)
    * - NZ_PRIOR
      - -1[def] 
-     - N(z) prior as function of i-band. The i-band number should be given in input (starting filter numbering at 1). The second number indicates which band to use if first undefined. Negative value means no prior.
+     - N(z) prior as function of i-band. The i-band number should be given in input (starting filter numbering at 1). The second number indicates which band to use if first undefined (not mandatory). Negative value means no prior.
    * - ZFIX
      - NO[def] or YES 
      - Fixed redshift with the spec-z value (as defined in CAT_TYPE LONG)

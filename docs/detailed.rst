@@ -411,7 +411,10 @@ The goal of this step is to:
 - store them in a common library in ``$LEPHAREWORK/filt/``.
 
   
-Several sets of filters from different telescopes/instruments are available in the directory ``$LEPHAREDIR/filt/``. You could find in this directory most of the standard filters (like the Johnson-Kron-Cousins in ``filt/jkc``). New set of filters can be added in this directory.  You could also store new filters in another directory than ``$LEPHAREDIR/filt/`` using the keyword ``FILTER_REP``.
+Several sets of filters from different telescopes/instruments are available in the directory ``$LEPHAREDIR/filt/``. You could find in this directory most of the standard filters (like the Johnson-Kron-Cousins in ``filt/jkc``). In order to know the existing filters in lephare-data, the simplest is to look at https://github.com/lephare-photoz/lephare-data/tree/main/filt, or the directory lephare-data if everything was cloned. The filters  will be downloaded automatically if a clone of the full lephare-data wasn't done.
+
+
+You could also store new filters in another directory than ``$LEPHAREDIR/filt/`` using the keyword ``FILTER_REP``.
 
 
 
@@ -570,11 +573,11 @@ The python interface allows to load the filters from a yml file, with the possib
 
 .. code-block:: python
 
-  filterLibSVO = lp.FilterSvc.from_yaml(f"{lp.LEPHAREDIR}/examples/config.yml")
+  filterLibSVO = lp.FilterSvc.from_yaml(f"{lp.LEPHAREDIR}/examples/config_svo_filters.yml")
   filter_output = os.path.join(os.environ["LEPHAREWORK"], "filt", keymap["FILTER_FILE"].value)
   lp.write_output_filter(filter_output + "_svo.dat", filter_output + "_svo.doc", filterLibSVO)
 
-where ``$LEPHAREDIR/examples/config.yml`` is a yml file including the name of filters to be downloaded. They are store in ``LEPHAREWORK/filt/`` and name defined according to the keyword ``FILTER_FILE``.
+where ``$LEPHAREDIR/examples/config_svo_filters.yml`` is a yml file including the name of filters to be downloaded. You can copy the yaml file into your own directory and modify the names of the filters according to the ones in the SVO website. The transmission type is given in the SVO webpage. The filters will be stored in ``LEPHAREWORK/filt/`` and name defined according to the keyword ``FILTER_FILE``.
 
 
 
@@ -1518,7 +1521,11 @@ A prior could be applied to avoid unrealistically bright galaxies. The keyword `
 |                |          |                  | number indicates |
 |                |          |                  | which band to    |
 |                |          |                  | use if first     |
-|                |          |                  | undefined.       |
+|                |          |                  | undefined. A     |
+|                |          |                  | second value     |
+|                |          |                  | isn't mandatory  |
+|                |          |                  |                  |
+|                |          |                  |                  |
 |                |          |                  |                  |
 |                |          |                  | Negative value   |
 |                |          |                  | means no prior.  |
@@ -1565,6 +1572,8 @@ If the photometric catalogue contains a large number of objects, you can save ti
 | **Note 1**: for philosophical reason, we decided that these offsets are added to the predicted magnitudes (because we don’t know if the offsets are due to the imaging, bad knowledge of the filters, bad knowledge of the templates). Therefore, if you want to apply them directly to the observed magnitude in your catalogue, you need to subtract these shifts.
 
 | **Note 2**: when using adaptive mode the redshift, for objects that meet the criteria from ADAPT_LIM and ADAPT_ZBIN, is automatically fixed to the spectroscopic value during the adaptation, and will be let free when adaptation is finished. Do not use the adaption with ``ZFIX YES``.
+
+| **Note 3**: If values are given in ``APPLY_SYSSHIFT``, the adaptation of the zero-points will be turn off automatically, even if the user set ``AUTO_ADAPT YES``. 
 
 In python, you can run only the training part with:
 
@@ -1766,7 +1775,7 @@ The predicted apparent magnitudes and absolute magnitudes can be computed in a d
 Physical parameters derived from BC03 templates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Physical parameters are derived as soon as you use a library including physical information like the normalisation of the template in stellar mass. In *LePHARE++* , such measurement is possible only with the BC03 templates (but we plan to integrate the PEGASE or MARASTON libraries on the long term). You don’t need to turn on any keyword to have these measurements. As long as you are using BC03 templates and that the corresponding keywords (as ``MASS_MED``, or ``SFR_MED``) appear in the output parameter file, you should get the physical parameters in output.
+Physical parameters are derived as soon as you use a library including physical information like the normalisation of the template in stellar mass. In *LePHARE++* , such measurement is currently possible with the BC03 or PEGASE2 template libraries (we plan to integrate the MARASTON libraries in the future). You don’t need to turn on any keyword to have these measurements. As long as you are using BC03 templates and that the corresponding keywords (as ``MASS_MED``, or ``SFR_MED``) appear in the output parameter file, you should get the physical parameters in output.
 
 As for the photo-z, you will find physical parameters measured at the minimum :math:`\chi^2` value (indicated with ``_BEST``) and the ones obtained by taken the median of the PDF marginalized over the relevant parameter.
 
@@ -2212,6 +2221,9 @@ The output parameters
 +---------------+-------------------------------------------+---+---+
 | SCALE_SEC     |                                           |   |   |
 +---------------+-------------------------------------------+---+---+
+| Z_FLAG        | Redshift quality flag from PDF(Z)         |   |   |
++---------------+---------------------------------------------------+
+   
 
 +-----------------+-----------------------------+---+---+
 |                 | QSO solutions               |   |   |
@@ -2307,6 +2319,8 @@ The output parameters
 +-----------------+-----------------------------+---+---+
 | MOD_QSO         |                             |   |   |
 +-----------------+-----------------------------+---+---+
+| SCALE_QSO       |                             |   |   |
++-----------------+-----------------------------+---+---+
 | Z_ML            | Zphot from Median of ML     |   |   |
 |                 | distribution                |   |   |
 +-----------------+-----------------------------+---+---+
@@ -2323,6 +2337,8 @@ The output parameters
 | MOD_STAR        |                             |   |   |
 +-----------------+-----------------------------+---+---+
 | CHI_STAR        |                             |   |   |
++-----------------+-----------------------------+---+---+
+| SCALE_STAR      |                             |   |   |
 +-----------------+-----------------------------+---+---+
 
 +---------------+-------------------------------------------+---+---+

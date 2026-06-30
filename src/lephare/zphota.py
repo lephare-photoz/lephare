@@ -1,11 +1,12 @@
-import time
+#! /usr/bin/env python
+
 from contextlib import suppress
 
 from ._lephare import (
-    GalMag,
     PhotoZ,
     keyword,
 )
+from .cli import build_cli
 from .runner import Runner
 
 __all__ = [
@@ -13,7 +14,7 @@ __all__ = [
 ]
 
 config_keys = {
-    "verbose": "increase onscreen verbosity",
+    "VERBOSE": "increase onscreen verbosity",
     "CAT_IN": "input catalog",
     "INP_TYPE": "F if Fluxes, M if magnitudes",
     "CAT_MAG": "AB or VEGA magnitude system of the input catalog (default AB)",
@@ -84,6 +85,7 @@ config_keys = {
     Need 1 or N values.",
     "LIMITS_MAPP_CUT": "Used to compute z_max. Apparent mag selection used in each redshift bin.\
     Need 1 or N values.",
+    "CHI2_OUT": "Flag to output the chi2 value of each template (one file per source)",
     "STAR_PDF_OUT": "output the PDF of each object, corresponding to the probability associated to the star MOD",
 }
 
@@ -92,7 +94,8 @@ nonestring = "NONE"
 
 class Zphota(Runner):
     """The specific arguments to the Zphota class are
-    verbose:
+
+    VERBOSE:
            add verbosity
     CAT_IN:
            input catalog
@@ -212,7 +215,9 @@ Need N+1 values (start with the minimum redshift).
 Need 1 or N values.
     LIMITS_MAPP_CUT:
             used to compute z_max. Apparent mag selection used in each redshift bin. \
-Need 1 or N values.
+Need 1 or N values
+    CHI2_OUT
+            Flag to output the chi2 value of each template (one file per source)
     STAR_PDF_OUT: output the PDF of each object, corresponding to the probability \
 associated to the star MOD.
     """
@@ -224,29 +229,27 @@ associated to the star MOD.
             self.parser.usage = doc
         self.__doc__ = doc + "\n"  # + inspect.getdoc(Zphota)
 
-    def __init__(self, config_file=None, config_keymap=None, **kwargs):
-        super().__init__(config_keys, config_file, **kwargs)
+    def __init__(self, config_file="", config_keymap=None, **kwargs):
+        self.name = "Zphota"
+        super().__init__(config_keys, config_file, config_keymap, **kwargs)
 
     def run(self, **kwargs):
         super().run(**kwargs)
 
-        self.keymap["c"] = keyword("c", self.config)
+        self.keymap["c"] = keyword("c", self.config_file)
 
         photoz = PhotoZ(self.keymap)
-        autoadapt = (self.keymap["AUTO_ADAPT"]).split_bool("NO", 1)[0]
-        if autoadapt:
-            adapt_srcs = photoz.read_autoadapt_sources()
-            a0 = photoz.run_autoadapt(adapt_srcs)
-        else:
-            a0 = []
-            for _ in range(photoz.imagm):
-                a0.append(0.0)
 
-        opa_out = GalMag.read_opa()  # noqa: F841
+        # Compute offsets depending on the AUTO_ADAPT and APPLY_SYSSHIFT options (0 if none)
+        adapt_srcs = photoz.read_autoadapt_sources()
+        a0 = photoz.compute_offsets(adapt_srcs)
 
         fit_srcs = photoz.read_photoz_sources()
         photoz.run_photoz(fit_srcs, a0)
-        photoz.write_outputs(fit_srcs, int(time.time()))
+        photoz.write_outputs(fit_srcs)
+
+        self.photoz = photoz
+        return
 
         self.photoz = photoz
         return
@@ -255,10 +258,13 @@ associated to the star MOD.
         super().end()
 
 
+# ---- CLI entry point ----
+
+cli = build_cli(Zphota, config_keys)
+
+
 def main():  # pragma no cover
-    runner = Zphota()
-    runner.run()
-    runner.end()
+    cli()
 
 
 if __name__ == "__main__":  # pragma no cover

@@ -1,5 +1,10 @@
+import warnings
+
 import numpy as np
 from matplotlib import pylab as plt
+from scipy.integrate import trapezoid
+from scipy.optimize import curve_fit
+from scipy.signal import find_peaks
 
 from ._lephare import HIGH_CHI2, PDF
 from ._utils import continueClass
@@ -12,6 +17,7 @@ __all__ = [
 @continueClass
 class PDF:  # noqa
     def setYvals(self, yvals, is_chi2=False):  # noqa: N802
+        yvals = np.array(yvals)
         if is_chi2:
             yvals[yvals >= HIGH_CHI2] = HIGH_CHI2
             self.chi2 = yvals
@@ -32,3 +38,138 @@ class PDF:  # noqa
             plt.plot(self.xaxis, self.chi2, **kwargs)
         else:
             plt.plot(self.xaxis, self.vPDF, **kwargs)
+
+    def variance(self, estimate):
+        """Compute the pseudo variance of the P(z) around estimate"""
+        var = trapezoid((np.array(self.xaxis) - estimate) ** 2 * self.vPDF, self.xaxis)
+        return np.sqrt(var)
+
+    def approximate_gaussian(self, estimate, error=None):
+        def gauss(z, a, mu, sigma):
+            return a * np.exp(-((z - mu) ** 2) / (2 * sigma**2))
+
+        if error is None:
+            error = self.variance(estimate)
+        mask = (np.array(self.xaxis) >= estimate - error) & (np.array(self.xaxis) <= estimate + error)
+        z_local = self.xaxis
+        pdz_local = np.where(mask, self.vPDF, 0.0)
+
+        p0 = [np.max(pdz_local), estimate, error]
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                popt, _ = curve_fit(gauss, z_local, pdz_local, p0=p0)
+
+            _, mu_fit, sigma_fit = popt
+            return abs(sigma_fit)
+        except (RuntimeError, ValueError):
+            # Return error if fitting fails
+            return error
+
+    def number_mod(self, threshold=0.43, distance=10):
+        """Count significant local maxima"""
+        if max(self.vPDF) != 0:
+            peaks, _ = find_peaks(self.vPDF, height=threshold * max(self.vPDF), distance=distance)
+            return len(peaks)
+        else:
+            return 0
+
+    def peak_ratio(self):
+        """Ratio of max(pdz) to the mean"""
+        if max(self.vPDF) != 0:
+            return np.mean(self.vPDF) / max(self.vPDF)
+        else:
+            return 0
+
+    def tail_mass(self, estimate, sigma=None, n_window=2, good_sigma=0.01):
+        """
+        Compute the total probability mass in the tails,
+        outside a window around z_best.
+        """
+        if sigma is None:
+            sigma = self.approximate_gaussian(estimate)
+
+        bound = n_window * sigma
+        mask = (self.xaxis < estimate - bound) | (self.xaxis > estimate + bound)
+
+        if sigma <= good_sigma:
+            return 0.0
+
+        return trapezoid(np.where(mask, self.vPDF, 0.0), self.xaxis)
+
+    def compute_quality_flag(
+        self,
+        estimate,
+        nb_peak_thresh=2,
+        height_thresh=0.43,
+        tail_thresh=0.23,
+        peak_ratio_thresh=0.1,
+        error_thresh=0.1,
+    ):
+        """
+        Compute a 4-bit quality score (0–15) based on PDF shape characteristics.
+
+        The score encodes different quality aspects of a probability distribution,
+        where higher values indicate lower quality. Each bit corresponds to a
+        specific diagnostic criterion:
+
+        - Bit 0 (value 1): High error variance (above `error_thresh`)
+        - Bit 1 (value 2): High peak ratio (above `peak_ratio_thresh`)
+        - Bit 2 (value 4): Large tail mass (above `tail_thresh`)
+        - Bit 3 (value 8): Multiple peaks (more than `nb_peak_thresh`)
+        - Bit 4 (value 16): Extreme error (above `max(xaxis) / 2.5`)
+
+        Args:
+        estimate (float): Central estimate or mean value used for statistics.
+        nb_peak_thresh (int, optional): Maximum acceptable number of peaks.
+            Defaults to 1.
+        height_thresh (float, optional): Threshold for peak detection height.
+            Defaults to 0.5.
+        tail_thresh (float, optional): Threshold for acceptable tail mass.
+            Defaults to 0.2.
+        peak_ratio_thresh (float, optional): Threshold for acceptable peak ratio.
+            Defaults to 0.25.
+        error_thresh (float, optional): Threshold for acceptable variance.
+            Defaults to 0.2.
+
+        Returns:
+        tuple:
+            A tuple containing:
+            - **int**: Quality flag score (0–15)
+            - **float**: Estimate value
+            - **float**: Error (variance)
+            - **float**: Peak ratio
+            - **float**: Tail mass
+            - **int**: Number of modes (peaks)
+            - **float**: Approximate Gaussian sigma
+
+        Notes:
+        - A higher score indicates a worse fit or less reliable PDF.
+        - The score is cumulative: multiple conditions may be triggered simultaneously.
+        """
+        score = 0
+        good_sigma = self.xaxis[1] - self.xaxis[0]
+        # Compute parameters from PDZSTats
+        error = self.variance(estimate)
+        sigma = self.approximate_gaussian(estimate, error=error)
+        tail_mass = self.tail_mass(estimate, sigma=sigma, good_sigma=good_sigma)
+        number_mod = self.number_mod(threshold=height_thresh)
+        peak_ratio = self.peak_ratio()
+
+        # Bit 0: error
+        if error > error_thresh and error < (np.max(self.xaxis) - np.min(self.xaxis)) / 2:
+            score += 1
+        # Bit 2: peak_ratio
+        if peak_ratio > peak_ratio_thresh:
+            score += 2
+        # Bit 1: tail mass
+        if tail_mass > tail_thresh:
+            score += 4
+        # Bit 0: number of peaks
+        if number_mod >= nb_peak_thresh:
+            score += 8
+        # Bit 3: catastrophic error
+        if error >= (np.max(self.xaxis) - np.min(self.xaxis)) / 2:
+            score += 16
+
+        return int(score), estimate, error, peak_ratio, tail_mass, number_mod, sigma

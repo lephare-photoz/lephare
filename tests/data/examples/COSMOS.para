@@ -20,7 +20,7 @@ GAL_SED		 sed/GAL/ONE_SED.list            # GALAXMuzzin09_SEDY list (full path)
 #GAL_SED		 examples/COSMOS_MOD.list            # GALAXMuzzin09_SEDY list (full path)
 GAL_LIB	         LIB_CE	                # Binary GAL LIBRARY (-> $ZPHOTWORK/lib_bin/*)
 GAL_FSCALE      1.                      # Arbitrary Flux Scale
-#SEL_AGE 	/data/zphot_vers25_03_03/sed/GAL/HYPERZ/AGE_GISSEL_HZ.dat	# List of Age for GISSEL(full path)
+#SEL_AGE 	fake.txt   	        # List of Age for GISSEL(full path)
 AGE_RANGE  0.,15.e9                                     # Age Min-Max in yr
 
                        
@@ -77,7 +77,7 @@ EM_DISPERSION   0.5,0.75,1.,1.5,2. # Dispersion allowed in the emission line flu
 ADD_DUSTEM      NO               # Add the dust emission in templates when missing 
 #
 #------------------     ASCII OUTPUT FILES OPTION       -------------------------------
-LIB_ASCII       NO		# Writing Output in ASCII file (-> working directory)
+LIB_ASCII       YES		# Writing Output in ASCII file (-> working directory)
 #
 
 

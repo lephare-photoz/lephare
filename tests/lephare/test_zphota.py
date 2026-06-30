@@ -87,7 +87,7 @@ def run_configured_zp(zp, config_file_path):
                 mock_run_photoz.assert_called_once()
                 mock_run_photoz.assert_called_with(mock_sources, ANY)
                 mock_write_outputs.assert_called_once()
-                mock_write_outputs.assert_called_with(mock_sources, ANY)
+                mock_write_outputs.assert_called_with(mock_sources)
 
                 assert os.path.realpath(zp.keymap["c"].value) == os.path.realpath(config_file_path)
 
@@ -98,41 +98,5 @@ def test_run_zp_config_file(monkeypatch):
     Note that we mock the cpp functions that are called by the run method."""
     config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
     zp = Zphota(config_file=config_file_path)
-
-    run_configured_zp(zp, config_file_path)
-
-
-def test_run_zp_command_line(monkeypatch):
-    """Use the command line to run the Zphota class."""
-    config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
-    monkeypatch.setattr("sys.argv", ["zphota.py", "--config", config_file_path, "--timer"])
-    zp = Zphota()
-
-    run_configured_zp(zp, config_file_path)
-
-
-def test_run_zp_extra_command_line_flags(monkeypatch):
-    """Run the zphota class with timer and verbose flags."""
-    config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
-    monkeypatch.setattr("sys.argv", ["zphota.py", "--config", config_file_path, "--timer", "--verbose"])
-    zp = Zphota(config_file=config_file_path)
-
-    run_configured_zp(zp, config_file_path)
-
-
-def test_run_zp_auto_adapt_yes(monkeypatch):
-    """Run the zphota class with AUTO_ADAPT toggled on."""
-    config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
-    monkeypatch.setattr("sys.argv", ["zphota.py", "--config", config_file_path, "--AUTO_ADAPT", "YES"])
-    zp = Zphota()
-
-    run_configured_zp(zp, config_file_path)
-
-
-def test_run_zp_auto_adapt_no(monkeypatch):
-    """Run the zphota class with AUTO_ADAPT toggled off."""
-    config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
-    monkeypatch.setattr("sys.argv", ["zphota.py", "--config", config_file_path, "--AUTO_ADAPT", "NO"])
-    zp = Zphota()
 
     run_configured_zp(zp, config_file_path)

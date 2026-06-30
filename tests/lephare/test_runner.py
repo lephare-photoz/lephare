@@ -26,6 +26,16 @@ def test_runner_base():
     runner = lp.Runner(config_keys=test_keys, cat_in="dummy")
     assert len(runner.keymap)
 
+    for verbose_val in ["yes", "YES", True, 1]:
+        r = lp.runner.Runner(config_keys={}, verbose=verbose_val)
+        assert r.verbose
+        assert r.keymap["VERBOSE"].value == "YES"
+
+    for verbose_val in ["no", "NO", False, 0, "any"]:
+        r = lp.runner.Runner(config_keys={}, verbose=verbose_val)
+        assert not r.verbose
+        assert r.keymap["VERBOSE"].value == "NO"
+
 
 def test_runner_no_config_keys():
     """Expect that a RuntimeError is raised when no config_keys or
@@ -98,28 +108,6 @@ def test_runner_config_file_not_found():
         assert excinfo.value == f"File {config_file_path} not found"
 
 
-def test_command_line_argument_parsing_basic(monkeypatch):
-    """Check to make sure that command line arguments are parsed correctly."""
-    test_keys = {"key1": "help1", "key2": "help2", "key3": "help3"}
-    monkeypatch.setattr("sys.argv", ["runner.py", "--key1", "foo", "--key2", "42"])
-    runner = lp.Runner(config_keys=test_keys)
-
-    assert runner.keymap["key1"].value == "foo"
-    assert runner.keymap["key2"].value == "42"
-    assert runner.keymap["key3"].value == ""
-    assert len(runner.keymap) == 3
-    assert runner.config == ""
-    assert runner.timer is False
-    assert runner.verbose is False
-
-    monkeypatch.setattr("sys.argv", ["runner.py", "--timer"])
-    runner = lp.Runner(config_keys=test_keys)
-    assert runner.timer is True
-    runner.run()
-    runner.end()
-    assert runner.stop - runner.start > 0
-
-
 def test_kwargs_arguments():
     test_keys = {"key1": "help1", "key2": "help2", "key3": "help3"}
     runner = lp.Runner(config_keys=test_keys)
@@ -131,64 +119,3 @@ def test_kwargs_arguments():
     with pytest.raises(RuntimeError) as excinfo:
         runner = lp.Runner(config_keys={"key1": "help"}, key2="unauthorized key")
         assert excinfo.value == f"key2 is not a recognized argument of {runner.__class__.__name__}."
-
-
-def test_command_line_argument_parsing_with_known_args(monkeypatch):
-    """Check to make sure that command line arguments are parsed correctly when
-    including known arguments."""
-    test_keys = {"key1": "help1", "key2": "help2", "key3": "help3", "QSO_FSCALE": "help"}
-    config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
-    monkeypatch.setattr(
-        "sys.argv", ["runner.py", "--key1", "foo", "--key2", "42", "--config", config_file_path, "--timer"]
-    )
-    runner = lp.Runner(config_keys=test_keys)
-
-    assert runner.keymap["key1"].value == "foo"
-    assert runner.keymap["key2"].value == "42"
-    assert runner.keymap["key3"].value == ""
-    assert runner.keymap["QSO_FSCALE"].value == "1."
-    assert len(runner.keymap) > 3
-    assert runner.config == config_file_path
-    assert runner.timer is True
-    assert runner.verbose is False
-    with pytest.raises(AttributeError) as excinfo:
-        _ = runner.args.typ
-        assert excinfo.value == "'Runner' object has no attribute 'typ'"
-
-
-def test_command_line_argument_parsing_with_subclass(monkeypatch):
-    """Want to cover the case where the `typ` argument is passed to the runner."""
-
-    class Sedtolib(lp.Runner):
-        @property
-        def __class__(self):
-            return type("Sedtolib", (object,), {})
-
-    test_keys = {"key1": "help1", "key2": "help2", "key3": "help3", "QSO_FSCALE": "help", "typ": "help"}
-    config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
-    monkeypatch.setattr(
-        "sys.argv",
-        [
-            "runner.py",
-            "--typ",
-            "BAR",
-            "--key1",
-            "foo",
-            "--key2",
-            "42",
-            "--config",
-            config_file_path,
-            "--timer",
-        ],
-    )
-    runner = Sedtolib(config_keys=test_keys)
-
-    assert runner.keymap["key1"].value == "foo"
-    assert runner.keymap["key2"].value == "42"
-    assert runner.keymap["key3"].value == ""
-    assert runner.keymap["QSO_FSCALE"].value == "1."
-    assert len(runner.keymap) > 3
-    assert runner.config == config_file_path
-    assert runner.timer is True
-    assert runner.verbose is False
-    assert runner.typ == "BAR"

@@ -12,7 +12,6 @@
 #include "flt.h"
 #include "globals.h"
 #include "keyword.h"
-#include "opa.h"  // IGM opacity class
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -25,14 +24,12 @@ class Mag {
   string config;
   cosmo lcdm;
   string filtFile, magtyp;
-  bool outasc, verbose;
+  bool outasc, verbose, add_dust;
   vector<string> extlaw;
-  int nextlaw;
   vector<double> ebv;
-  int nebv;
   vector<int> modext;
   double dz, zmin, zmax;
-  string lib, colib, addDust;
+  string lib, colib;
 
   // only for the galaxy, but much easier to keep them here
   string emlines = "NO";
@@ -49,30 +46,30 @@ class Mag {
 
   vector<double> magko;
 
-  vector<opa> opaAll;
-
  public:
   Mag(keymap &key_analysed);
   Mag(){};
   virtual ~Mag();
 
-  /// open the IGM opacity files
-  static ifstream open_opa_files();
   /// read the extinction laws into attribute extAll (vector of vectors of type
   /// ext)
   void read_ext();
-  /// read the IGM opacities into attribute opaAll (vector of vectors of type
-  /// opa)
-  static vector<opa> read_opa();
-  /// read the filter curve and build the corresponding vectors stored in
-  /// attribute allFlt
-  void read_flt(const string &);
-  // Read the long wavelength Bethermin+2012 templates to add the dust emission
-  // to the BC03 templates
+
+  // Read the long wavelength Bethermin+2012 templates
+  // to add the dust emission to the BC03 templates
   void read_B12();
+
   /// define the vector of redshifts, and associate to it vectors of age and
   /// distance modulus, based on the lcdm attribute
   void def_zgrid();
+
+  /// helper function to set the grid of redshift
+  /// @param dz : step in z in the grid
+  /// @param zmin : minimum z
+  /// @param zmax : maximum z
+  inline void set_zgrid(double dz, double zmin, double zmax) {
+    gridz = zgrid(dz, zmin, zmax);
+  }
 
   /// Write in file sdocOut the documentation for the GALAXY/QSO/STAR case
   void write_doc();
@@ -92,7 +89,7 @@ class Mag {
 class StarMag : public Mag {
  public:
   StarMag(keymap &key_analysed);
-  StarMag(){};
+  StarMag(){};  // LCOV_EXCL_LINE
   ~StarMag(){};
 
   void print_info();
@@ -105,7 +102,7 @@ class StarMag : public Mag {
 class QSOMag : public Mag {
  public:
   QSOMag(keymap &key_analysed);
-  QSOMag(){};
+  QSOMag(){};  // LCOV_EXCL_LINE
   ~QSOMag(){};
 
   void print_info();

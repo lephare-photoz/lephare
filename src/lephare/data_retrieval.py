@@ -4,6 +4,7 @@ This module provides functionality for downloading and managing data files using
 """
 
 import concurrent.futures
+import fnmatch
 import os
 import warnings
 from functools import partial
@@ -121,7 +122,8 @@ def download_registry_from_github(url="", outfile=""):
     # If local registry hash matches remote hash, our registry is already up-to-date:
     if os.path.isfile(outfile) and _check_registry_is_latest_version(url, outfile):
         print(f"Local registry file is up to date: {outfile}")
-        return
+        with open(outfile, "r", encoding="utf-8") as f:
+            return f.read()
 
     # Download the registry file
     response = requests.get(url, headers={"User-Agent": "LePHARE"}, timeout=120)
@@ -366,7 +368,7 @@ def _check_downloaded_files(file_names, completed_futures):
     return True
 
 
-def config_to_required_files(keymap, base_url=None):
+def config_to_required_files(keymap, base_url=None, lephare_dir=LEPHAREDIR):
     """Take a lephare config and return list of auxiliary files required for run.
 
     For the sed lists these must be present in the auxiliary files directory. If
@@ -383,7 +385,11 @@ def config_to_required_files(keymap, base_url=None):
         The dictionary of config keys containing filters etc required.
     base_url : str
         Url to overwrite default base.
+    lephare_dir : str
+        Path to lephare directory for auxiliary files. This is used to check for
+        local presence of files before downloading.
     """
+    keymap = all_types_to_keymap(keymap)
     if base_url is None:
         base_url = DEFAULT_BASE_DATA_URL
     required_files = []
@@ -410,18 +416,32 @@ def config_to_required_files(keymap, base_url=None):
     for key in sed_keys:
         try:
             # If find sed/ in the path, assume the list is present in lephare-data
-            # and try to retreive the files
+            # and try to retreive the files if not present locally.
             list_file = keymap[key].value
             # Remove the beginning of the path before sed/
             if list_file.find("sed/") > 0:
                 list_file = (list_file[list_file.find("sed/") :]).strip()
-            required_files += [list_file]
-            # Add the url to retrieve the files
-            list_file = base_url + list_file
+            # Add the url to retrieve the files if it is not present locally
+            if (not os.path.exists(os.path.join(lephare_dir, list_file))) and (not os.path.exists(list_file)):
+                required_files += [list_file]
+                # Get the files from the list file whether locally present or not
+                # Add url to retireve files
+                list_file = base_url + list_file
+            else:
+                warnings.warn(
+                    f"{os.path.join(lephare_dir, list_file)} is present locally and will not be overwritten."
+                )
+                # If location implied from data directory get full path for
+                # #reading list file, which is needed to get the files in the list file
+                if list_file.startswith("sed/"):
+                    list_file = os.path.join(lephare_dir, list_file)
+            # Get the files from the list file whether locally present or not
             file_names = read_list_file(list_file, prefix=f"sed/{key.split('_')[0]}/")
             required_files += file_names
         except KeyError:
             warnings.warn(f"{key} keyword not set or not present in auxiliary files directory.")
+        except requests.exceptions.HTTPError:
+            warnings.warn(f"Could not retrieve sed list file {list_file}. Continuing without it.")
     # Bethermin12 always required
     bet_list = "sed/GAL/BETHERMIN12/BETHERMIN12_MOD.list"
     required_files += [bet_list]
@@ -461,6 +481,7 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
 
     # Get the registry file
     file_text = download_registry_from_github()
+    all_files = np.array(file_text.split())[0:-1:2]
     base_url = DEFAULT_BASE_DATA_URL
     repo_name = "lephare-data"
     repo_url = f"https://github.com/lephare-photoz/{repo_name}"
@@ -480,11 +501,31 @@ def get_auxiliary_data(lephare_dir=LEPHAREDIR, keymap=None, additional_files=Non
             os.system(f"git clone {repo_url} {lephare_dir}")
     else:
         retriever = make_retriever(base_url=base_url, registry_file=registry_file, data_path=data_path)
-        if keymap is not None:
-            file_list = config_to_required_files(keymap)
-        else:
-            file_list = np.array(file_text.split())[0:-1:2]
+        file_list = config_to_required_files(keymap) if keymap is not None else all_files
         download_all_files(retriever, file_list, ignore_registry=False)
     if additional_files is not None:
-        download_all_files(retriever, additional_files, ignore_registry=False)
+        # Check for wildcard matches using fnmatch
+        matched = [
+            f for f in all_files if any(fnmatch.fnmatch(f, p) for p in _expand_folders(additional_files))
+        ]
+        download_all_files(retriever, matched, ignore_registry=False)
     os.system(f"rm {registry_file}")
+
+
+def _expand_folders(items):
+    """Expand folder paths in a list of items to include all files within those folders."""
+    result = []
+    for item in items:
+        # Check for file extension (there is a dot after last slash)
+        basename = os.path.basename(item)
+
+        is_file = "." in basename
+        has_wildcard = "*" in item
+
+        if not is_file and not has_wildcard:
+            # Treat as folder and append wildcard
+            item = os.path.join(item, "*")
+
+        result.append(item)
+
+    return result

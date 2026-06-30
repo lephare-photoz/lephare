@@ -2,6 +2,7 @@ import lephare as lp
 import matplotlib
 import numpy as np
 import pytest
+import scipy as sp
 
 matplotlib.use("Agg")
 
@@ -57,16 +58,6 @@ def test_quadratic_extremum():
     assert ym == pytest.approx(yt)
 
 
-def test_int_parab():
-    pdf = lp.PDF(0, 1, 10)
-    yvals = np.linspace(0.0, 1.0, 10)
-    pdf.setYvals(yvals, is_chi2=True)
-    assert pdf.int_parab() == 0.0
-    yvals = np.linspace(1.0, 0.0, 10)
-    pdf.setYvals(yvals, is_chi2=True)
-    assert pdf.int_parab() == 1.0
-
-
 def test_pdf():
     """Basic test to ensure we can instantiate a PDF object."""
     test_pdf = lp.PDF(0, 3, 10)
@@ -98,12 +89,15 @@ def test_cumulant():
 
 
 def test_index():
+    # 0, 0.33, 0.66,..., 2.66, 3 (10 values)
     pdf = lp.PDF(0, 3, 10)
     assert pdf.index(-1) == 0
     assert pdf.index(20) == 9
     assert pdf.index(2) == 6
     assert pdf.index(2.1) == 6
     assert pdf.index(2.2) == 7
+    assert pdf.index(0) == 0
+    assert pdf.index(3) == 9
 
 
 def test_set_yvals():
@@ -307,13 +301,77 @@ def test_improve_extremum():
     assert a == pytest.approx(0.45)
     assert b == pytest.approx(0.2)
 
+    # Problematic situations
+    pdf = lp.PDF(0, 1, 101)
+    xaxis = np.array(pdf.xaxis)
+    # extrememum at upper boundary
+    pdf.setYvals((xaxis - 1.1) ** 2 + 0.2, True)
+    a, b = pdf.improve_extremum(True)
+    assert a == 1.0
+    assert b == pytest.approx((a - 1.1) ** 2 + 0.2)
+    pdf.setYvals(-((xaxis - 1.1) ** 2) + 2, False)
+    a, b = pdf.improve_extremum(False)
+    assert a == 1.0
+    assert b == pytest.approx(-((a - 1.1) ** 2) + 2)
+    # extrememum at lower boundary
+    pdf = lp.PDF(0, 1, 101)
+    xaxis = np.array(pdf.xaxis)
+    # extrememum at upper boundary
+    pdf.setYvals((xaxis) ** 2 + 0.2, True)
+    a, b = pdf.improve_extremum(True)
+    assert a == 0.0
+    assert b == pytest.approx((a) ** 2 + 0.2)
+    pdf.setYvals(-((xaxis) ** 2) + 2, False)
+    a, b = pdf.improve_extremum(False)
+    assert a == 0.0
+    assert b == pytest.approx(-((a) ** 2) + 2)
+    # HIGH_CHI2 issue
+    pdf = lp.PDF(0, 1, 101)
+    xaxis = np.array(pdf.xaxis)
+    for i in range(3):
+        # chi2 and a val at HIGH_CHI2
+        yvals = (xaxis - 0.5) ** 2 + 0.2
+        yvals[50 - 1 + i] = lp.HIGH_CHI2
+        pdf.setYvals(yvals, True)
+        a, b = pdf.improve_extremum(True)
+        expected_min = 0.49 if i == 1 else 0.5
+        assert a == pytest.approx(expected_min)
+        assert b == pytest.approx((a - 0.5) ** 2 + 0.2)
+        # vPDF and a val at 0
+        yvals = -((xaxis - 0.5) ** 2) + 0.3
+        yvals[50 - 1 + i] = 0
+        pdf.setYvals(yvals, False)
+        a, b = pdf.improve_extremum(False)
+        expected_min = 0.49 if i == 1 else 0.5
+        assert a == pytest.approx(expected_min)
+        assert b == pytest.approx(-((a - 0.5) ** 2) + 0.3)
+    # check the delta_x<0.5 condition
+    pdf = lp.PDF(0, 1, 3)
+    pdf.setYvals([0, 1, 0], False)
+    assert a == 0.5
+    assert b == 0.3  # normalized
+
 
 def test_confidence_interval():
     pdf = lp.PDF(-5, 5, 1001)
     pdf.setYvals(np.array(pdf.xaxis) ** 2, is_chi2=True)
+    assert pdf.get_max() == pytest.approx(0)
+    assert pdf.get_maxid() == 500
     a, b = pdf.confidence_interval(1)
     assert a == pytest.approx(-1)
     assert b == pytest.approx(1)
     a, b = pdf.confidence_interval(2.71)
     assert a == pytest.approx(-np.sqrt(2.71), 1.0e-5)
     assert b == pytest.approx(np.sqrt(2.71), 1.0e-5)
+
+
+@pytest.mark.filterwarnings("ignore:Covariance of the parameters could not be estimated")
+def test_quality_flags():
+    pdf = lp.PDF(-5, 5, 10001)
+    pdf.setYvals(sp.stats.norm(loc=0, scale=1).pdf(pdf.xaxis), is_chi2=False)
+    assert pdf.variance(0) == pytest.approx(1.0, 1.0e-5)
+    assert pdf.approximate_gaussian(0, error=5) == pytest.approx(1, 1.0e-5)
+    assert pdf.peak_ratio() == pytest.approx(0.250662, 1.0e-3)
+    assert pdf.number_mod() == 1
+    assert pdf.tail_mass(0, n_window=6) == pytest.approx(1.0e-4, 1.0e-2)
+    assert pdf.compute_quality_flag(0)[0] == 3

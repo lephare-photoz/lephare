@@ -78,6 +78,11 @@ def test_update_registry_hash_matches():
                 # Call the function
                 with tempfile.TemporaryDirectory() as tmp_dir:
                     registry_outfile = os.path.join(tmp_dir, "registry.txt")
+
+                    # Create an empty registry file to satisfy the open()
+                    with open(registry_outfile, "w") as f:
+                        f.write("dummy content")
+
                     download_registry_from_github(
                         url="http://example.com/data_registry.txt", outfile=registry_outfile
                     )
@@ -118,6 +123,11 @@ def test_update_registry_hash_mismatches():
                 # Call the function
                 with tempfile.TemporaryDirectory() as tmp_dir:
                     registry_outfile = os.path.join(tmp_dir, "registry.txt")
+
+                    # Create an empty registry file to satisfy the open()
+                    with open(registry_outfile, "w") as f:
+                        f.write("dummy content")
+
                     download_registry_from_github(
                         url="http://example.com/data_registry.txt", outfile=registry_outfile
                     )

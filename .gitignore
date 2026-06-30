@@ -165,4 +165,3 @@ _html/
 # ignore files in catalogs folder
 /stargal/catalogs/*/*
 /stargal/notebooks/TRASH.ipynb
-/stargal/calibration
