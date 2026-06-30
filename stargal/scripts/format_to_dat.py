@@ -122,8 +122,12 @@ def format_to_lephareinput(CAT_IN, CAT_OUT, input_columns, n_filters,
     #--- 3bis. Add missing 'context' column automatically ---
     if CAT_TYPE == 'long' and apply_context.lower() in ['yes', 'null']:
         expected_len = 1 + n_filters * 2 + 2  # Id + (mags+errs) + context + zspec
-        if len(input_columns) in [expected_len - 1, expected_len - 2] and apply_context != 'no':
-            df['context'] = 0
+        if len(input_columns) == expected_len - 1:
+            df['context'] = 2**n_filters - 1
+            input_columns.insert(-1, 'context')
+            print("[INFO] Added missing 'context' column automatically.")
+        elif len(input_columns) == expected_len - 2:
+            df['context'] = 2**n_filters - 1
             input_columns.append('context')
             print("[INFO] Added missing 'context' column automatically.")
 

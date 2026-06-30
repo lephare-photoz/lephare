@@ -11,12 +11,12 @@ The stargal folder contains:
     - `cat_to_lephare_input`: Convert catalogs to `.dat` format to make them suitable for LePHARE.
     - `chi2_stargal_separation`: Example of χ² comparison for stargal (first part of SPLIT).
     - `chi2_stats`: Look at the z and χ² distributions.
+    - `lephare_full_run`: Run LePHARE with the Python interface.
     - `plot_filters`: Plot the filter libraries.
     - `plot_seds`: Plot the SED libraries.
     - `SPLIT_dev`: Implementation of SPLIT in a notebook.
     - `star_pdf_flagger_part1`: Analyzing the behavior of source classes over physical parameters of stars.
     - `star_pdf_flagger_part2`: Use the results of "star_pdf_flagger_part1" to classify sources.
-    - `lephare_full_run`: Run LePHARE with the Python interface.
     - `statistic_tests_for_sedlib_improvement`: To verify if a richer star SED library improves the separation.
     - `imports.py`: The usual packages to import at the beginning of a notebook. 
 

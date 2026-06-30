@@ -14,11 +14,14 @@ import sys
 # === DATABASE & DL DIRECTORY ===
 MODEL = "bt-nextgen-agss2009"
 BASE_URL = f"https://svo2.cab.inta-csic.es/theory/newov2/ssap.php?model={MODEL}"
-OUTPUT_DIR = os.path.abspath(os.path.join(os.getcwd(), 'simulated_star_sed/bt_spectra')) # replace by you output directory
+OUTPUT_DIR = os.path.abspath(os.path.join(os.getcwd(), 'stargal/simulated_sed/bt_spectra')) # replace by you output directory
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # === PHYSICAL VALUES SPECTRUM GRID  ===
-teff_values = list(range(800, 7200, 400)) + list(range(7200, 12001, 600)) + list(range(12500, 25001, 5000)) + list(range(25000, 50001, 5000))
+# teff_values = list(range(800, 7200, 400)) + list(range(7200, 12001, 600)) + list(range(14000, 20001, 2000)) + list(range(22000, 50001, 2000))
+# logg_values = [4.0]
+# metallicity_values = [0.0]
+teff_values = list(range(800, 7200, 400)) + list(range(7200, 12001, 600)) + list(range(14000, 20001, 2000)) + list(range(25000, 50001, 5000))
 logg_values = np.arange(0.0, 5.6, 0.5)
 metallicity_values = [-3, -2, -1, 0.0, 0.3, 0.5]
 
@@ -149,6 +152,7 @@ DL   = 5.0      # Å, set to None to keep original sampling
 wl_norm = 10000
 make_sed_list = True
 overwrite_seds = False
+list_name = "bt_star_sed_full"
 
 # === DOWNLOAD AND CONVERT TO SED ===
 for i, (teff, logg, feh, url) in enumerate(spectra_links, 1):
@@ -185,7 +189,7 @@ print("All available spectrum have been downloaded and formated.")
 
 # Make sed.list, mandatory for lephare if requested
 if make_sed_list == True:
-    SED_list_path = os.path.join(OUTPUT_DIR, 'bt_star_sed_full.list')
+    SED_list_path = os.path.join(OUTPUT_DIR, f'{list_name}.list')
     
     bt_sed_list = sorted([
         f for f in os.listdir(OUTPUT_DIR)
