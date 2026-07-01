@@ -55,7 +55,7 @@ class onesource {
 
   long cont, new_cont;
   vector<double> ab, sab, mab, msab, magm, magm0, absmagPred, magPred, kap,
-      mabs, emabs, ab_ori, mab_ori, abIR, sabIR;
+      mabs, emabs, ab_ori, sab_ori, mab_ori, abIR, sabIR;
   vector<int> busnorma, busul, busfir, bscfir, absfilt;
   string spec, str_inp;
   int pos, nbused, nbul, nbusIR, indminSec, indminIR, imasminIR;
