@@ -284,18 +284,11 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
   string red_type =
       key_analysed["APPLY_MW_EXTINCTION"].split_string("NO", 1)[0];
   // If it is GALAMETZ we compute per model values
-  if (red_type == "GALAMETZ") {
-    mw_galametz = true;
-  } else {
-    mw_galametz = false;
-  }
+  if (red_type == "GALAMETZ") mw_galametz = true;
   // If it is CLASSIC we correct the observed magnitudes, without considering
   // model dependence
-  if (red_type == "CLASSIC") {
-    mw_classic_extinction = true;
-  } else {
-    mw_classic_extinction = false;
-  }
+  if (red_type == "CLASSIC") mw_classic_extinction = true;
+
   // read the kweywords associated to these two both options
   mwExtCurve = (key_analysed["EXT_MW_CURVE"]).split_string("CARDELLI", 1)[0];
   ext milkyWayExtinction(mwExtCurve);
@@ -315,9 +308,7 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
   // Could decide to apply a single MW E(B-V) to the full catalogue rather than
   // one per source
   mw_global_ebv = ((key_analysed["MW_GLOBAL_EBV"]).split_double("-1", 1))[0];
-  if (mw_global_ebv >= 0) {
-    one_mw_ebv = true;
-  }
+  if (mw_global_ebv >= 0) one_mw_ebv = true;
 
   /*
     INFO PARAMETERS ON SCREEN AND DOC
