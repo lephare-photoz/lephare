@@ -280,8 +280,6 @@ void onesource::correct_classic_mw(const vector<double> Alamb_corr,
 
   // change also the associated magnitudes
   this->convertMag();
-  // Consider that the original magnitudes should include the correction
-  this->keepOri();
 
   return;
 }

@@ -1234,17 +1234,19 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
       for (auto& oneObj : adaptSources) {
         // Correction for MW attenuation only the first time
 
+        // Correct the observed magnitudes and fluxes with the coefficients
+        // found by auto-adapt
+        // Start with the original fluxes ab_ori
+        oneObj->adapt_mag(a0);
+
         // Apply the milky way ebv correction to the observed mag if CLASSIC
-        if (iteration == 0 && mw_classic_extinction) {
+        if (mw_classic_extinction) {
           oneObj->correct_classic_mw(mw_classic_extinction_values,
                                      mw_global_ebv);
         } else if (!one_mw_ebv && mw_galametz) {
           flux = oneObj->redden_flux(flux_no_mw, reddening);
         }
 
-        // Correct the observed magnitudes and fluxes with the coefficients
-        // found by auto-adapt
-        oneObj->adapt_mag(a0);
         // set the prior on the redshift, abs mag, ebv, etc on the object
         oneObj->setPriors(magabsB, magabsF);
 
@@ -1864,12 +1866,13 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
       cout << "Fit source " << nobj << " with Id " << oneObj->spec << " \r "
            << flush;
     nobj++;
+    // auto-adapt
+    // Apply offset anyway (should be 0 if no auto-adapt or no systematic shifts
+    // Start from the original flux ab_ori
+    oneObj->adapt_mag(a0_checked);
     // Apply the milky way ebv correction to the observed mag if CLASSIC method
     if (mw_classic_extinction)
       oneObj->correct_classic_mw(mw_classic_extinction_values, mw_global_ebv);
-    // auto-adapt
-    // Apply offset anyway (should be 0 if no auto-adapt or no systematic shifts
-    oneObj->adapt_mag(a0_checked);
     // set the prior on the redshift, abs mag, ebv, etc on the object
     oneObj->setPriors(magabsB, magabsF);
     // If ZFIX=YES select the templates with the closest redshift to zs,
