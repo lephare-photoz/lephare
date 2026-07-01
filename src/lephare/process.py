@@ -164,6 +164,8 @@ def calculate_offsets_from_input(
 
     if mw_ebv is not None:
         warnings.warn("Milky Way E(B-V) values provided to process. Overriding FILE or global value if set.")
+        if len(mw_ebv) != ng:
+            raise ValueError(f"Length of mw_ebv ({len(mw_ebv)}) does not match number of objects ({ng}).")
         for i in range(ng):
             srclist[i].mw_ebv = mw_ebv[i]
     else:
