@@ -11,6 +11,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 // Le Phare
@@ -1690,7 +1691,15 @@ void PhotoZ::read_mw_ebv(vector<onesource*> sources) {
   string mw_ebv_file = ((keys["MW_EBV_FILE"]).split_string("NONE", 1))[0];
 
   size_t mw_ebv_nlines = 0;
+  size_t matched = 0;
   vector<double> mw_ebv_values;
+
+  // Build a lookup from source ID -> source pointer
+  std::unordered_map<std::string, onesource*> source_map;
+  for (auto* src : sources) {
+    source_map[src->spec] = src;
+    std::cout << "Read SOURCE ID: '" << src->spec << "'\n";
+  }
 
   // If a file name is defined
   if (mw_ebv_file.substr(0, 4) != "NONE") {
@@ -1711,27 +1720,19 @@ void PhotoZ::read_mw_ebv(vector<onesource*> sources) {
         double val;
         ss >> id >> val;
 
-        // Store when the id of the ebv file
-        // match the id of the first source
-        if (mw_ebv_nlines < sources.size()) {
-          if (id == sources[mw_ebv_nlines]->spec) {
-            sources[mw_ebv_nlines]->mw_ebv = val;
-            mw_ebv_nlines++;
-          } else {
-            throw std::runtime_error(
-                "Ids are not sorted in the same way between input file and "
-                "MW_EBV_FILE");
-          }
+        auto it = source_map.find(id);
+        if (it != source_map.end()) {
+          it->second->mw_ebv = val;
+          matched++;
         }
       }
     }
 
     // If the number of read MW E(B-V) does not match the number of sources
-    if (mw_ebv_nlines != sources.size()) {
-      cout << "\nERROR: mismatch in MW_EBV file " << mw_ebv_nlines << " "
-           << sources.size() << endl;
-    } else {
-      cout << "One MW E(B-V) per source as expected " << endl;
+    if (matched != sources.size()) {
+      throw std::runtime_error("Only matched " + std::to_string(matched) +
+                               " of " + std::to_string(sources.size()) +
+                               " sources.");
     }
   }
   return;
