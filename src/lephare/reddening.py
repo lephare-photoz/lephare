@@ -41,8 +41,7 @@ def compute_model_reddening(config):
     - The output array `values[i, j]` corresponds to the reddening for model `i`
       through filter `j`.
     """
-    config["APPLY_MW_EXTINCTION"] = "GALAMETZ"
-    keymap = lp.all_types_to_keymap(config)
+    keymap = lp.all_types_to_keymap({**config, "APPLY_MW_EXTINCTION": "GALAMETZ"})
     lp.prepare(keymap)
     photz = lp.PhotoZ(keymap)
     albd_lib = np.array([g.milky_way_extinction for g in photz.fullLib])
@@ -86,8 +85,7 @@ def compute_band_pass_correction(config):
     - The output array `values[i]` corresponds to the band pass correction for model `i`.
     """
     # Set to calculate the values if not set
-    config["APPLY_MW_EXTINCTION"] = "GALAMETZ"
-    keymap = lp.all_types_to_keymap(config)
+    keymap = lp.all_types_to_keymap({**config, "APPLY_MW_EXTINCTION": "GALAMETZ"})
     lp.prepare(keymap)
     photz = lp.PhotoZ(keymap)
     band_pass_correction = np.array([g.band_pass_correction for g in photz.fullLib])
