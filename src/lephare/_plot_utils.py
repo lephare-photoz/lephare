@@ -728,7 +728,9 @@ class PlotUtils:
             conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
 
             # Plot photo-z versus spec-z
-            ax.scatter(self.zp[conda], self.zml[conda], s=1, color="b", alpha=0.5, marker="s")
+            ax.scatter(
+                self.zp[conda], self.zml[conda], s=1, color="b", alpha=0.5, marker="s", rasterized=True
+            )
 
             # Trace the limits 0.15(1+z)
             x_zs = np.array([0, 6])
@@ -1456,7 +1458,9 @@ class PlotUtils:
             ax.axis([self.z_min, self.z_max, -16, -25.9])
 
             conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
-            ax.scatter(self.zp[conda], self.mabsb[conda], s=1, color="b", alpha=0.2, marker="s")
+            ax.scatter(
+                self.zp[conda], self.mabsb[conda], s=1, color="b", alpha=0.2, marker="s", rasterized=True
+            )
 
             ax.annotate(f"${magmin:.2f} < mag < {magmax:.2f}$", xy=(0.1, -25), color="black", fontsize=15)
 
@@ -2411,7 +2415,9 @@ class PlotUtils:
             conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
 
             # Plot mass med versus best
-            ax.scatter(self.massb[conda], self.massm[conda], s=1, color="b", alpha=0.5, marker="s")
+            ax.scatter(
+                self.massb[conda], self.massm[conda], s=1, color="b", alpha=0.5, marker="s", rasterized=True
+            )
 
             # Trace the limits 0.15(1+z)
             x_zs = np.array([6, 15])
@@ -2483,7 +2489,9 @@ class PlotUtils:
             conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
 
             # Plot SFR med versus best
-            ax.scatter(self.sfrb[conda], self.sfrm[conda], s=1, color="b", alpha=0.5, marker="s")
+            ax.scatter(
+                self.sfrb[conda], self.sfrm[conda], s=1, color="b", alpha=0.5, marker="s", rasterized=True
+            )
 
             # Trace the limits 0.15(1+z)
             x_zs = np.array([-6, 15])
@@ -2542,7 +2550,9 @@ class PlotUtils:
             ax.axis([self.z_min, self.z_max, 7, 11.9])
 
             conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
-            ax.scatter(self.zp[conda], self.massb[conda], s=1, color="b", alpha=0.2, marker="s")
+            ax.scatter(
+                self.zp[conda], self.massb[conda], s=1, color="b", alpha=0.2, marker="s", rasterized=True
+            )
 
             ax.annotate(f"${magmin:.2f} < mag < {magmax:.2f}$", xy=(0.2, 11.5), color="black", fontsize=15)
 
@@ -2591,7 +2601,9 @@ class PlotUtils:
             ax.axis([self.z_min, self.z_max, -3, 3.9])
 
             conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
-            ax.scatter(self.zp[conda], self.sfrb[conda], s=1, color="b", alpha=0.2, marker="s")
+            ax.scatter(
+                self.zp[conda], self.sfrb[conda], s=1, color="b", alpha=0.2, marker="s", rasterized=True
+            )
 
             ax.annotate(f"${magmin:.2f} < mag < {magmax:.2f}$", xy=(0.2, 3.0), color="black", fontsize=15)
 
@@ -2636,11 +2648,15 @@ class PlotUtils:
 
             # new condition with the redshift range and star-forming
             conda = self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.ssfrb > -11) & (self.ssfrb < 90)
-            ax.scatter(self.massb[conda], self.sfrb[conda], s=1, color="b", alpha=0.2, marker="s")
+            ax.scatter(
+                self.massb[conda], self.sfrb[conda], s=1, color="b", alpha=0.2, marker="s", rasterized=True
+            )
 
             # new condition with the redshift range and quiescent
             conda = self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.ssfrb < -11)
-            ax.scatter(self.massb[conda], self.sfrb[conda], s=1, color="r", alpha=0.2, marker="s")
+            ax.scatter(
+                self.massb[conda], self.sfrb[conda], s=1, color="r", alpha=0.2, marker="s", rasterized=True
+            )
 
             ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(8, 3), color="black", fontsize=15)
 
@@ -2684,7 +2700,9 @@ class PlotUtils:
 
             # new condition with the redshift range and star-forming
             conda = self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.sfrb > -90)
-            ax.scatter(self.sfrb[conda], self.lnuv[conda], s=1, color="b", alpha=0.2, marker="s")
+            ax.scatter(
+                self.sfrb[conda], self.lnuv[conda], s=1, color="b", alpha=0.2, marker="s", rasterized=True
+            )
 
             ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(-3, 10), color="black", fontsize=15)
 
@@ -2738,7 +2756,7 @@ class PlotUtils:
             ax.axis([self.z_min, self.z_max, -1.4, 0.2])
 
             conda = self.cond & self.condgal & (self.mag > magmin) & (self.mag < magmax)
-            ax.scatter(self.zp[conda], mlratio[conda], s=1, color="b", alpha=0.2, marker="s")
+            ax.scatter(self.zp[conda], mlratio[conda], s=1, color="b", alpha=0.2, marker="s", rasterized=True)
 
             ax.annotate(f"${magmin:.2f} < mag < {magmax:.2f}$", xy=(0.2, 0), color="black", fontsize=15)
 
@@ -2788,12 +2806,28 @@ class PlotUtils:
             # new condition with the magnitude range and star-forming
             conda = self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.ssfrm > -11) & (self.ssfrm < 0)
             if len(self.massb[conda]) > 0:
-                ax.scatter(self.massb[conda], self.mabsk[conda], s=1, color="b", alpha=0.2, marker="s")
+                ax.scatter(
+                    self.massb[conda],
+                    self.mabsk[conda],
+                    s=1,
+                    color="b",
+                    alpha=0.2,
+                    marker="s",
+                    rasterized=True,
+                )
 
             # new condition with the magnitude range and quiescent
             conda = self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.ssfrm < -11)
             if len(self.massb[conda]) > 0:
-                ax.scatter(self.massb[conda], self.mabsk[conda], s=1, color="r", alpha=0.2, marker="s")
+                ax.scatter(
+                    self.massb[conda],
+                    self.mabsk[conda],
+                    s=1,
+                    color="r",
+                    alpha=0.2,
+                    marker="s",
+                    rasterized=True,
+                )
 
             ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(6.5, -23), color="black", fontsize=15)
 
@@ -2838,11 +2872,17 @@ class PlotUtils:
             # new condition with the redshift range and star-forming
             conda = self.cond & (self.zp > zmin) & (self.zp < zmax) & (self.sfrb > -90)
             condb = conda & (self.ebv <= 0.1)
-            ax.scatter(self.sfrb[condb], self.mabsu[condb], s=1, color="b", alpha=0.2, marker="s")
+            ax.scatter(
+                self.sfrb[condb], self.mabsu[condb], s=1, color="b", alpha=0.2, marker="s", rasterized=True
+            )
             condb = conda & (self.ebv > 0.1) & (self.ebv < 0.3)
-            ax.scatter(self.sfrb[condb], self.mabsu[condb], s=1, color="g", alpha=0.2, marker="s")
+            ax.scatter(
+                self.sfrb[condb], self.mabsu[condb], s=1, color="g", alpha=0.2, marker="s", rasterized=True
+            )
             condb = conda & (self.ebv >= 0.3)
-            ax.scatter(self.sfrb[condb], self.mabsu[condb], s=1, color="r", alpha=0.2, marker="s")
+            ax.scatter(
+                self.sfrb[condb], self.mabsu[condb], s=1, color="r", alpha=0.2, marker="s", rasterized=True
+            )
 
             ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(-3, -23), color="black", fontsize=15)
 
