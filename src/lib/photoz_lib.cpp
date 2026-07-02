@@ -1718,9 +1718,9 @@ void PhotoZ::read_mw_ebv(vector<onesource*> sources) {
             sources[mw_ebv_nlines]->mw_ebv = val;
             mw_ebv_nlines++;
           } else {
-            cout << "Ids are not sorted in the same way between the input file";
-            cout << " and the Milky Way EBV values from MW_EBV_FILE " << endl;
-            exit(0);
+            throw std::runtime_error(
+                "Ids are not sorted in the same way between input file and "
+                "MW_EBV_FILE");
           }
         }
       }
