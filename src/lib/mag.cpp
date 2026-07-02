@@ -89,8 +89,19 @@ Mag::Mag(keymap& key_analysed)
     milkyWayExtinction.read(
         lepharedir + "/ext/" +
         key_analysed["EXT_MW_CURVE"].split_string("CARDELLI", 1)[0]);
-  }
+  } else {
+    double lmin = 300.;
+    double lmax = 10000000;
+    double lextg, extg;
 
+    // computes the galactic extinction
+    double dlbd = (lmax - lmin) / 400.;
+    for (int i = 0; i < 10000; i++) {
+      lextg = lmin + double(i - 1) * dlbd;
+      extg = cardelli_law(lextg);
+      milkyWayExtinction.add_element(lextg, extg);
+    }
+  }
   string red_type =
       key_analysed["APPLY_MW_EXTINCTION"].split_string("NO", 1)[0];
   // If it is GALAMETZ we compute per model values
@@ -174,9 +185,9 @@ void Mag::open_files() {
     // header of the .dat file
     switch (object) {
       case object_type::GAL:
-        sdatOut
-            << "# model ext_law E(B-V) frac_EmLines redshift dist_modulus age "
-               "N_filt magnitude[N_filt] kcorr[N_filt] ";
+        sdatOut << "# model ext_law E(B-V) frac_EmLines redshift "
+                   "dist_modulus age "
+                   "N_filt magnitude[N_filt] kcorr[N_filt] ";
         if (applyMilkyWayExtinction)
           sdatOut << " MW_extinction[N_filt] Band-pass-correct ";
         sdatOut << endl;
@@ -189,7 +200,7 @@ void Mag::open_files() {
         sdatOut << endl;
         break;
       case object_type::STAR:
-        sdatOut << "# model N_filt magnitude[N_filt]" << endl;
+        sdatOut << "# model N_filt magnitude[N_filt] " << endl;
         if (applyMilkyWayExtinction)
           sdatOut << " MW_extinction[N_filt] Band-pass-correct ";
         break;
@@ -222,17 +233,17 @@ void Mag::read_ext() {
   }
 }
 
-// Read the long wavelength Bethermin+2012 templates to add the dust emission to
-// the BC03 templates Associate a b12 SED to each redshift of the grid in
+// Read the long wavelength Bethermin+2012 templates to add the dust emission
+// to the BC03 templates Associate a b12 SED to each redshift of the grid in
 // redshift
 void Mag::read_B12() {
   /*
   IMPORTANT NOTE
   There is one limitation with current implementation of the code:
-  If several templates from B12 are used (not the first one by default), the fit
-  and predicted magnitudes will be correct. But the best-fit template in the
-  .spec file will be off in FIR since it is based on the z=0 full template to be
-  reconstructed No easy fix yet.
+  If several templates from B12 are used (not the first one by default), the
+  fit and predicted magnitudes will be correct. But the best-fit template in
+  the .spec file will be off in FIR since it is based on the z=0 full template
+  to be reconstructed No easy fix yet.
   */
 
   // Open the file with the list of B12 templates
@@ -242,8 +253,8 @@ void Mag::read_B12() {
   if (!b12mod)
     throw invalid_argument("Can't open Bethermin+12 list " + b12List);
 
-  // Create a list of SED with the B12 templates. Need one SED for each redshift
-  // of gridz.
+  // Create a list of SED with the B12 templates. Need one SED for each
+  // redshift of gridz.
   string lit, nameSED, bid;
   double b12z;
   size_t gr = 0;
@@ -368,7 +379,8 @@ GalMag::GalMag(keymap& key_analysed) : Mag(key_analysed) {
 
   // Emission lines in output
   emlines = ((key_analysed["EM_LINES"]).split_string("EMP_UV", 1))[0];
-  // If 'yes' as the old keyword, swich to EMP_UV which should be always working
+  // If 'yes' as the old keyword, swich to EMP_UV which should be always
+  // working
   if (emlines[0] == 'y' || emlines[0] == 'Y') emlines = "EMP_UV";
   // Check the the keyword has an expected value, otherwise stop
   if (emlines.substr(0, 6).compare("EMP_UV") != 0 &&
@@ -424,7 +436,8 @@ void GalMag::read_SED() {
         cout << "Need to stop the process. Not enough memory.";
         cout << "Free RAM (MegaB) " << si.freeram / megabyte << endl;
         cout << "Total RAM (MegaB) " << si.totalram / megabyte << endl;
-        cout << "Possible to subdivide the library if necessary, or reduce the "
+        cout << "Possible to subdivide the library if necessary, or reduce "
+                "the "
                 "parameter space."
              << endl;
         throw runtime_error();
@@ -460,13 +473,13 @@ vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
           // extinction in the right model range) Remove all cases with
           // extinction not in the right model range The condition i==0 only
           // means that for null extinction the templates are computed only
-          // once, using the first extinction law, and it does not matter which
-          // one this extinction law is.
+          // once, using the first extinction law, and it does not matter
+          // which one this extinction law is.
           if ((ebv[j] < 1.e-10 && i == 0) ||
               (ebv[j] > 0 && oneSED.nummod >= modext[i * 2] &&
                oneSED.nummod <= modext[i * 2 + 1])) {
-            // Generate intermediate Continuum SED, since original one must not
-            // change
+            // Generate intermediate Continuum SED, since original one must
+            // not change
             GalSED oneSEDInt(oneSED);
 
             // galaxy redshift/distance in the grid
@@ -496,8 +509,8 @@ vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
                 oneSEDInt.sumSpectra(B12SED[k], dL);
               }
 
-              // Opacity applied in rest-frame, depending on the redshift of the
-              // source
+              // Opacity applied in rest-frame, depending on the redshift of
+              // the source
               oneSEDInt.applyOpa(get_opa_vector());
 
               // redshift the SED, and restrict it to the union of the filters
@@ -727,7 +740,8 @@ void QSOMag::read_SED() {
         cout << "Need to stop the process. Not enough memory.";
         cout << "Free RAM (MegaB) " << si.freeram / megabyte << endl;
         cout << "Total RAM (MegaB) " << si.totalram / megabyte << endl;
-        cout << "Possible to subdivide the library if necessary, or reduce the "
+        cout << "Possible to subdivide the library if necessary, or reduce "
+                "the "
                 "parameter space."
              << endl;
         throw runtime_error();
@@ -747,9 +761,9 @@ vector<QSOSED> QSOMag::make_maglib(const QSOSED& oneSED) {
     for (int j = 0; j < ebv.size(); j++) {
       // Loop over the redshift grid
       for (size_t k = 0; k < gridz.size(); k++) {
-        // Select case which need to be considered (no extinction or extinction
-        // in the right model range) Remove all cases with extinction not in the
-        // right model range
+        // Select case which need to be considered (no extinction or
+        // extinction in the right model range) Remove all cases with
+        // extinction not in the right model range
         if ((ebv[j] < 1.e-10 && i == 0) ||
             (ebv[j] > 0 && oneSED.nummod >= (modext[i * 2]) &&
              oneSED.nummod <= (modext[i * 2 + 1]))) {
@@ -900,8 +914,8 @@ vector<StarSED> StarMag::make_maglib(const StarSED& sed) {
     newsed.compute_milky_way_extinction(milkyWayExtinction, allFlt);
     newsed.has_mw_galametz = true;
   }
-  // return singleton vector in order to have the same structure as for QSO and
-  // Gal
+  // return singleton vector in order to have the same structure as for QSO
+  // and Gal
   allSED.push_back(newsed);
   return allSED;
 }

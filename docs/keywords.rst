@@ -139,13 +139,13 @@ mag_gal
      - Add the dust emission in templates when missing (using energy balance).
    * - EXT_MW_CURVE
      - CARDELLI[def] or NONE
-     - Extinction curve for the Milky Way extinction (used for the energy balance when adding dust emission). Should be in $LEPHAREDIR/ext if relative.
+     - Extinction curve for the Milky Way extinction. Should be in $LEPHAREDIR/ext if relative.
    * - EXT_ATMOS_CURVE
      - NONE[def] or e.g. SB_calzetti.dat
-     - Extinction curve for the atmospheric extinction (used for the energy balance when adding dust emission). Should be in $LEPHAREDIR/ext if relative.
+     - Extinction curve for the atmospheric extinction. Should be in $LEPHAREDIR/ext if relative.
    * - APPLY_MW_EXTINCTION
      - NONE[DEF], CLASSIC, GALAMETZ
-     - Method to apply the Milky Way extinction to the templates. If CLASSIC, the extinction is applied using the E(B-V) value and the extinction curve. If GALAMETZ, the extinction is applied using the E(B-V) value and the extinction curve, but also taking into account the SED dependence of the extinction (see Galametz et al. 2013). In this case, the MW_REFERENCE_MODEL keyword must be set to define the reference SED for which the E(B-V) value is defined.
+     - Method to apply the Milky Way extinction to the templates. If CLASSIC, the extinction is applied using the E(B-V) value and the extinction curve. If GALAMETZ, the extinction is applied using the E(B-V) value and the extinction curve, but also taking into account the SED dependence of the extinction (see Galametz et al. 2017). In this case, the MW_REFERENCE_MODEL keyword must be set to define the reference SED for which the E(B-V) value is defined.
    * - MW_REFERENCE_MODEL
      - sed/STAR/PICKLES/b5i.sed[DEF]
      - Reference SED for which the E(B-V) value is defined when using the GALAMETZ method to apply the Milky Way extinction. Should be in $LEPHAREDIR if relative.

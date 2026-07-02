@@ -297,6 +297,18 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
       milkyWayExtinction.read(
           lepharedir + "/ext/" +
           key_analysed["EXT_MW_CURVE"].split_string("CARDELLI", 1)[0]);
+    } else {
+      double lmin = 300.;
+      double lmax = 10000000;
+      double lextg, extg;
+
+      // computes the galactic extinction
+      double dlbd = (lmax - lmin) / 400.;
+      for (int i = 0; i < 10000; i++) {
+        lextg = lmin + double(i - 1) * dlbd;
+        extg = cardelli_law(lextg);
+        milkyWayExtinction.add_element(lextg, extg);
+      }
     }
   }
   // Additional information only for Galametz
@@ -1706,9 +1718,9 @@ void PhotoZ::read_mw_ebv(vector<onesource*> sources) {
             sources[mw_ebv_nlines]->mw_ebv = val;
             mw_ebv_nlines++;
           } else {
-            cout << "Ids are not sorted in the same way between the input file";
-            cout << " and the Milky Way EBV values from MW_EBV_FILE " << endl;
-            exit(0);
+            throw std::runtime_error(
+                "Ids are not sorted in the same way between input file and "
+                "MW_EBV_FILE");
           }
         }
       }

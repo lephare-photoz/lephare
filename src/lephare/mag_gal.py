@@ -32,8 +32,10 @@ config_keys = {
     "EM_LINES": "[NO/EMP_UV/EMP_SFR/PHYS] choice of prescription for emission line computation",
     "EM_DISPERSION": "rescaling values for the emission lines",
     "ADD_DUSTEM": "add the dust emission in templates when missing",
-    "EXT_MW_CURVE": "Extinction curve for the Milky Way extinction. Stored in $LEPHAREDIR/ext",
-    "EXT_ATMOS_CURVE": "Extinction curve for the atmospheric extinction. Stored $LEPHAREDIR/ext",
+    "EXT_MW_CURVE": "Extinction curve for the Milky Way extinction. Should be in $LEPHAREDIR/ext \
+       if relative.",
+    "EXT_ATMOS_CURVE": "Extinction curve for the atmospheric extinction. Should be in \
+       $LEPHAREDIR/ext if relative.",
     "APPLY_MW_EXTINCTION": "Method to apply the Milky Way extinction to the \
        templates. If CLASSIC, the extinction is applied using the E(B-V) value\
        and the extinction curve. If GALAMETZ, the extinction is applied \

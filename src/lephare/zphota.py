@@ -86,8 +86,10 @@ config_keys = {
     "LIMITS_MAPP_CUT": "Used to compute z_max. Apparent mag selection used in each redshift bin.\
        Need 1 or N values.",
     "CHI2_OUT": "Flag to output the chi2 value of each template (one file per source)",
-    "EXT_MW_CURVE": "Extinction curve for the Milky Way extinction. Stored in $LEPHAREDIR/ext",
-    "EXT_ATMOS_CURVE": "Extinction curve for the atmospheric extinction. Stored $LEPHAREDIR/ext",
+    "EXT_MW_CURVE": "Extinction curve for the Milky Way extinction Should be in $LEPHAREDIR/ext \
+       if relative.",
+    "EXT_ATMOS_CURVE": "Extinction curve for the atmospheric extinction. Should be in \
+       $LEPHAREDIR/ext if relative.",
     "APPLY_MW_EXTINCTION": "Method to apply the Milky Way extinction to the \
        templates. If CLASSIC, the extinction is applied using the E(B-V) value\
        and the extinction curve. If GALAMETZ, the extinction is applied \
@@ -237,9 +239,11 @@ Need 1 or N values
     CHI2_OUT
             Flag to output the chi2 value of each template (one file per source)
     EXT_MW_CURVE:
-              Extinction curve for the Milky Way extinction. Stored in $LEPHAREDIR/ext.
+              Extinction curve for the Milky Way extinction. Should be in
+              $LEPHAREDIR/ext if relative.
     EXT_ATMOS_CURVE:
-              Extinction curve for the atmospheric extinction. Stored $LEPHAREDIR/ext.
+              Extinction curve for the atmospheric extinction. Should be in
+              $LEPHAREDIR/ext if relative.
     APPLY_MW_EXTINCTION:
               Method to apply the Milky Way extinction to the
               templates. If CLASSIC, the extinction is applied using the E(B-V) value
