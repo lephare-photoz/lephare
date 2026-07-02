@@ -100,7 +100,7 @@ class PhotoZ {
 
   void uncertainties_onesource(onesource& src);
 
-  void physpara_onesource(onesource& src);
+  void physpara_onesource(onesource& src, const vector<double>& a0);
 
   pair<vector<double>, vector<double>> besttemplate_onesource(
       onesource& src, int const templateType, double const minl,
