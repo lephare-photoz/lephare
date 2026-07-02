@@ -39,7 +39,7 @@ def process(
         Whether to write the output spectra, PDF, and ascii file if specified
         in the config. By default these are not written to save space.
     mw_ebv: np.array or None
-        Array of E(B-V) values for each object in the input catalogue. This
+        Array of Milky Way E(B-V) values for each object in the input catalogue. This
         will override the file or global value if set in the config.
 
     Returns

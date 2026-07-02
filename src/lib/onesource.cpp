@@ -229,6 +229,7 @@ void onesource::convertMag() {
 */
 void onesource::keepOri() {
   ab_ori = ab;
+  sab_ori = sab;
   mab_ori = mab;
   return;
 }
@@ -246,8 +247,11 @@ void onesource::adapt_mag(vector<double> a0) {
     // Observed magnitudes and flux with the correction
     // apply the offset a0, in mag. Offset of +2.5 mag multiplies the flux by 10
     // Convention inverted: it's like applying the offset to the model (or to
-    // the data but sign inverted) That's why the sab aren't changed
-    if (ab_ori[k] > 0 || sab[k] > 0) ab[k] = ab_ori[k] * pow(10., 0.4 * corr);
+    // the data but sign inverted)
+    if (ab_ori[k] > 0 || sab_ori[k] > 0) {
+      ab[k] = ab_ori[k] * pow(10., 0.4 * corr);
+      sab[k] = sab_ori[k] * pow(10., 0.4 * corr);
+    }
     if (ab[k] > 0)
       mab[k] = flux2mag(ab[k]);
     else
@@ -280,8 +284,6 @@ void onesource::correct_classic_mw(const vector<double> Alamb_corr,
 
   // change also the associated magnitudes
   this->convertMag();
-  // Consider that the original magnitudes should include the correction
-  this->keepOri();
 
   return;
 }
