@@ -134,8 +134,8 @@ double cardelli_ext(flt& oneFlt) {
   // computes the galactic extinction
   double dlbd = (lmax - lmin) / 400.;
   // i needs to be an int else double(i-1) is not correctly cast
-  for (int i = 0; i < 402; i++) {
-    lextg = lmin + double(i - 1) * dlbd;
+  for (int i = 0; i < 401; i++) {
+    lextg = lmin + double(i) * dlbd;
     extg = cardelli_law(lextg);
     oneExt.add_element(lextg, extg);
   }
