@@ -1718,10 +1718,11 @@ void PhotoZ::read_mw_ebv(vector<onesource*> sources) {
             sources[mw_ebv_nlines]->mw_ebv = val;
             mw_ebv_nlines++;
           } else {
-            throw std::runtime_error(
-                "Ids are not sorted in the same way between input file and "
-                "MW_EBV_FILE:" +
-                id + " != " + sources[mw_ebv_nlines]->spec);
+            // this does not work for the autoadapt subset:
+            // throw std::runtime_error(
+            //     "Ids are not sorted in the same way between input file and "
+            //     "MW_EBV_FILE:" +
+            //     id + " != " + sources[mw_ebv_nlines]->spec);
           }
         }
       }
