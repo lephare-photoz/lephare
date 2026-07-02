@@ -81,11 +81,10 @@ def test_photoz_cosmos():
     photz.prep_data(src)
 
     a0 = photz.compute_offsets([])
-    src.adapt_mag(a0)
     print("Done with offsets")
     assert len(a0) == 6
 
-    photz.fit_onesource(src)
+    photz.fit_onesource(src, a0)
     print("Done with fit")
 
     # test the value of the minimisation
@@ -206,7 +205,8 @@ def test_rm_discrepant():
     )
 
     photz.prep_data(src)
-    photz.fit_onesource(src)
+    a0 = photz.compute_offsets([])
+    photz.fit_onesource(src, a0)
     assert src.nbused == 5
     assert src.zmin[0] == pytest.approx(0.65)
     assert src.dmmin[0] == pytest.approx(1.0000, abs=1e-04)
@@ -347,11 +347,10 @@ def test_physicalpara_bc03():
     photz.prep_data(src)
 
     a0 = photz.compute_offsets([])
-    src.adapt_mag(a0)
     print("Done with offsets")
     assert len(a0) == 10
 
-    photz.fit_onesource(src)
+    photz.fit_onesource(src, a0)
     print("Done with fit")
     assert src.zmin[0] == 0.40
     print("src.dmmin[0]: ", src.dmmin[0])
@@ -570,8 +569,8 @@ def test_fit_fir():
     )
 
     photz.prep_data(src)
-
-    photz.fit_onesource(src)
+    a0 = photz.compute_offsets([])
+    photz.fit_onesource(src, a0)
     print("Done with fit")
     assert src.zmin[0] == 0.40
     assert src.dmmin[0] == pytest.approx(1.0000e10, 1.0e4)
