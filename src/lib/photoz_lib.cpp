@@ -2041,12 +2041,34 @@ vector<size_t> PhotoZ::validLib(const double& redshift, const bool& ir) {
 /*
   Propose a function to fit only one source
 */
-void PhotoZ::fit_onesource(onesource& src) {
+void PhotoZ::fit_onesource(onesource& src, const vector<double>& a0) {
   // Threshold in chi2 to consider. Remove <3 bands, stop when below this chi2
   double thresholdChi2 =
       ((keys["RM_DISCREPANT_BD"]).split_double("1.e9", 2))[0];
 
   cout << "Fit source with Id " << src.spec << endl;
+
+  // check that the offset vector has the correct dimension. Otherwise, offsets
+  // at 0
+  vector<double> a0_checked = a0;
+  if (a0.size() != size_t(imagm)) {
+    a0_checked.assign(imagm, 0.);
+    cout << "Offsets have a size: " << a0.size()
+         << ", different from the filter number:" << imagm << endl;
+    cout << "Offsets changed at 0." << endl;
+  }
+
+  // Apply offset anyway (should be 0 if no auto-adapt or no systematic shifts
+  // Start from the original flux ab_ori
+  src.adapt_mag(a0_checked);
+
+  // Apply the milky way ebv correction to the observed mag if CLASSIC method
+  if (mw_classic_extinction) {
+    src.correct_classic_mw(mw_classic_extinction_values, mw_global_ebv);
+    // Apply MW reddening first if Galametz option on
+  } else if (!one_mw_ebv && mw_galametz) {
+    flux = src.redden_flux(flux_no_mw, reddening);
+  }
 
   // set the prior on the redshift, abs mag, ebv, etc on the object
   src.setPriors(magabsB, magabsF);

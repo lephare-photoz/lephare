@@ -120,11 +120,10 @@ def test_emlines():
 
     photz.prep_data(src)
     a0 = photz.compute_offsets([])
-    src.adapt_mag(a0)
     print("Done with offsets")
     assert len(a0) == 6
 
-    photz.fit_onesource(src)
+    photz.fit_onesource(src, a0)
     print("Done with fit")
     assert src.zmin[0] == 0.40
     print("src.dmmin[0]: ", src.dmmin[0])

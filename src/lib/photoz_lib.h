@@ -96,7 +96,7 @@ class PhotoZ {
 
   void run_photoz(vector<onesource*> sources, const vector<double>& a0);
 
-  void fit_onesource(onesource& sources);
+  void fit_onesource(onesource& sources, const vector<double>& a0);
 
   void uncertainties_onesource(onesource& src);
 

@@ -93,7 +93,7 @@ config_keys = {
     "APPLY_MW_EXTINCTION": "Method to apply the Milky Way extinction to the \
        templates. If CLASSIC, the extinction is applied using the E(B-V) value\
        and the extinction curve. If GALAMETZ, the extinction is applied \
-       using the E(B-V) value and the extinction curve, but alsotaking into \
+       using the e(b-v) value(s) and the extinction curve, but also taking into \
        account the SED dependence of the extinction (see Galametz et al. 2013).\
        In this case, the MW_REFERENCE_MODEL keyword must be set to define the \
        reference SED for which the E(B-V) value is defined.",
@@ -248,7 +248,7 @@ Need 1 or N values
               Method to apply the Milky Way extinction to the
               templates. If CLASSIC, the extinction is applied using the E(B-V) value
               and the extinction curve. If GALAMETZ, the extinction is applied
-              using the E(B-V) value and the extinction curve, but alsotaking into
+              using the e(b-v) value(s) and the extinction curve, but also taking into
               account the SED dependence of the extinction (see Galametz et al. 2013).
               In this case, the MW_REFERENCE_MODEL keyword must be set to define the
               reference SED for which the E(B-V) value is defined.
