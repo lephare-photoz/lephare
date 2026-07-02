@@ -156,8 +156,8 @@ def calculate_extinction_values(filters, atmec, galec, verbose=False):
         rv = 3.1
         if "SMC_prevot" in galec:
             rv = 2.72
-            if "calzetti" in galec:
-                rv = 4.05
+        if "calzetti" in galec:
+            rv = 4.05
         if verbose:
             print(f"assuming Rv={rv} for this Extinction law {galec}")
         # galactic curves given in k(lbda) (=A(lbda)/E(B-V))
