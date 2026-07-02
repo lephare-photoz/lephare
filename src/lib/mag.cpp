@@ -200,9 +200,10 @@ void Mag::open_files() {
         sdatOut << endl;
         break;
       case object_type::STAR:
-        sdatOut << "# model N_filt magnitude[N_filt]" << endl;
+        sdatOut << "# model N_filt magnitude[N_filt]";
         if (applyMilkyWayExtinction)
           sdatOut << " MW_extinction[N_filt] Band-pass-correct ";
+        sdatOut << endl;
         break;
     }
   }
