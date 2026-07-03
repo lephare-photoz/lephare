@@ -1698,7 +1698,6 @@ void PhotoZ::read_mw_ebv(vector<onesource*> sources) {
   std::unordered_map<std::string, onesource*> source_map;
   for (auto* src : sources) {
     source_map[src->spec] = src;
-    std::cout << "Read SOURCE ID: '" << src->spec << "'\n";
   }
 
   // If a file name is defined
