@@ -11,6 +11,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 // Le Phare
@@ -1690,8 +1691,14 @@ void PhotoZ::read_mw_ebv(vector<onesource*> sources) {
   string mw_ebv_file = ((keys["MW_EBV_FILE"]).split_string("NONE", 1))[0];
 
   size_t mw_ebv_nlines = 0;
-  size_t n_sources_mw_ebv = 0;
+  size_t matched = 0;
   vector<double> mw_ebv_values;
+
+  // Build a lookup from source ID -> source pointer
+  std::unordered_map<std::string, onesource*> source_map;
+  for (auto* src : sources) {
+    source_map[src->spec] = src;
+  }
 
   // If a file name is defined
   if (mw_ebv_file.substr(0, 4) != "NONE") {
@@ -1712,27 +1719,22 @@ void PhotoZ::read_mw_ebv(vector<onesource*> sources) {
         double val;
         ss >> id >> val;
 
-        // This logic assumes that the file is in the same order as the sources
-        // vector. But the sources vector can be a subset as for the auto adapt
-        // sources.
-        if (n_sources_mw_ebv < sources.size()) {
-          if (id == sources[n_sources_mw_ebv]->spec) {
-            sources[n_sources_mw_ebv]->mw_ebv = val;
-            n_sources_mw_ebv++;
-          }
-          mw_ebv_nlines++;
+        auto it = source_map.find(id);
+        if (it != source_map.end()) {
+          it->second->mw_ebv = val;
+          matched++;
         }
       }
     }
-    if (n_sources_mw_ebv != sources.size()) {
-      throw std::runtime_error(
-          "MW_EBV_FILE '" + mw_ebv_file +
-          "' does not contain MW E(B-V) values for all requested sources. "
-          "Found " +
-          std::to_string(n_sources_mw_ebv) + " of " +
-          std::to_string(sources.size()) + " sources.");
+
+    // If the number of read MW E(B-V) does not match the number of sources
+    if (matched != sources.size()) {
+      throw std::runtime_error("Only matched " + std::to_string(matched) +
+                               " of " + std::to_string(sources.size()) +
+                               " sources.");
     }
   }
+  return;
 }
 
 /*
