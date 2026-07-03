@@ -161,10 +161,9 @@ const vector<opa>& get_opa_vector() {
 flt filterB;
 flt filterV;
 
-void initialise_filters() {
-  static bool initialised = false;
-  if (initialised) return;
+std::once_flag filters_init_flag;
 
+void initialise_filters_impl() {
   static const std::vector<double> lB = {
       3600., 3700., 3800., 3900., 4000., 4100., 4200.,
       4300., 4400., 4500., 4600., 4700., 4800., 4900.,
@@ -193,6 +192,8 @@ void initialise_filters() {
 
   for (size_t i = 0; i < lV.size(); i++)
     filterV.lamb_trans.emplace_back(lV[i], fV[i]);
+}
 
-  initialised = true;
+void initialise_filters() {
+  std::call_once(filters_init_flag, initialise_filters_impl);
 }
