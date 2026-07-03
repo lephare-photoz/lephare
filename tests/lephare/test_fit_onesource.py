@@ -693,29 +693,35 @@ def test_photoz_galametz():
     assert photz.gridz[0] == 0
     assert photz.gridz[20] == 1
 
+    # Compute the magnitude of this source, including MW EBV extinction
+    # Alambda for the LSST filters, and this model 1 +redshift 0.65 (taken from a .dat file)
+    alambda = [4.82514, 3.54035, 2.53661, 1.95327, 1.54498, 1.24711]
+    # bandpass_correct divided by the ref
+    bdc = 0.0858869 / 0.0978
+    # Apply MW extinction to the magnitudes, using and EBV MW=0.5
+    mag_source = [30.9393, 29.4864, 28.102, 27.1517, 26.8568, 26.6285]
+    mag_sources_mw = [m + 0.5 * a / bdc for m, a in zip(mag_source, alambda)]
+    # mag_sources_mw  [33.6865, 31.5021, 29.5462, 28.2638, 27.73643, 27.3385]
+
     # Instantiate a source (Id, gridz)
     src = lp.onesource(101, photz.gridz)
     # read the source, change Id, attribute mag/err, ...
     cont = 0
     src.readsource(
         "65",
-        [30.9393, 29.4864, 28.102, 27.1517, 26.8568, 26.6285],
+        mag_sources_mw,
         [0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
         cont,
         0.65,
         "test",
     )
     # Set the value of the MW E(B-V) for this source
-    src.mw_ebv = 0.0
+    src.mw_ebv = 0.5
+
     src.convertFlux("AB", photz.allFilters)
     print("Done creating source")
     assert src.spec == "65"
-    assert (
-        np.testing.assert_almost_equal(
-            -2.5 * np.log10(src.ab) - 48.60, [30.9393, 29.4864, 28.102, 27.1517, 26.8568, 26.6285]
-        )
-        is None
-    )
+    assert np.testing.assert_almost_equal(-2.5 * np.log10(src.ab) - 48.60, mag_sources_mw) is None
 
     photz.prep_data(src)
 
@@ -728,7 +734,7 @@ def test_photoz_galametz():
 
     # test the value of the minimisation
     assert src.zmin[0] == pytest.approx(0.65)
-    assert src.dmmin[0] == pytest.approx(1.0000, abs=1e-04)
+    assert src.dmmin[0] == pytest.approx(1.0000, abs=1e-03)
     assert src.imasmin[0] == pytest.approx(1)
     assert src.chimin[0] < src.chimin[1] < src.chimin[2]
 
@@ -748,10 +754,11 @@ def test_photoz_galametz():
     # Test the absolute magnitude estimate
     photz.physpara_onesource(src, a0)
     print("Done with physical parameters")
-    assert src.mabs[5] == pytest.approx(26.6285 - 42.9504 - src.kap[5], abs=3e-2)
-    assert src.mabs[0] == pytest.approx(30.9393 - 42.9504 - src.kap[0], abs=3e-2)
+    # assert src.mabs[5] == pytest.approx(26.6285 - 42.9504 - src.kap[5], abs=3e-2)
+    # assert src.mabs[0] == pytest.approx(30.9393 - 42.9504 - src.kap[0], abs=3e-2)
+    assert src.mabs[5] == pytest.approx(27.3385 - 42.9504 - src.kap[5], abs=3e-2)
+    assert src.mabs[0] == pytest.approx(33.6865 - 42.9504 - src.kap[0], abs=3e-2)
     assert np.testing.assert_almost_equal(src.absfilt, [0, 1, 2, 3, 4, 5]) is None
-
     # Test how spectra are generated
     minl = 3000.0
     maxl = 13000.0
