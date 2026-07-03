@@ -11,7 +11,6 @@
 #include <set>
 #include <sstream>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 // Le Phare
@@ -1691,14 +1690,8 @@ void PhotoZ::read_mw_ebv(vector<onesource*> sources) {
   string mw_ebv_file = ((keys["MW_EBV_FILE"]).split_string("NONE", 1))[0];
 
   size_t mw_ebv_nlines = 0;
-  size_t matched = 0;
+  size_t n_sources_mw_ebv = 0;
   vector<double> mw_ebv_values;
-
-  // Build a lookup from source ID -> source pointer
-  std::unordered_map<std::string, onesource*> source_map;
-  for (auto* src : sources) {
-    source_map[src->spec] = src;
-  }
 
   // If a file name is defined
   if (mw_ebv_file.substr(0, 4) != "NONE") {
@@ -1719,27 +1712,32 @@ void PhotoZ::read_mw_ebv(vector<onesource*> sources) {
         double val;
         ss >> id >> val;
 
-        auto it = source_map.find(id);
-        if (it != source_map.end()) {
-          it->second->mw_ebv = val;
-          matched++;
+        // This logic assumes that the file is in the same order as the sources
+        // vector. But the sources vector can be a subset as for the auto adapt
+        // sources.
+        if (n_sources_mw_ebv < sources.size()) {
+          if (id == sources[n_sources_mw_ebv]->spec) {
+            sources[n_sources_mw_ebv]->mw_ebv = val;
+            n_sources_mw_ebv++;
+          }
+          mw_ebv_nlines++;
         }
       }
     }
-
-    // If the number of read MW E(B-V) does not match the number of sources
-    if (matched != sources.size()) {
-      throw std::runtime_error("Only matched " + std::to_string(matched) +
-                               " of " + std::to_string(sources.size()) +
-                               " sources.");
+    if (n_sources_mw_ebv != sources.size()) {
+      throw std::runtime_error(
+          "MW_EBV_FILE '" + mw_ebv_file +
+          "' does not contain MW E(B-V) values for all requested sources. "
+          "Found " +
+          std::to_string(n_sources_mw_ebv) + " of " +
+          std::to_string(sources.size()) + " sources.");
     }
   }
-  return;
 }
 
 /*
-  Additional layer to prepare the data for the run (context, flux and asscoiated
-  uncertainties)
+  Additional layer to prepare the data for the run (context, flux and
+  asscoiated uncertainties)
 */
 void PhotoZ::prep_data(onesource* oneObj) {
   // Convert the magnitude in fluxes if needed
@@ -1769,8 +1767,8 @@ void PhotoZ::prep_data(vector<onesource*> sources) {
 void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
   // Open the output file
   // RM_DISCREPANT_BD
-  // Threshold in chi2 to consider. Remove <3 bands, stop when below this chi2
-  // threshold
+  // Threshold in chi2 to consider. Remove <3 bands, stop when below this
+  // chi2 threshold
   double thresholdChi2 =
       ((keys["RM_DISCREPANT_BD"]).split_double("1.e9", 2))[0];
 
@@ -1781,19 +1779,19 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
   // DZ_WIN minimal delta z window to search - 0.25 by default
   double dz_win = ((keys["DZ_WIN"]).split_double("0.25", 1))[0];
 
-  // LIMITS_ZBIN Compute the z_max and M_faint in several bins of redshift. Give
-  // the z bin.
+  // LIMITS_ZBIN Compute the z_max and M_faint in several bins of redshift.
+  // Give the z bin.
   vector<double> limits_zbin =
       (keys["LIMITS_ZBIN"]).split_double("0.0,90.", -1);
   int nzbin = int(limits_zbin.size()) - 1;
-  // LIMITS_MAPP_REF Compute the z_max and M_faint in several bins of redshift.
-  // Give the reference band.
+  // LIMITS_MAPP_REF Compute the z_max and M_faint in several bins of
+  // redshift. Give the reference band.
   int limits_ref = ((keys["LIMITS_MAPP_REF"]).split_int("1", 1))[0];
-  // LIMITS_MAPP_SEL Compute the z_max and M_faint in several bins of redshift.
-  // Give the selection band in each bin.
+  // LIMITS_MAPP_SEL Compute the z_max and M_faint in several bins of
+  // redshift. Give the selection band in each bin.
   vector<int> limits_sel = (keys["LIMITS_MAPP_SEL"]).split_int("1", nzbin);
-  // LIMITS_MAPP_CUT Compute the z_max and M_faint in several bins of redshift.
-  // Give the cut in magnitude in each bin.
+  // LIMITS_MAPP_CUT Compute the z_max and M_faint in several bins of
+  // redshift. Give the cut in magnitude in each bin.
   vector<double> limits_cut =
       (keys["LIMITS_MAPP_CUT"]).split_double("90.", nzbin);
 
@@ -1804,16 +1802,16 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
   long fir_cont = keys["FIR_CONT"].split_long("-1", 1)[0];
   // FIR_SCALE context of the bands used for the rescaling in IR
   long fir_scale = keys["FIR_SCALE"].split_long("-1", 1)[0];
-  // FIR_FREESCALE possible free rscaling in IR, when several bands. Otherwise,
-  // model imposed by its LIR
+  // FIR_FREESCALE possible free rscaling in IR, when several bands.
+  // Otherwise, model imposed by its LIR
   string fir_frsc = keys["FIR_FREESCALE"].split_string("NO", 1)[0];
   // FIR_SUBSTELLAR remove the stellar component
   bool substar = keys["FIR_SUBSTELLAR"].split_bool("NO", 1)[0];
   // MIN_THRES threshold to trigger the detection - 0.1 by default
   double min_thres = keys["MIN_THRES"].split_double("0.1", 1)[0];
 
-  /* Define what are the filters to be used for the absolute magnitude depending
-   * on the method adopted */
+  /* Define what are the filters to be used for the absolute magnitude
+   * depending on the method adopted */
   // MABS_METHOD method to compute the absolute magnitudes
   int method = keys["MABS_METHOD"].split_int("0", -1)[0];
   // MABS_REF reference filter in case of mag abs method 2
@@ -1823,11 +1821,11 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
   vector<int> bappOp = keys["MABS_FILT"].split_int("1", -1);
   size_t nbBinZ = bappOp.size();
 
-  // Need to substract one because the convention in the .para file start at 1,
-  // but 0 in the code
+  // Need to substract one because the convention in the .para file start at
+  // 1, but 0 in the code
   for (auto& tmp : bappOp) tmp--;
-  // Need to substract one because the convention in the .para file start at 1,
-  // but 0 in the code
+  // Need to substract one because the convention in the .para file start at
+  // 1, but 0 in the code
   for (auto& tmp : bapp) tmp--;
 
   // MABS_ZBIN give the redshift bins corresponding to MABS_FILT
@@ -1841,8 +1839,8 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
       imagm, gridz, fullLib, method, magabscont, bapp, bappOp, zbmin, zbmax);
   vector<vector<double>> maxkcol = maxkcolor(gridz, fullLib, goodFlt);
 
-  // check that the offset vector has the correct dimension. Otherwise, offsets
-  // at 0
+  // check that the offset vector has the correct dimension. Otherwise,
+  // offsets at 0
   vector<double> a0_checked = a0;
   if (a0.size() != size_t(imagm)) {
     a0_checked.assign(imagm, 0.);
@@ -1874,10 +1872,11 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
            << flush;
     nobj++;
     // auto-adapt
-    // Apply offset anyway (should be 0 if no auto-adapt or no systematic shifts
-    // Start from the original flux ab_ori
+    // Apply offset anyway (should be 0 if no auto-adapt or no systematic
+    // shifts Start from the original flux ab_ori
     oneObj->adapt_mag(a0_checked);
-    // Apply the milky way ebv correction to the observed mag if CLASSIC method
+    // Apply the milky way ebv correction to the observed mag if CLASSIC
+    // method
     if (mw_classic_extinction)
       oneObj->correct_classic_mw(mw_classic_extinction_values, mw_global_ebv);
     // set the prior on the redshift, abs mag, ebv, etc on the object
@@ -1896,15 +1895,15 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
     // Core of the program: compute the chi2
     oneObj->fit(lightLib, flux, valid, funz0, bp, restrict_rf);
 
-    // Try to remove some bands to improve the chi2, only as long as the chi2 is
-    // above a threshold
+    // Try to remove some bands to improve the chi2, only as long as the
+    // chi2 is above a threshold
     oneObj->rm_discrepant(lightLib, flux, valid, funz0, bp, thresholdChi2,
                           restrict_rf);
     // Generate the marginalized PDF (z+physical parameters) from the chi2
     // stored in each SED
     oneObj->generatePDF(lightLib, valid, colAnalysis, zfix);
-    // Interpolation of Z_BEST and ZQ_BEST (zmin) via Chi2 curves, put z-spec if
-    // ZFIX YES  (only gal for the moment)
+    // Interpolation of Z_BEST and ZQ_BEST (zmin) via Chi2 curves, put
+    // z-spec if ZFIX YES  (only gal for the moment)
     if (zfix || zintp) oneObj->interp(zfix, zintp, lcdm);
     // Uncertainties from the minimum chi2 + delta chi2
     oneObj->uncertaintiesMin();
@@ -1915,17 +1914,17 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
     // find the mode of the marginalized PDF and associated uncertainties,
     // centered on the mode
     oneObj->mode();
-    // The rest of the procedure requires that a specific choice be made for the
-    // redshift of GAL solutions, to be considered for computation of physical
-    // quantities, among the following choices: the spectro zs, the best chi2
-    // fit solution zmin[0], or the median solution zgmed[0].
+    // The rest of the procedure requires that a specific choice be made for
+    // the redshift of GAL solutions, to be considered for computation of
+    // physical quantities, among the following choices: the spectro zs, the
+    // best chi2 fit solution zmin[0], or the median solution zgmed[0].
     if (zfix) {
       oneObj->consiz = oneObj->zs;
     } else if (methz) {
       oneObj->consiz = oneObj->zgmed[0];
       oneObj->chimin[0] = 1.e9;
-      // Select the index of the templates that have a redshift closest to zgmed
-      // We only work on GAL solutions here
+      // Select the index of the templates that have a redshift closest to
+      // zgmed We only work on GAL solutions here
       auto validfix = validLib(oneObj->zgmed[0]);
       oneObj->fit(lightLib, flux, validfix, funz0, bp, restrict_rf);
 
@@ -1952,8 +1951,8 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
       oneObj->fltUsedIR(fir_cont, fir_scale, allFilters, fir_lmin);
       // Substract the stellar component to the FIR observed flux
       oneObj->subtract_stellar_component(substar, allFilters);
-      // Select in the IR library only the templates with redshifts closest to
-      // consiz
+      // Select in the IR library only the templates with redshifts closest
+      // to consiz
       auto validfix = validLib(oneObj->consiz, true);
       // Fit the SED on FIR data, with the redshift fixed at zmin or zmed
       oneObj->fitIR(fullLibIR, fluxIR, validfix, fir_frsc, lcdm);
@@ -2041,14 +2040,15 @@ vector<size_t> PhotoZ::validLib(const double& redshift, const bool& ir) {
   Propose a function to fit only one source
 */
 void PhotoZ::fit_onesource(onesource& src, const vector<double>& a0) {
-  // Threshold in chi2 to consider. Remove <3 bands, stop when below this chi2
+  // Threshold in chi2 to consider. Remove <3 bands, stop when below this
+  // chi2
   double thresholdChi2 =
       ((keys["RM_DISCREPANT_BD"]).split_double("1.e9", 2))[0];
 
   cout << "Fit source with Id " << src.spec << endl;
 
-  // check that the offset vector has the correct dimension. Otherwise, offsets
-  // at 0
+  // check that the offset vector has the correct dimension. Otherwise,
+  // offsets at 0
   vector<double> a0_checked = a0;
   if (a0.size() != size_t(imagm)) {
     a0_checked.assign(imagm, 0.);
@@ -2057,11 +2057,12 @@ void PhotoZ::fit_onesource(onesource& src, const vector<double>& a0) {
     cout << "Offsets changed at 0." << endl;
   }
 
-  // Apply offset anyway (should be 0 if no auto-adapt or no systematic shifts
-  // Start from the original flux ab_ori
+  // Apply offset anyway (should be 0 if no auto-adapt or no systematic
+  // shifts Start from the original flux ab_ori
   src.adapt_mag(a0_checked);
 
-  // Apply the milky way ebv correction to the observed mag if CLASSIC method
+  // Apply the milky way ebv correction to the observed mag if CLASSIC
+  // method
   if (mw_classic_extinction) {
     src.correct_classic_mw(mw_classic_extinction_values, mw_global_ebv);
     // Apply MW reddening first if Galametz option on
@@ -2082,8 +2083,8 @@ void PhotoZ::fit_onesource(onesource& src, const vector<double>& a0) {
   }
   // Core of the program: compute the chi2
   src.fit(lightLib, flux, valid, funz0, bp, restrict_rf);
-  // Try to remove some bands to improve the chi2, only as long as the chi2 is
-  // above a threshold
+  // Try to remove some bands to improve the chi2, only as long as the chi2
+  // is above a threshold
   src.rm_discrepant(lightLib, flux, valid, funz0, bp, thresholdChi2,
                     restrict_rf);
 
@@ -2116,8 +2117,8 @@ void PhotoZ::uncertainties_onesource(onesource& src) {
   // stored in each SED
   src.generatePDF(lightLib, valid, colAnalysis, zfix);
 
-  // Interpolation of Z_BEST and ZQ_BEST (zmin) via Chi2 curves, put z-spec if
-  // ZFIX YES  (only gal for the moment)
+  // Interpolation of Z_BEST and ZQ_BEST (zmin) via Chi2 curves, put z-spec
+  // if ZFIX YES  (only gal for the moment)
   if (zfix || zintp) src.interp(zfix, zintp, lcdm);
   // Uncertainties from the minimum chi2 + delta chi2
   src.uncertaintiesMin();
@@ -2136,8 +2137,8 @@ void PhotoZ::uncertainties_onesource(onesource& src) {
   Compute physical parameters for one source
 */
 void PhotoZ::physpara_onesource(onesource& src, const vector<double>& a0) {
-  /* Define what are the filters to be used for the absolute magnitude depending
-   * on the method adopted */
+  /* Define what are the filters to be used for the absolute magnitude
+   * depending on the method adopted */
   // MABS_METHOD method to compute the absolute magnitudes
   int method = keys["MABS_METHOD"].split_int("0", -1)[0];
   // MABS_REF reference filter in case of mag abs method 2
@@ -2169,16 +2170,16 @@ void PhotoZ::physpara_onesource(onesource& src, const vector<double>& a0) {
   long fir_cont = keys["FIR_CONT"].split_long("-1", 1)[0];
   // FIR_SCALE context of the bands used for the rescaling in IR
   long fir_scale = keys["FIR_SCALE"].split_long("-1", 1)[0];
-  // FIR_FREESCALE possible free rscaling in IR, when several bands. Otherwise,
-  // model imposed by its LIR
+  // FIR_FREESCALE possible free rscaling in IR, when several bands.
+  // Otherwise, model imposed by its LIR
   string fir_frsc = keys["FIR_FREESCALE"].split_string("NO", 1)[0];
   // FIR_SUBSTELLAR remove the stellar component
   bool substar = keys["FIR_SUBSTELLAR"].split_bool("NO", 1)[0];
   // MIN_THRES threshold to trigger the detection - 0.1 by default
   double min_thres = keys["MIN_THRES"].split_double("0.1", 1)[0];
 
-  // check that the offset vector has the correct dimension. Otherwise, offsets
-  // at 0
+  // check that the offset vector has the correct dimension. Otherwise,
+  // offsets at 0
   vector<double> a0_checked = a0;
   if (a0.size() != size_t(imagm)) {
     a0_checked.assign(imagm, 0.);
@@ -2187,11 +2188,12 @@ void PhotoZ::physpara_onesource(onesource& src, const vector<double>& a0) {
     cout << "Offsets changed at 0." << endl;
   }
 
-  // Apply offset anyway (should be 0 if no auto-adapt or no systematic shifts
-  // Start from the original flux ab_ori
+  // Apply offset anyway (should be 0 if no auto-adapt or no systematic
+  // shifts Start from the original flux ab_ori
   src.adapt_mag(a0_checked);
 
-  // Apply the milky way ebv correction to the observed mag if CLASSIC method
+  // Apply the milky way ebv correction to the observed mag if CLASSIC
+  // method
   if (mw_classic_extinction) {
     src.correct_classic_mw(mw_classic_extinction_values, mw_global_ebv);
     // Apply MW reddening first if Galametz option on
@@ -2199,17 +2201,17 @@ void PhotoZ::physpara_onesource(onesource& src, const vector<double>& a0) {
     flux = src.redden_flux(flux_no_mw, reddening);
   }
 
-  // The rest of the procedure requires that a specific choice be made for the
-  // redshift of GAL solutions, to be considered for computation of physical
-  // quantities, among the following choices: the spectro zs, the best chi2
-  // fit solution zmin[0], or the median solution zgmed[0].
+  // The rest of the procedure requires that a specific choice be made for
+  // the redshift of GAL solutions, to be considered for computation of
+  // physical quantities, among the following choices: the spectro zs, the
+  // best chi2 fit solution zmin[0], or the median solution zgmed[0].
   if (zfix) {
     src.consiz = src.zs;
   } else if (methz) {
     src.consiz = src.zgmed[0];
     src.chimin[0] = 1.e9;
-    // Select the index of the templates that have a redshift closest to zgmed
-    // We only work on GAL solutions here
+    // Select the index of the templates that have a redshift closest to
+    // zgmed We only work on GAL solutions here
     auto valid = validLib(src.zgmed[0]);
     src.fit(lightLib, flux, valid, funz0, bp, restrict_rf);
   } else {
