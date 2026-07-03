@@ -97,7 +97,7 @@ Mag::Mag(keymap& key_analysed)
     // computes the galactic extinction
     double dlbd = (lmax - lmin) / 10000.;
     for (int i = 0; i < 10001; i++) {
-      lextg = lmin + double(i - 1) * dlbd;
+      lextg = lmin + double(i) * dlbd;
       extg = cardelli_law(lextg);
       milkyWayExtinction.add_element(lextg, extg);
     }
