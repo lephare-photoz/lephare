@@ -1666,7 +1666,6 @@ void SED::compute_milky_way_extinction(const ext& oneExt,
     } else {
       milky_way_extinction[i] =
           -2.5 * LOG10D(result[3] / milky_way_extinction[i]) / reference_ebv;
-      // or just = new_val, depending on what you want
     }
   }
 }
