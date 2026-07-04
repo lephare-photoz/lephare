@@ -1934,8 +1934,12 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
       oneObj->consiz = oneObj->zmin[0];
     }
 
+    // Correct the ab magnitude based on the last fit
+    // when galametz method is on
+    if (mw_galametz) oneObj->correct_galametz_mw(reddening);
+
     // Interpolation at the new redshift  (only gal for the moment)
-    oneObj->interp_lib(fullLib, flux);
+    oneObj->interp_lib(fullLib, flux_no_mw);
     // Compute absolute magnitudes
     oneObj->absmag(goodFlt, maxkcol, lcdm, gridz);
     // Compute zmax and M_faint
@@ -2090,6 +2094,12 @@ void PhotoZ::fit_onesource(onesource& src, const vector<double>& a0) {
   src.rm_discrepant(lightLib, flux, valid, funz0, bp, thresholdChi2,
                     restrict_rf);
 
+  // Correct the ab magnitude based on the last fit
+  // when galametz method is on
+  // It allows to have correct physical parameters
+  // And a good match in the .spec
+  if (mw_galametz) src.correct_galametz_mw(reddening);
+
   // write out chisquare values for all templates
   if (outchi) src.writeFullChi(lightLib);
 
@@ -2138,7 +2148,7 @@ void PhotoZ::uncertainties_onesource(onesource& src) {
 /*
   Compute physical parameters for one source
 */
-void PhotoZ::physpara_onesource(onesource& src, const vector<double>& a0) {
+void PhotoZ::physpara_onesource(onesource& src) {
   /* Define what are the filters to be used for the absolute magnitude
    * depending on the method adopted */
   // MABS_METHOD method to compute the absolute magnitudes
@@ -2180,26 +2190,10 @@ void PhotoZ::physpara_onesource(onesource& src, const vector<double>& a0) {
   // MIN_THRES threshold to trigger the detection - 0.1 by default
   double min_thres = keys["MIN_THRES"].split_double("0.1", 1)[0];
 
-  // check that the offset vector has the correct dimension. Otherwise,
-  // offsets at 0
-  vector<double> a0_checked = a0;
-  if (a0.size() != size_t(imagm)) {
-    a0_checked.assign(imagm, 0.);
-    cout << "Offsets have a size: " << a0.size()
-         << ", different from the filter number:" << imagm << endl;
-    cout << "Offsets changed at 0." << endl;
-  }
-
-  // Apply offset anyway (should be 0 if no auto-adapt or no systematic
-  // shifts Start from the original flux ab_ori
-  src.adapt_mag(a0_checked);
-
-  // Apply the milky way ebv correction to the observed mag if CLASSIC
-  // method
-  if (mw_classic_extinction) {
-    src.correct_classic_mw(mw_classic_extinction_values, mw_global_ebv);
-    // Apply MW reddening first if Galametz option on
-  } else if (!one_mw_ebv && mw_galametz) {
+  // In the case of Galametz, recompute the flux
+  // with the redenning from this source (if another source with run before,
+  // it could be the wrong reddening)
+  if (!one_mw_ebv && mw_galametz) {
     flux = src.redden_flux(flux_no_mw, reddening);
   }
 
@@ -2215,13 +2209,14 @@ void PhotoZ::physpara_onesource(onesource& src, const vector<double>& a0) {
     // Select the index of the templates that have a redshift closest to
     // zgmed We only work on GAL solutions here
     auto valid = validLib(src.zgmed[0]);
-    src.fit(lightLib, flux, valid, funz0, bp, restrict_rf);
+    // Use the flux with no  MW since ab mag corrected in fit_onesource
+    src.fit(lightLib, flux_no_mw, valid, funz0, bp, restrict_rf);
   } else {
     src.consiz = src.zmin[0];
   }
 
   // Interpolation at the new redshift  (only gal for the moment)
-  src.interp_lib(fullLib, flux);
+  src.interp_lib(fullLib, flux_no_mw);
 
   // Compute absolute magnitudes
   src.absmag(goodFlt, maxkcol, lcdm, gridz);

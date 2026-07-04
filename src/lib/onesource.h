@@ -263,6 +263,7 @@ class onesource {
    * @param allFilters : the list of filters, needed to discard filters
    * which have \f$\lambda_{mean}/(1+z)\f>250 \mu m$.
    */
+  void correct_galametz_mw(const vector<vector<double>>& reddening);
   void subtract_stellar_component(const bool substar, vector<flt> allFilters);
   void absmag(const vector<vector<int>>& bestFlt,
               const vector<vector<double>>& maxkcolor, cosmo lcdm,

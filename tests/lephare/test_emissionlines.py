@@ -136,7 +136,7 @@ def test_emlines():
     assert max_position == 2
     assert len(src.pdfmap[11].xaxis) == 6
     assert src.zs == pytest.approx(0.4, abs=1e-02)
-    photz.physpara_onesource(src, a0)
+    photz.physpara_onesource(src)
     print("Done with physical parameters")
     assert src.consiz == 0.4
 

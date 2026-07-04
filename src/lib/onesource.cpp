@@ -289,6 +289,29 @@ void onesource::correct_classic_mw(const vector<double> Alamb_corr,
 }
 
 /*
+ APPLY THE MILKY WAY EBV COORECTION WITH THE GALAMETZ METHOD (MODEL DEPENDENCY)
+*/
+void onesource::correct_galametz_mw(const vector<vector<double>>& reddening) {
+  double corr = 1.;
+
+  // Loop over each filter
+  for (size_t k = 0; k < ab.size(); k++) {
+    // Define the correction to be applied to the observed fluxes
+    if ((this->mw_ebv > 0) && (indmin[0] > 0)) {
+      corr = pow(10., 0.4 * reddening[indmin[0]][k] * this->mw_ebv);
+    }
+    // Correct the fluxes (only case without correction is the negative error)
+    ab[k] = ab[k] * corr;
+    if (sab[k] > 0) sab[k] = sab[k] * corr;
+  }
+
+  // change also the associated magnitudes
+  this->convertMag();
+
+  return;
+}
+
+/*
  SUBSTRACT THE STELLAR COMPONENT TO THE FIR OBSERVED FLUXES
 */
 void onesource::subtract_stellar_component(const bool substar,

@@ -107,7 +107,7 @@ def test_photoz_cosmos():
     assert src.zgmode[3] < src.zgmode[1] < src.zgmode[0] < src.zgmode[2] < src.zgmode[4]
 
     # Test the absolute magnitude estimate
-    photz.physpara_onesource(src, a0)
+    photz.physpara_onesource(src)
     print("Done with physical parameters")
     assert src.mabs[5] == pytest.approx(26.6285 - 42.9504 - src.kap[5], abs=3e-2)
     assert src.mabs[0] == pytest.approx(30.9393 - 42.9504 - src.kap[0], abs=3e-2)
@@ -363,7 +363,7 @@ def test_physicalpara_bc03():
     assert max_position == 2
     assert len(src.pdfmap[11].xaxis) == 6
     assert src.zs == pytest.approx(0.4, abs=1e-02)
-    photz.physpara_onesource(src, a0)
+    photz.physpara_onesource(src)
     print("Done with physical parameters")
     assert src.consiz == 0.4
 
@@ -583,7 +583,7 @@ def test_fit_fir():
     assert len(src.pdfmap[11].xaxis) == 6
     assert src.zs == pytest.approx(0.4, abs=1e-02)
 
-    photz.physpara_onesource(src, a0)
+    photz.physpara_onesource(src)
     print("Done with physical parameters")
     print(src.results)
     assert src.consiz == 0.4
@@ -732,6 +732,8 @@ def test_photoz_galametz():
     photz.fit_onesource(src, a0)
     print("Done with fit")
 
+    assert np.testing.assert_almost_equal(-2.5 * np.log10(src.ab) - 48.60, mag_source, decimal=2) is None
+
     # test the value of the minimisation
     assert src.zmin[0] == pytest.approx(0.65)
     assert src.dmmin[0] == pytest.approx(1.0000, abs=1e-03)
@@ -752,12 +754,10 @@ def test_photoz_galametz():
     assert src.zgmode[3] < src.zgmode[1] < src.zgmode[0] < src.zgmode[2] < src.zgmode[4]
 
     # Test the absolute magnitude estimate
-    photz.physpara_onesource(src, a0)
+    photz.physpara_onesource(src)
     print("Done with physical parameters")
-    # assert src.mabs[5] == pytest.approx(26.6285 - 42.9504 - src.kap[5], abs=3e-2)
-    # assert src.mabs[0] == pytest.approx(30.9393 - 42.9504 - src.kap[0], abs=3e-2)
-    assert src.mabs[5] == pytest.approx(27.3385 - 42.9504 - src.kap[5], abs=3e-2)
-    assert src.mabs[0] == pytest.approx(33.6865 - 42.9504 - src.kap[0], abs=3e-2)
+    assert src.mabs[5] == pytest.approx(26.6285 - 42.9504 - src.kap[5], abs=3e-2)
+    assert src.mabs[0] == pytest.approx(30.9393 - 42.9504 - src.kap[0], abs=3e-2)
     assert np.testing.assert_almost_equal(src.absfilt, [0, 1, 2, 3, 4, 5]) is None
     # Test how spectra are generated
     minl = 3000.0
