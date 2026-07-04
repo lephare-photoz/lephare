@@ -59,7 +59,7 @@ mag_gal -c $CONFIG_FILE \
     --EB_V 0.,0.1,0.2,0.3 \
     --EXTINC_LAW SB_calzetti.dat \
     --LIB_ASCII NO \
-    --Z_STEP 0.04,0,6 \
+    --Z_STEP 0.01,0.,6. \
     --LIB_ASCII YES
 
 echo "Running sedtolib and mag_gal for galaxies..."
@@ -76,7 +76,7 @@ mag_gal -c $CONFIG_FILE \
     --EXTINC_LAW SMC_prevot.dat,SB_calzetti.dat,SB_calzetti_bump1.dat,SB_calzetti_bump2.dat  \
     --EM_LINES EMP_UV \
     --EM_DISPERSION 0.5,0.75,1.,1.5,2. \
-    --Z_STEP 0.04,0,6 \
+    --Z_STEP 0.01,0.,6. \
     --LIB_ASCII YES \
     --VERBOSE NO
 
@@ -89,14 +89,15 @@ zphota -c $CONFIG_FILE \
     --AUTO_ADAPT YES \
     --CAT_LINES 1,100 \
     --SPEC_OUT YES \
-    --PARA_OUT $LEPHAREDIR/examples/output.para \
+    --CHI2_OUT YES \
+    --PARA_OUT ./output.para \
     --VERBOSE NO \
     --ZFIX NO \
-    --PDZ_OUT $LEPHAREWORK/zphota/ \
+    --PDZ_OUT $LEPHAREWORK/zphota/test
 
 echo "Generating figures and specs..."
 python $LEPHAREDIR/examples/figuresLPZ.py $CAT_OUT
 python $LEPHAREDIR/examples/spec.py *.spec -d pdf -o $LEPHAREWORK/zphota/spec
 
 echo "Moving output files..."
-mv $CAT_OUT Id*.spec figuresLPZ.pdf $LEPHAREWORK/zphota/
+mv $CAT_OUT Id*.* figuresLPZ.pdf $LEPHAREWORK/zphota/
