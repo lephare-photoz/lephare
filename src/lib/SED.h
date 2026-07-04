@@ -78,6 +78,7 @@ class SED {
 
   int extlawId;  ///< index of the extinction law when dust attenuation has been
                  ///< applied
+  double fracEm;  ///< fraction of the emission line considered
 
   array<double, 4>
       qi;  ///< Store the unnormalized number flux
@@ -338,8 +339,7 @@ class GalSED : public SED {
  public:
   vector<double> flEm;
   string format;
-  double tau, zmet, d4000,
-      fracEm;  //< fraction of the emmission line considered
+  double tau, zmet, d4000;
 
   /// Copy constructor from base class
   GalSED(SED const &p) : SED(p) { nlib = GAL; };
@@ -463,7 +463,7 @@ struct SEDlight {
   vector<object_type> nlib;
   vector<int> index, nummod, extlawId, index_z0;
   vector<double> red, chi2, dm, luv, lopt, lnir, mag0;
-  vector<double> ebv, lgage, lgmass, lgsfr, lgssfr, ltir;
+  vector<double> ebv, lgage, lgmass, lgsfr, lgssfr, ltir, fracEm;
   vector<array<double, 3>> colRF;
 
   void push_sed(SED const &src, const array<double, 3> &colRFin) {
@@ -486,6 +486,7 @@ struct SEDlight {
     lgsfr.push_back(LOG10D(src.sfr));
     lgssfr.push_back(LOG10D(src.ssfr));
     colRF.push_back(colRFin);
+    fracEm.push_back(src.fracEm);
   }
 };
 

@@ -42,6 +42,7 @@ SED::SED(const string nameC, int nummodC, string type) {
   sfr = -999;    // SFR (Mo/yr)
   ltir = -999;   // Int_8um^1000um    L_lbda . dlbda    in Log unit Lo
   ebv = 0.;      // E(B-V) applied to the SED
+  fracEm = 0.;
   extlawId =
       0;  // index of the extinction law when dust attenuation has been applied
   chi2 = HIGH_CHI2;  // chi2 of the fit
