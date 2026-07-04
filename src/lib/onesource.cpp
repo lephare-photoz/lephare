@@ -2231,7 +2231,8 @@ void onesource::writeFullChi(const SEDlight &lightLib) {
   ofstream stochi;
   string ochi = "Id" + string(spec) + ".chi";
   stochi.open(ochi.c_str());
-  stochi << "# nlib z model Age Extlaw EB_V Ldust Luv Lr Lk Ldust2 Mo SFR Chi2"
+  stochi << "# nlib z model Age Extlaw EB_V fracEm Ldust Luv Lr Lk Ldust2 Mo "
+            "SFR Chi2"
          << endl;
 
   // Loop over all SEDs from the library
@@ -2245,6 +2246,7 @@ void onesource::writeFullChi(const SEDlight &lightLib) {
     stochi << lightLib.lgage[k] << " ";
     stochi << lightLib.extlawId[k] << " ";
     stochi << lightLib.ebv[k] << " ";
+    stochi << lightLib.fracEm[k] << " ";
     // Check that the scaling and mass defined
     if ((lightLib.lgmass[k] > -100) && sca > -100) {
       stochi << lightLib.ltir[k] + sca << " ";
