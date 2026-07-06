@@ -1415,9 +1415,9 @@ Milky Way Reddening
 
 Measured photometric fluxes are affected by the Milky Way extinction. Usually the inpute fluxes are 'dereddened' to account for this effect. The code can correct for this effect if the user provides the E(B-V) value for each source in the input catalog. The reddening is applied to the predicted fluxes using the MW extinction law (Seaton 1979). The reddening value can be provided in the input catalog as an additional column (format LONG) or as a separate file (see ``MW_REDDENING`` keyword). In this case, the file should contain two columns: Id and E(B-V). The Id must match the one in the input catalog.
 
-`Galametz et al. (2017) <https://www.aanda.org/articles/aa/abs/2017/02/aa29333-16/aa29333-16.html>`_ investigated the impact of SED dependent reddening on the photo-z. They found that the effect is small, but it can be significant for some specific SEDs. The code can apply a SED dependent reddening if the user provides a file with the E(B-V) values for each source. The file should contain two columns: object ID and E(B-V). The SED number must match the one in the library.
+`Galametz et al. (2017) <https://www.aanda.org/articles/aa/abs/2017/02/aa29333-16/aa29333-16.html>`_ investigated the impact of SED dependent reddening on the photo-z. They found that the effect is small, but it can be significant for some specific SEDs. The code can apply a SED dependent reddening if the user provides a file with the E(B-V) values for each source. The file should contain two columns: object ID and E(B-V). The SED number must match the one in the library. It is important to note that the GALAMETZ method adds significant cpu time to all stages of the code. For large area runs where CPU time is critical we recommend using the CLASSIC method or dereddening the input catalogues.
 
-It is also possible to apply a global reddening correction to all sources in the input catalog using the keyword ``MW_REDDENING``. In this case, the value of E(B-V) is provided directly in the configuration file.
+It is also possible to apply a global reddening correction to all sources in the input catalog using the keyword ``MW_EBV_FILE``. In this case, the value of E(B-V) is provided directly in the configuration file.
 
 .. list-table:: 
    :widths: 20 10 10 55
