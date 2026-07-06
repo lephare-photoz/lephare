@@ -489,6 +489,15 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
     // Compute the ebv for the reference model to scale the Band-Pass
     // Corrections
     const auto& refBPC = mw_ref_model_sed.band_pass_correction;
+    if (std::abs(refBPC) < 1e-12) {
+      throw std::runtime_error(
+          "refBPC is effectively zero. Check the reference model SED "
+          "(MW_REFERENCE_MODEL: " +
+          mw_ref_mod +
+          ") and the Milky Way extinction curve "
+          "(EXT_MW_CURVE : " +
+          milkyWayExtinction.name + ").");
+    }
     for (size_t i = 0; i < fullLib.size(); i++) {
       // Scale every SED BPC by the reference model BPC, and compute the
       // reddening in each band
