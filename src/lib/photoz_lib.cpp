@@ -506,6 +506,8 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
       double bpc_i = sed->band_pass_correction;
       double scaled_bpc_i = bpc_i / refBPC;  // updated BPC
       sed->band_pass_correction = scaled_bpc_i;
+      // Edge case, not a real situation.
+      if (scaled_bpc_i < 1e-100) scaled_bpc_i = 1.;
       for (size_t j = 0; j < mw.size(); j++) {
         reddening[i][j] = mw[j] / scaled_bpc_i;
       }
