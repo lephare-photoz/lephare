@@ -8,7 +8,7 @@
 
 #include "SED.h"
 #include "cosmology.h"
-#include "ext.h"  // extinction law class
+#include "ext.h"
 #include "flt.h"
 #include "globals.h"
 #include "keyword.h"
@@ -37,14 +37,6 @@ class Mag {
   string sedlibFile, docFile, binOutFile, datFile;
   ifstream ssedIn;
   ofstream sdocOut, sbinOut, sdatOut;
-
-  // vector<ext> extAll;
-  // vector<flt> allFlt;
-  // vector<GalSED> B12SED;
-  // vector<double> gridz;
-  // vector<double> gridT, gridDM;
-
-  // vector<double> magko;
 
  public:
   Mag(keymap& key_analysed);
