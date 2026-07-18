@@ -78,7 +78,6 @@ class Mag {
 
   vector<ext> extAll;
 
-  std::string milkyWayCurve;
   ext milkyWayExtinction;
   bool applyMilkyWayExtinction;
 

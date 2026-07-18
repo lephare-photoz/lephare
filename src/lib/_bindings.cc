@@ -316,7 +316,6 @@ PYBIND11_MODULE(_lephare, mod) {
        .def("write_doc", &c::write_doc)                                       \
        .def("make_maglib", &c::make_maglib)                                   \
        .def("write_mag", &c::write_mag)                                       \
-       .def_readwrite("milkyWayCurve", &c::milkyWayCurve)                     \
        .def_readwrite("milkyWayExtinction", &c::milkyWayExtinction)           \
        .def_readwrite("applyMilkyWayExtinction", &c::applyMilkyWayExtinction) \
        .def_readonly("extAll", &c::extAll)                                    \
@@ -439,7 +438,6 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("uncertaintiesMin", &onesource::uncertaintiesMin)
       .def("uncertaintiesBay", &onesource::uncertaintiesBay)
       .def("secondpeak", &onesource::secondpeak)
-      .def("interp_lib", &onesource::interp_lib)
       .def("absmag", &onesource::absmag)
       .def("limits", &onesource::limits)
       .def("computePredAbsMag", &onesource::computePredMag)
