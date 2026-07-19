@@ -261,25 +261,20 @@ void onesource::adapt_mag(vector<double> a0) {
 }
 
 /*
- APPLY THE MILKY WAY EBV COORECTION WITH A CLASSIC METHOD (NO MODEL DEPENDENCY)
+ APPLY THE MILKY WAY EBV CORRECTION WITH A CLASSIC METHOD (NO MODEL DEPENDENCY)
 */
-void onesource::correct_classic_mw(const vector<double> Alamb_corr,
+void onesource::correct_classic_mw(const vector<double>& Alamb_corr,
                                    const double mw_global_ebv) {
-  double corr = 1.;
+  double ebv = this->mw_ebv > 0 ? this->mw_ebv : 0.;
+  ebv = mw_global_ebv >= 0 ? mw_global_ebv : ebv;
+  if (ebv == 0.) return;
 
   // Loop over each filter
   for (size_t k = 0; k < ab.size(); k++) {
-    // Define the correction to be applied to the observed fluxes
-    // 10**(0.4*"+Alambda[k]*ebv
-    // The global correction is the one by defaut if defined
-    if (mw_global_ebv >= 0) {
-      corr = pow(10., 0.4 * Alamb_corr[k] * mw_global_ebv);
-    } else if (this->mw_ebv > 0) {
-      corr = pow(10., 0.4 * Alamb_corr[k] * this->mw_ebv);
-    }
-    // Correct the fluxes (only case without correction is the negative error)
-    ab[k] = ab[k] * corr;
-    if (sab[k] > 0) sab[k] = sab[k] * corr;
+    double corr = pow(10., 0.4 * Alamb_corr[k] * ebv);
+    ab[k] *= corr;
+    // note: corr>0 so if sab negative, it stays so.
+    sab[k] *= corr;
   }
 
   // change also the associated magnitudes
