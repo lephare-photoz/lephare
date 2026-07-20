@@ -302,24 +302,22 @@ PYBIND11_MODULE(_lephare, mod) {
   mod.def("readPEGASE", &readPEGASE);
 
   /******** CLASS MAG *********/
-#define MAGDEFS(c, n)                                                         \
-  (py::class_<c>(mod, n)                                                      \
-       .def(py::init<keymap&>(), py::arg("key_analysed"))                     \
-       .def(py::init<>())                                                     \
-       .def("open_files", &c::open_files)                                     \
-       .def("close_files", &c::close_files)                                   \
-       .def("print_info", &c::print_info)                                     \
-       .def("read_ext", &c::read_ext)                                         \
-       .def("read_B12", &c::read_B12)                                         \
-       .def("set_zgrid", &c::set_zgrid)                                       \
-       .def("read_SED", &c::read_SED)                                         \
-       .def("write_doc", &c::write_doc)                                       \
-       .def("make_maglib", &c::make_maglib)                                   \
-       .def("write_mag", &c::write_mag)                                       \
-       .def_readwrite("milkyWayExtinction", &c::milkyWayExtinction)           \
-       .def_readwrite("applyMilkyWayExtinction", &c::applyMilkyWayExtinction) \
-       .def_readonly("extAll", &c::extAll)                                    \
-       .def_readonly("opaAll", &c::opaAll)                                    \
+#define MAGDEFS(c, n)                                     \
+  (py::class_<c>(mod, n)                                  \
+       .def(py::init<keymap&>(), py::arg("key_analysed")) \
+       .def(py::init<>())                                 \
+       .def("open_files", &c::open_files)                 \
+       .def("close_files", &c::close_files)               \
+       .def("print_info", &c::print_info)                 \
+       .def("read_ext", &c::read_ext)                     \
+       .def("read_B12", &c::read_B12)                     \
+       .def("set_zgrid", &c::set_zgrid)                   \
+       .def("read_SED", &c::read_SED)                     \
+       .def("write_doc", &c::write_doc)                   \
+       .def("make_maglib", &c::make_maglib)               \
+       .def("write_mag", &c::write_mag)                   \
+       .def_readonly("extAll", &c::extAll)                \
+       .def_readonly("opaAll", &c::opaAll)                \
        .def_readonly("allFlt", &c::allFlt))
   MAGDEFS(StarMag, "StarMag");
   MAGDEFS(QSOMag, "QSOMag");

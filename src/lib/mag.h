@@ -19,6 +19,7 @@
 /// abstract class to handle everything related to the computation of expected
 /// magnitudes
 class Mag {
+ private:
  protected:
   object_type object;
   string config;
@@ -37,6 +38,9 @@ class Mag {
   string sedlibFile, docFile, binOutFile, datFile;
   ifstream ssedIn;
   ofstream sdocOut, sbinOut, sdatOut;
+
+  ext milkyWayExtinction;
+  bool applyMilkyWayExtinction;
 
  public:
   Mag(keymap& key_analysed);
@@ -77,9 +81,6 @@ class Mag {
   virtual void read_SED() = 0;
 
   vector<ext> extAll;
-
-  ext milkyWayExtinction;
-  bool applyMilkyWayExtinction;
 
   vector<flt> allFlt;
   vector<GalSED> B12SED;
