@@ -1610,6 +1610,9 @@ double interpolate(const std::vector<double>& x, const std::vector<double>& y,
 
 void SED::compute_milky_way_extinction(const ext& oneExt,
                                        const vector<flt>& filters) {
+  // Temporary SED object to do the computation
+  SED tmp(*this);
+
   // Reference E(B-V) value used to estimate extinction coefficients
   // assuming the extinction scales linearly with reddening.
   // Following the approach described in Galametz Appendix A.
@@ -1617,19 +1620,19 @@ void SED::compute_milky_way_extinction(const ext& oneExt,
 
   // Store the unreddened integrated flux for each filter.
   for (const auto& filter : filters) {
-    auto result = this->integrateSED(filter);
-    milky_way_extinction.push_back(result[3]);
+    auto result = tmp.integrateSED(filter);
+    tmp.milky_way_extinction.push_back(result[3]);
   }
 
   // compute the BPC for the SED using  B and V band filters
-  auto resultB = this->integrateSED(filterB);
-  auto resultV = this->integrateSED(filterV);
+  auto resultB = tmp.integrateSED(filterB);
+  auto resultV = tmp.integrateSED(filterV);
 
   // Use 0.1 as a default value for the extinction, to be able to rescale it
-  this->apply_extinction(reference_ebv, oneExt, false);
+  tmp.apply_extinction(reference_ebv, oneExt, false);
 
-  auto resultB_red = this->integrateSED(filterB);
-  auto resultV_red = this->integrateSED(filterV);
+  auto resultB_red = tmp.integrateSED(filterB);
+  auto resultV_red = tmp.integrateSED(filterV);
 
   float eb;
   float ev;
@@ -1650,24 +1653,30 @@ void SED::compute_milky_way_extinction(const ext& oneExt,
   }
 
   // Band-pass correction term E(B-V).
-  band_pass_correction = eb - ev;
+  tmp.band_pass_correction = eb - ev;
 
   // Convert flux attenuation into extinction coefficients for each filter.
   for (size_t i = 0; i < filters.size(); ++i) {
-    auto result = integrateSED(filters[i]);
+    auto result = tmp.integrateSED(filters[i]);
 
     if (!(result[3] > 0)) {
       // If the integral fails take the extinction at the upper limit of the
       // filter.:
       auto [x, y] = to_tuple(oneExt.lamb_ext);
       double filt_max = filters[i].lmax();
-      milky_way_extinction[i] = interpolate(x, y, filt_max);
+      tmp.milky_way_extinction[i] = interpolate(x, y, filt_max);
 
     } else {
-      milky_way_extinction[i] =
-          -2.5 * LOG10D(result[3] / milky_way_extinction[i]) / reference_ebv;
+      tmp.milky_way_extinction[i] =
+          -2.5 * LOG10D(result[3] / tmp.milky_way_extinction[i]) /
+          reference_ebv;
     }
   }
+  // copy over the resulting computation
+  milky_way_extinction = tmp.milky_way_extinction;
+  band_pass_correction = tmp.band_pass_correction;
+  has_mw_galametz = true;
+  tmp.clean();
 }
 
 vector<double> SED::integrateSED(const flt& filter) {

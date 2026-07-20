@@ -523,17 +523,8 @@ vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
 
               // Compute Milky Way extinction
               if (applyMilkyWayExtinction) {
-                GalSED oneSEDInt2(oneSEDInt);
-                oneSEDInt2.lamb_flux = oneSEDInt.lamb_flux;
-                oneSEDInt2.compute_milky_way_extinction(milkyWayExtinction,
-                                                        allFlt);
-                oneSEDInt.milky_way_extinction =
-                    oneSEDInt2.milky_way_extinction;
-                oneSEDInt.band_pass_correction =
-                    oneSEDInt2.band_pass_correction;
-                oneSEDInt.has_mw_galametz = true;
-                // Cleaning
-                oneSEDInt2.clean();
+                oneSEDInt.compute_milky_way_extinction(milkyWayExtinction,
+                                                       allFlt);
               }
 
               // If z>0, no need to keep the spectra
@@ -801,14 +792,7 @@ vector<QSOSED> QSOMag::make_maglib(const QSOSED& oneSED) {
 
           // Compute Milky Way extinction
           if (applyMilkyWayExtinction) {
-            QSOSED oneSEDInt2(oneSEDInt);
-            oneSEDInt2.lamb_flux = oneSEDInt.lamb_flux;
-            oneSEDInt2.compute_milky_way_extinction(milkyWayExtinction, allFlt);
-            oneSEDInt.milky_way_extinction = oneSEDInt2.milky_way_extinction;
-            oneSEDInt.band_pass_correction = oneSEDInt2.band_pass_correction;
-            oneSEDInt.has_mw_galametz = true;
-            // Cleaning
-            oneSEDInt2.clean();
+            oneSEDInt.compute_milky_way_extinction(milkyWayExtinction, allFlt);
           }
 
           // If z>0, no need to keep the spectra
@@ -925,14 +909,7 @@ vector<StarSED> StarMag::make_maglib(const StarSED& sed) {
   newsed.compute_magnitudes(allFlt);
   // Compute Milky Way extinction
   if (applyMilkyWayExtinction) {
-    StarSED oneSEDInt2(newsed);
-    oneSEDInt2.lamb_flux = newsed.lamb_flux;
-    oneSEDInt2.compute_milky_way_extinction(milkyWayExtinction, allFlt);
-    newsed.milky_way_extinction = oneSEDInt2.milky_way_extinction;
-    newsed.band_pass_correction = oneSEDInt2.band_pass_correction;
-    newsed.has_mw_galametz = true;
-    // Cleaning
-    oneSEDInt2.clean();
+    newsed.compute_milky_way_extinction(milkyWayExtinction, allFlt);
   }
   // return singleton vector in order to have the same structure as for QSO
   // and Gal
