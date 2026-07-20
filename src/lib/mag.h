@@ -27,7 +27,8 @@ class Mag {
   string filtFile, magtyp;
   bool outasc, verbose, add_dust;
   vector<string> extlaw;
-  vector<double> ebv;
+  vector<double> ebv, magko;
+
   vector<int> modext;
   double dz, zmin, zmax;
   string lib, colib;
@@ -51,8 +52,8 @@ class Mag {
   /// ext)
   void read_ext();
 
-  // Read the long wavelength Bethermin+2012 templates
-  // to add the dust emission to the BC03 templates
+  /// Read the long wavelength Bethermin+2012 templates
+  /// to add the dust emission to the BC03 templates
   void read_B12();
 
   /// define the vector of redshifts, and associate to it vectors of age and
@@ -86,8 +87,6 @@ class Mag {
   vector<GalSED> B12SED;
   vector<double> gridz;
   vector<double> gridT, gridDM;
-
-  vector<double> magko;
 
   vector<opa> opaAll;
 };

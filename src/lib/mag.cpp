@@ -598,6 +598,8 @@ vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
     // compute k-correction
     if (allSED[k].red < 1.e-5) {
       // keep the magnitude at z=0 and put the k-correction at 0
+      // note: magko is saved here, just to be used in the else statement
+      // coming next. The ordering is guaranteed in the main loop
       magko = allSED[k].mag;
       allSED[k].kcorr.assign(allFlt.size(), 0.);
     } else {
@@ -824,6 +826,8 @@ vector<QSOSED> QSOMag::make_maglib(const QSOSED& oneSED) {
     // compute k-correction
     if (allSED[k].red < 1.e-5) {
       // keep the magnitude at z=0 and put the k-correction at 0
+      // note: magko is saved here, just to be used in the else statement
+      // coming next. The ordering is guaranteed in the main loop
       magko = allSED[k].mag;
       allSED[k].kcorr.assign(allFlt.size(), 0.);
     } else {

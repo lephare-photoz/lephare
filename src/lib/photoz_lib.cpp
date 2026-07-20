@@ -1180,8 +1180,8 @@ vector<onesource*> PhotoZ::read_autoadapt_sources() {
     }
   }
 
-  // If MW should be corrected with different EBV vlue, try to read a file with
-  // thiese values
+  // If MW should be corrected with different EBV value,
+  // try to read a file with these values
   if ((mw_galametz || mw_classic_extinction) && !one_mw_ebv) {
     this->read_mw_ebv(adaptSources);
   }
@@ -1699,7 +1699,7 @@ vector<onesource*> PhotoZ::read_photoz_sources() {
 void PhotoZ::read_mw_ebv(vector<onesource*> sources) {
   // MW_EBV file
   ifstream mw_ebv_ifstream;
-  string mw_ebv_file = ((keys["MW_EBV_FILE"]).split_string("NONE", 1))[0];
+  string mw_ebv_file = keys["MW_EBV_FILE"].split_string("NONE", 1)[0];
 
   size_t mw_ebv_nlines = 0;
   size_t matched = 0;
