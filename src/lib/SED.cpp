@@ -12,6 +12,7 @@
 #include <fstream>   // print output file
 #include <iomanip>   // std::set precision
 #include <iostream>  // print standard file
+#include <limits>    //std::numeric_limits
 #include <sstream>
 #include <string>
 #include <vector>
@@ -1653,7 +1654,12 @@ void SED::compute_milky_way_extinction(const ext& oneExt,
   }
 
   // Band-pass correction term E(B-V).
-  tmp.band_pass_correction = eb - ev;
+  // It is used as a denominator later, so default value
+  // in case of failure is set to 1 (thus, no band pass correction).
+  if (abs(eb - ev) < std::numeric_limits<float>::epsilon())
+    tmp.band_pass_correction = 1.;
+  else
+    tmp.band_pass_correction = eb - ev;
 
   // Convert flux attenuation into extinction coefficients for each filter.
   for (size_t i = 0; i < filters.size(); ++i) {
