@@ -498,6 +498,10 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
           "(EXT_MW_CURVE : " +
           milkyWayExtinction.name + ").");
     }
+
+    // 10000 for the threshold is a generic default from Claude.ai.
+    // It may need optimization through profiling
+#pragma omp parallel for schedule(static) if (fullLib.size() > 10000)
     for (size_t i = 0; i < fullLib.size(); i++) {
       // Scale every SED BPC by the reference model BPC, and compute the
       // reddening in each band
@@ -506,8 +510,17 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
       double bpc_i = sed->band_pass_correction;
       double scaled_bpc_i = bpc_i / refBPC;  // updated BPC
       sed->band_pass_correction = scaled_bpc_i;
+
+      // tell the compiler that there is no risk of aliased vector element
+      // use inverse of scaled_bpc_i as divide is much more expensive than
+      // multiply and can even block vectorization
+      double inv_scaled_bpc_i = 1.0 / scaled_bpc_i;
+      double* __restrict out = reddening[i].data();
+      const double* __restrict in = mw.data();
+      // explicit directive for good measure
+#pragma omp simd
       for (size_t j = 0; j < mw.size(); j++) {
-        reddening[i][j] = mw[j] / scaled_bpc_i;
+        reddening[i][j] = mw[j] * inv_scaled_bpc_i;
       }
     }
   } else if (mw_classic_extinction) {
