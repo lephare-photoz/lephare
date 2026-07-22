@@ -11,5 +11,5 @@ TESTDATADIR = os.path.join(TESTDIR, "../data")
 
 
 def test_spec_plotspec():
-    lp._spec.plotspec(os.path.join(TESTDATADIR, "example.spec"))
+    lp._spec.plot_spectrum(os.path.join(TESTDATADIR, "example.spec"))
     assert True

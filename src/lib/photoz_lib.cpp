@@ -2067,7 +2067,7 @@ vector<size_t> PhotoZ::validLib(const double& redshift, const bool& ir) {
 /*
   Propose a function to fit only one source
 */
-void PhotoZ::fit_onesource(onesource& src, const vector<double>& a0) {
+void PhotoZ::fit(onesource& src, const vector<double>& a0) {
   // Threshold in chi2 to consider. Remove <3 bands, stop when below this
   // chi2
   double thresholdChi2 =
@@ -2131,7 +2131,7 @@ void PhotoZ::fit_onesource(onesource& src, const vector<double>& a0) {
 /*
   Associate PDF and analysis of the PDF to the source which has been fit
 */
-void PhotoZ::uncertainties_onesource(onesource& src) {
+void PhotoZ::fit_uncertainties(onesource& src) {
   // Parabolic interpolation of the redshift
   bool zintp = keys["Z_INTERP"].split_bool("NO", 1)[0];
   // DZ_WIN minimal delta z window to search - 0.25 by default
@@ -2170,7 +2170,7 @@ void PhotoZ::uncertainties_onesource(onesource& src) {
 /*
   Compute physical parameters for one source
 */
-void PhotoZ::physpara_onesource(onesource& src) {
+void PhotoZ::physical_parameters(onesource& src) {
   /* Define what are the filters to be used for the absolute magnitude
    * depending on the method adopted */
   // MABS_METHOD method to compute the absolute magnitudes
@@ -2231,7 +2231,7 @@ void PhotoZ::physpara_onesource(onesource& src) {
     // Select the index of the templates that have a redshift closest to
     // zgmed We only work on GAL solutions here
     auto valid = validLib(src.zgmed[0]);
-    // Use the flux with no  MW since ab mag corrected in fit_onesource
+    // Use the flux with no  MW since ab mag corrected in fit
     src.fit(lightLib, flux_no_mw, valid, funz0, bp, restrict_rf);
   } else {
     src.consiz = src.zmin[0];
@@ -2273,7 +2273,7 @@ void PhotoZ::physpara_onesource(onesource& src) {
 /*
   return the best fit template
 */
-pair<vector<double>, vector<double>> PhotoZ::besttemplate_onesource(
+pair<vector<double>, vector<double>> PhotoZ::best_template(
     onesource& src, int const templateType, double const minl,
     double const maxl) {
   pair<vector<double>, vector<double>> tmp;
@@ -2300,8 +2300,9 @@ pair<vector<double>, vector<double>> PhotoZ::besttemplate_onesource(
       tmp = src.best_spec_vec(4, fullLib, lcdm, minl, maxl);
       break;
     default:
-      // Gestion d'erreur si 'case' n'est pas entre 1 et 5
-      throw std::invalid_argument("Case between 1 and 5.");
+      // Gestion d'erreur si 'case' n'est pas entre 0 et 4
+      throw std::invalid_argument(
+          "templateType needs to be an integer between 0 and 4.");
   }
 
   return tmp;

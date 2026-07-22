@@ -96,19 +96,46 @@ class PhotoZ {
 
   void run_photoz(vector<onesource*> sources, const vector<double>& a0);
 
-  void fit_onesource(onesource& sources, const vector<double>& a0);
+  /*! Fit a source based on the PhotoZ configuration
+   * \param source: the onesource object under consideration
+   * \param mag_shifts: magnitude shifts to apply prior to fit (zero points)
+   */
+  void fit(onesource& source, const vector<double>& mag_shifts);
 
-  void uncertainties_onesource(onesource& src);
+  /*! Compute the fit uncertainties of a source
+   * \param source: the onesource object under consideration
+   */
+  void fit_uncertainties(onesource& source);
 
-  void physpara_onesource(onesource& src);
+  /*! Compute the physical parameters derived from the fit to a source
+   * \param source: the onesource object under consideration
+   */
+  void physical_parameters(onesource& src);
 
-  pair<vector<double>, vector<double>> besttemplate_onesource(
-      onesource& src, int const templateType, double const minl,
-      double const maxl);
+  /*! Get the spectrum of one of the template of one solution to the fit of
+   * a source
+   * \param source: the onesource object under consideration
+   * \param templateType: which object type (GAL:0, GAL 2nd solution:1, GAL
+   * FIR:2, QSO:3, STAR:4)
+   * \param minl: lower bound in wavelength for the returned spectrum
+   * \param maxl: upper bound in wavelength for the returned
+   * spectrum
+   *
+   * \return a pair of vectors for the wavelengths and spectral energy density.
+   */
+  pair<vector<double>, vector<double>> best_template(onesource& source,
+                                                     int const templateType,
+                                                     double const minl,
+                                                     double const maxl);
 
-  inline void writeSpec_onesource(const onesource& src,
-                                  const string outdir = ".") {
-    src.writeSpec(fullLib, fullLibIR, lcdm, allFilters, outdir);
+  /*! Write out the spectrum solutions to ascii
+   * \param source: the onesource object under consideration
+   * \param outputDir: output directory
+   * The ascii file will be outputDir/Id<source.spec>.spec
+   */
+  inline void write_spectrum(const onesource& src,
+                             const string outputDir = ".") {
+    src.writeSpec(fullLib, fullLibIR, lcdm, allFilters, outputDir);
   }
 
   string prep_header(vector<string> outkeywords);
