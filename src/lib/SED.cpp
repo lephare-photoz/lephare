@@ -52,6 +52,8 @@ SED::SED(const string nameC, int nummodC, string type) {
   distMod = 0;
   qi = {0., 0., 0., 0.};
 
+  band_pass_correction = 1.;
+
   // Initialise the B and V filters for the band pass correction
   initialise_filters();
 }
