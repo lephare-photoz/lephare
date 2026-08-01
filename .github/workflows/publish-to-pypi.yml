@@ -40,7 +40,7 @@ jobs:
         with:
           submodules: recursive
       - name: Build wheels
-        uses: pypa/cibuildwheel@v4.1.0
+        uses: pypa/cibuildwheel@v4.1.1
         env:
           CIBUILDWHEEL: 1
           CIBW_ENVIRONMENT_LINUX: PYTHON_VERSION_REQUIRED=${{ matrix.python_version }}
@@ -76,7 +76,7 @@ jobs:
         with:
           submodules: recursive
       - name: Build wheels
-        uses: pypa/cibuildwheel@v4.1.0
+        uses: pypa/cibuildwheel@v4.1.1
         env:
           CIBUILDWHEEL: 1
           CIBW_BEFORE_ALL_MACOS: brew install llvm libomp
@@ -112,7 +112,7 @@ jobs:
         with:
           submodules: recursive
       - name: Build wheels
-        uses: pypa/cibuildwheel@v4.1.0
+        uses: pypa/cibuildwheel@v4.1.1
         env:
           CIBUILDWHEEL: 1
           CIBW_BEFORE_ALL_MACOS: brew install llvm libomp
