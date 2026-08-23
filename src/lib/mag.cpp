@@ -404,7 +404,7 @@ void GalMag::read_SED() {
   }  // end of while loop
 }
 
-struct valid_search {
+struct valid_extinction {
   int i;  // extlaw index
   int j;  // ebv index
 };
@@ -419,7 +419,7 @@ vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
   string mwFile = lepharedir + "/ext/MW_seaton.dat";
   mw_ext.read(mwFile);
 
-  std::vector<valid_search> valid_indices;
+  std::vector<valid_extinction> valid_indices;
 
   // extlaw.size()*ebv.size() is likely to be relatively low, so doing this
   // sequentially is fine
@@ -704,65 +704,72 @@ void QSOMag::read_SED() {
 }
 
 vector<QSOSED> QSOMag::make_maglib(const QSOSED& oneSED) {
-  vector<QSOSED> allSED;
-#pragma omp parallel for ordered schedule(dynamic) collapse(3)
-  // Loop over each extinction law
+  std::vector<valid_extinction> valid_indices;
+  // extlaw.size()*ebv.size() is likely to be relatively low, so doing this
+  // sequentially is fine
   for (int i = 0; i < extlaw.size(); i++) {
-    // loop over each E(B-V)
     for (int j = 0; j < ebv.size(); j++) {
-      // Loop over the redshift grid
-      for (size_t k = 0; k < gridz.size(); k++) {
-        // Select case which need to be considered (no extinction or extinction
-        // in the right model range) Remove all cases with extinction not in the
-        // right model range
-        if ((ebv[j] < 1.e-10 && i == 0) ||
-            (ebv[j] > 0 && oneSED.nummod >= (modext[i * 2]) &&
-             oneSED.nummod <= (modext[i * 2 + 1]))) {
-          // Generate intermediate Continuum SED, since original one must not
-          // change
-          QSOSED oneSEDInt(oneSED);
-
-          // galaxy redshift/distance in the grid
-          oneSEDInt.red = gridz[k];
-          oneSEDInt.distMod = gridDM[k];
-
-          // Check that the lambda coverage is correct
-          oneSEDInt.warning_integrateSED(allFlt, verbose);
-
-          // product of the SED with the extinction law
-          oneSEDInt.apply_extinction(ebv[j], extAll[i]);
-
-          // Opacity applied in rest-frame, depending on the redshift of the
-          // source
-          oneSEDInt.applyOpa(get_opa_vector());
-
-          // redshift the SED
-          oneSEDInt.redshift();
-
-          // Compute magnitude
-          oneSEDInt.compute_magnitudes(allFlt);
-
-          // If z>0, no need to keep the spectra
-          if (oneSEDInt.red > 1.e-10) oneSEDInt.lamb_flux.clear();
-
-#pragma omp ordered
-          {
-            // add to all SED (one time if ebv==0)
-            allSED.push_back(oneSEDInt);
-
-            // Info screen
-            // Display in the right order, even when the code is parrallelized
-            if (verbose) {
-              cout << "SED " << oneSEDInt.name << " z " << setw(6)
-                   << oneSEDInt.red;
-              cout << " Ext law " << extlaw[i] << "  E(B-V) " << ebv[j]
-                   << "  \r " << flush;
-            }
-            // Cleaning
-            oneSEDInt.clean();
-          }
-        }
+      // Select case which need to be considered (no extinction or extinction
+      // in the right model range) Remove all cases with extinction not in the
+      // right model range
+      if ((ebv[j] < 1.e-10 && i == 0) ||
+          (ebv[j] > 0 && oneSED.nummod >= (modext[i * 2]) &&
+           oneSED.nummod <= (modext[i * 2 + 1]))) {
+        valid_indices.push_back({i, j});
       }
+    }
+  }
+  size_t valid = valid_indices.size() * gridz.size();
+
+  // Generate intermediate Continuum SED, since original one must not
+  // change
+  vector<QSOSED> allSED(valid, oneSED);
+#pragma omp parallel for schedule(dynamic)
+  for (size_t itr = 0; itr != valid; ++itr) {
+    auto search_idx = itr / gridz.size();
+    auto search = valid_indices[search_idx];
+    auto i = search.i;
+    auto j = search.j;
+    auto k = itr % gridz.size();
+    QSOSED& oneSEDInt = allSED[itr];
+
+    // galaxy redshift/distance in the grid
+    oneSEDInt.red = gridz[k];
+    oneSEDInt.distMod = gridDM[k];
+
+    // Check that the lambda coverage is correct
+    oneSEDInt.warning_integrateSED(allFlt, verbose);
+
+    // product of the SED with the extinction law
+    oneSEDInt.apply_extinction(ebv[j], extAll[i]);
+
+    // Opacity applied in rest-frame, depending on the redshift of the
+    // source
+    oneSEDInt.applyOpa(get_opa_vector());
+
+    // redshift the SED
+    oneSEDInt.redshift();
+
+    // Compute magnitude
+    oneSEDInt.compute_magnitudes(allFlt);
+
+    // If z>0, no need to keep the spectra
+    if (oneSEDInt.red > 1.e-10) oneSEDInt.lamb_flux.clear();
+  }
+
+  // Display in the right order, even when the code is
+  // parrallelized
+  if (verbose) {
+    for (size_t itr = 0; itr != valid; ++itr) {
+      auto search_idx = itr / gridz.size();
+      auto search = valid_indices[search_idx];
+      auto i = search.i;
+      auto j = search.j;
+      auto k = itr % gridz.size();
+      QSOSED& oneSEDInt = allSED[itr];
+      cout << "SED " << oneSEDInt.name << " z " << setw(6) << oneSEDInt.red;
+      cout << " Ext law " << extlaw[i] << "  E(B-V) " << ebv[j] << "  \r "
+           << flush;
     }
   }
   // Now take all the SED for the current initial template
