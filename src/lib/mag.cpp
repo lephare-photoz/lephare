@@ -444,10 +444,10 @@ vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
 #pragma omp parallel for schedule(dynamic)
   for (size_t itr = 0; itr != valid; ++itr) {
     auto search_idx = itr / (fracEm.size() * gridz.size());
+    auto inner_start = itr % (fracEm.size() * gridz.size());
     auto search = valid_indices[search_idx];
     auto i = search.i;
     auto j = search.j;
-    auto inner_start = itr - search_idx * (fracEm.size() * gridz.size());
     auto l = inner_start / gridz.size();
     auto k = inner_start % gridz.size();
     GalSED& oneSEDInt = allSED[itr];
@@ -539,10 +539,10 @@ vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
   if (verbose) {
     for (size_t itr = 0; itr != valid; ++itr) {
       auto search_idx = itr / (fracEm.size() * gridz.size());
+      auto inner_start = itr % (fracEm.size() * gridz.size());
       auto search = valid_indices[search_idx];
       auto i = search.i;
       auto j = search.j;
-      auto inner_start = itr - search_idx * (fracEm.size() * gridz.size());
       auto l = inner_start / gridz.size();
       auto k = inner_start % gridz.size();
       GalSED& oneSEDInt = allSED[itr];
