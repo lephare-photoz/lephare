@@ -36,11 +36,11 @@ jobs:
           - python: 314
             python_version: "3.14"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.4.1
+        uses: pypa/cibuildwheel@v4.1.1
         env:
           CIBUILDWHEEL: 1
           CIBW_ENVIRONMENT_LINUX: PYTHON_VERSION_REQUIRED=${{ matrix.python_version }}
@@ -72,11 +72,11 @@ jobs:
           - python: 314
             python_version: "3.14"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.4.1
+        uses: pypa/cibuildwheel@v4.1.1
         env:
           CIBUILDWHEEL: 1
           CIBW_BEFORE_ALL_MACOS: brew install llvm libomp
@@ -108,11 +108,11 @@ jobs:
             python_version: "3.14"
     steps:
       - name: Checkout LePhare
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: recursive
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.4.1
+        uses: pypa/cibuildwheel@v4.1.1
         env:
           CIBUILDWHEEL: 1
           CIBW_BEFORE_ALL_MACOS: brew install llvm libomp
@@ -132,7 +132,7 @@ jobs:
     name: Make SDist
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         fetch-depth: 0  # Optional, use if you use setuptools_scm
         submodules: recursive  # Optional, use if you have submodules
