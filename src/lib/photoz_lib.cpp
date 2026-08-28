@@ -290,7 +290,7 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
   // model dependence
   if (red_type == "CLASSIC") mw_classic_extinction = true;
 
-  // read the kweywords associated to these two both options
+  // read the keywords associated to these two both options
   mwExtCurve = (key_analysed["EXT_MW_CURVE"]).split_string("CARDELLI", 1)[0];
   ext milkyWayExtinction(mwExtCurve);
   if (mw_galametz || mw_classic_extinction) {
@@ -1727,9 +1727,8 @@ void PhotoZ::read_mw_ebv(vector<onesource*> sources) {
     // Check if the file exist
     mw_ebv_ifstream.open(mw_ebv_file.c_str());
     if (!mw_ebv_ifstream) {
-      cout << "External MW_EBV_FILE indicated, but no existing file "
-           << mw_ebv_file << endl;
-      exit(0);
+      throw std::runtime_error("External MW_EBV_FILE not found: " +
+                               mw_ebv_file);
     }
 
     // Read ebv stream
