@@ -1,6 +1,9 @@
+#! /usr/bin/env python
+
 from contextlib import suppress
 
 from ._lephare import GalMag, QSOMag, StarMag, keyword
+from .cli import build_cli
 from .runner import Runner
 
 __all__ = [
@@ -9,7 +12,7 @@ __all__ = [
 
 config_keys = {
     "typ": "define what kind of objects these SED belong to : GAL, QSO, or STAR",
-    "verbose": "increase onscreen verbosity",
+    "VERBOSE": "increase onscreen verbosity",
     "COSMOLOGY": "fiducial cosmology used for absolute magnitudes evaluations",
     "FILTER_FILE": "filter file provided by filter script or the Filter class",
     "MAGTYPE": "AB or VEGA system",
@@ -37,7 +40,7 @@ class MagGal(Runner):
 
     typ:
            define what kind of objects these SED belong to : GAL, QSO, or STAR
-    verbose:
+    VERBOSE:
            increase onscreen verbosity
     COSMOLOGY:
            fiducial h0, Omega_m0, and LambdaO used to define a flat LCDM cosmology
@@ -70,8 +73,6 @@ class MagGal(Runner):
            possible rescaling values for the emission lines
     ADD_DUSTEM:
            add the dust emission in templates when missing
-    VERBOSE:
-           add verbosity
     """
 
     def update_help(self):
@@ -81,7 +82,8 @@ class MagGal(Runner):
             self.parser.usage = "Build the LePHARE synthetic magnitudes"
         self.__doc__ = doc + "\n"  # + inspect.getdoc(MagGal)
 
-    def __init__(self, config_file=None, config_keymap=None, **kwargs):
+    def __init__(self, config_file="", config_keymap=None, **kwargs):
+        self.name = "MagGal"
         super().__init__(config_keys, config_file, config_keymap, **kwargs)
 
     def run(self, **kwargs):
@@ -97,7 +99,7 @@ class MagGal(Runner):
         # Define the type (Galaxy, QSO, Stars)
         self.keymap["t"] = keyword("t", self.typ)
         # Parameter file
-        self.keymap["c"] = keyword("c", self.config)
+        self.keymap["c"] = keyword("c", self.config_file)
 
         if self.typ[0] == "G":
             mag = GalMag(self.keymap)
@@ -109,10 +111,6 @@ class MagGal(Runner):
             raise KeyError("-t arg must start with G/g Q/q or S/s for Galaxy QSO and Star respectively.")
         mag.open_files()
         mag.print_info()
-        # Read dust extinction laws
-        mag.read_ext()
-        # Define the redshift grid
-        mag.def_zgrid()
         # Read B12 templates to add dust emission to BC03
         add_dust = self.keymap["ADD_DUSTEM"].split_bool("NO", 1)
         if add_dust:
@@ -128,10 +126,13 @@ class MagGal(Runner):
         return
 
 
+# ---- CLI entry point ----
+
+cli = build_cli(MagGal, config_keys)
+
+
 def main():  # pragma no cover
-    runner = MagGal()
-    runner.run()
-    runner.end()
+    cli()
 
 
 if __name__ == "__main__":  # pragma no cover

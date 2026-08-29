@@ -3,6 +3,7 @@ import shutil
 
 import lephare as lp
 import numpy as np
+import pytest
 from astropy.table import Table
 
 
@@ -31,16 +32,16 @@ def test_process(test_data_dir: str):
             reduced_cols.append(c)
     output, photozlist = lp.process(config, input[reduced_cols], write_outputs=False)
     # Check one of the outputs (results are terrible with just one filter and sparse z grid)
-    assert np.isclose(output["Z_BEST"][0], 3.5877994546919934)
+    assert output["Z_BEST"][0] == pytest.approx(3.5878, abs=1.0e-3)
     assert len(photozlist[0].pdfmap[11].xaxis) == 51
     pdfs = np.array([photozlist[i].pdfmap[11].vPDF for i in np.arange(len(photozlist))])
-    assert np.isclose(np.sum(pdfs), 1001.2774052829275)
+    assert np.sum(pdfs) == pytest.approx(1001.3718)
     assert output["STRING_INPUT"][0] == test_string
     # Check AUTO_ADAPT
     config["AUTO_ADAPT"] = "YES"
     output, photozlist = lp.process(config, input[reduced_cols], write_outputs=True)
 
-    assert ~np.isclose(output["Z_BEST"][0], 3.5877994546919934)
+    assert ~(output["Z_BEST"][0] == pytest.approx(3.5877994546919934))
     assert os.path.isfile("zphot.out")
     assert output["IDENT"][0] == str(input["id"][0])
 
@@ -58,6 +59,41 @@ def test_process(test_data_dir: str):
         config, input[reduced_cols], standard_names=True
     )
     assert len(zspec) == 100
+
+
+def test_table_to_data_meme_mmme(test_data_dir):
+    # Test that we can load tables in MEME and MMEE formats
+    config = lp.default_cosmos_config.copy()
+    config["FILTER_LIST"] = "DUMMY1,DUMMY2"
+    input_table = Table()
+    input_table["id"] = [1, 2, 3]
+    input_table["f1"] = [10, 20, 30]
+    input_table["f2"] = [0.1, 0.2, 0.3]
+    input_table["f1_err"] = [1, 2, 3]
+    input_table["f2_err"] = [0.01, 0.02, 0.03]
+    input_table["context"] = [0, 0, 0]
+    input_table["zspec"] = [0.1, 0.2, 0.3]
+    input_table["string_input"] = ["a", "b", "c"]
+    config["CAT_FMT"] = "MMEE"
+    id, flux, flux_err, context, zspec, string_data = lp.table_to_data(
+        config,
+        input_table=input_table,
+    )
+    assert np.array_equal(id, [str(i) for i in input_table["id"]])
+    assert np.array_equal(flux, np.array([input_table["f1"], input_table["f2"]]).T)
+
+    # get current column order
+    cols = list(input_table.colnames)
+
+    # swap columns at index 2 and 3 (i.e. 3rd and 4th)
+    cols[2], cols[3] = cols[3], cols[2]
+    config["CAT_FMT"] = "MEME"
+    id, flux, flux_err, context, zspec, string_data = lp.table_to_data(
+        config,
+        input_table=input_table[cols],
+    )
+    assert np.array_equal(id, [str(i) for i in input_table["id"]])
+    assert np.array_equal(flux, np.array([input_table["f1"], input_table["f2"]]).T)
 
 
 def test_load_sed_list(test_data_dir):

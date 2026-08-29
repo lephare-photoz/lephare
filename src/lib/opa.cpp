@@ -46,7 +46,7 @@ void opa::read() {
       // getline( sopa, lit);
       // getline( sopa, lit);
 
-      lamb_opa.emplace_back(l, v, 3);
+      lamb_opa.emplace_back(l, v);
     }
   }
 

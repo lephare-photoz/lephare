@@ -1,6 +1,7 @@
 from matplotlib import pylab as plt
 
-from ._lephare import flt
+from lephare import flt
+
 from ._utils import continueClass
 
 __all__ = [

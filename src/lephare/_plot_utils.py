@@ -121,10 +121,12 @@ class PlotUtils:
 
     Notes
     -----
-    - The filter numbering starts at 0.
-    - The table must contain all expected columns from a LePHARE output table.
-    - The class methods produce a variety of plots to assess photometric redshift
-      performance and SED fitting reliability.
+
+        1. The filter numbering starts at 0.
+        2. The table must contain all expected columns from a LePHARE
+           output table.
+        3. The class methods produce a variety of plots to assess
+           photometric redshift performance and SED fitting reliability.
     """
 
     def __init__(self, t, sel_filt=0, pos_filt=None, range_z=None, range_mag=None, pdf_col=None):
@@ -228,6 +230,7 @@ class PlotUtils:
         self.lr = t["LUM_R_BEST"]
         self.lk = t["LUM_K_BEST"]
         self.pdfs = np.array(t[pdf_col])
+        self.zflag = t["Z_FLAG"] if "Z_FLAG" in t.colnames else np.zeros(len(t))
 
         # Define the panels with the binning in redshift an magnitude
         if len(range_z) <= 1:
@@ -289,14 +292,12 @@ class PlotUtils:
             The output PDF filename (default "all_photoz_plots.pdf").
         **kwargs : dict, optional
             Keyword arguments to pass to the plotting methods. Common keys include:
-            - bins : int
-                Number of bins for histograms.
-            - show_pit : bool
-                Whether to include PIT histogram in applicable plots.
-            - show_qq : bool
-                Whether to include QQ plots in applicable methods.
-            - savefig : bool
-                Whether to save individual plots.
+
+            - bins : int Number of bins for histograms.
+            - show_pit : bool Whether to include PIT histogram in applicable plots.
+            - show_qq : bool Whether to include QQ plots in applicable methods.
+            - savefig : bool Whether to save individual plots.
+
             Any method that does not accept a particular key will ignore it.
         """
         # Get all callable public methods
@@ -317,6 +318,7 @@ class PlotUtils:
             self.errormag,
             self.errorz,
             self.pit_qq,
+            self.zz_plot_flag,
         ]
 
         with PdfPages(filename) as pdf:
@@ -357,14 +359,12 @@ class PlotUtils:
             The output PDF filename (default "all_phys_plots.pdf").
         **kwargs : dict, optional
             Keyword arguments to pass to the plotting methods. Common keys include:
-            - bins : int
-                Number of bins for histograms.
-            - show_pit : bool
-                Whether to include PIT histogram in applicable plots.
-            - show_qq : bool
-                Whether to include QQ plots in applicable methods.
-            - savefig : bool
-                Whether to save individual plots.
+
+            - bins : int Number of bins for histograms.
+            - show_pit : bool Whether to include PIT histogram in applicable plots.
+            - show_qq : bool Whether to include QQ plots in applicable methods.
+            - savefig : bool Whether to save individual plots.
+
             Any method that does not accept a particular key will ignore it.
         """
         # Get all callable public methods
@@ -486,11 +486,14 @@ class PlotUtils:
 
         Notes
         -----
-        - Only objects with valid spectroscopic redshifts (`0 < ZSPEC < 9`) and
-          within the defined redshift and magnitude ranges are included.
-        - The number and layout of subpanels depend on the magnitude binning.
-        - This plot is typically one of the first diagnostics used to check the
-          performance of photometric redshift estimation.
+
+            1. Only objects with valid spectroscopic redshifts
+               (`0 < ZSPEC < 9`) and within the defined redshift and
+               magnitude ranges are included.
+            2. The number and layout of subpanels depend on the magnitude
+               binning.
+            3. This plot is typically one of the first diagnostics used to
+               check the performance of photometric redshift estimation.
 
         See Also
         --------
@@ -583,10 +586,12 @@ class PlotUtils:
 
         Notes
         -----
-        - Only sources with valid spectroscopic redshifts (`0 < ZSPEC < 9`) and
-          within the defined redshift and magnitude ranges are included.
-        - The panel layout is determined by the number of magnitude bins.
-        - This plot complements :func:`zml_zs` by using the minimum χ² redshift
+
+            1. Only sources with valid spectroscopic redshifts
+               (`0 < ZSPEC < 9`) and within the defined redshift and
+               magnitude ranges are included.
+            2. The panel layout is determined by the number of magnitude bins.
+            3. This plot complements :func:`zml_zs` by using the minimum χ² redshift
           rather than the PDF median.
 
         See Also
@@ -610,7 +615,7 @@ class PlotUtils:
 
         # label of the figure
         f.text(0.5, 0.04, "$z_{spec}$", ha="center", fontsize=15)
-        f.text(0.04, 0.5, r"$z_{phot}\; median\; PDF(z)$", va="center", rotation="vertical", fontsize=15)
+        f.text(0.04, 0.5, r"$z_{phot}\; minimum\; \chi^2$", va="center", rotation="vertical", fontsize=15)
 
         # Loop over the magnitude bins
         for rm in range(len(self.range_mag) - 1):
@@ -678,11 +683,13 @@ class PlotUtils:
 
         Notes
         -----
-        - Only sources within the defined redshift and magnitude ranges are included.
-        - The plot can reveal populations where the PDF and best-fit solutions diverge,
-          such as multi-peaked PDFs or poor fits.
-        - Strong deviations from the 1:1 line indicate inconsistency between the
-          χ²-based and PDF-based estimates.
+
+            1. Only sources within the defined redshift and magnitude ranges
+               are included.
+            2. The plot can reveal populations where the PDF and best-fit
+               solutions diverge, such as multi-peaked PDFs or poor fits.
+            3. Strong deviations from the 1:1 line indicate inconsistency
+               between the χ²-based and PDF-based estimates.
 
         See Also
         --------
@@ -757,13 +764,18 @@ class PlotUtils:
 
         Notes
         -----
-        - Only objects satisfying the redshift and magnitude selection criteria are used.
-        - Overlaid histograms allow direct comparison of the redshift distributions.
-        - Discrepancies between spectroscopic and photometric distributions may indicate
-          systematic shifts or incomplete coverage in certain redshift ranges.
+
+            1. Only objects satisfying the redshift and magnitude selection
+               criteria are used.
+            2. Overlaid histograms allow direct comparison of the redshift
+               distributions.
+            3. Discrepancies between spectroscopic and photometric
+               distributions may indicate systematic shifts or incomplete
+               coverage in certain redshift ranges.
 
         See Also
         --------
+
         zml_zs : Compare median photometric redshifts versus spectroscopic redshifts.
         zp_zs  : Compare best-fit photometric redshifts versus spectroscopic redshifts.
         zml_zp : Compare median and best-fit photometric redshifts.
@@ -877,10 +889,14 @@ class PlotUtils:
 
         Notes
         -----
-        - The figure is typically divided into subpanels according to `range_mag`.
-        - Only objects meeting the redshift and magnitude selection criteria are included.
-        - A broad or asymmetric χ² distribution at a given magnitude may suggest
-          underestimated photometric errors or mismatched templates.
+
+            1. The figure is typically divided into subpanels according
+               to `range_mag`.
+            2. Only objects meeting the redshift and magnitude selection
+               criteria are included.
+            3. A broad or asymmetric χ² distribution at a given magnitude
+               may suggest underestimated photometric errors or mismatched
+               templates.
 
         See Also
         --------
@@ -998,10 +1014,13 @@ class PlotUtils:
 
         Notes
         -----
-        - Uses the `NBAND_USED` column from the LePHARE output table.
-        - Only sources satisfying the redshift and magnitude selection criteria are included.
-        - A concentration of objects with a low number of filters may indicate missing
-          photometry or incomplete coverage in certain bands.
+
+            1. Uses the `NBAND_USED` column from the LePHARE output table.
+            2. Only sources satisfying the redshift and magnitude selection
+               criteria are included.
+            3. A concentration of objects with a low number of filters may
+               indicate missing photometry or incomplete coverage in certain
+               bands.
 
         See Also
         --------
@@ -1072,11 +1091,14 @@ class PlotUtils:
 
         Notes
         -----
-        - Uses the `MOD_BEST` column from the LePHARE output table.
-        - Only sources satisfying the redshift and magnitude selection criteria are included.
-        - The model identifiers correspond to entries in the LePHARE template library.
-        - A dominance of certain templates may indicate population trends or a lack of
-          diversity in the input SED library.
+
+            1. Uses the `MOD_BEST` column from the LePHARE output table.
+            2. Only sources satisfying the redshift and magnitude selection
+               criteria are included.
+            3. The model identifiers correspond to entries in the LePHARE
+               template library.
+            4. A dominance of certain templates may indicate population
+               trends or a lack of diversity in the input SED library.
 
         See Also
         --------
@@ -1147,10 +1169,13 @@ class PlotUtils:
 
         Notes
         -----
-        - Uses the `EBV_BEST` column from the LePHARE output table.
-        - Only sources meeting the redshift and magnitude selection criteria are included.
-        - Peaks or concentrations in E(B-V) may indicate preferred extinction values
-          in the template set or the typical dust content of the population.
+
+            1. Uses the `EBV_BEST` column from the LePHARE output table.
+            2. Only sources meeting the redshift and magnitude selection
+               criteria are included.
+            3. Peaks or concentrations in E(B-V) may indicate preferred
+               extinction values in the template set or the typical dust
+               content of the population.
 
         See Also
         --------
@@ -1222,12 +1247,16 @@ class PlotUtils:
 
         Notes
         -----
-        - Only sources with a valid secondary peak (`Z_SEC`) are included.
-        - The figure may be divided into subpanels based on magnitude bins.
-        - Comparison of primary and secondary peaks can reveal degeneracies in SED fitting
-          and ambiguous photometric redshift solutions.
-        - Useful for assessing the reliability of photometric redshift catalogs
-          and flagging objects with uncertain redshifts.
+
+            1. Only sources with a valid secondary peak (`Z_SEC`) are
+               included.
+            2. The figure may be divided into subpanels based on magnitude
+               bins.
+            3. Comparison of primary and secondary peaks can reveal
+               degeneracies in SED fitting and ambiguous photometric
+               redshift solutions.
+            4. Useful for assessing the reliability of photometric redshift
+               catalogs and flagging objects with uncertain redshifts.
 
         See Also
         --------
@@ -1324,12 +1353,15 @@ class PlotUtils:
 
         Notes
         -----
-        - Uses the observed magnitudes in B (`magb`), z (`magz`), and K (`magk`) filters.
-        - Only sources meeting the redshift and magnitude selection criteria are included.
-        - Overlaid regions indicate typical BzK selection areas for star-forming galaxies,
-          passive galaxies, and stars.
-        - Helps identify misclassified objects or potential contamination by stars
-          in galaxy samples.
+
+            1. Uses the observed magnitudes in B (`magb`), z (`magz`),
+               and K (`magk`) filters.
+            2. Only sources meeting the redshift and magnitude selection
+               criteria are included.
+            3. Overlaid regions indicate typical BzK selection areas for
+               star-forming galaxies, passive galaxies, and stars.
+            4. Helps identify misclassified objects or potential
+               contamination by stars in galaxy samples.
 
         See Also
         --------
@@ -1387,11 +1419,15 @@ class PlotUtils:
 
         Notes
         -----
-        - Uses the B-band absolute magnitudes
-        - Only objects within the redshift and magnitude selection ranges are included.
-        - The figure can be divided into subpanels based on magnitude or redshift bins.
-        - Helps identify trends such as brightening or dimming with redshift
-          and the distribution of galaxies in the luminosity-redshift plane.
+
+            1. Uses the B-band absolute magnitudes
+            2. Only objects within the redshift and magnitude selection
+               ranges are included.
+            3. The figure can be divided into subpanels based on magnitude
+               or redshift bins.
+            4. Helps identify trends such as brightening or dimming with
+               redshift and the distribution of galaxies in the
+               luminosity-redshift plane.
 
         See Also
         --------
@@ -1438,11 +1474,15 @@ class PlotUtils:
 
         Notes
         -----
-        - Uses absolute magnitudes (`MAG_ABS()`) and rest-frame colors derived from
-          the best-fit templates.
-        - Only objects within the redshift and magnitude selection ranges are included.
-        - Can reveal red sequence and blue cloud populations in the color–magnitude diagram.
-        - Subpanels can be used to separate objects by magnitude or redshift bins.
+
+            1. Uses absolute magnitudes (`MAG_ABS()`) and rest-frame colors
+               derived from the best-fit templates.
+            2. Only objects within the redshift and magnitude selection
+               ranges are included.
+            3. Can reveal red sequence and blue cloud populations in the
+               color–magnitude diagram.
+            4. Subpanels can be used to separate objects by magnitude or
+               redshift bins.
 
         See Also
         --------
@@ -1493,11 +1533,15 @@ class PlotUtils:
 
         Notes
         -----
-        - Uses rest-frame magnitudes or colors derived from the best-fit templates.
-        - Only objects within the redshift and magnitude selection ranges are included.
-        - Subpanels can be applied based on redshift or magnitude bins to study
-          evolution with cosmic time.
-        - Helps visualize the bimodality of galaxy populations in rest-frame color space.
+
+            1. Uses rest-frame magnitudes or colors derived from the
+               best-fit templates.
+            2. Only objects within the redshift and magnitude selection
+               ranges are included.
+            3. Subpanels can be applied based on redshift or magnitude bins
+               to study evolution with cosmic time.
+            4. Helps visualize the bimodality of galaxy populations in
+               rest-frame color space.
 
         See Also
         --------
@@ -1555,10 +1599,13 @@ class PlotUtils:
 
         Notes
         -----
-        - Only objects with valid spectroscopic redshifts are considered.
-        - A well-calibrated photometric redshift error distribution should contain
-          ~68% of spectroscopic redshifts within the 68% interval.
-        - Deviations from 68% indicate under- or overestimated photometric uncertainties.
+
+            1. Only objects with valid spectroscopic redshifts are considered.
+            2. A well-calibrated photometric redshift error distribution
+               should contain ~68% of spectroscopic redshifts within the
+               68% interval.
+            3. Deviations from 68% indicate under- or overestimated
+               photometric uncertainties.
 
         See Also
         --------
@@ -1648,11 +1695,13 @@ class PlotUtils:
 
         Notes
         -----
-        - Uses the columns `Z_BEST68_LOW`, `Z_BEST68_HIGH`, `Z_MED68_LOW`, `Z_MED68_HIGH`,
-          and `ZSPEC`.
-        - The plot shows error distributions as a function of the selected magnitude band.
-        - Can reveal trends where photometric errors are underestimated at faint magnitudes
-          or overestimated at bright magnitudes.
+
+            1. Uses the columns `Z_BEST68_LOW`, `Z_BEST68_HIGH`,
+               `Z_MED68_LOW`, `Z_MED68_HIGH`, and `ZSPEC`.
+            2. The plot shows error distributions as a function of the
+               selected magnitude band.
+            3. Can reveal trends where photometric errors are underestimated
+               at faint magnitudes or overestimated at bright magnitudes.
 
         See Also
         --------
@@ -1698,10 +1747,13 @@ class PlotUtils:
 
         Notes
         -----
-        - Uses the selected magnitude (`mag`) and corresponding photometric redshift
-          errors from the LePHARE output.
-        - Only objects within the redshift and magnitude selection criteria are included.
-        - Typically, errors increase for fainter objects due to lower signal-to-noise.
+
+            1. Uses the selected magnitude (`mag`) and corresponding
+               photometric redshift errors from the LePHARE output.
+            2. Only objects within the redshift and magnitude selection
+               criteria are included.
+            3. Typically, errors increase for fainter objects due to lower
+               signal-to-noise.
 
         See Also
         --------
@@ -1781,11 +1833,13 @@ class PlotUtils:
 
         Notes
         -----
-        - Uses the photometric redshifts (`Z_BEST` or `Z_MED`) and their
-          associated uncertainties from the LePHARE output.
-        - Only objects within the redshift and magnitude selection criteria are included.
-        - Errors often increase at high redshift due to fainter magnitudes and
-          fewer spectral features in the observed bands.
+
+            1. Uses the photometric redshifts (`Z_BEST` or `Z_MED`) and their
+               associated uncertainties from the LePHARE output.
+            2. Only objects within the redshift and magnitude selection
+               criteria are included.
+            3. Errors often increase at high redshift due to fainter
+               magnitudes and fewer spectral features in the observed bands.
 
         See Also
         --------
@@ -1902,15 +1956,15 @@ class PlotUtils:
 
         Returns
         -------
-        str
-            Path to the saved figure if `savefig=True`; otherwise an empty string.
+        Path to the saved figure if `savefig=True`; otherwise an empty string: str
 
         Notes
         -----
-        - PIT (Probability Integral Transform) values should be uniformly
-        distributed if the PDFs are well-calibrated.
-        - QQ plot compares the quantiles of the PIT distribution against a
-        uniform distribution to visually assess calibration.
+
+            1. PIT (Probability Integral Transform) values should be uniformly
+               distributed if the PDFs are well-calibrated.
+            2. QQ plot compares the quantiles of the PIT distribution
+               against a uniform distribution to visually assess calibration.
         """
 
         if pdfs is None:
@@ -2319,11 +2373,12 @@ class PlotUtils:
 
         Notes
         -----
-        - Only sources within the defined redshift and magnitude ranges are included.
-        - The plot can reveal populations where the PDF and best-fit solutions diverge,
-          such as multi-peaked PDFs or poor fits.
-        - Strong deviations from the 1:1 line indicate inconsistency between the
-          χ²-based and PDF-based estimates.
+        1. Only sources within the defined redshift and magnitude
+        ranges are included.
+        2. The plot can reveal populations where the PDF and best-fit
+        solutions diverge, such as multi-peaked PDFs or poor fits.
+        3. Strong deviations from the 1:1 line indicate inconsistency
+        between the χ²-based and PDF-based estimates.
 
         Examples
         --------
@@ -2390,11 +2445,12 @@ class PlotUtils:
 
         Notes
         -----
-        - Only sources within the defined redshift and magnitude ranges are included.
-        - The plot can reveal populations where the PDF and best-fit solutions diverge,
-          such as multi-peaked PDFs or poor fits.
-        - Strong deviations from the 1:1 line indicate inconsistency between the
-          χ²-based and PDF-based estimates.
+        1. Only sources within the defined redshift and magnitude
+        ranges are included.
+        2. The plot can reveal populations where the PDF and best-fit
+        solutions diverge, such as multi-peaked PDFs or poor fits.
+        3. Strong deviations from the 1:1 line indicate inconsistency
+        between the χ²-based and PDF-based estimates.
 
         Examples
         --------
@@ -2450,16 +2506,20 @@ class PlotUtils:
         Plot stellar mass versus redshift for the sample.
 
         This diagnostic shows the relation between stellar masses
-        and redshift, providing insight into mass evolution, selection effects, and completeness
-        limits of the survey.
+        and redshift, providing insight into mass evolution,
+        selection effects, and completeness limits of the survey.
 
         Notes
         -----
-        - Uses the stellar mass
-        - Only objects within the redshift and magnitude selection ranges are included.
-        - The figure can be divided into subpanels based on magnitude or redshift bins.
-        - Helps identify trends such as brightening or dimming with redshift
-          and the distribution of galaxies in the mass-redshift plane.
+
+            1. Uses the stellar mass
+            2. Only objects within the redshift and magnitude selection
+               ranges are included.
+            3. The figure can be divided into subpanels based on magnitude
+               or redshift bins.
+            4. Helps identify trends such as brightening or dimming with
+               redshift and the distribution of galaxies in the mass-redshift
+               plane.
 
         Examples
         --------
@@ -2495,16 +2555,20 @@ class PlotUtils:
         Plot SFR versus redshift for the sample.
 
         This diagnostic shows the relation between SFR
-        and redshift, providing insight into mass evolution, selection effects, and completeness
-        limits of the survey.
+        and redshift, providing insight into mass evolution,
+        selection effects, and completeness limits of the survey.
 
         Notes
         -----
-        - Uses the SFR
-        - Only objects within the redshift and magnitude selection ranges are included.
-        - The figure can be divided into subpanels based on magnitude or redshift bins.
-        - Helps identify trends such as brightening or dimming with redshift
-          and the distribution of galaxies in the mass-redshift plane.
+
+            1. Uses the SFR
+            2. Only objects within the redshift and magnitude selection
+               ranges are included.
+            3. The figure can be divided into subpanels based on magnitude
+               or redshift bins.
+            4. Helps identify trends such as brightening or dimming with
+               redshift and the distribution of galaxies in the mass-redshift
+               plane.
 
         Examples
         --------
@@ -2543,9 +2607,12 @@ class PlotUtils:
 
         Notes
         -----
-        - Uses the stellar mass and SFR
-        - Only objects within the redshift and magnitude selection ranges are included.
-        - The figure can be divided into subpanels based on magnitude or redshift bins.
+
+            1. Uses the stellar mass and SFR
+            2. Only objects within the redshift and magnitude selection
+               ranges are included.
+            3. The figure can be divided into subpanels based on magnitude
+               or redshift bins.
 
         Examples
         --------
@@ -2588,9 +2655,12 @@ class PlotUtils:
 
         Notes
         -----
-        - Uses the Lnuv and SFR
-        - Only objects within the redshift and magnitude selection ranges are included.
-        - The figure can be divided into subpanels based on magnitude or redshift bins.
+
+            1. Uses the Lnuv and SFR
+            2. Only objects within the redshift and magnitude selection
+               ranges are included.
+            3. The figure can be divided into subpanels based on magnitude
+               or redshift bins.
 
         Examples
         --------
@@ -2631,9 +2701,12 @@ class PlotUtils:
 
         Notes
         -----
-        - Uses the L(K) and massb
-        - Only objects within the redshift and magnitude selection ranges are included.
-        - The figure can be divided into subpanels based on magnitude or redshift bins.
+
+            1. Uses the L(K) and massb
+            2. Only objects within the redshift and magnitude selection
+               ranges are included.
+            3. The figure can be divided into subpanels based on magnitude
+               or redshift bins.
 
         Examples
         --------
@@ -2685,9 +2758,12 @@ class PlotUtils:
 
         Notes
         -----
-        - Uses the M(Ks) and mass
-        - Only objects within the redshift and magnitude selection ranges are included.
-        - The figure can be divided into subpanels based on magnitude or redshift bins.
+
+            1. Uses the M(Ks) and mass
+            2. Only objects within the redshift and magnitude selection
+               ranges are included.
+            3. The figure can be divided into subpanels based on magnitude
+               or redshift bins.
 
         Examples
         --------
@@ -2732,9 +2808,12 @@ class PlotUtils:
 
         Notes
         -----
-        - Uses the M(U) and SFR
-        - Only objects within the redshift and magnitude selection ranges are included.
-        - The figure can be divided into subpanels based on magnitude or redshift bins.
+
+            1. Uses the M(U) and SFR
+            2. Only objects within the redshift and magnitude selection
+               ranges are included.
+            3. The figure can be divided into subpanels based on magnitude
+               or redshift bins.
 
         Examples
         --------
@@ -2769,7 +2848,45 @@ class PlotUtils:
 
             ax.annotate(f"${zmin:.2f} < z < {zmax:.2f}$", xy=(-3, -23), color="black", fontsize=15)
 
-        return
+    def zz_plot_flag(self, fbounds=(0, 31), show=False):
+        """
+        Create a Z_BEST VS ZSPEC, Z_FLAG color coded scatter plot.
+
+
+        Notes
+        -----
+        - Uses Z_BEST, ZSPEC and Z_FLAG outputs.
+        - Boundaries can be set on the flag.
+        Examples
+        --------
+        >>> utils = lp.PlotUtils(t, sel_filt=3)
+        >>> utils.zz_plot_flag(flag_bound=(8,15))
+        """
+
+        plt.clf()
+
+        fig, ax = plt.subplots(figsize=(6, 5))
+
+        mask = (self.zflag >= fbounds[0]) & (self.zflag <= fbounds[1])
+
+        z_photo = self.zp[mask]
+        z_spec = self.zs[mask]
+        if z_photo.size == 0 or z_spec.size == 0:
+            print(f"the fbounds argument discarded all zphot or/and zspec values:{fbounds}")
+            return
+        stat = np.array(self.zflag[mask])
+        sc = ax.scatter(z_spec, z_photo, linewidth=0.3, s=8, alpha=0.5, c=stat, cmap="plasma_r")
+
+        ax.plot([0, max(np.max(z_spec), np.max(z_photo))], [0, max(np.max(z_spec), np.max(z_photo))], "r--")
+
+        ax.set_xlabel(r"$z_{spec}$")
+        ax.set_ylabel(r"$z_{phot}$")
+
+        fig.colorbar(sc, ax=ax)
+        fig.tight_layout()
+
+        if show:
+            plt.show()
 
 
 def integrate_pdfs_to_ztrue(pdfs, zgrid, ztrue):
