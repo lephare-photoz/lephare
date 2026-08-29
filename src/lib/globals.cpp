@@ -134,6 +134,10 @@ const vector<opa> &get_opa_vector() {
 
     string name;
     double red;
+    // clear the vector in case there are failed attempts to
+    // execute this code : C++ standard allows for retries on std::call_once
+    // in case of exception during initialization
+    result.clear();
     // Take the stream line by line: list of each opa file
     for (int i = 0; i < 81; i++) {
       stream >> red >> name;
