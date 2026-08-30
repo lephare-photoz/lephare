@@ -419,6 +419,23 @@ vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
   string mwFile = lepharedir + "/ext/MW_seaton.dat";
   mw_ext.read(mwFile);
 
+  // TODO is gridT monotonically increasing? so the filter could be an offset or
+  // view? claude suggests the cosmo::time function is monotonically decreasing,
+  // so we just need to decide if gridz is
+  std::vector<double> gridz_filtered;
+  std::vector<double> gridDM_filtered;
+  std::vector<GalSED*> B12SED_filtered;
+  for (size_t k = 0; k < gridz.size(); ++k) {
+    // Not older than the age of the Universe
+    if (gridT[k] > oneSED.age) {
+      gridz_filtered.push_back(gridz[k]);
+      gridDM_filtered.push_back(gridDM[k]);
+      if (add_dust) {
+        B12SED_filtered.push_back(&B12SED[k]);
+      }
+    }
+  }
+
   std::vector<valid_extinction> valid_indices;
 
   // extlaw.size()*ebv.size() is likely to be relatively low, so doing this
@@ -438,99 +455,96 @@ vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
       }
     }
   }
-  size_t valid = valid_indices.size() * fracEm.size() * gridz.size();
+  size_t valid = valid_indices.size() * fracEm.size() * gridz_filtered.size();
   vector<GalSED> allSED(valid, oneSED);
 
 #pragma omp parallel for schedule(dynamic)
   for (size_t itr = 0; itr != valid; ++itr) {
-    auto search_idx = itr / (fracEm.size() * gridz.size());
-    auto inner_start = itr % (fracEm.size() * gridz.size());
+    auto search_idx = itr / (fracEm.size() * gridz_filtered.size());
+    auto inner_start = itr % (fracEm.size() * gridz_filtered.size());
     auto search = valid_indices[search_idx];
     auto i = search.i;
     auto j = search.j;
-    auto l = inner_start / gridz.size();
-    auto k = inner_start % gridz.size();
+    auto l = inner_start / gridz_filtered.size();
+    auto k = inner_start % gridz_filtered.size();
     GalSED& oneSEDInt = allSED[itr];
 
     // galaxy redshift/distance in the grid
-    oneSEDInt.red = gridz[k];
-    oneSEDInt.distMod = gridDM[k];
+    oneSEDInt.red = gridz_filtered[k];
+    oneSEDInt.distMod = gridDM_filtered[k];
 
     // Check that the lambda coverage is correct
     oneSEDInt.warning_integrateSED(allFlt, verbose);
 
-    // Not older than the age of the Universe
-    if (gridT[k] > oneSEDInt.age) {
-      double LbeforeExt = oneSEDInt.trapzd();
+    double LbeforeExt = oneSEDInt.trapzd();
 
-      // product of the SED with the extinction law
-      oneSEDInt.apply_extinction(ebv[j], extAll[i]);
+    // product of the SED with the extinction law
+    oneSEDInt.apply_extinction(ebv[j], extAll[i]);
 
-      // Difference between the integrated flux with and without
-      // extinction (without is computed just above) flux integrate of
-      // the lambda range -> erg/s/cm2. It was for the source at 10pc,
-      // and then convert erg/s in Lsol
-      double dL = (LbeforeExt - oneSEDInt.trapzd()) / Lsol *
-                  (4 * pi * 100 * pow(pc, 2));
-      if (oneSEDInt.ltir < 0 && dL > 0) oneSEDInt.ltir = log10(dL);
-      // Rescale the B12 to the right dust luminosity (with energy
-      // balance) and sum to the stellar continuum is option on.
-      if (add_dust) {
-        oneSEDInt.sumSpectra(B12SED[k], dL);
+    // Difference between the integrated flux with and without
+    // extinction (without is computed just above) flux integrate of
+    // the lambda range -> erg/s/cm2. It was for the source at 10pc,
+    // and then convert erg/s in Lsol
+    double dL =
+        (LbeforeExt - oneSEDInt.trapzd()) / Lsol * (4 * pi * 100 * pow(pc, 2));
+    if (oneSEDInt.ltir < 0 && dL > 0) oneSEDInt.ltir = log10(dL);
+    // Rescale the B12 to the right dust luminosity (with energy
+    // balance) and sum to the stellar continuum is option on.
+    if (add_dust) {
+      oneSEDInt.sumSpectra(*B12SED_filtered[k], dL);
+    }
+
+    // Opacity applied in rest-frame, depending on the redshift of the
+    // source
+    oneSEDInt.applyOpa(get_opa_vector());
+
+    // redshift the SED, and restrict it to the union of the filters
+    // support.
+    oneSEDInt.redshift();
+    oneSEDInt.reduce_memory(allFlt);
+    // Compute magnitude
+    // Loop over the filters
+    oneSEDInt.compute_magnitudes(allFlt);
+    // If z>0, no need to keep the spectra
+    if (oneSEDInt.red > 1.e-10) oneSEDInt.lamb_flux.clear();
+
+    // Derive the emission line flux in each filter
+    if (emlines[0] == 'E' || emlines[0] == 'P') {
+      // Generate intermediate EM SED, since original one must not
+      // change
+      GalSED oneEmInt(oneEm);
+      oneEmInt.ebv = ebv[j];
+      oneEmInt.red = gridz_filtered[k];
+      // For the emission lines, use only the MW. Change fac_line
+      oneEmInt.apply_extinction_to_lines(ebv[j], mw_ext);
+      // rescale the lines as a free parameter
+      oneEmInt.fracEm = fracEm[l];
+      oneEmInt.rescaleEmLines();
+      /*
+      // Decide to not applied.
+      // apply a z dependence of the emission line ratio for OIII
+      oneEmInt.zdepEmLines(1);
+      */
+      // Generate the spectra with the emission lines
+      oneEmInt.generateEmSpectra(40);
+      // Opacity applied in rest-frame, depending on the redshift of
+      // the source
+      oneEmInt.applyOpa(get_opa_vector());
+      // Save the emission lines rest-frame in the continuum SED
+      oneSEDInt.fac_line = oneEmInt.fac_line;
+      //
+      oneEmInt.redshift();
+      oneEmInt.rescale(pow(10., -0.4 * oneSEDInt.distMod));
+      oneEmInt.reduce_memory(allFlt);
+      if (oneEmInt.lamb_flux.size() > 0) {
+        oneSEDInt.flEm = oneEmInt.compute_fluxes(allFlt);
+      } else {
+        oneSEDInt.flEm.assign(allFlt.size(), 0.);
       }
-
-      // Opacity applied in rest-frame, depending on the redshift of the
-      // source
-      oneSEDInt.applyOpa(get_opa_vector());
-
-      // redshift the SED, and restrict it to the union of the filters
-      // support.
-      oneSEDInt.redshift();
-      oneSEDInt.reduce_memory(allFlt);
-      // Compute magnitude
-      // Loop over the filters
-      oneSEDInt.compute_magnitudes(allFlt);
-      // If z>0, no need to keep the spectra
-      if (oneSEDInt.red > 1.e-10) oneSEDInt.lamb_flux.clear();
-
-      // Derive the emission line flux in each filter
-      if (emlines[0] == 'E' || emlines[0] == 'P') {
-        // Generate intermediate EM SED, since original one must not
-        // change
-        GalSED oneEmInt(oneEm);
-        oneEmInt.ebv = ebv[j];
-        oneEmInt.red = gridz[k];
-        // For the emission lines, use only the MW. Change fac_line
-        oneEmInt.apply_extinction_to_lines(ebv[j], mw_ext);
-        // rescale the lines as a free parameter
-        oneEmInt.fracEm = fracEm[l];
-        oneEmInt.rescaleEmLines();
-        /*
-        // Decide to not applied.
-        // apply a z dependence of the emission line ratio for OIII
-        oneEmInt.zdepEmLines(1);
-        */
-        // Generate the spectra with the emission lines
-        oneEmInt.generateEmSpectra(40);
-        // Opacity applied in rest-frame, depending on the redshift of
-        // the source
-        oneEmInt.applyOpa(get_opa_vector());
-        // Save the emission lines rest-frame in the continuum SED
-        oneSEDInt.fac_line = oneEmInt.fac_line;
-        //
-        oneEmInt.redshift();
-        oneEmInt.rescale(pow(10., -0.4 * oneSEDInt.distMod));
-        oneEmInt.reduce_memory(allFlt);
-        if (oneEmInt.lamb_flux.size() > 0) {
-          oneSEDInt.flEm = oneEmInt.compute_fluxes(allFlt);
-        } else {
-          oneSEDInt.flEm.assign(allFlt.size(), 0.);
-        }
-        // indicate that the emission lines have been computed
-        oneSEDInt.has_emlines = true;
-        oneSEDInt.fracEm = fracEm[l];
-        if (oneSEDInt.red > 1.e-10) oneEmInt.lamb_flux.clear();
-      }
+      // indicate that the emission lines have been computed
+      oneSEDInt.has_emlines = true;
+      oneSEDInt.fracEm = fracEm[l];
+      if (oneSEDInt.red > 1.e-10) oneEmInt.lamb_flux.clear();
     }
   }
 
@@ -538,13 +552,13 @@ vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
   // parrallelized
   if (verbose) {
     for (size_t itr = 0; itr != valid; ++itr) {
-      auto search_idx = itr / (fracEm.size() * gridz.size());
-      auto inner_start = itr % (fracEm.size() * gridz.size());
+      auto search_idx = itr / (fracEm.size() * gridz_filtered.size());
+      auto inner_start = itr % (fracEm.size() * gridz_filtered.size());
       auto search = valid_indices[search_idx];
       auto i = search.i;
       auto j = search.j;
-      auto l = inner_start / gridz.size();
-      auto k = inner_start % gridz.size();
+      auto l = inner_start / gridz_filtered.size();
+      auto k = inner_start % gridz_filtered.size();
       GalSED& oneSEDInt = allSED[itr];
       cout << "SED " << oneSEDInt.name << " z " << setw(6) << oneSEDInt.red;
       cout << " Ext law " << extlaw[i] << "  E(B-V) " << ebv[j] << "  Age "
