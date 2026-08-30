@@ -280,8 +280,8 @@ class SED {
 
   /*!  Return the pair of vectors [lambdas, vals] of wavelength and spectrum
    * values
-   * \param minl: Minimum \f$\lambda\f$ of the vector
-   * \param maxl: Maximum \f$\lambda\f$ of the vector
+   * \param minl: Minimum \f$\lambda\f$ of the vector (Angstrom)
+   * \param maxl: Maximum \f$\lambda\f$ of the vector (Angstrom)
    * \param mag: If true, return magnitudes as vals instead of fluxes
    * \param offset: offset of the mag system to be used in case mag is true.
    */

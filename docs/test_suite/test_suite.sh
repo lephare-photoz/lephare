@@ -89,6 +89,7 @@ zphota -c $CONFIG_FILE \
     --AUTO_ADAPT YES \
     --CAT_LINES 1,100 \
     --SPEC_OUT YES \
+    --CHI2_OUT YES \
     --PARA_OUT $LEPHAREDIR/examples/output.para \
     --VERBOSE NO \
     --ZFIX NO \
@@ -99,4 +100,4 @@ python $LEPHAREDIR/examples/figuresLPZ.py $CAT_OUT
 python $LEPHAREDIR/examples/spec.py *.spec -d pdf -o $LEPHAREWORK/zphota/spec
 
 echo "Moving output files..."
-mv $CAT_OUT Id*.spec figuresLPZ.pdf $LEPHAREWORK/zphota/
+mv $CAT_OUT Id*.spec Id*.chi figuresLPZ.pdf $LEPHAREWORK/zphota/
