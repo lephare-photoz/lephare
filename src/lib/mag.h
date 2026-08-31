@@ -44,8 +44,6 @@ class Mag {
   vector<double> gridz;
   vector<double> gridT, gridDM;
 
-  vector<double> magko;
-
  public:
   Mag(keymap &key_analysed);
   Mag(){};

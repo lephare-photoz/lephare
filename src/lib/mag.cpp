@@ -419,9 +419,9 @@ vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
   string mwFile = lepharedir + "/ext/MW_seaton.dat";
   mw_ext.read(mwFile);
 
-  // TODO is gridT monotonically increasing? so the filter could be an offset or
-  // view? claude suggests the cosmo::time function is monotonically decreasing,
-  // so we just need to decide if gridz is
+  // TODO is gridT monotonically decreasing? if so then we could just only use
+  // the first N values claude suggests the cosmo::time function is
+  // monotonically decreasing
   std::vector<double> gridz_filtered;
   std::vector<double> gridDM_filtered;
   std::vector<GalSED*> B12SED_filtered;
@@ -565,6 +565,8 @@ vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
            << oneSEDInt.age << "  \r " << flush;
     }
   }
+
+  std::vector<double> magko(allFlt.size());
 
   // Now take all the SED for the current initial template
   // Compute the K-correction, and save to file.
@@ -786,6 +788,8 @@ vector<QSOSED> QSOMag::make_maglib(const QSOSED& oneSED) {
            << flush;
     }
   }
+
+  std::vector<double> magko(allFlt.size());
   // Now take all the SED for the current initial template
   // Compute the K-correction
   for (size_t k = 0; k < allSED.size(); k++) {
