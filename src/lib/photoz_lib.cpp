@@ -11,6 +11,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 // Le Phare
@@ -20,8 +21,10 @@
 
 #include "SED.h"        //our own class to read the keywords
 #include "cosmology.h"  // in order to measure the distance modulus
-#include "globals.h"    // global variables
-#include "keyword.h"    //our own class to read the keywords
+#include "ext.h"  // to read the extinction curves and apply them to the SEDs when adding dust emission
+#include "flt.h"  //To get BPC of reference model if MW extinction is applied
+#include "globals.h"  // global variables
+#include "keyword.h"  //our own class to read the keywords
 #include "mag.h"  // to create the predicted magnitudes/k-corrections along the grid
 #include "onesource.h"
 #include "photoz_lib.h"
@@ -33,7 +36,7 @@ using namespace std;
   1 - Analyse the keywords
   2 - Read the magnitude's library and other documentation
 */
-PhotoZ::PhotoZ(keymap &key_analysed) {
+PhotoZ::PhotoZ(keymap& key_analysed) {
   keys = key_analysed;
   imagm = 0;
 
@@ -241,7 +244,7 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   bapp = key_analysed["MABS_REF"].split_int("1", -1);
   // Need to substract one because the convention in the .para file
   // start at 1, but 0 in the code
-  for (auto &tmp : bapp) tmp--;
+  for (auto& tmp : bapp) tmp--;
 
   // MABS_ZBIN give the redshift bins corresponding to MABS_FILT
   // MABS_FILT choose filters per redshift bin (MABS_ZBIN) if method 4
@@ -278,6 +281,48 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
     fltREF--;
   }
 
+  // EXTINCTION OF THE MILKY WAY
+  string red_type =
+      key_analysed["APPLY_MW_EXTINCTION"].split_string("NO", 1)[0];
+  // If it is GALAMETZ we compute per model values
+  if (red_type == "GALAMETZ") mw_galametz = true;
+  // If it is CLASSIC we correct the observed magnitudes, without considering
+  // model dependence
+  if (red_type == "CLASSIC") mw_classic_extinction = true;
+
+  // read the keywords associated to these two both options
+  mwExtCurve = (key_analysed["EXT_MW_CURVE"]).split_string("CARDELLI", 1)[0];
+  ext milkyWayExtinction(mwExtCurve);
+  if (mw_galametz || mw_classic_extinction) {
+    if (milkyWayExtinction.name != "CARDELLI") {
+      milkyWayExtinction.read(
+          lepharedir + "/ext/" +
+          key_analysed["EXT_MW_CURVE"].split_string("CARDELLI", 1)[0]);
+    } else {
+      double lmin = 300.;
+      double lmax = 10000000;
+      double lextg, extg;
+
+      // computes the galactic extinction
+      double dlbd = (lmax - lmin) / 10000.;
+      for (int i = 0; i < 10001; i++) {
+        lextg = lmin + double(i) * dlbd;
+        extg = cardelli_law(lextg);
+        milkyWayExtinction.add_element(lextg, extg);
+      }
+    }
+  }
+  // Additional information only for Galametz
+  if (mw_galametz) {
+    // set the reddening from the albd vals, the bpc, and the target model
+    mw_ref_mod = (key_analysed["MW_REFERENCE_MODEL"])
+                     .split_string("sed/STAR/PICKLES/b5i.sed", 1)[0];
+  }
+  // Could decide to apply a single MW E(B-V) to the full catalogue rather than
+  // one per source
+  mw_global_ebv = ((key_analysed["MW_GLOBAL_EBV"]).split_double("-1", 1))[0];
+  if (mw_global_ebv >= 0) one_mw_ebv = true;
+
   /*
     INFO PARAMETERS ON SCREEN AND DOC
   */
@@ -295,6 +340,11 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
     outputHeader += colib[k] + ' ';
   };
   outputHeader += '\n';
+  outputHeader += "# APPLY_MW_EXTINCTION    : " + red_type + '\n';
+  if (mw_galametz || mw_classic_extinction) {
+    outputHeader +=
+        "# MW_GLOBAL_EBV          : " + to_string(mw_global_ebv) + '\n';
+  }
   outputHeader += "# FIR_LIB                : ";
   for (size_t k = 0; k < nlibext; k++) {
     outputHeader += libext[k] + ' ';
@@ -307,12 +357,12 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   outputHeader += "# FIR_FREESCALE          : " + fir_frsc + '\n';
   outputHeader += "# FIR_SUBSTELLAR         : " + bool2string(substar) + '\n';
   outputHeader += "# ERR_SCALE              : ";
-  for (auto &err : min_err) {
+  for (auto& err : min_err) {
     outputHeader += to_string(err) + ' ';
   };
   outputHeader += '\n';
   outputHeader += "# ERR_FACTOR             : ";
-  for (auto &err : fac_err) {
+  for (auto& err : fac_err) {
     outputHeader += to_string(err) + ' ';
   };
   outputHeader += '\n';
@@ -333,12 +383,12 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 
   outputHeader += "# MABS_METHOD            : " + to_string(method) + '\n';
   outputHeader += "# MABS_CONTEXT           : ";
-  for (auto &tmp : magabscont) {
+  for (auto& tmp : magabscont) {
     outputHeader += to_string(tmp) + ' ';
   };
   outputHeader += '\n';
   outputHeader += "# MABS_REF               : ";
-  for (auto &tmp : bapp) {
+  for (auto& tmp : bapp) {
     outputHeader += to_string(tmp + 1) + ' ';
   };
   outputHeader += '\n';
@@ -423,6 +473,80 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
     allFiltersAdd = read_doc_filters(filtNameAdd);
   }
 
+  /*
+    Reddening of the Milky Way depending on the options
+  */
+  reddening.resize(fullLib.size(), vector<double>(imagm, 0.));
+  mw_classic_extinction_values.resize(allFilters.size(), 0.);
+  // Define the reddening correction to be applied model by model in case of
+  // Galametz method
+  if (mw_galametz) {
+    // Get the SED
+    SED mw_ref_model_sed("ReferenceModel", -1, "S");
+    mw_ref_model_sed.read(lepharedir + "/" + mw_ref_mod);
+    mw_ref_model_sed.compute_milky_way_extinction(milkyWayExtinction,
+                                                  allFilters);
+    // Compute the ebv for the reference model to scale the Band-Pass
+    // Corrections
+    const auto& refBPC = mw_ref_model_sed.band_pass_correction;
+    if (std::abs(refBPC) < 1e-12) {
+      throw std::runtime_error(
+          "refBPC is effectively zero. Check the reference model SED "
+          "(MW_REFERENCE_MODEL: " +
+          mw_ref_mod +
+          ") and the Milky Way extinction curve "
+          "(EXT_MW_CURVE : " +
+          milkyWayExtinction.name + ").");
+    }
+
+    // 10000 for the threshold is a generic default from Claude.ai.
+    // It may need optimization through profiling
+#pragma omp parallel for schedule(static) if (fullLib.size() > 10000)
+    for (size_t i = 0; i < fullLib.size(); i++) {
+      // Scale every SED BPC by the reference model BPC, and compute the
+      // reddening in each band
+      auto& sed = fullLib[i];
+      const auto& mw = sed->milky_way_extinction;
+      // Check that the number of filters used to compute the extinction
+      // in the library matches the number of filters in the input
+      if (imagm != mw.size()) {
+        throw runtime_error(
+            "Option MW dust correction is used with galametz, but "
+            "the number of filters used to compute the extinction in "
+            "the library do not match the number of filters in the input.");
+      }
+      double bpc_i = sed->band_pass_correction;
+      double scaled_bpc_i = bpc_i / refBPC;  // updated BPC
+      sed->band_pass_correction = scaled_bpc_i;
+
+      // tell the compiler that there is no risk of aliased vector element
+      // use inverse of scaled_bpc_i as divide is much more expensive than
+      // multiply and can even block vectorization
+      double inv_scaled_bpc_i = 1.0 / scaled_bpc_i;
+      double* __restrict out = reddening[i].data();
+      const double* __restrict in = mw.data();
+      // explicit directive for good measure
+#pragma omp simd
+      for (size_t j = 0; j < imagm; j++) {
+        reddening[i][j] = mw[j] * inv_scaled_bpc_i;
+      }
+    }
+  } else if (mw_classic_extinction) {
+    // If we apply the MW extinction in a classic way, we need to compute the
+    // extinction curve for each filter and apply it to the observations prior
+    // to the fit.
+    if (milkyWayExtinction.name != "CARDELLI") {
+      for (size_t j = 0; j < allFilters.size(); j++) {
+        mw_classic_extinction_values[j] =
+            compute_filter_extinction(allFilters[j], milkyWayExtinction);
+      }
+    } else {
+      for (size_t j = 0; j < allFilters.size(); j++) {
+        mw_classic_extinction_values[j] = 3.1 * cardelli_ext(allFilters[j]);
+      }
+    }
+  }
+
   // Decide if the uncertainties on the rest-frame colors should be analysed
   colAnalysis =
       ((fltColRF[0] >= 0) && (fltColRF[1] >= 0) && (fltColRF[2] >= 0) &&
@@ -433,6 +557,8 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
   and a light structure of SED
   Done to improve the performance in the fit*/
   flux.resize(fullLib.size(), vector<double>(imagm, 0.));
+  flux_no_mw.resize(fullLib.size(), vector<double>(imagm, 0.));
+
   zLib.resize(fullLib.size(), -99.);
   fluxIR.resize(fullLibIR.size(), vector<double>(imagm, 0.));
   zLibIR.resize(fullLibIR.size(), -99.);
@@ -473,6 +599,27 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
     // create a vector with the redshift of the library
     zLib[i] = redin;
   }
+
+  // Preparation for Galametz
+  if (mw_galametz) {
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    // Initialize the chi2
+    for (size_t i = 0; i < fullLib.size(); i++) {
+      // Loop over the filters
+      for (size_t k = 0; k < allFilters.size(); k++) {
+        // In case of Galametz method, save the unreddedned MW flux
+        flux_no_mw[i][k] = flux[i][k];
+        // If Galametz with one MW value, correct the lib once
+        if (one_mw_ebv) {
+          double factor = pow(10.0, reddening[i][k] * mw_global_ebv * 0.4);
+          flux[i][k] = flux_no_mw[i][k] / factor;
+        }
+      }
+    }
+  }
+
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
@@ -487,9 +634,9 @@ PhotoZ::PhotoZ(keymap &key_analysed) {
 keymap read_keymap_from_doc(const string libName) {
   // List of the keywords to be found in the mag_gal doc output.
   string list_keywords[] = {
-      "LIB_TYPE", "NUMBER_ROWS", "FILTER_FILE", "FILTERS",   "EM_LINES",
-      "LIB_NAME", "NUMBER_SED",  "Z_STEP",      "COSMOLOGY", "EXTINC_LAW",
-      "EB_V",     "MOD_EXTINC",  "Z_FORM"};
+      "LIB_TYPE", "NUMBER_ROWS", "FILTER_FILE", "FILTERS",     "EM_LINES",
+      "LIB_NAME", "NUMBER_SED",  "Z_STEP",      "COSMOLOGY",   "EXTINC_LAW",
+      "EB_V",     "MOD_EXTINC",  "Z_FORM",      "MW_GALAMETZ", "EXT_MW_CURVE"};
   // Number of keywords
   int nb_doc_key = (int)(sizeof(list_keywords) / sizeof(list_keywords[0]));
   cout << "Number of keywords to be read in the doc: " << nb_doc_key << endl;
@@ -504,16 +651,16 @@ keymap read_keymap_from_doc(const string libName) {
   }
   // need to create an array of char pointer, exactly as argv, in order to use
   // analyse_keywords
-  char *writable = new char[docOutFile.size() + 1];
+  char* writable = new char[docOutFile.size() + 1];
   copy(docOutFile.begin(), docOutFile.end(), writable);
   writable[docOutFile.size()] = '\0';
-  char *argv[] = {(char *)"bid", (char *)"-c", writable, NULL};
+  char* argv[] = {(char*)"bid", (char*)"-c", writable, NULL};
   keymap key_analysed = analyse_keywords(2, argv, list_keywords, nb_doc_key);
   delete[] writable;
   return key_analysed;
 }
 
-void PhotoZ::check_consistency(keymap &keys) {
+void PhotoZ::check_consistency(keymap& keys) {
   string valc = keys["LIB_TYPE"].split_string("GALAXY", 1)[0];
   // if we are not looking at a STAR library, we need
   // to assert that cosmology and z grids have been defined identically
@@ -540,14 +687,31 @@ void PhotoZ::check_consistency(keymap &keys) {
       }
     }
   }
+  // Check consistency between MW galametz options for library and photoz
+  bool mw_galametz_lib = keys["MW_GALAMETZ"].split_bool("NO", 1)[0];
+  string mw_curve_lib = ((keys["EXT_MW_CURVE"]).split_string("NONE", 1))[0];
+  // Check that GALAMETZ can be applied
+  if (mw_galametz) {
+    if (!mw_galametz_lib) {
+      throw runtime_error(
+          "Galametz MW option not used during building library "
+          "Can not be use now!");
+    } else if (strncasecmp(mw_curve_lib.c_str(), mwExtCurve.c_str(), 4) != 0) {
+      cout << "Library MW extinction curve " << mw_curve_lib << endl;
+      cout << "Photoz MW extinction curve " << mwExtCurve << endl;
+      throw runtime_error(
+          "Not the same EXT_MW_CURVE used during building library "
+          "And the one you want to use now!");
+    }
+  }
 }
 
 /*
   Read the magnitude library
 */
-void PhotoZ::read_lib(vector<SED *> &libFull, int &ind, int nummodpre[3],
-                      const string libName, string &filtname, vector<int> emMod,
-                      int &babs) {
+void PhotoZ::read_lib(vector<SED*>& libFull, int& ind, int nummodpre[3],
+                      const string libName, string& filtname, vector<int> emMod,
+                      int& babs) {
   keyword oneel;
   vector<keyword> key_doc;
   string line;
@@ -565,7 +729,11 @@ void PhotoZ::read_lib(vector<SED *> &libFull, int &ind, int nummodpre[3],
   filtname = ((key_analysed["FILTER_FILE"]).split_string("filters.dat", 1))[0];
   // EM_LINES
   string emlines = ((key_analysed["EM_LINES"]).split_string("NO", 1))[0];
-
+  // MW GALAMETZ
+  bool mw_galametz_lib = key_analysed["MW_GALAMETZ"].split_bool("NO", 1)[0];
+  // MW EXTINCTION CURVE
+  string mw_curve_lib =
+      ((key_analysed["EXT_MW_CURVE"]).split_string("NONE", 1))[0];
   // EXTINC_LAW"
   vector<string> extlaw =
       (key_analysed["EXTINC_LAW"]).split_string("calzetti.dat", -1);
@@ -598,7 +766,7 @@ void PhotoZ::read_lib(vector<SED *> &libFull, int &ind, int nummodpre[3],
   int ind0 = 0;
   vector<double> mag_z0;
   while (slibIn.tellg() < length) {
-    SED *oneSED;
+    SED* oneSED;
 
     if (valc[0] == 'G' || valc[0] == 'g') {
       oneSED = new GalSED("bid.dat", 0);
@@ -611,6 +779,11 @@ void PhotoZ::read_lib(vector<SED *> &libFull, int &ind, int nummodpre[3],
     } else {
       throw invalid_argument("There is no such SED type defined: " + valc);
     }
+
+    if (mw_galametz_lib) {
+      oneSED->has_mw_galametz = true;
+    }
+
     // read each SED in the library binary file
     oneSED->readMagBin(slibIn);
 
@@ -755,7 +928,7 @@ string PhotoZ::prep_header(vector<string> outkeywords) {
   string form = "# Format: \n#";
 
   // Loop over each keyword
-  for (const auto &outkey : outkeywords) {
+  for (const auto& outkey : outkeywords) {
     for (const string k : {"IDENT", "CONTEXT", "NBAND_USED", "NBAND_ULIM",
                            "ZSPEC", "STRING_INPUT"}) {
       if (outkey == k) {
@@ -853,7 +1026,7 @@ string PhotoZ::prep_header(vector<string> outkeywords) {
   ////////////////////////////////////////////////////////////////////////
   // Format for topcat
   form += "# Format topcat: \n#";
-  for (const auto &outkey : outkeywords) {
+  for (const auto& outkey : outkeywords) {
     for (const string k : {"IDENT", "CONTEXT", "NBAND_USED", "NBAND_ULIM",
                            "ZSPEC", "STRING_INPUT"}) {
       if (outkey == k) {
@@ -946,7 +1119,7 @@ string PhotoZ::prep_header(vector<string> outkeywords) {
 /*
  READ THE SOURCE IN THE INPUT CATALOGUE, CHOICE BETWEEN VARIOUS FORMATS
 */
-void PhotoZ::readsource(onesource *src, const string line) {
+void PhotoZ::readsource(onesource* src, const string line) {
   double dab, dsab;
 
   // put the line into the stream ss
@@ -992,10 +1165,10 @@ void PhotoZ::readsource(onesource *src, const string line) {
 /*
   read the sources which are used for the adaotation of the zero-points
  */
-vector<onesource *> PhotoZ::read_autoadapt_sources() {
+vector<onesource*> PhotoZ::read_autoadapt_sources() {
   string line;
   // Vector of the objects with a spec-z
-  vector<onesource *> adaptSources;
+  vector<onesource*> adaptSources;
   ifstream sin(cat.c_str());
   // Read all the sources for auto-adapt, store them
   int nobj = 0;
@@ -1003,7 +1176,7 @@ vector<onesource *> PhotoZ::read_autoadapt_sources() {
     // If the first character of the line is not #
     if (check_first_char(line)) {
       // Construct one objet
-      onesource *oneObj = yield(nobj, line);
+      onesource* oneObj = yield(nobj, line);
       oneObj->set_verbosity(verbose);
 
       // Keep only sources with a spectroscopic redshift
@@ -1025,14 +1198,43 @@ vector<onesource *> PhotoZ::read_autoadapt_sources() {
       }
     }
   }
+
+  // Read external file with MW EBV
+  this->read_mw_ebv(adaptSources);
+  // Read external file with redshifts
+  this->read_externalz(adaptSources);
+
   return adaptSources;
+}
+
+/*
+  Check if the source belong to the auto-adapt sample
+ */
+bool PhotoZ::belong_autoadapt(onesource* src) {
+  bool belongauto = false;
+
+  // Keep only sources with a spectroscopic redshift in the range
+  if (src->zs > adzmin && src->zs < adzmax) {
+    // extract the magnitude in the fl_auto filter
+    double magSel;
+    if (src->ab[fl_auto] > 0)
+      magSel = src->mab[fl_auto];
+    else
+      magSel = HIGH_MAG;
+    // Keep all the objects in the mag range
+    if (magSel > auto_thresmin && magSel < auto_thresmax) {
+      belongauto = true;
+    }
+  }
+
+  return belongauto;
 }
 
 /*
    Decide which offsets to be used depending on the AUTO_ADAPT and
    APPLY_SYSSHIFT option
 */
-vector<double> PhotoZ::compute_offsets(vector<onesource *> adaptSources) {
+vector<double> PhotoZ::compute_offsets(vector<onesource*> adaptSources) {
   // Offsets stored in a0
   vector<double> a0;
 
@@ -1070,7 +1272,7 @@ vector<double> PhotoZ::compute_offsets(vector<onesource *> adaptSources) {
   Run the fit in order to get an adaptation of the zero-points
   Median of the difference between the modeled magnitudes and the observed ones
 */
-vector<double> PhotoZ::run_autoadapt(vector<onesource *> adaptSources) {
+vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
   vector<double> a0;
   a0.assign(imagm, 0.);
   // Use the spec-z for the adpation
@@ -1084,24 +1286,39 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource *> adaptSources) {
     // While the convergence is not reached and we have less than 10 iterations
     while (converge == 0 && iteration < 10) {
       // Loop over the sources
-      for (auto &oneObj : adaptSources) {
+      unsigned int n_adapt_obj = 0;
+      for (auto& oneObj : adaptSources) {
+        // Correction for MW attenuation only the first time
+
         // Correct the observed magnitudes and fluxes with the coefficients
         // found by auto-adapt
+        // Start with the original fluxes ab_ori
         oneObj->adapt_mag(a0);
+
+        // Apply the milky way ebv correction to the observed mag if CLASSIC
+        if (mw_classic_extinction) {
+          oneObj->correct_classic_mw(mw_classic_extinction_values,
+                                     mw_global_ebv);
+        } else if (!one_mw_ebv && mw_galametz) {
+          flux = oneObj->redden_flux(flux_no_mw, reddening);
+        }
+
         // set the prior on the redshift, abs mag, ebv, etc on the object
         oneObj->setPriors(magabsB, magabsF);
 
         // Fit the source at the spec-z value, using only the template with
         // compatible redshift to zs.
         auto valid = validLib(oneObj->zs);
+
         oneObj->fit(lightLib, flux, valid, funz0, bp, restrict_rf);
 
+        n_adapt_obj++;
         // Interpolation of the predicted magnitudes, scaling at zs, checking
         // first that the fit was sucessfull
         if (oneObj->indmin[0] >= 0) {
           // interp_lib uses consiz to define the position of interpolation
           oneObj->consiz = oneObj->zs;
-          oneObj->interp_lib(fullLib);
+          oneObj->interp_lib(fullLib, flux);
         }
         if (verbose)
           cout << " Fit source for adapt " << oneObj->spec << "  \r " << flush;
@@ -1123,8 +1340,8 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource *> adaptSources) {
 /*
   function to compare observed magnitudes and predicted ones
 */
-void auto_adapt(const vector<onesource *> adaptSources, vector<double> &a0,
-                int &converge, int &iteration) {
+void auto_adapt(const vector<onesource*> adaptSources, vector<double>& a0,
+                int& converge, int& iteration) {
   vector<double> diff, a0pre;
   double inter;
 
@@ -1139,7 +1356,7 @@ void auto_adapt(const vector<onesource *> adaptSources, vector<double> &a0,
   for (int k = 0; k < imagm; k++) {
     diff.clear();
     // define a vector difference between the observed and predicted mag
-    for (auto &oneObj : adaptSources) {
+    for (auto& oneObj : adaptSources) {
       // Only in the case of a positive flux and a fit successfully performed
       if (oneObj->mab_ori[k] > 0 && oneObj->indmin[0] > 0 &&
           oneObj->busnorma[k] == 1) {
@@ -1187,7 +1404,7 @@ void auto_adapt(const vector<onesource *> adaptSources, vector<double> &a0,
    Determine the best filter to be used as a function of redshift
 */
 vector<vector<int>> bestFilter(int nbFlt, vector<double> gridz,
-                               vector<SED *> fulllib, int method,
+                               vector<SED*> fulllib, int method,
                                vector<long> magabscont, vector<int> bapp,
                                vector<int> bappOp, vector<double> zbmin,
                                vector<double> zbmax) {
@@ -1258,7 +1475,7 @@ vector<vector<int>> bestFilter(int nbFlt, vector<double> gridz,
   Derive the k-color term (rest-frame color - k-correction) maximum, in order to
   conserve the error bars for the absolute magnitudes
 */
-vector<vector<double>> maxkcolor(vector<double> gridz, vector<SED *> fulllib,
+vector<vector<double>> maxkcolor(vector<double> gridz, vector<SED*> fulllib,
                                  vector<vector<int>> bestFlt) {
   vector<vector<double>> extremeDiff, extremeDiffMin, extremeDiffMax;
   vector<double> extremeValMin, extremeValMax, extremeVal, di;
@@ -1283,7 +1500,7 @@ vector<vector<double>> maxkcolor(vector<double> gridz, vector<SED *> fulllib,
   {
 #pragma omp for
 #endif
-    for (vector<SED *>::iterator it = fulllib.begin(); it < fulllib.end();
+    for (vector<SED*>::iterator it = fulllib.begin(); it < fulllib.end();
          ++it) {
       // computed only for galaxies
       if ((*it)->nlib == 0) {
@@ -1326,8 +1543,8 @@ vector<vector<double>> maxkcolor(vector<double> gridz, vector<SED *> fulllib,
   Define the filters to pick (depending on the redshift) to minimize the
   k-correction + rest-frame color term in the absolute magnitude computation
 */
-void minimizekcolor(vector<double> gridz, vector<SED *> fulllib,
-                    vector<vector<int>> &bestFlt, vector<long> magabscont) {
+void minimizekcolor(vector<double> gridz, vector<SED*> fulllib,
+                    vector<vector<int>>& bestFlt, vector<long> magabscont) {
   vector<vector<double>> extremeDiffMin, extremeDiffMax;
   vector<double> extremeValMin, extremeValMax, extremeVal, di;
   vector<int> possiFlt;
@@ -1382,7 +1599,7 @@ void minimizekcolor(vector<double> gridz, vector<SED *> fulllib,
     {
 #pragma omp for
 #endif
-      for (vector<SED *>::iterator it = fulllib.begin(); it < fulllib.end();
+      for (vector<SED*>::iterator it = fulllib.begin(); it < fulllib.end();
            ++it) {
         // computed only for galaxies
         if ((*it)->nlib == 0) {
@@ -1428,38 +1645,8 @@ void minimizekcolor(vector<double> gridz, vector<SED *> fulllib,
   return;
 }
 
-vector<onesource *> PhotoZ::read_photoz_sources() {
-  vector<onesource *> photoz_sources;
-  // open the external file with zspec
-  ifstream szex;
-  string externalzfile = ((keys["EXTERNALZ_FILE"]).split_string("NONE", 1))[0];
-  if (externalzfile.substr(0, 4) != "NONE") {
-    szex.open(externalzfile.c_str());
-    if (!szex) {
-      cout << "External spec-z option, but no file " << externalzfile << endl;
-      exit(0);
-    }
-    string linezex;
-    // Ignore the comments
-    int nbcomments = 0;
-    while (!(check_first_char(linezex))) {
-      getline(szex, linezex);
-      nbcomments++;
-    }
-    // back to the beginning of the file
-    szex.seekg(0, ios::beg);
-    ;
-    // Go directly to the right lines, skip commented lines
-    for (int k = 1; k < nbcomments; k++) {
-      getline(szex, linezex);
-      cout << "skip comments " << '\n';
-    }  // go to the right starting row of the file
-    // Go directly to the right lines, skipping lines if CAT_LINES
-    for (unsigned int k = 1; k < rowmin; k++) {
-      getline(szex, linezex);
-      cout << "done skip " << k << " " << rowmin << '\n';
-    }  // go to the right starting row of the file
-  }
+vector<onesource*> PhotoZ::read_photoz_sources() {
+  vector<onesource*> photoz_sources;
 
   // Take the stream line by line
   unsigned int nobj = 0;
@@ -1483,35 +1670,153 @@ vector<onesource *> PhotoZ::read_photoz_sources() {
       }  // CAT_LINES option
 
       // Generate one objet
-      onesource *oneObj = yield(nobj, line);
+      onesource* oneObj = yield(nobj, line);
       oneObj->set_verbosity(verbose);
-
-      // Use zspec from external file
-      // open the external file with zspec
-      if (externalzfile.substr(0, 4) != "NONE") {
-        string idzex, linezex;
-        getline(szex, linezex);
-        stringstream sszex(linezex);
-        sszex >> idzex;
-        if (idzex != oneObj->spec)
-          cout << endl
-               << "ERROR: mismatch in the external file " << idzex << " "
-               << oneObj->spec << endl;
-        sszex >> oneObj->zs;
-      }
 
       // Add the source
       photoz_sources.push_back(oneObj);
     }
   }
+
+  // Read external file with MW EBV
+  this->read_mw_ebv(photoz_sources);
+  // Read external file with redshifts
+  this->read_externalz(photoz_sources);
+
   return photoz_sources;
 }
 
 /*
-  Additional layer to prepare the data for the run (context, flux and asscoiated
-  uncertainties)
+  Read the file with the external redshifts stored
+  Replace the zs read in input
+  Based on a unique Id
+ */
+void PhotoZ::read_externalz(vector<onesource*> sources) {
+  // open the external file with zspec
+  ifstream zex_ifstream;
+  string zex_file = ((keys["EXTERNALZ_FILE"]).split_string("NONE", 1))[0];
+  // check that the file exists
+  if (zex_file.substr(0, 4) != "NONE") {
+    zex_ifstream.open(zex_file.c_str());
+    if (!zex_ifstream) {
+      throw std::runtime_error("Associating external redshift file " +
+                               zex_file +
+                               " which is not found. EXTERNALZ_FILE option.");
+    }
+
+    // Build a lookup from source ID -> source pointer
+    std::unordered_map<std::string, onesource*> source_map;
+    for (auto* src : sources) {
+      source_map[src->spec] = src;
+    }
+
+    // Read zex stream
+    string linezex;
+    size_t matched = 0;
+    while (getline(zex_ifstream, linezex)) {
+      // check for comments
+      if (check_first_char(linezex)) {
+        stringstream ss(linezex);
+        string id;
+        double val;
+        // Expect Id and spec-z
+        ss >> id >> val;
+
+        // Find the input source with the same id
+        auto it = source_map.find(id);
+        if (it != source_map.end()) {
+          // Update its spec-z
+          it->second->zs = val;
+          matched++;
+        }
+      }
+    }
+
+    // If the number of external z does not match the number of sources
+    // Display a warning
+    if (matched != sources.size()) {
+      cout << "Warning: only matched " + std::to_string(matched) + " of " +
+                  to_string(sources.size()) +
+                  " sources when associating external redshift file." +
+                  " Not all zs replaced.";
+    }
+  }
+  return;
+}
+
+/*
+  Read the file with the MW E(B-V)
+  One value per source is expected
+  The E(B-V) should be sorted as the source list
+  Based on a unique Id
+ */
+void PhotoZ::read_mw_ebv(vector<onesource*> sources) {
+  // MW_EBV file
+  ifstream mw_ebv_ifstream;
+  string mw_ebv_file = keys["MW_EBV_FILE"].split_string("NONE", 1)[0];
+
+  // If MW should be corrected with different EBV value,
+  // and if the one single global MW EBV value is not defined
+  if ((mw_galametz || mw_classic_extinction) && !one_mw_ebv) {
+    // If a file name is defined
+    if (mw_ebv_file.substr(0, 4) != "NONE") {
+      // Check if the file exist
+      mw_ebv_ifstream.open(mw_ebv_file.c_str());
+      if (!mw_ebv_ifstream) {
+        throw std::runtime_error(
+            "External MW_EBV_FILE not found: " + mw_ebv_file +
+            " and global EBV not defined." +
+            "Can not apply MW dust correction as required.");
+      }
+
+      // Build a lookup from source ID -> source pointer
+      std::unordered_map<std::string, onesource*> source_map;
+      for (auto* src : sources) {
+        source_map[src->spec] = src;
+      }
+
+      // Read ebv stream
+      size_t matched = 0;
+      string linemwebv;
+      while (getline(mw_ebv_ifstream, linemwebv)) {
+        if (check_first_char(linemwebv)) {
+          stringstream ss(linemwebv);
+          string id;
+          double val;
+          ss >> id >> val;
+
+          auto it = source_map.find(id);
+          if (it != source_map.end()) {
+            it->second->mw_ebv = val;
+            matched++;
+          }
+        }
+      }
+
+      // If the number of read MW E(B-V) does not match the number of sources
+      if (matched != sources.size()) {
+        throw std::runtime_error(
+            "Only matched " + std::to_string(matched) + " of " +
+            std::to_string(sources.size()) +
+            " sources (associating MW_EBV_FILE to input)." +
+            " Stop because MW dust correction can not be " +
+            " applied to all sources while the option is used.");
+      }
+    } else {
+      throw std::runtime_error("External MW_EBV_FILE not found: " +
+                               mw_ebv_file + " and global EBV not defined." +
+                               "Can not apply MW dust correction as required.");
+    }
+  }
+
+  return;
+}
+
+/*
+  Additional layer to prepare the data for the run (context, flux and
+  asscoiated uncertainties)
 */
-void PhotoZ::prep_data(onesource *oneObj) {
+void PhotoZ::prep_data(onesource* oneObj) {
   // Convert the magnitude in fluxes if needed
   if (typm[0] == 'M') oneObj->convertFlux(catmag, allFilters);
   // Rescale the flux errors if needed
@@ -1525,9 +1830,9 @@ void PhotoZ::prep_data(onesource *oneObj) {
   return;
 }
 
-void PhotoZ::prep_data(vector<onesource *> sources) {
+void PhotoZ::prep_data(vector<onesource*> sources) {
   // Loop over all sources
-  for (auto &oneObj : sources) {
+  for (auto& oneObj : sources) {
     prep_data(oneObj);
   }
   return;
@@ -1536,11 +1841,11 @@ void PhotoZ::prep_data(vector<onesource *> sources) {
 /*
   Central part of the code to fit the templates and measure the photo-z
 */
-void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
+void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
   // Open the output file
   // RM_DISCREPANT_BD
-  // Threshold in chi2 to consider. Remove <3 bands, stop when below this chi2
-  // threshold
+  // Threshold in chi2 to consider. Remove <3 bands, stop when below this
+  // chi2 threshold
   double thresholdChi2 =
       ((keys["RM_DISCREPANT_BD"]).split_double("1.e9", 2))[0];
 
@@ -1551,19 +1856,19 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
   // DZ_WIN minimal delta z window to search - 0.25 by default
   double dz_win = ((keys["DZ_WIN"]).split_double("0.25", 1))[0];
 
-  // LIMITS_ZBIN Compute the z_max and M_faint in several bins of redshift. Give
-  // the z bin.
+  // LIMITS_ZBIN Compute the z_max and M_faint in several bins of redshift.
+  // Give the z bin.
   vector<double> limits_zbin =
       (keys["LIMITS_ZBIN"]).split_double("0.0,90.", -1);
   int nzbin = int(limits_zbin.size()) - 1;
-  // LIMITS_MAPP_REF Compute the z_max and M_faint in several bins of redshift.
-  // Give the reference band.
+  // LIMITS_MAPP_REF Compute the z_max and M_faint in several bins of
+  // redshift. Give the reference band.
   int limits_ref = ((keys["LIMITS_MAPP_REF"]).split_int("1", 1))[0];
-  // LIMITS_MAPP_SEL Compute the z_max and M_faint in several bins of redshift.
-  // Give the selection band in each bin.
+  // LIMITS_MAPP_SEL Compute the z_max and M_faint in several bins of
+  // redshift. Give the selection band in each bin.
   vector<int> limits_sel = (keys["LIMITS_MAPP_SEL"]).split_int("1", nzbin);
-  // LIMITS_MAPP_CUT Compute the z_max and M_faint in several bins of redshift.
-  // Give the cut in magnitude in each bin.
+  // LIMITS_MAPP_CUT Compute the z_max and M_faint in several bins of
+  // redshift. Give the cut in magnitude in each bin.
   vector<double> limits_cut =
       (keys["LIMITS_MAPP_CUT"]).split_double("90.", nzbin);
 
@@ -1574,16 +1879,16 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
   long fir_cont = keys["FIR_CONT"].split_long("-1", 1)[0];
   // FIR_SCALE context of the bands used for the rescaling in IR
   long fir_scale = keys["FIR_SCALE"].split_long("-1", 1)[0];
-  // FIR_FREESCALE possible free rscaling in IR, when several bands. Otherwise,
-  // model imposed by its LIR
+  // FIR_FREESCALE possible free rscaling in IR, when several bands.
+  // Otherwise, model imposed by its LIR
   string fir_frsc = keys["FIR_FREESCALE"].split_string("NO", 1)[0];
   // FIR_SUBSTELLAR remove the stellar component
   bool substar = keys["FIR_SUBSTELLAR"].split_bool("NO", 1)[0];
   // MIN_THRES threshold to trigger the detection - 0.1 by default
   double min_thres = keys["MIN_THRES"].split_double("0.1", 1)[0];
 
-  /* Define what are the filters to be used for the absolute magnitude depending
-   * on the method adopted */
+  /* Define what are the filters to be used for the absolute magnitude
+   * depending on the method adopted */
   // MABS_METHOD method to compute the absolute magnitudes
   int method = keys["MABS_METHOD"].split_int("0", -1)[0];
   // MABS_REF reference filter in case of mag abs method 2
@@ -1593,12 +1898,12 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
   vector<int> bappOp = keys["MABS_FILT"].split_int("1", -1);
   size_t nbBinZ = bappOp.size();
 
-  // Need to substract one because the convention in the .para file start at 1,
-  // but 0 in the code
-  for (auto &tmp : bappOp) tmp--;
-  // Need to substract one because the convention in the .para file start at 1,
-  // but 0 in the code
-  for (auto &tmp : bapp) tmp--;
+  // Need to substract one because the convention in the .para file start at
+  // 1, but 0 in the code
+  for (auto& tmp : bappOp) tmp--;
+  // Need to substract one because the convention in the .para file start at
+  // 1, but 0 in the code
+  for (auto& tmp : bapp) tmp--;
 
   // MABS_ZBIN give the redshift bins corresponding to MABS_FILT
   vector<double> zbmin = (keys["MABS_ZBIN"]).split_double("0", nbBinZ + 1);
@@ -1611,8 +1916,8 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
       imagm, gridz, fullLib, method, magabscont, bapp, bappOp, zbmin, zbmax);
   vector<vector<double>> maxkcol = maxkcolor(gridz, fullLib, goodFlt);
 
-  // check that the offset vector has the correct dimension. Otherwise, offsets
-  // at 0
+  // check that the offset vector has the correct dimension. Otherwise,
+  // offsets at 0
   vector<double> a0_checked = a0;
   if (a0.size() != size_t(imagm)) {
     a0_checked.assign(imagm, 0.);
@@ -1638,14 +1943,19 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
   }
 
   unsigned int nobj = 0;
-  for (auto &oneObj : sources) {
+  for (auto& oneObj : sources) {
     if (verbose)
       cout << "Fit source " << nobj << " with Id " << oneObj->spec << " \r "
            << flush;
     nobj++;
     // auto-adapt
-    // Apply offset anyway (should be 0 if no auto-adapt or no systematic shifts
+    // Apply offset anyway (should be 0 if no auto-adapt or no systematic
+    // shifts. Start from the original flux ab_ori
     oneObj->adapt_mag(a0_checked);
+    // Apply the milky way ebv correction to the observed mag if CLASSIC
+    // method
+    if (mw_classic_extinction)
+      oneObj->correct_classic_mw(mw_classic_extinction_values, mw_global_ebv);
     // set the prior on the redshift, abs mag, ebv, etc on the object
     oneObj->setPriors(magabsB, magabsF);
     // If ZFIX=YES select the templates with the closest redshift to zs,
@@ -1653,17 +1963,24 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
     if (zfix) {
       valid = validLib(oneObj->zs);
     }
+
+    // Apply MW reddening first if Galametz option on
+    if (!one_mw_ebv && mw_galametz) {
+      flux = oneObj->redden_flux(flux_no_mw, reddening);
+    }
+
     // Core of the program: compute the chi2
     oneObj->fit(lightLib, flux, valid, funz0, bp, restrict_rf);
-    // Try to remove some bands to improve the chi2, only as long as the chi2 is
-    // above a threshold
+
+    // Try to remove some bands to improve the chi2, only as long as the
+    // chi2 is above a threshold
     oneObj->rm_discrepant(lightLib, flux, valid, funz0, bp, thresholdChi2,
                           restrict_rf);
     // Generate the marginalized PDF (z+physical parameters) from the chi2
     // stored in each SED
     oneObj->generatePDF(lightLib, valid, colAnalysis, zfix);
-    // Interpolation of Z_BEST and ZQ_BEST (zmin) via Chi2 curves, put z-spec if
-    // ZFIX YES  (only gal for the moment)
+    // Interpolation of Z_BEST and ZQ_BEST (zmin) via Chi2 curves, put
+    // z-spec if ZFIX YES  (only gal for the moment)
     if (zfix || zintp) oneObj->interp(zfix, zintp, lcdm);
     // Uncertainties from the minimum chi2 + delta chi2
     oneObj->uncertaintiesMin();
@@ -1674,25 +1991,30 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
     // find the mode of the marginalized PDF and associated uncertainties,
     // centered on the mode
     oneObj->mode();
-    // The rest of the procedure requires that a specific choice be made for the
-    // redshift of GAL solutions, to be considered for computation of physical
-    // quantities, among the following choices: the spectro zs, the best chi2
-    // fit solution zmin[0], or the median solution zgmed[0].
+    // The rest of the procedure requires that a specific choice be made for
+    // the redshift of GAL solutions, to be considered for computation of
+    // physical quantities, among the following choices: the spectro zs, the
+    // best chi2 fit solution zmin[0], or the median solution zgmed[0].
     if (zfix) {
       oneObj->consiz = oneObj->zs;
     } else if (methz) {
       oneObj->consiz = oneObj->zgmed[0];
       oneObj->chimin[0] = 1.e9;
-      // Select the index of the templates that have a redshift closest to zgmed
-      // We only work on GAL solutions here
+      // Select the index of the templates that have a redshift closest to
+      // zgmed We only work on GAL solutions here
       auto validfix = validLib(oneObj->zgmed[0]);
       oneObj->fit(lightLib, flux, validfix, funz0, bp, restrict_rf);
+
     } else {
       oneObj->consiz = oneObj->zmin[0];
     }
 
+    // Correct the ab magnitude based on the last fit
+    // when galametz method is on
+    if (mw_galametz) oneObj->correct_galametz_mw(reddening);
+
     // Interpolation at the new redshift  (only gal for the moment)
-    oneObj->interp_lib(fullLib);
+    oneObj->interp_lib(fullLib, flux_no_mw);
     // Compute absolute magnitudes
     oneObj->absmag(goodFlt, maxkcol, lcdm, gridz);
     // Compute zmax and M_faint
@@ -1710,8 +2032,8 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
       oneObj->fltUsedIR(fir_cont, fir_scale, allFilters, fir_lmin);
       // Substract the stellar component to the FIR observed flux
       oneObj->subtract_stellar_component(substar, allFilters);
-      // Select in the IR library only the templates with redshifts closest to
-      // consiz
+      // Select in the IR library only the templates with redshifts closest
+      // to consiz
       auto validfix = validLib(oneObj->consiz, true);
       // Fit the SED on FIR data, with the redshift fixed at zmin or zmed
       oneObj->fitIR(fullLibIR, fluxIR, validfix, fir_frsc, lcdm);
@@ -1729,7 +2051,7 @@ void PhotoZ::run_photoz(vector<onesource *> sources, const vector<double> &a0) {
   return;
 }
 
-void PhotoZ::write_outputs(vector<onesource *> sources) {
+void PhotoZ::write_outputs(vector<onesource*> sources) {
   // CAT_OUT output  file -  zphot.out default
   string outf = ((keys["CAT_OUT"]).split_string("zphot.out", 1))[0];
   ofstream stout;
@@ -1747,14 +2069,14 @@ void PhotoZ::write_outputs(vector<onesource *> sources) {
   // If the pdf(z) is requested in output, open the several streams
   unordered_map<string, ofstream> pdf_streams;
   if (outpdz.compare(nonestring) != 0) {
-    for (const auto &type : pdftype) {
+    for (const auto& type : pdftype) {
       string output = outpdz + "_" + type + ".prob";
       pdf_streams[type].open(output.c_str());
     }
   }
 
   static bool first_obj = true;
-  for (auto &oneObj : sources) {
+  for (auto& oneObj : sources) {
     // write the object in output
     oneObj->write_out(stout, outkeywords);
 
@@ -1770,7 +2092,7 @@ void PhotoZ::write_outputs(vector<onesource *> sources) {
   }
 
   if (outpdz.compare(nonestring) != 0)
-    for (const auto &type : pdftype) {
+    for (const auto& type : pdftype) {
       pdf_streams[type].close();
     }
   stout.close();
@@ -1787,7 +2109,7 @@ void PhotoZ::write_outputs(vector<onesource *> sources) {
   return;
 }
 
-vector<size_t> PhotoZ::validLib(const double &redshift, const bool &ir) {
+vector<size_t> PhotoZ::validLib(const double& redshift, const bool& ir) {
   double closest_red = gridz[indexz(redshift, gridz)];
   vector<size_t> result = ir ? indexes_in_vec(closest_red, zLibIR, 1.e-10)
                              : indexes_in_vec(closest_red, zLib, 1.e-10);
@@ -1798,12 +2120,37 @@ vector<size_t> PhotoZ::validLib(const double &redshift, const bool &ir) {
 /*
   Propose a function to fit only one source
 */
-void PhotoZ::fit_onesource(onesource &src) {
-  // Threshold in chi2 to consider. Remove <3 bands, stop when below this chi2
+void PhotoZ::fit(onesource& src, const vector<double>& a0) {
+  // Threshold in chi2 to consider. Remove <3 bands, stop when below this
+  // chi2
   double thresholdChi2 =
       ((keys["RM_DISCREPANT_BD"]).split_double("1.e9", 2))[0];
 
   cout << "Fit source with Id " << src.spec << endl;
+
+  // check that the offset vector has the correct dimension. Otherwise,
+  // offsets at 0
+  vector<double> a0_checked = a0;
+  if (a0.size() != size_t(imagm)) {
+    a0_checked.assign(imagm, 0.);
+    cout << "Offsets have a size: " << a0.size()
+         << ", different from the filter number:" << imagm << endl;
+    cout << "Offsets changed at 0." << endl;
+  }
+
+  // Apply offset anyway (should be 0 if no auto-adapt or no systematic
+  // shifts Start from the original flux ab_ori
+  src.adapt_mag(a0_checked);
+
+  // Apply the milky way ebv correction to the observed mag if CLASSIC
+  // method
+  if (mw_classic_extinction) {
+    src.correct_classic_mw(mw_classic_extinction_values, mw_global_ebv);
+    // Apply MW reddening first if Galametz option on
+    // And not already done with global MW EBV
+  } else if (!one_mw_ebv && mw_galametz) {
+    flux = src.redden_flux(flux_no_mw, reddening);
+  }
 
   // set the prior on the redshift, abs mag, ebv, etc on the object
   src.setPriors(magabsB, magabsF);
@@ -1818,10 +2165,16 @@ void PhotoZ::fit_onesource(onesource &src) {
   }
   // Core of the program: compute the chi2
   src.fit(lightLib, flux, valid, funz0, bp, restrict_rf);
-  // Try to remove some bands to improve the chi2, only as long as the chi2 is
-  // above a threshold
+  // Try to remove some bands to improve the chi2, only as long as the chi2
+  // is above a threshold
   src.rm_discrepant(lightLib, flux, valid, funz0, bp, thresholdChi2,
                     restrict_rf);
+
+  // Correct the ab magnitude based on the last fit
+  // when galametz method is on
+  // It allows to have correct physical parameters
+  // And a good match in the .spec
+  if (mw_galametz) src.correct_galametz_mw(reddening);
 
   // write out chisquare values for all templates
   if (outchi) src.writeFullChi(lightLib);
@@ -1832,7 +2185,7 @@ void PhotoZ::fit_onesource(onesource &src) {
 /*
   Associate PDF and analysis of the PDF to the source which has been fit
 */
-void PhotoZ::uncertainties_onesource(onesource &src) {
+void PhotoZ::fit_uncertainties(onesource& src) {
   // Parabolic interpolation of the redshift
   bool zintp = keys["Z_INTERP"].split_bool("NO", 1)[0];
   // DZ_WIN minimal delta z window to search - 0.25 by default
@@ -1852,8 +2205,8 @@ void PhotoZ::uncertainties_onesource(onesource &src) {
   // stored in each SED
   src.generatePDF(lightLib, valid, colAnalysis, zfix);
 
-  // Interpolation of Z_BEST and ZQ_BEST (zmin) via Chi2 curves, put z-spec if
-  // ZFIX YES  (only gal for the moment)
+  // Interpolation of Z_BEST and ZQ_BEST (zmin) via Chi2 curves, put z-spec
+  // if ZFIX YES  (only gal for the moment)
   if (zfix || zintp) src.interp(zfix, zintp, lcdm);
   // Uncertainties from the minimum chi2 + delta chi2
   src.uncertaintiesMin();
@@ -1871,9 +2224,9 @@ void PhotoZ::uncertainties_onesource(onesource &src) {
 /*
   Compute physical parameters for one source
 */
-void PhotoZ::physpara_onesource(onesource &src) {
-  /* Define what are the filters to be used for the absolute magnitude depending
-   * on the method adopted */
+void PhotoZ::physical_parameters(onesource& src) {
+  /* Define what are the filters to be used for the absolute magnitude
+   * depending on the method adopted */
   // MABS_METHOD method to compute the absolute magnitudes
   int method = keys["MABS_METHOD"].split_int("0", -1)[0];
   // MABS_REF reference filter in case of mag abs method 2
@@ -1883,8 +2236,8 @@ void PhotoZ::physpara_onesource(onesource &src) {
 
   // Need to substract one because the convention in the .para file
   // start at 1, but 0 in the code
-  for (auto &tmp : bappOp) tmp--;
-  for (auto &tmp : bapp) tmp--;
+  for (auto& tmp : bappOp) tmp--;
+  for (auto& tmp : bapp) tmp--;
 
   // MABS_ZBIN give the redshift bins corresponding to MABS_FILT
   size_t nbBinZ = bappOp.size();
@@ -1905,33 +2258,41 @@ void PhotoZ::physpara_onesource(onesource &src) {
   long fir_cont = keys["FIR_CONT"].split_long("-1", 1)[0];
   // FIR_SCALE context of the bands used for the rescaling in IR
   long fir_scale = keys["FIR_SCALE"].split_long("-1", 1)[0];
-  // FIR_FREESCALE possible free rscaling in IR, when several bands. Otherwise,
-  // model imposed by its LIR
+  // FIR_FREESCALE possible free rscaling in IR, when several bands.
+  // Otherwise, model imposed by its LIR
   string fir_frsc = keys["FIR_FREESCALE"].split_string("NO", 1)[0];
   // FIR_SUBSTELLAR remove the stellar component
   bool substar = keys["FIR_SUBSTELLAR"].split_bool("NO", 1)[0];
   // MIN_THRES threshold to trigger the detection - 0.1 by default
   double min_thres = keys["MIN_THRES"].split_double("0.1", 1)[0];
 
-  // The rest of the procedure requires that a specific choice be made for the
-  // redshift of GAL solutions, to be considered for computation of physical
-  // quantities, among the following choices: the spectro zs, the best chi2
-  // fit solution zmin[0], or the median solution zgmed[0].
+  // In the case of Galametz, recompute the flux
+  // with the redenning from this source (if another source with run before,
+  // it could be the wrong reddening)
+  if (!one_mw_ebv && mw_galametz) {
+    flux = src.redden_flux(flux_no_mw, reddening);
+  }
+
+  // The rest of the procedure requires that a specific choice be made for
+  // the redshift of GAL solutions, to be considered for computation of
+  // physical quantities, among the following choices: the spectro zs, the
+  // best chi2 fit solution zmin[0], or the median solution zgmed[0].
   if (zfix) {
     src.consiz = src.zs;
   } else if (methz) {
     src.consiz = src.zgmed[0];
     src.chimin[0] = 1.e9;
-    // Select the index of the templates that have a redshift closest to zgmed
-    // We only work on GAL solutions here
+    // Select the index of the templates that have a redshift closest to
+    // zgmed We only work on GAL solutions here
     auto valid = validLib(src.zgmed[0]);
-    src.fit(lightLib, flux, valid, funz0, bp, restrict_rf);
+    // Use the flux with no  MW since ab mag corrected in fit
+    src.fit(lightLib, flux_no_mw, valid, funz0, bp, restrict_rf);
   } else {
     src.consiz = src.zmin[0];
   }
 
   // Interpolation at the new redshift  (only gal for the moment)
-  src.interp_lib(fullLib);
+  src.interp_lib(fullLib, flux_no_mw);
 
   // Compute absolute magnitudes
   src.absmag(goodFlt, maxkcol, lcdm, gridz);
@@ -1966,8 +2327,8 @@ void PhotoZ::physpara_onesource(onesource &src) {
 /*
   return the best fit template
 */
-pair<vector<double>, vector<double>> PhotoZ::besttemplate_onesource(
-    onesource &src, int const templateType, double const minl,
+pair<vector<double>, vector<double>> PhotoZ::best_template(
+    onesource& src, int const templateType, double const minl,
     double const maxl) {
   pair<vector<double>, vector<double>> tmp;
 
@@ -1993,8 +2354,9 @@ pair<vector<double>, vector<double>> PhotoZ::besttemplate_onesource(
       tmp = src.best_spec_vec(4, fullLib, lcdm, minl, maxl);
       break;
     default:
-      // Gestion d'erreur si 'case' n'est pas entre 1 et 5
-      throw std::invalid_argument("Case between 1 and 5.");
+      // Gestion d'erreur si 'case' n'est pas entre 0 et 4
+      throw std::invalid_argument(
+          "templateType needs to be an integer between 0 and 4.");
   }
 
   return tmp;

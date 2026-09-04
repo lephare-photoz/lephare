@@ -1,5 +1,6 @@
 import os
 import shutil
+import warnings
 
 import numpy as np
 
@@ -17,6 +18,7 @@ def process(
     standard_names=False,
     filename=None,
     write_outputs=False,
+    mw_ebv=None,
 ):
     """Run all required steps to produce photometric redshift estimates
 
@@ -36,6 +38,9 @@ def process(
     write_outputs : bool
         Whether to write the output spectra, PDF, and ascii file if specified
         in the config. By default these are not written to save space.
+    mw_ebv: np.array or None
+        Array of Milky Way E(B-V) values for each object in the input catalogue. This
+        will be override by the global MW EBV value if set in the config.
 
     Returns
     =======
@@ -47,37 +52,56 @@ def process(
     # ensure that all values in the keymap are keyword objects
     config = lp.all_types_to_keymap(config)
 
+    # Extract the standard information from astropy table
     id, flux, flux_err, context, zspec, string_data = table_to_data(
         config, input_table, col_names=col_names, standard_names=standard_names
     )
     ng = len(id)
     n_filters = len(config["FILTER_LIST"].value.split(","))
     print(f"Processing {ng} objects with {n_filters} bands")
-    photz = lp.PhotoZ(config)
-    # Compute offsets which will set to zero if AUTO_ADAPT is NO or APPLY_SYSSHIFT
-    # is not set. This will be used in the run_photoz method to apply the offsets
-    # to the model magnitudes.
-    # Loop over all ng galaxies!
-    srclist = []
-    for i in range(ng):
-        one_obj = lp.onesource(i, photz.gridz)
-        one_obj.readsource(str(id[i]), flux[i], flux_err[i], context[i], zspec[i], str(string_data[i]))
-        photz.prep_data(one_obj)
-        srclist.append(one_obj)
 
-    # compute the offset, depending on the option in the code (AUTO_ADAPT, or APPLY_SYSSHIFT
-    a0 = photz.compute_offsets(srclist)
+    # Check that the number of MW EBV given in argument match the number of sources in the table
+    mw_ebv_arg = mw_ebv is not None
+    if mw_ebv_arg:
+        warnings.warn("Milky Way E(B-V) values provided to process. Do not consider the MW external file.")
+        if len(mw_ebv) != ng:
+            raise ValueError(
+                f"Length of mw_ebv {len(mw_ebv)} provide to process does not match number of objects {ng}."
+            )
+
+    # initialize the photoz run
+    photz = lp.PhotoZ(config)
+
+    # Function to initialise one source
+    def create_and_prep_source(i):
+        obj = lp.onesource(i, photz.gridz)
+        obj.readsource(str(id[i]), flux[i], flux_err[i], context[i], zspec[i], str(string_data[i]))
+        if mw_ebv_arg:
+            obj.mw_ebv = mw_ebv[i]
+        photz.prep_data(obj)
+        return obj
+
+    # Define the list of sources to run the photoz and adaptation
+    photozlist = []
+    adaptlist = []
+    for i in range(ng):
+        one_obj = create_and_prep_source(i)
+        photozlist.append(one_obj)
+        # Add the source in the list only if it satisfies the autoadapt selection criteria
+        if photz.belong_autoadapt(one_obj):
+            # Need to recreate the source to have independant objects
+            adaptlist.append(create_and_prep_source(i))
+
+    if not mw_ebv_arg:
+        # Read the EBV from an external file, if not given in argument
+        photz.read_mw_ebv(photozlist)
+        photz.read_mw_ebv(adaptlist)
+
+    # compute the offset, depending on the option in the code (AUTO_ADAPT, or APPLY_SYSSHIFT)
+    a0 = photz.compute_offsets(adaptlist)
     offsets = ",".join(np.array(a0).astype(str))
     offsets = "# Offsets added to the modeled magnitudes (or substracted to the observed): " + offsets + "\n"
     print(offsets)
-
-    # create the onesource objects
-    photozlist = []
-    for i in range(ng):
-        one_obj = lp.onesource(i, photz.gridz)
-        one_obj.readsource(str(id[i]), flux[i], flux_err[i], context[i], zspec[i], str(string_data[i]))
-        photz.prep_data(one_obj)
-        photozlist.append(one_obj)
 
     # Perform the main run
     photz.run_photoz(photozlist, a0)
@@ -89,7 +113,13 @@ def process(
     return output, photozlist
 
 
-def calculate_offsets_from_input(config, input_table, col_names=None, standard_names=False):
+def calculate_offsets_from_input(
+    config,
+    input_table,
+    col_names=None,
+    standard_names=False,
+    mw_ebv=None,
+):
     """Calculate the zero point offsets for objects with spectroscopic redshifts
 
     We want to have this available as an independent method so that it can be
@@ -106,6 +136,9 @@ def calculate_offsets_from_input(config, input_table, col_names=None, standard_n
         Input catalogue column names. We will use ordering to determine meaning
     standard_names : bool
         If true we assume standard names.
+    mw_ebv: np.array or None
+        Array of Milky Way E(B-V) values for each object in the input catalogue. This
+        will be override by the global MW EBV value if set in the config.
 
     Returns
     =======
@@ -119,16 +152,34 @@ def calculate_offsets_from_input(config, input_table, col_names=None, standard_n
     ng = len(id)
     n_filters = len(config["FILTER_LIST"].value.split(","))
     print(f"Processing {ng} objects with {n_filters} bands")
+
+    # Check that the number of MW EBV given in argument match the number of sources in the table
+    mw_ebv_arg = mw_ebv is not None
+    if mw_ebv_arg:
+        warnings.warn("Milky Way E(B-V) values provided to process. Do not consider the MW external file.")
+        if len(mw_ebv) != ng:
+            raise ValueError(
+                f"Length of mw_ebv {len(mw_ebv)} provide to process does not match number of objects {ng}."
+            )
+
     photz = lp.PhotoZ(config)
+
     # Loop over all ng galaxies!
-    srclist = []
+    adaptlist = []
     for i in range(ng):
         one_obj = lp.onesource(i, photz.gridz)
         one_obj.readsource(str(id[i]), flux[i], flux_err[i], context[i], zspec[i], str(string_data[i]))
+        if mw_ebv_arg:
+            one_obj.mw_ebv = mw_ebv[i]
         photz.prep_data(one_obj)
-        srclist.append(one_obj)
+        if photz.belong_autoadapt(one_obj):
+            adaptlist.append(one_obj)
 
-    a0 = photz.compute_offsets(srclist)
+    if not mw_ebv_arg:
+        # Read the EBV from an external file, if not given in argument
+        photz.read_mw_ebv(adaptlist)
+
+    a0 = photz.compute_offsets(adaptlist)
     offsets = ",".join(np.array(a0).astype(str))
     offsets = "Offsets from auto-adapt: " + offsets + "\n"
     print(offsets)

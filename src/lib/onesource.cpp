@@ -28,7 +28,7 @@
 
 using namespace std;
 
-void onesource::readsource(const string &identifier, const vector<double> vals,
+void onesource::readsource(const string& identifier, const vector<double> vals,
                            const vector<double> err_vals,
                            const long context = 0, const double z_spec = -99.9,
                            const string additional_input = " ") {
@@ -162,7 +162,7 @@ void onesource::fltUsedIR(const long fir_cont, const long fir_scale,
  CONVERT THE MAG INTO FLUX IF NECESSARY
 */
 // LCOV_EXCL_START
-void onesource::convertFlux(const string &catmag,
+void onesource::convertFlux(const string& catmag,
                             const vector<flt> allFilters) {
   size_t imagm = allFilters.size();
   // If both magnitude and error are negative, flux/err are invalid
@@ -199,6 +199,9 @@ void onesource::convertFlux(const string &catmag,
  CONVERT THE FLUX INTO MAG
 */
 void onesource::convertMag() {
+  mab.clear();
+  msab.clear();
+
   // Loop over each filter
   for (size_t k = 0; k < ab.size(); k++) {
     // Case with everything positive
@@ -226,6 +229,7 @@ void onesource::convertMag() {
 */
 void onesource::keepOri() {
   ab_ori = ab;
+  sab_ori = sab;
   mab_ori = mab;
   return;
 }
@@ -243,13 +247,70 @@ void onesource::adapt_mag(vector<double> a0) {
     // Observed magnitudes and flux with the correction
     // apply the offset a0, in mag. Offset of +2.5 mag multiplies the flux by 10
     // Convention inverted: it's like applying the offset to the model (or to
-    // the data but sign inverted) That's why the sab aren't changed
-    if (ab_ori[k] > 0 || sab[k] > 0) ab[k] = ab_ori[k] * pow(10., 0.4 * corr);
+    // the data but sign inverted)
+    if (ab_ori[k] > 0 || sab_ori[k] > 0) {
+      ab[k] = ab_ori[k] * pow(10., 0.4 * corr);
+      sab[k] = sab_ori[k] * pow(10., 0.4 * corr);
+    }
     if (ab[k] > 0)
       mab[k] = flux2mag(ab[k]);
     else
       mab[k] = HIGH_MAG;
   }
+  return;
+}
+
+/*
+ Apply the MW dust correction with a classic method (no model dependency)
+ to the observed flux, error
+*/
+void onesource::correct_classic_mw(const vector<double>& Alamb_corr,
+                                   const double mw_global_ebv) {
+  // Initialise by the individual MW EBV if positive
+  double ebv = this->mw_ebv > 0 ? this->mw_ebv : 0.;
+  // Replace by the global ebv when exist.
+  // So, the global EBV overwrite all others
+  ebv = mw_global_ebv >= 0 ? mw_global_ebv : ebv;
+  // Don't do anything if ebv=0
+  if (ebv == 0.) return;
+
+  // Loop over each filter
+  for (size_t k = 0; k < ab.size(); k++) {
+    // Define the MW dust correction
+    double corr = pow(10., 0.4 * Alamb_corr[k] * ebv);
+    // Apply the correction to the flux and associated error
+    ab[k] *= corr;
+    // note: corr>0 so if sab negative, it stays so.
+    sab[k] *= corr;
+  }
+
+  // change also the associated magnitudes
+  this->convertMag();
+
+  return;
+}
+
+/*
+ Apply the MW dust correction with the galametz method (model dependency)
+ to the observed flux, error
+*/
+void onesource::correct_galametz_mw(const vector<vector<double>>& reddening) {
+  if (indmin[0] < 0 || this->mw_ebv <= 0) return;
+
+  // Take the reddening at the template position which minimize chi2
+  vector<double> sed_reddening_correction = reddening[indmin[0]];
+
+  // Loop over each filter
+  for (size_t k = 0; k < ab.size(); k++) {
+    // Define the correction to be applied to the observed fluxes
+    double corr = pow(10., 0.4 * sed_reddening_correction[k] * this->mw_ebv);
+    ab[k] = ab[k] * corr;
+    sab[k] *= corr;
+  }
+
+  // change also the associated magnitudes
+  this->convertMag();
+
   return;
 }
 
@@ -339,11 +400,48 @@ void onesource::rescale_flux_errors(const vector<double> min_err,
 }
 
 /*
+ redden the modeled fluxes according to the galactic E(B-V) value
+ of the considered galaxy, and the SED
+*/
+vector<vector<double>> onesource::redden_flux(
+    const vector<vector<double>>& flux,
+    const vector<vector<double>>& reddening) const {
+  // Determine dimensions
+  size_t nRows = flux.size();
+  size_t nCols = flux.empty() ? 0 : flux[0].size();
+
+  // Allocate output array with same size
+  vector<vector<double>> out(nRows, vector<double>(nCols, 0.0));
+
+#ifdef _OPENMP
+#pragma omp parallel
+  {
+#pragma omp for
+#endif
+    // Apply reddening correction element-wise
+    for (size_t i = 0; i < nRows; ++i) {
+      for (size_t k = 0; k < nCols; ++k) {
+        double factor = 1.;
+        // Do the correction only when MW E(B-V) is positive
+        if (this->mw_ebv > 0)
+          factor = pow(10.0, reddening[i][k] * this->mw_ebv * 0.4);
+        // Divide to redden times to deredden
+        out[i][k] = flux[i][k] / factor;
+      }
+    }
+#ifdef _OPENMP
+  }
+#endif
+
+  return out;
+}
+
+/*
  Principal function of the code with the fitting procedure
  */
-void onesource::fit(SEDlight &lightLib, const vector<vector<double>> &flux,
-                    const vector<size_t> &va, const double &funz0,
-                    const array<int, 2> &bp, const bool restrict) {
+void onesource::fit(SEDlight& lightLib, const vector<vector<double>>& flux,
+                    const vector<size_t>& va, const double& funz0,
+                    const array<int, 2>& bp, const bool restrict) {
   int number_threads = 1, thread_id = 0;
   size_t imagm = ab.size();
 
@@ -401,7 +499,7 @@ void onesource::fit(SEDlight &lightLib, const vector<vector<double>> &flux,
       double dmloc = -999.;
       for (size_t k = 0; k < imagm; k++) {
         // Not use negative  predicted flux (restrict RF lambda range)
-        double fluxin = flux[i][k] < 0 &&restrict ? 0 : flux[i][k];
+        double fluxin = flux[i][k] < 0 && restrict ? 0 : flux[i][k];
 
         avmago += fluxin * abinvsabSq[k];
         avmagt += fluxin * fluxin * invsabSq[k];
@@ -413,7 +511,7 @@ void onesource::fit(SEDlight &lightLib, const vector<vector<double>> &flux,
       double chi2loc = 0;
       for (size_t k = 0; k < imagm; k++) {
         // Not use negative  predicted flux (restrict RF lambda range)
-        double inter = flux[i][k] < 0 &&restrict
+        double inter = flux[i][k] < 0 && restrict
                            ? 0
                            : s2n[k] - dmloc * flux[i][k] * invsab[k];
         chi2loc += inter * inter;
@@ -498,7 +596,7 @@ void onesource::fit(SEDlight &lightLib, const vector<vector<double>> &flux,
   return;
 }
 
-void onesource::compute_best_fit_physical_quantities(vector<SED *> &fulllib) {
+void onesource::compute_best_fit_physical_quantities(vector<SED*>& fulllib) {
   // Best fit values for GAL physical parameters
   if (indmin[0] >= 0 && dmmin[0] > 0) {
     auto best_gal_sed = fulllib[indmin[0]];
@@ -624,9 +722,9 @@ double onesource::nzprior(const double luv, const double lnir,
  Test if some bands can be removed to improve the chi2, as long as the chi2
  remains above a threshold Done over all libraries
 */
-void onesource::rm_discrepant(SEDlight &lightLib,
-                              const vector<vector<double>> &flux,
-                              const vector<size_t> &va, const double funz0,
+void onesource::rm_discrepant(SEDlight& lightLib,
+                              const vector<vector<double>>& flux,
+                              const vector<size_t>& va, const double funz0,
                               const array<int, 2> bp, double thresholdChi2,
                               const bool restrict) {
   size_t imagm = busnorma.size();
@@ -677,9 +775,9 @@ void onesource::rm_discrepant(SEDlight &lightLib,
 /*
  Compute the chi2 for the IR library
 */
-void onesource::fitIR(vector<SED *> &fulllibIR,
-                      const vector<vector<double>> &fluxIR,
-                      const vector<size_t> &va, const string fit_frsc,
+void onesource::fitIR(vector<SED*>& fulllibIR,
+                      const vector<vector<double>>& fluxIR,
+                      const vector<size_t>& va, const string fit_frsc,
                       cosmo lcdm) {
   int number_threads = 1, thread_id = 0;
 // Do a local minimisation per thread (store chi2 and index)
@@ -712,7 +810,7 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
 #pragma omp for schedule(static, 10000)
     for (size_t v = 0; v < va.size(); v++) {
       size_t i = va[v];
-      SED *sed = fulllibIR[i];
+      SED* sed = fulllibIR[i];
       double dmcor;
       dmcor = pow(10., (0.4 * (lcdm.distMod(sed->red) - lcdm.distMod(consiz))));
 
@@ -787,7 +885,7 @@ void onesource::fitIR(vector<SED *> &fulllibIR,
  Generate PDF marginalized over several parameters
  based on the chi2 stored in the SED class
 */
-void onesource::generatePDF(SEDlight &lightLib, const vector<size_t> &va,
+void onesource::generatePDF(SEDlight& lightLib, const vector<size_t>& va,
                             const bool colAnalysis, const bool zfix) {
   // dimension of the redshift grid for the PDF
   int dimzg = pdfmap[9].size();
@@ -807,7 +905,7 @@ void onesource::generatePDF(SEDlight &lightLib, const vector<size_t> &va,
   // to create the marginalized PDF
   int pos = 0;
   double col1 = -999., col2 = -999.;
-  SED *rfSED;
+  SED* rfSED;
   double prob;
   // need to convert into 1 dimension array for openMP reduction
   // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] / 5:["AGE"] /
@@ -825,18 +923,18 @@ void onesource::generatePDF(SEDlight &lightLib, const vector<size_t> &va,
   vector<double> PDFmrefloc(pdfmap[8].size(), 0.0);
 
   // Prepare direct references for all variables stored inside slow containers
-  auto &pdfmass = pdfmap[0];
-  auto &pdfsfr = pdfmap[1];
-  auto &pdfssfr = pdfmap[2];
-  auto &pdfldust = pdfmap[3];
-  auto &pdfage = pdfmap[5];
-  auto &pdfcol1 = pdfmap[6];
-  auto &pdfcol2 = pdfmap[7];
-  auto &pdfmref = pdfmap[8];
-  auto &pdfminzg = pdfmap[9];
-  auto &pdfminzq = pdfmap[10];
-  auto &pdfbayzg = pdfmap[11];
-  auto &pdfbayzq = pdfmap[12];
+  auto& pdfmass = pdfmap[0];
+  auto& pdfsfr = pdfmap[1];
+  auto& pdfssfr = pdfmap[2];
+  auto& pdfldust = pdfmap[3];
+  auto& pdfage = pdfmap[5];
+  auto& pdfcol1 = pdfmap[6];
+  auto& pdfcol2 = pdfmap[7];
+  auto& pdfmref = pdfmap[8];
+  auto& pdfminzg = pdfmap[9];
+  auto& pdfminzq = pdfmap[10];
+  auto& pdfbayzg = pdfmap[11];
+  auto& pdfbayzq = pdfmap[12];
 
   // parrallellize over each SED
 #ifdef _OPENMP
@@ -1007,7 +1105,7 @@ void onesource::generatePDF(SEDlight &lightLib, const vector<size_t> &va,
 
   // Normalize the PDF
 
-  for (const auto &key : {11, 12, 0, 1, 2, 5, 3, 6, 7, 8})
+  for (const auto& key : {11, 12, 0, 1, 2, 5, 3, 6, 7, 8})
     pdfmap[key].normalization();
 
   // Convert minimum chi2 at a given redshift into proba
@@ -1022,7 +1120,7 @@ void onesource::generatePDF(SEDlight &lightLib, const vector<size_t> &va,
  Generate PDF marginalized over LIR
  based on the chi2 stored in the SED class
 */
-void onesource::generatePDF_IR(vector<SED *> &fulllib) {
+void onesource::generatePDF_IR(vector<SED*>& fulllib) {
   // 4:["LIR"]
   double PDFlirloc[pdfmap[4].size()];
   for (size_t i = 0; i < pdfmap[4].size(); ++i) PDFlirloc[i] = 0.0;
@@ -1036,9 +1134,9 @@ void onesource::generatePDF_IR(vector<SED *> &fulllib) {
 #endif
 
     // Loop over all SEDs
-    for (vector<SED *>::const_iterator it = fulllib.begin(); it < fulllib.end();
+    for (vector<SED*>::const_iterator it = fulllib.begin(); it < fulllib.end();
          ++it) {
-      const SED *sed = *it;
+      const SED* sed = *it;
       double prob = exp(-0.5 * (sed->chi2 - chiminIR));
 
       // Check that the model has a defined probability
@@ -1101,9 +1199,9 @@ void onesource::mode() {
 /*
  write the output file
 */
-void onesource::write_out(ofstream &stout, const vector<string> &outkeywords) {
+void onesource::write_out(ofstream& stout, const vector<string>& outkeywords) {
   // Loop over each keyword
-  for (const string &outkey : outkeywords) {
+  for (const string& outkey : outkeywords) {
     // If a match a found, write the value into the stream
     if (outkey == "IDENT")
       stout << setw(15) << std::fixed << setprecision(0) << spec << " ";
@@ -1155,7 +1253,7 @@ void onesource::write_out(ofstream &stout, const vector<string> &outkeywords) {
       stout << setw(6) << std::fixed << results["EXTLAW_BEST"] << " ";
     // Float
     stout.setf(ios::fixed, ios::floatfield);
-    for (const auto &key :
+    for (const auto& key :
          {"MASS_BEST", "LDUST_BEST", "LUM_TIR_BEST", "EBV_BEST", "LUM_NUV_BEST",
           "LUM_R_BEST", "LUM_K_BEST"}) {
       if (outkey == key)
@@ -1170,7 +1268,7 @@ void onesource::write_out(ofstream &stout, const vector<string> &outkeywords) {
       stout << setw(14) << setprecision(5) << chimin[0] << " ";
     if (outkey == "SCALE_BEST")
       stout << setw(14) << setprecision(5) << dmmin[0] << " ";
-    for (const auto &key : {"SFR_BEST", "SSFR_BEST", "AGE_BEST"}) {
+    for (const auto& key : {"SFR_BEST", "SSFR_BEST", "AGE_BEST"}) {
       if (outkey == key)
         stout << setw(12) << setprecision(3) << results[key] << " ";
     }
@@ -1189,15 +1287,15 @@ void onesource::write_out(ofstream &stout, const vector<string> &outkeywords) {
     if (outkey == "ZSPEC") stout << setw(14) << setprecision(5) << zs << " ";
 
     if (outkey == "MAG_OBS()") {
-      for (const auto &m : mab)
+      for (const auto& m : mab)
         stout << setw(10) << setprecision(3) << m << " ";
     }
     if (outkey == "ERR_MAG_OBS()") {
-      for (const auto &m : msab)
+      for (const auto& m : msab)
         stout << setw(10) << setprecision(3) << m << " ";
     }
     if (outkey == "MAG_MOD()") {
-      for (const auto &m : magm)
+      for (const auto& m : magm)
         stout << setw(10) << setprecision(3) << m << " ";
     }
 
@@ -1338,7 +1436,7 @@ void onesource::write_out(ofstream &stout, const vector<string> &outkeywords) {
     // 8 MAIN EMISSION LINES LYA, OII, HB, OIIIA, OIIIB, HA, SIIIA, SIIIB
     stout.setf(ios::scientific, ios::floatfield);
     stout.precision(5);
-    for (const auto &item : results_emission_lines) {
+    for (const auto& item : results_emission_lines) {
       if (outkey == item.first)
         stout << setw(15) << setprecision(5) << item.second << " ";
     }
@@ -1362,14 +1460,14 @@ void onesource::write_out(ofstream &stout, const vector<string> &outkeywords) {
  write the header of the PDF(z)
 */
 void onesource::write_pdz_header(vector<string> pdztype,
-                                 unordered_map<string, ofstream> &stpdz) {
+                                 unordered_map<string, ofstream>& stpdz) {
   // Loop over the PDF type wanted in output
   time_t now = time(nullptr);
-  for (const auto &type : pdztype) {
+  for (const auto& type : pdztype) {
     stpdz[type] << "# Creation date: " << asctime(localtime(&now));
     stpdz[type] << "# Probability associated to the following steps " << endl
                 << "# Id ";
-    for (const auto &xval : pdfmap[maptype[type]].xaxis)
+    for (const auto& xval : pdfmap[maptype[type]].xaxis)
       stpdz[type] << "P" << xval << " ";
     stpdz[type] << endl;
   }
@@ -1380,11 +1478,11 @@ void onesource::write_pdz_header(vector<string> pdztype,
  write the PDF(z)
 */
 void onesource::write_pdz(vector<string> pdztype,
-                          unordered_map<string, ofstream> &stpdz) {
+                          unordered_map<string, ofstream>& stpdz) {
   // Loop over the PDF type wanted in output
-  for (const auto &type : pdztype) {
+  for (const auto& type : pdztype) {
     stpdz[type] << setw(15) << std::fixed << setprecision(4) << spec << " ";
-    for (const auto &xval : pdfmap[maptype[type]].vPDF)
+    for (const auto& xval : pdfmap[maptype[type]].vPDF)
       stpdz[type] << setw(16) << std::scientific << xval << " ";
     stpdz[type] << endl;
   }
@@ -1395,7 +1493,8 @@ void onesource::write_pdz(vector<string> pdztype,
  INTERPOLATE LINEARILY IN THE LIBRARY
  Do it only for GAL
 */
-void onesource::interp_lib(vector<SED *> &fulllib) {
+void onesource::interp_lib(vector<SED*>& fulllib,
+                           const vector<vector<double>>& flux) {
   magm.clear();
   // all the sizes in in the fulllib SED should be identical to the
   // bands saved in the onesource object
@@ -1427,8 +1526,20 @@ void onesource::interp_lib(vector<SED *> &fulllib) {
     if (fulllib[indmin[0] + deca]->red < 1.e-10) deca = 0;
 
     // Store in two SED around zs
-    const SED &SEDa = *fulllib[indmin[0]];
-    const SED &SEDb = *fulllib[indmin[0] + deca];
+    const SED& SEDa = *fulllib[indmin[0]];
+    const SED& SEDb = *fulllib[indmin[0] + deca];
+    vector<double> magma(imagm), magmb(imagm);
+    for (int k = 0; k < imagm; k++) {
+      // Use the flux from the lib which could change with MW extinction
+      if (flux[indmin[0]][k] > 0 && flux[indmin[0] + deca][k] > 0) {
+        magma[k] = flux2mag(flux[indmin[0]][k]);
+        magmb[k] = flux2mag(flux[indmin[0] + deca][k]);
+      } else {
+        // Case of negative predicted flux (occurs in FIR fit)
+        magma[k] = SEDa.mag[k];
+        magmb[k] = SEDb.mag[k];
+      }
+    }
 
     // Check that the interpolation can be done
     // same model in the library around zs
@@ -1443,7 +1554,7 @@ void onesource::interp_lib(vector<SED *> &fulllib) {
         // Check if the interpolation if possible
         if (SEDb.mag[k] > 90) a = 0.0;
         // Interpolation of the predicted magnitudes.
-        magm.push_back(a * SEDb.mag[k] + (1. - a) * SEDa.mag[k]);
+        magm.push_back(a * magmb[k] + (1. - a) * magma[k]);
         // Check if the interpolation if possible
         if (SEDb.kcorr[k] > 90) a = 0.0;
         // Interpolation of the k-corrections
@@ -1491,7 +1602,7 @@ void onesource::interp_lib(vector<SED *> &fulllib) {
 /*
  REDSHIFT INTERPOLATION  if  ZINTP=true
 */
-void onesource::interp(const bool zfix, const bool zintp, const cosmo &lcdm) {
+void onesource::interp(const bool zfix, const bool zintp, const cosmo& lcdm) {
   if (zfix) {
     dmmin[0] *= lcdm.flux_rescaling(zmin[0], zs);
     zmin[0] = zs;
@@ -1649,7 +1760,7 @@ void onesource::uncertaintiesBayIR() {
      As pdfmap[9]=="MIN_ZG" is harcoded here, this is only valid
      for the GAL solutions.
 */
-void onesource::secondpeak(SEDlight &lightLib, const double dz_win,
+void onesource::secondpeak(SEDlight& lightLib, const double dz_win,
                            const double min_thres) {
   // Detect the other maximum in the PDF
   pdfmap[9].secondMax(dz_win);
@@ -1687,8 +1798,8 @@ void onesource::secondpeak(SEDlight &lightLib, const double dz_win,
 /*
  ABSOLUTE MAGNITUDES
 */
-void onesource::absmag(const vector<vector<int>> &bestFlt,
-                       const vector<vector<double>> &maxkcolor, cosmo lcdm,
+void onesource::absmag(const vector<vector<int>>& bestFlt,
+                       const vector<vector<double>>& maxkcolor, cosmo lcdm,
                        const vector<double> gridz) {
   int fobs;
   double errmagabs;
@@ -1729,7 +1840,7 @@ void onesource::absmag(const vector<vector<int>> &bestFlt,
 /*
  Compute the emission lines to add them in the output later
 */
-void onesource::computeEmFlux(vector<SED *> &fulllib, cosmo lcdm) {
+void onesource::computeEmFlux(vector<SED*>& fulllib, cosmo lcdm) {
   /// rest frame wavelengths [Lya, OII, Hb, OIIIa, OIIIb, Ha, SIIIa, SIIIb]
   array<double, 8> lambda_em = {1215.67, 3727.00, 4861.32, 4958.91,
                                 5006.84, 6562.80, 9068.60, 9530.85};
@@ -1798,7 +1909,7 @@ void onesource::computeEmFlux(vector<SED *> &fulllib, cosmo lcdm) {
   vector<string> line_names = {"LYA",   "OII", "HB",    "OIIIA",
                                "OIIIB", "HA",  "SIIIA", "SIIIB"};
   size_t count = 0;
-  for (const string &name : line_names) {
+  for (const string& name : line_names) {
     results_emission_lines["EM_FLUX_" + name] = flux_em[count];
     results_emission_lines["EM_EW_" + name] = EW_em[count];
     count++;
@@ -1810,7 +1921,7 @@ void onesource::computeEmFlux(vector<SED *> &fulllib, cosmo lcdm) {
 /*
 Compute predicted magnitude in new filters
 */
-void onesource::computePredMag(vector<SED *> &fulllib, cosmo lcdm,
+void onesource::computePredMag(vector<SED*>& fulllib, cosmo lcdm,
                                vector<flt> allFltAdd) {
   double val;
 
@@ -1855,7 +1966,7 @@ void onesource::computePredMag(vector<SED *> &fulllib, cosmo lcdm,
 /*
 Compute absolute magnitudes in new filters
 */
-void onesource::computePredAbsMag(vector<SED *> &fulllib, cosmo lcdm,
+void onesource::computePredAbsMag(vector<SED*>& fulllib, cosmo lcdm,
                                   vector<flt> allFltAdd) {
   double val;
 
@@ -1899,9 +2010,9 @@ void onesource::computePredAbsMag(vector<SED *> &fulllib, cosmo lcdm,
 Compute the maximum redshift at which a source can be observed given the
 magnitude selection
 */
-void onesource::limits(vector<SED *> &fulllib, vector<double> &limits_zbin,
-                       int limits_ref, vector<int> &limits_sel,
-                       vector<double> &limits_cut) {
+void onesource::limits(vector<SED*>& fulllib, vector<double>& limits_zbin,
+                       int limits_ref, vector<int>& limits_sel,
+                       vector<double>& limits_cut) {
   // Be careful with the convention of filter in the parameter file : start at 1
   if (limits_ref > 0) {
     limits_ref -= 1;
@@ -1966,7 +2077,7 @@ void onesource::limits(vector<SED *> &fulllib, vector<double> &limits_zbin,
 
 // Used for the python interface in the notebook
 pair<vector<double>, vector<double>> onesource::best_spec_vec(
-    short sol, vector<SED *> &fulllib, cosmo lcdm, double minl,
+    short sol, vector<SED*>& fulllib, cosmo lcdm, double minl,
     double maxl) const {
   // sol=0 for GAL-1, sol=1 for GAL-2, sol=2 for FIR, sol=3 for QSO, sol=4 for
   // STAR
@@ -2030,8 +2141,8 @@ pair<vector<double>, vector<double>> onesource::best_spec_vec(
 /*
  WRITE .SPEC FILE
 */
-void onesource::writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
-                          cosmo lcdm, const vector<flt> &allflt,
+void onesource::writeSpec(vector<SED*>& fulllib, vector<SED*>& fulllibIR,
+                          cosmo lcdm, const vector<flt>& allflt,
                           const string outspdir) const {
   // open the output file
   ofstream stospec;
@@ -2224,7 +2335,7 @@ void onesource::writeSpec(vector<SED *> &fulllib, vector<SED *> &fulllibIR,
 /*
  WRITE FULL CHI2 FILE
 */
-void onesource::writeFullChi(const SEDlight &lightLib) {
+void onesource::writeFullChi(const SEDlight& lightLib) {
   double sca;
 
   // open the output file

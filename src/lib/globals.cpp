@@ -12,6 +12,8 @@ declaration of global variables
 #include <mutex>
 #include <string>
 
+#include "flt.h"
+
 using namespace std;
 
 // lepharedir and lepharework as global variables
@@ -19,7 +21,7 @@ string lepharedir, lepharework;
 
 // LCOV_EXCL_START
 void get_lephare_env() {
-  char const *temp;
+  char const* temp;
   temp = getenv("LEPHAREDIR");
   if (temp != NULL) {
     lepharedir = string(temp);
@@ -46,7 +48,7 @@ If the string has a length of 0, return also false
 input: string to analyse
 output: boolean
 */
-bool check_first_char(const string &maligne) {
+bool check_first_char(const string& maligne) {
   for (string::const_iterator it = maligne.begin(); it != maligne.end(); it++) {
     if (*it == ' ' || *it == '\t') {
       continue;
@@ -71,8 +73,8 @@ double blackbody(double T, double lambda) {
   return val;
 }
 
-vector<size_t> indexes_in_vec(const double &value, const vector<double> &vec,
-                              const float &precision) {
+vector<size_t> indexes_in_vec(const double& value, const vector<double>& vec,
+                              const float& precision) {
   vector<size_t> result;
   for (size_t i = 0; i < vec.size(); i++) {
     if (abs(vec[i] - value) < precision) result.push_back(i);
@@ -81,9 +83,9 @@ vector<size_t> indexes_in_vec(const double &value, const vector<double> &vec,
   return result;
 }  // LCOV_EXCL_LINE
 
-vector<double> fast_interpolate(const std::vector<double> &x,
-                                const std::vector<double> &y,
-                                const std::vector<double> &z, double d) {
+vector<double> fast_interpolate(const std::vector<double>& x,
+                                const std::vector<double>& y,
+                                const std::vector<double>& z, double d) {
   std::vector<double> out;
   out.reserve(z.size());
 
@@ -109,7 +111,7 @@ vector<double> fast_interpolate(const std::vector<double> &x,
   return out;
 }  // LCOV_EXCL_LINE
 
-const vector<opa> &get_opa_vector() {
+const vector<opa>& get_opa_vector() {
   // define a static vector that is created once only
   // and the available just calling this function
   static vector<opa> result;
@@ -158,4 +160,44 @@ const vector<opa> &get_opa_vector() {
     }
   });
   return result;
+}
+
+flt filterB;
+flt filterV;
+
+std::once_flag filters_init_flag;
+
+void initialise_filters_impl() {
+  static const std::vector<double> lB = {
+      3600., 3700., 3800., 3900., 4000., 4100., 4200.,
+      4300., 4400., 4500., 4600., 4700., 4800., 4900.,
+      5000., 5100., 5200., 5300., 5400., 5500., 5600.};
+
+  static const std::vector<double> fB = {
+      0.000, 0.030, 0.134, 0.567, 0.920, 0.978, 1.000,
+      0.978, 0.935, 0.853, 0.740, 0.640, 0.536, 0.424,
+      0.325, 0.235, 0.150, 0.095, 0.043, 0.009, 0.000};
+
+  static const std::vector<double> lV = {
+      4700., 4800., 4900., 5000., 5100., 5200., 5300., 5400.,
+      5500., 5600., 5700., 5800., 5900., 6000., 6100., 6200.,
+      6300., 6400., 6500., 6600., 6700., 6800., 6900., 7000.};
+
+  static const std::vector<double> fV = {
+      0.000, 0.030, 0.163, 0.458, 0.780, 0.967, 1.000, 0.973,
+      0.898, 0.792, 0.684, 0.574, 0.461, 0.359, 0.270, 0.197,
+      0.135, 0.081, 0.045, 0.025, 0.017, 0.013, 0.009, 0.000};
+
+  filterB.lamb_trans.reserve(lB.size());
+  filterV.lamb_trans.reserve(lV.size());
+
+  for (size_t i = 0; i < lB.size(); i++)
+    filterB.lamb_trans.emplace_back(lB[i], fB[i]);
+
+  for (size_t i = 0; i < lV.size(); i++)
+    filterV.lamb_trans.emplace_back(lV[i], fV[i]);
+}
+
+void initialise_filters() {
+  std::call_once(filters_init_flag, initialise_filters_impl);
 }

@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 __all__ = [
-    "plotspec",
+    "plot_spectrum",
 ]
 
 
@@ -26,7 +26,7 @@ __all__ = [
 # - Bayesian posterior
 # - Profile likelihood
 #
-def plotspec(filename):
+def plot_spectrum(filename):
     ##############  READING INFORMATION  ###############
 
     ### Open .spec file[s] and read the parameters

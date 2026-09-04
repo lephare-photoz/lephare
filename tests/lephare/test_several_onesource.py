@@ -30,6 +30,10 @@ def test_photoz_cosmos():
             "INP_TYPE": "M",
             "CAT_MAG": "AB",
             "CAT_TYPE": "LONG",
+            "APPLY_MW_EXTINCTION": "CLASSIC",
+            "MW_EBV_FILE": str(os.path.expandvars("$LEPHAREWORK/ebv.in")),
+            "MW_GLOBAL_EBV": "-1",
+            "EXT_MW_CURVE": "LMC_Fitzpatrick.dat",
             "GLB_CONTEXT": "-1",
             "AUTO_ADAPT": "NO",
             "Z_STEP": "0.05,0,1",
@@ -49,7 +53,6 @@ def test_photoz_cosmos():
             "SPEC_OUT": str(os.path.expandvars("$LEPHAREWORK/spec")),
         }
     )
-    print("SPEC ", os.path.expandvars("$LEPHAREWORK/spec"))
     keymap = lp.all_types_to_keymap(config)
 
     # Run preparation tasks (libraries)
@@ -72,21 +75,38 @@ def test_photoz_cosmos():
         [0.656911, -0.0506009, 0.148528, 0.357171, 0.483391, 0.548042],  # star, mod 24
         [23.3172, 22.7789, 22.4013, 21.9102, 21.7947, 21.0578],  # ebv=0.3, z=0.5, pl_TQSO1_template_norm.sed
     ]
-    print(mag_sources[0])
     emag_sources = [0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
     zs_in = [0.65, 0.1, 0.9, 0.000, 0.5]
+
+    # Alambda for the LSST filters
+    alambda = [4.81258037, 3.67400869, 2.60741946, 1.9612444, 1.5451387, 1.24510377]
+
+    # Associate an MW E(B-V) for each source
+    ebv_mw = [0.1, 0.2, 0.3, 0.4, 0.5]
+    # Apply MW extinction to the magnitudes
+    mag_sources_mw = [
+        [m + ebv_mw[i] * a for m, a in zip(source_mags, alambda)] for i, source_mags in enumerate(mag_sources)
+    ]
 
     # Name of the temprary input file
     fil = os.path.expandvars("$LEPHAREWORK/mag.in")
     with open(fil, "w") as f:
         for idline in range(1, 6):
-            mags = mag_sources[idline - 1][0:6]
+            mags = mag_sources_mw[idline - 1][0:6]
             zsin = zs_in[idline - 1]
             line = (
                 f"{idline} {' '.join(map(str, mags))}  "
                 f"{' '.join(map(str, emag_sources))} 63 "
                 f"{str(zsin)} -99 \n"
             )
+            f.write(line)
+
+    # Name of the temprary input file with the MW E(B-V)
+    filebv = os.path.expandvars("$LEPHAREWORK/ebv.in")
+    with open(filebv, "w") as f:
+        for idline in range(1, 6):
+            ebvmwin = ebv_mw[idline - 1]
+            line = f"{idline} {str(ebvmwin)}  \n"
             f.write(line)
 
     # Compute offsets depending on the AUTO_ADAPT and APPLY_SYSSHIFT options (0 if none)
@@ -102,7 +122,7 @@ def test_photoz_cosmos():
     # Check that input file is well read
     for k in range(0, 5):
         # Check magnitudes
-        assert np.isclose(allsources[k].mab, mag_sources[k], atol=0.01).all()
+        assert np.isclose(allsources[k].mab, mag_sources_mw[k], atol=0.01).all()
         # Check context
         assert allsources[k].cont == 63
         # Check spec-z
@@ -111,6 +131,12 @@ def test_photoz_cosmos():
     # run the fit
     photz.run_photoz(allsources, a0)
     print("Done with fit")
+
+    # Check that the MW E(B-V) associated to each galaxy works
+    for i, source in enumerate(allsources):
+        assert (
+            ebv_mw[i] == source.mw_ebv
+        ), f"La liste allsources[{i}].mw_ebv={source.mw_ebv} ne correspond pas à ebv_mw={ebv_mw}"
 
     # Check library
     assert (allsources[0].chimin[0] < allsources[0].chimin[1]) and (

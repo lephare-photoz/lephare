@@ -12,11 +12,13 @@
 #include <fstream>   // print output file
 #include <iomanip>   // std::set precision
 #include <iostream>  // print standard file
+#include <limits>    //std::numeric_limits
 #include <sstream>
 #include <string>
 #include <vector>
 
 #include "emission_lines.h"
+#include "ext.h"
 #include "globals.h"
 #include "oneElLambda.h"
 
@@ -33,6 +35,7 @@ SED::SED(const string nameC, int nummodC, string type) {
   nlib = string_to_object(type);
 
   has_emlines = false;
+  has_mw_galametz = false;
   idAge = 0;     // index of the age into the SED
   age = -999;    // Age  (yr)
   red = 0.;      // redshift considered for the SED
@@ -48,6 +51,11 @@ SED::SED(const string nameC, int nummodC, string type) {
   dm = -999.;        // Rescaling of the template
   distMod = 0;
   qi = {0., 0., 0., 0.};
+
+  band_pass_correction = 1.;
+
+  // Initialise the B and V filters for the band pass correction
+  initialise_filters();
 }
 
 /*
@@ -88,7 +96,7 @@ void SED::rescale(double scaleFac) {
   read the templates in ascii, ascii valid for QSO/STARS/GAL
   It will be overwritten in derived classes for more complex reading
 */
-void SED::read(const string &sedFile) {
+void SED::read(const string& sedFile) {
   ifstream ssed;
   string lit;
 
@@ -133,19 +141,19 @@ void SED::read(const string &sedFile) {
   Write the sed in binary format with the basis format (used for STARS and QSO)
   That's the output of sedtolib
 */
-void SED::writeSED(ofstream &ofsBin, ofstream &ofsPhys, ofstream &ofsDoc) {
-  ofsBin.write((char *)&nummod, sizeof(int));
+void SED::writeSED(ofstream& ofsBin, ofstream& ofsPhys, ofstream& ofsDoc) {
+  ofsBin.write((char*)&nummod, sizeof(int));
 
-  long nbw = lamb_flux.size();               // Number of wavelength bins
-  ofsBin.write((char *)&nbw, sizeof(long));  // Number of wavelength bins
+  long nbw = lamb_flux.size();              // Number of wavelength bins
+  ofsBin.write((char*)&nbw, sizeof(long));  // Number of wavelength bins
 
   // Write the wavelength
-  for (auto &oneEl : lamb_flux) {
-    ofsBin.write((char *)&(oneEl.lamb), sizeof(double));
+  for (auto& oneEl : lamb_flux) {
+    ofsBin.write((char*)&(oneEl.lamb), sizeof(double));
   }
   // Write the fluxes
-  for (auto &oneEl : lamb_flux) {
-    ofsBin.write((char *)&(oneEl.val), sizeof(double));
+  for (auto& oneEl : lamb_flux) {
+    ofsBin.write((char*)&(oneEl.val), sizeof(double));
   }
 
   // Write the documentation
@@ -158,13 +166,13 @@ void SED::writeSED(ofstream &ofsBin, ofstream &ofsPhys, ofstream &ofsDoc) {
 /*
   read the sed library in binary format in the basis case (Stars and QSO)
 */
-void SED::readSEDBin(ifstream &ins) {
-  ins.read((char *)&nummod, sizeof(int));
+void SED::readSEDBin(ifstream& ins) {
+  ins.read((char*)&nummod, sizeof(int));
   name = "MOD_" + to_string(nummod);
 
   long nbw;
   // second line with the flux
-  ins.read((char *)&nbw, sizeof(long));
+  ins.read((char*)&nbw, sizeof(long));
 
   if (nbw <= 0) {
     throw runtime_error("SED::readSEDBin(ifstream& ins) lamb flux is zero");
@@ -172,12 +180,12 @@ void SED::readSEDBin(ifstream &ins) {
 
   lamb_flux.resize(nbw, oneElLambda(-99, -99));
   // Read the wavelength
-  for (auto &oneEl : lamb_flux) {
-    ins.read((char *)&oneEl.lamb, sizeof(double));
+  for (auto& oneEl : lamb_flux) {
+    ins.read((char*)&oneEl.lamb, sizeof(double));
   }
   // Read the flux
-  for (auto &oneEl : lamb_flux) {
-    ins.read((char *)&oneEl.val, sizeof(double));
+  for (auto& oneEl : lamb_flux) {
+    ins.read((char*)&oneEl.val, sizeof(double));
   }
 
   return;
@@ -187,9 +195,9 @@ void SED::readSEDBin(ifstream &ins) {
   Check that we can integrate within a filter. If a risk, issue a warning, then
   extrapolate
 */
-void SED::warning_integrateSED(const vector<flt> &filters, bool verbose) {
+void SED::warning_integrateSED(const vector<flt>& filters, bool verbose) {
   // Loop over the filters
-  for (const auto &filter : filters) {
+  for (const auto& filter : filters) {
     if (((lamb_flux.begin())->lamb) * (1. + red) > filter.lmin()) {
       // if(verbose){
       // cout << "A problem could occur since minimum of SED " <<
@@ -386,7 +394,7 @@ void SED::reduce_memory(vector<flt> allFlt) {
     vector<bool> flags;
     flags.resize(lamb_flux.size(), false);
 
-    for (const auto &flt : allFlt) {
+    for (const auto& flt : allFlt) {
       // Loop over all the lambda of the SED
       for (size_t k = 1; k < lamb_flux.size() - 1; ++k) {
         // Set the flag if the current SED point is within the filter support,
@@ -474,10 +482,14 @@ void SED::redshift() {
   return;
 }
 
-void SED::apply_extinction(const double ebv, const ext &oneext) {
-  (*this).ebv = ebv;
+void SED::apply_extinction(const double ebv, const ext& oneext,
+                           bool update_ebv) {
+  // Optionally update stored ebv
+  if (update_ebv) {
+    (*this).ebv = ebv;
+  }
   // No need to loose time if E(b-V)~0
-  if (ebv <= 1.e-20) return;
+  if (std::abs(ebv) <= 1.e-20) return;
   // if empty spectrum return
   if (lamb_flux.empty()) return;
 
@@ -504,7 +516,7 @@ void SED::apply_extinction(const double ebv, const ext &oneext) {
   Apply dust extinction on the emission lines (fac_line)
   Only for galaxies and QSO
 */
-void SED::apply_extinction_to_lines(double ebv, const ext &oneext) {
+void SED::apply_extinction_to_lines(double ebv, const ext& oneext) {
   // If you want to use the redshift dependency of the attenuation line versus
   // continuum F=F(z=0)+a*z If such option is re-activated, absolutely need to
   // change the code in read_lib and onesource.cpp
@@ -555,7 +567,7 @@ void SED::apply_extinction_to_lines(double ebv, const ext &oneext) {
   product of the sed with the opacity of the IGM
   only for galaxies and QSO
 */
-void SED::applyOpa(const vector<opa> &opaAll) {
+void SED::applyOpa(const vector<opa>& opaAll) {
   // Select the right opacity file according to the redshift of the source
   // Do not use simply 0.1 -> need to have the same as the fortran version and
   // some rounding problem (e.g. z=0.15 with step=0.01)
@@ -625,7 +637,7 @@ GalSED::GalSED(const string nameC, double tauC, double ageC, string formatC,
   fracEm = 1.;  // fraction of the emmission line considered
 }
 
-GalSED GalSED::generateEmSED(const string &emtype) {
+GalSED GalSED::generateEmSED(const string& emtype) {
   // Only if emission lines
   GalSED oneEm("");
   if (emtype[0] == 'P') {
@@ -899,7 +911,7 @@ pair<vector<double>, vector<double>> SED::get_data_vector(double minl,
                                                           double offset) {
   vector<double> lambs, vals;
   double lamb, val;
-  for (const auto &onel : lamb_flux) {
+  for (const auto& onel : lamb_flux) {
     lamb = onel.lamb;
     val = onel.val;
     if (lamb <= minl || lamb >= maxl) continue;
@@ -951,21 +963,21 @@ void GalSED::compute_luminosities() {
   Write the galaxy sed in binary format, the physical parameters linked to the
   sed, the doc
 */
-void GalSED::writeSED(ofstream &ofsBin, ofstream &ofsPhys, ofstream &ofsDoc) {
+void GalSED::writeSED(ofstream& ofsBin, ofstream& ofsPhys, ofstream& ofsDoc) {
   SED::writeSED(ofsBin, ofsPhys, ofsDoc);
 
   // Write in the binary file the physical information
-  ofsBin.write((char *)&luv, sizeof(double));
-  ofsBin.write((char *)&lopt, sizeof(double));
-  ofsBin.write((char *)&lnir, sizeof(double));
-  ofsBin.write((char *)&ltir, sizeof(double));
-  ofsBin.write((char *)&mass, sizeof(double));
-  ofsBin.write((char *)&sfr, sizeof(double));
-  ofsBin.write((char *)&zmet, sizeof(double));
-  ofsBin.write((char *)&tau, sizeof(double));
-  ofsBin.write((char *)&d4000, sizeof(double));
-  ofsBin.write((char *)&qi[2], sizeof(double));
-  ofsBin.write((char *)&age, sizeof(double));
+  ofsBin.write((char*)&luv, sizeof(double));
+  ofsBin.write((char*)&lopt, sizeof(double));
+  ofsBin.write((char*)&lnir, sizeof(double));
+  ofsBin.write((char*)&ltir, sizeof(double));
+  ofsBin.write((char*)&mass, sizeof(double));
+  ofsBin.write((char*)&sfr, sizeof(double));
+  ofsBin.write((char*)&zmet, sizeof(double));
+  ofsBin.write((char*)&tau, sizeof(double));
+  ofsBin.write((char*)&d4000, sizeof(double));
+  ofsBin.write((char*)&qi[2], sizeof(double));
+  ofsBin.write((char*)&age, sizeof(double));
 
   // Physical parameters in the ascii file
   ofsPhys << setw(12) << age << " ";
@@ -986,20 +998,20 @@ void GalSED::writeSED(ofstream &ofsBin, ofstream &ofsPhys, ofstream &ofsDoc) {
 /*
   Read the sed in binary format in the galaxy case
 */
-void GalSED::readSEDBin(ifstream &ins) {
+void GalSED::readSEDBin(ifstream& ins) {
   SED::readSEDBin(ins);
 
-  ins.read((char *)&luv, sizeof(double));
-  ins.read((char *)&lopt, sizeof(double));
-  ins.read((char *)&lnir, sizeof(double));
-  ins.read((char *)&ltir, sizeof(double));
-  ins.read((char *)&mass, sizeof(double));
-  ins.read((char *)&sfr, sizeof(double));
-  ins.read((char *)&zmet, sizeof(double));
-  ins.read((char *)&tau, sizeof(double));
-  ins.read((char *)&d4000, sizeof(double));
-  ins.read((char *)&qi[2], sizeof(double));
-  ins.read((char *)&age, sizeof(double));
+  ins.read((char*)&luv, sizeof(double));
+  ins.read((char*)&lopt, sizeof(double));
+  ins.read((char*)&lnir, sizeof(double));
+  ins.read((char*)&ltir, sizeof(double));
+  ins.read((char*)&mass, sizeof(double));
+  ins.read((char*)&sfr, sizeof(double));
+  ins.read((char*)&zmet, sizeof(double));
+  ins.read((char*)&tau, sizeof(double));
+  ins.read((char*)&d4000, sizeof(double));
+  ins.read((char*)&qi[2], sizeof(double));
+  ins.read((char*)&age, sizeof(double));
 
   return;
 }
@@ -1008,52 +1020,61 @@ void GalSED::readSEDBin(ifstream &ins) {
   Write the predicted magnitudes in binary format for the galaxy library
   Result of mag_gal
 */
-void GalSED::writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
+void GalSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
                       vector<flt> allFilters, string magtyp) const {
   // number of filters
   int nbFlt = mag.size();
 
-  ofsBin.write((char *)&luv, sizeof(double));
-  ofsBin.write((char *)&lopt, sizeof(double));
-  ofsBin.write((char *)&lnir, sizeof(double));
-  ofsBin.write((char *)&ltir, sizeof(double));
-  ofsBin.write((char *)&mass, sizeof(double));
-  ofsBin.write((char *)&sfr, sizeof(double));
-  ofsBin.write((char *)&zmet, sizeof(double));
-  ofsBin.write((char *)&tau, sizeof(double));
-  ofsBin.write((char *)&d4000, sizeof(double));
+  ofsBin.write((char*)&luv, sizeof(double));
+  ofsBin.write((char*)&lopt, sizeof(double));
+  ofsBin.write((char*)&lnir, sizeof(double));
+  ofsBin.write((char*)&ltir, sizeof(double));
+  ofsBin.write((char*)&mass, sizeof(double));
+  ofsBin.write((char*)&sfr, sizeof(double));
+  ofsBin.write((char*)&zmet, sizeof(double));
+  ofsBin.write((char*)&tau, sizeof(double));
+  ofsBin.write((char*)&d4000, sizeof(double));
 
   // Write the library in a binary file
-  ofsBin.write((char *)&nummod, sizeof(int));      // Index du template
-  ofsBin.write((char *)&extlawId, sizeof(int));    // type du model
-  ofsBin.write((char *)&ebv, sizeof(double));      // E(B-V)
-  ofsBin.write((char *)&fracEm, sizeof(double));   // fracEm index
-  ofsBin.write((char *)&red, sizeof(double));      // redshift
-  ofsBin.write((char *)&distMod, sizeof(double));  // distance modulus
-  ofsBin.write((char *)&age, sizeof(double));      // age
-  ofsBin.write((char *)&nbFlt, sizeof(int));       // Number of filters
+  ofsBin.write((char*)&nummod, sizeof(int));      // Index du template
+  ofsBin.write((char*)&extlawId, sizeof(int));    // type du model
+  ofsBin.write((char*)&ebv, sizeof(double));      // E(B-V)
+  ofsBin.write((char*)&fracEm, sizeof(double));   // fracEm index
+  ofsBin.write((char*)&red, sizeof(double));      // redshift
+  ofsBin.write((char*)&distMod, sizeof(double));  // distance modulus
+  ofsBin.write((char*)&age, sizeof(double));      // age
+  ofsBin.write((char*)&nbFlt, sizeof(int));       // Number of filters
 
   // Write the predicted magnitudes
   for (int k = 0; k < nbFlt; k++)
-    ofsBin.write((char *)&(mag[k]), sizeof(double));
+    ofsBin.write((char*)&(mag[k]), sizeof(double));
   // Write the k-correction
   for (int k = 0; k < nbFlt; k++)
-    ofsBin.write((char *)&(kcorr[k]), sizeof(double));
+    ofsBin.write((char*)&(kcorr[k]), sizeof(double));
+
+  // Write the extinction values
+  if (has_mw_galametz) {
+    for (int k = 0; k < nbFlt; k++) {
+      ofsBin.write((char*)&(milky_way_extinction[k]), sizeof(double));
+    }
+    ofsBin.write((char*)&(band_pass_correction), sizeof(double));
+  }
+
   // Write the emission lines
   if (has_emlines) {
     // Write the flux predicted into the filters
     for (int k = 0; k < nbFlt; k++)
-      ofsBin.write((char *)&(flEm[k]), sizeof(double));
+      ofsBin.write((char*)&(flEm[k]), sizeof(double));
     // Don't write the flux at z>0, to save RAM. With such cleaning, no z
     // dependency on line ratio can be implemented.
     if (red < 1.e-20) {
       // Write the line fluxes
       int nbEm = fac_line.size();
-      ofsBin.write((char *)&(nbEm), sizeof(int));
+      ofsBin.write((char*)&(nbEm), sizeof(int));
       for (int k = 0; k < nbEm; k++)
-        ofsBin.write((char *)&(fac_line[k].lamb), sizeof(double));
+        ofsBin.write((char*)&(fac_line[k].lamb), sizeof(double));
       for (int k = 0; k < nbEm; k++)
-        ofsBin.write((char *)&(fac_line[k].val), sizeof(double));
+        ofsBin.write((char*)&(fac_line[k].val), sizeof(double));
     }
   }
 
@@ -1061,11 +1082,11 @@ void GalSED::writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
   if (red < 1.e-20) {
     // Write the continuum spectra
     int nbLamb = lamb_flux.size();
-    ofsBin.write((char *)&(nbLamb), sizeof(int));
+    ofsBin.write((char*)&(nbLamb), sizeof(int));
     for (int k = 0; k < nbLamb; k++)
-      ofsBin.write((char *)&(lamb_flux[k].lamb), sizeof(double));
+      ofsBin.write((char*)&(lamb_flux[k].lamb), sizeof(double));
     for (int k = 0; k < nbLamb; k++)
-      ofsBin.write((char *)&(lamb_flux[k].val), sizeof(double));
+      ofsBin.write((char*)&(lamb_flux[k].val), sizeof(double));
   }
 
   // Case with the ascii file
@@ -1092,10 +1113,12 @@ void GalSED::writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
     for (int k = 0; k < nbFlt; k++) {
       ofsDat << setw(6) << kcorr[k] << " ";
     }
-    if (has_emlines) {
+    // Write the extinction values
+    if (has_mw_galametz) {
       for (int k = 0; k < nbFlt; k++) {
-        ofsDat << setw(6) << flEm[k] << " ";
+        ofsDat << setw(6) << milky_way_extinction[k] << " ";
       }
+      ofsDat << setw(6) << band_pass_correction << " ";
     }
     ofsDat << endl;
   }
@@ -1108,28 +1131,28 @@ void GalSED::writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
   Case for the galaxies
   Used in zphota
 */
-void GalSED::readMagBin(ifstream &ins) {
+void GalSED::readMagBin(ifstream& ins) {
   int nbFlt;
 
-  ins.read((char *)&luv, sizeof(double));
-  ins.read((char *)&lopt, sizeof(double));
-  ins.read((char *)&lnir, sizeof(double));
-  ins.read((char *)&ltir, sizeof(double));
-  ins.read((char *)&mass, sizeof(double));
-  ins.read((char *)&sfr, sizeof(double));
-  ins.read((char *)&zmet, sizeof(double));
-  ins.read((char *)&tau, sizeof(double));
-  ins.read((char *)&d4000, sizeof(double));
+  ins.read((char*)&luv, sizeof(double));
+  ins.read((char*)&lopt, sizeof(double));
+  ins.read((char*)&lnir, sizeof(double));
+  ins.read((char*)&ltir, sizeof(double));
+  ins.read((char*)&mass, sizeof(double));
+  ins.read((char*)&sfr, sizeof(double));
+  ins.read((char*)&zmet, sizeof(double));
+  ins.read((char*)&tau, sizeof(double));
+  ins.read((char*)&d4000, sizeof(double));
 
   // Read information conserning the SED which is read
-  ins.read((char *)&nummod, sizeof(int));
-  ins.read((char *)&extlawId, sizeof(int));
-  ins.read((char *)&ebv, sizeof(double));
-  ins.read((char *)&fracEm, sizeof(double));
-  ins.read((char *)&red, sizeof(double));
-  ins.read((char *)&distMod, sizeof(double));
-  ins.read((char *)&age, sizeof(double));
-  ins.read((char *)&nbFlt, sizeof(int));
+  ins.read((char*)&nummod, sizeof(int));
+  ins.read((char*)&extlawId, sizeof(int));
+  ins.read((char*)&ebv, sizeof(double));
+  ins.read((char*)&fracEm, sizeof(double));
+  ins.read((char*)&red, sizeof(double));
+  ins.read((char*)&distMod, sizeof(double));
+  ins.read((char*)&age, sizeof(double));
+  ins.read((char*)&nbFlt, sizeof(int));
 
   // define the ssfr
   if (mass > 0) {
@@ -1140,32 +1163,41 @@ void GalSED::readMagBin(ifstream &ins) {
 
   // Read the magnitudes
   mag.resize(nbFlt, 99);
-  for (auto &m : mag) {
-    ins.read((char *)&m, sizeof(double));
+  for (auto& m : mag) {
+    ins.read((char*)&m, sizeof(double));
   }
   kcorr.resize(nbFlt, 0);
-  for (auto &k : kcorr) {
-    ins.read((char *)&k, sizeof(double));
+  for (auto& k : kcorr) {
+    ins.read((char*)&k, sizeof(double));
+  }
+
+  // Read the extinction values
+  if (has_mw_galametz) {
+    milky_way_extinction.resize(nbFlt, 0.);
+    for (auto& mwe : milky_way_extinction) {
+      ins.read((char*)&mwe, sizeof(double));
+    }
+    ins.read((char*)&band_pass_correction, sizeof(double));
   }
 
   // Read the emission lines fluxes integrated into filters
   if (has_emlines) {
     flEm.resize(nbFlt, 0.);
-    for (auto &flem : flEm) {
-      ins.read((char *)&flem, sizeof(double));
+    for (auto& flem : flEm) {
+      ins.read((char*)&flem, sizeof(double));
     }
     // Don't read the lines at z>0, to save RAM. With such cleaning, no z
     // dependency on line ratio can be implemented.
     if (red < 1.e-20) {
       // Read the emission lines fluxes
       int nbEm;
-      ins.read((char *)&nbEm, sizeof(int));
+      ins.read((char*)&nbEm, sizeof(int));
       fac_line.resize(nbEm, oneElLambda(-999, -999));
-      for (auto &eml : fac_line) {
-        ins.read((char *)&eml.lamb, sizeof(double));
+      for (auto& eml : fac_line) {
+        ins.read((char*)&eml.lamb, sizeof(double));
       }
-      for (auto &eml : fac_line) {
-        ins.read((char *)&eml.val, sizeof(double));
+      for (auto& eml : fac_line) {
+        ins.read((char*)&eml.val, sizeof(double));
       }
     }
   }
@@ -1173,13 +1205,13 @@ void GalSED::readMagBin(ifstream &ins) {
   // read the spectra only if the redshift is 0
   if (red < 1.e-20) {
     int nblamb;
-    ins.read((char *)&nblamb, sizeof(int));
+    ins.read((char*)&nblamb, sizeof(int));
     lamb_flux.resize(nblamb, oneElLambda(-999, -999));
-    for (auto &oneEl : lamb_flux) {
-      ins.read((char *)&oneEl.lamb, sizeof(double));
+    for (auto& oneEl : lamb_flux) {
+      ins.read((char*)&oneEl.lamb, sizeof(double));
     }
-    for (auto &oneEl : lamb_flux) {
-      ins.read((char *)&oneEl.val, sizeof(double));
+    for (auto& oneEl : lamb_flux) {
+      ins.read((char*)&oneEl.val, sizeof(double));
     }
   }
 
@@ -1210,7 +1242,7 @@ void GalSED::sumEmLines() {
   Recompute k-corr. Necessary because of the emission lines contribution not
   included in mag_gal
 */
-void GalSED::kcorrec(const vector<double> &magz0) {
+void GalSED::kcorrec(const vector<double>& magz0) {
   // Loop over each filter.
   for (size_t k = 0; k < mag.size(); k++) {
     // Substract the magnitude at z and the one at z=0
@@ -1295,7 +1327,7 @@ void GalSED::zdepEmLines(int flag) {
 /*
   Write the magnitudes in binary format for the QSO library
 */
-void QSOSED::writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
+void QSOSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
                       vector<flt> allFilters, string magtyp) const {
   // Info screen
   // cout << "Compute magnitudes for QSO SEDs " << name << " z " <<  setw(6) <<
@@ -1305,28 +1337,36 @@ void QSOSED::writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
   // number of filters
   int nbFlt = mag.size();
   // Write the library in a binary file
-  ofsBin.write((char *)&nummod, sizeof(int));      // Index du template
-  ofsBin.write((char *)&extlawId, sizeof(int));    // type du model
-  ofsBin.write((char *)&ebv, sizeof(double));      // E(B-V)
-  ofsBin.write((char *)&red, sizeof(double));      // redshift
-  ofsBin.write((char *)&distMod, sizeof(double));  // distance modulus
-  ofsBin.write((char *)&nbFlt, sizeof(int));       // Number of filters
+  ofsBin.write((char*)&nummod, sizeof(int));      // Index du template
+  ofsBin.write((char*)&extlawId, sizeof(int));    // type du model
+  ofsBin.write((char*)&ebv, sizeof(double));      // E(B-V)
+  ofsBin.write((char*)&red, sizeof(double));      // redshift
+  ofsBin.write((char*)&distMod, sizeof(double));  // distance modulus
+  ofsBin.write((char*)&nbFlt, sizeof(int));       // Number of filters
 
   // Write the predicted magnitudes
   for (int k = 0; k < nbFlt; k++)
-    ofsBin.write((char *)&(mag[k]), sizeof(double));
+    ofsBin.write((char*)&(mag[k]), sizeof(double));
   // Write the k-corrections
   for (int k = 0; k < nbFlt; k++)
-    ofsBin.write((char *)&(kcorr[k]), sizeof(double));
+    ofsBin.write((char*)&(kcorr[k]), sizeof(double));
+
+  // Write the extinction values
+  if (has_mw_galametz) {
+    for (int k = 0; k < nbFlt; k++) {
+      ofsBin.write((char*)&(milky_way_extinction[k]), sizeof(double));
+    }
+    ofsBin.write((char*)&(band_pass_correction), sizeof(double));
+  }
 
   // Write the spectra only if the redshift is 0
   if (red < 1.e-20) {
     int nbLamb = lamb_flux.size();
-    ofsBin.write((char *)&(nbLamb), sizeof(int));
+    ofsBin.write((char*)&(nbLamb), sizeof(int));
     for (size_t k = 0; k < lamb_flux.size(); k++)
-      ofsBin.write((char *)&(lamb_flux[k].lamb), sizeof(double));
+      ofsBin.write((char*)&(lamb_flux[k].lamb), sizeof(double));
     for (size_t k = 0; k < lamb_flux.size(); k++)
-      ofsBin.write((char *)&(lamb_flux[k].val), sizeof(double));
+      ofsBin.write((char*)&(lamb_flux[k].val), sizeof(double));
   }
 
   // Case with the ascii file
@@ -1351,6 +1391,13 @@ void QSOSED::writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
     for (int k = 0; k < nbFlt; k++) {
       ofsDat << setw(6) << kcorr[k] << " ";
     }
+    // Write the extinction values
+    if (has_mw_galametz) {
+      for (int k = 0; k < nbFlt; k++) {
+        ofsDat << setw(6) << milky_way_extinction[k] << " ";
+      }
+      ofsDat << setw(6) << band_pass_correction << " ";
+    }
     ofsDat << endl;
   }
 
@@ -1362,37 +1409,46 @@ void QSOSED::writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
   Case for the galaxies
   Used in zphota
 */
-void QSOSED::readMagBin(ifstream &ins) {
+void QSOSED::readMagBin(ifstream& ins) {
   int nbFlt;
 
   // Read information conserning the SED which is read
-  ins.read((char *)&nummod, sizeof(int));
-  ins.read((char *)&extlawId, sizeof(int));
-  ins.read((char *)&ebv, sizeof(double));
-  ins.read((char *)&red, sizeof(double));
-  ins.read((char *)&distMod, sizeof(double));
-  ins.read((char *)&nbFlt, sizeof(int));
+  ins.read((char*)&nummod, sizeof(int));
+  ins.read((char*)&extlawId, sizeof(int));
+  ins.read((char*)&ebv, sizeof(double));
+  ins.read((char*)&red, sizeof(double));
+  ins.read((char*)&distMod, sizeof(double));
+  ins.read((char*)&nbFlt, sizeof(int));
 
   // Read the magnitudes
   mag.assign(nbFlt, HIGH_MAG);
-  for (auto &m : mag) {
-    ins.read((char *)&m, sizeof(double));
+  for (auto& m : mag) {
+    ins.read((char*)&m, sizeof(double));
   }
   kcorr.assign(nbFlt, 0);
-  for (auto &k : kcorr) {
-    ins.read((char *)&k, sizeof(double));
+  for (auto& k : kcorr) {
+    ins.read((char*)&k, sizeof(double));
+  }
+
+  // Read the extinction values
+  if (has_mw_galametz) {
+    milky_way_extinction.resize(nbFlt, 0.);
+    for (auto& mwe : milky_way_extinction) {
+      ins.read((char*)&mwe, sizeof(double));
+    }
+    ins.read((char*)&band_pass_correction, sizeof(double));
   }
 
   // read the spectra only if the redshift is 0
   if (red < 1.e-20) {
     int nblamb;
-    ins.read((char *)&nblamb, sizeof(int));
+    ins.read((char*)&nblamb, sizeof(int));
     lamb_flux.resize(nblamb, oneElLambda(-999, -999));
-    for (auto &oneEl : lamb_flux) {
-      ins.read((char *)&oneEl.lamb, sizeof(double));
+    for (auto& oneEl : lamb_flux) {
+      ins.read((char*)&oneEl.lamb, sizeof(double));
     }
-    for (auto &oneEl : lamb_flux) {
-      ins.read((char *)&oneEl.val, sizeof(double));
+    for (auto& oneEl : lamb_flux) {
+      ins.read((char*)&oneEl.val, sizeof(double));
     }
   }
 
@@ -1410,27 +1466,35 @@ void QSOSED::readMagBin(ifstream &ins) {
   Case for the stars
   Used in zphota
 */
-void StarSED::readMagBin(ifstream &ins) {
+void StarSED::readMagBin(ifstream& ins) {
   int nbFlt;
   // Read information conserning the SED which is read
-  ins.read((char *)&nummod, sizeof(int));
-  ins.read((char *)&nbFlt, sizeof(int));
+  ins.read((char*)&nummod, sizeof(int));
+  ins.read((char*)&nbFlt, sizeof(int));
 
   // Read the magnitudes
   mag.resize(nbFlt, 99);
-  for (auto &m : mag) {
-    ins.read((char *)&m, sizeof(double));
+  for (auto& m : mag) {
+    ins.read((char*)&m, sizeof(double));
+  }
+  // Read the MW extinction values
+  if (has_mw_galametz) {
+    milky_way_extinction.resize(nbFlt, 0.);
+    for (auto& mwe : milky_way_extinction) {
+      ins.read((char*)&mwe, sizeof(double));
+    }
+    ins.read((char*)&band_pass_correction, sizeof(double));
   }
 
   // read the spectra only if the redshift is 0
   int nblamb;
-  ins.read((char *)&nblamb, sizeof(int));
+  ins.read((char*)&nblamb, sizeof(int));
   lamb_flux.resize(nblamb, oneElLambda(-999, -999));
-  for (auto &oneEl : lamb_flux) {
-    ins.read((char *)&oneEl.lamb, sizeof(double));
+  for (auto& oneEl : lamb_flux) {
+    ins.read((char*)&oneEl.lamb, sizeof(double));
   }
-  for (auto &oneEl : lamb_flux) {
-    ins.read((char *)&oneEl.val, sizeof(double));
+  for (auto& oneEl : lamb_flux) {
+    ins.read((char*)&oneEl.val, sizeof(double));
   }
 
   return;
@@ -1439,7 +1503,7 @@ void StarSED::readMagBin(ifstream &ins) {
 /*
   Write the magnitudes in binary format for the stars
 */
-void StarSED::writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
+void StarSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
                        vector<flt> allFilters, string magtyp) const {
   // Info screen
   // cout << "Compute magnitudes for SED " << name  << "  \r " << flush;
@@ -1447,20 +1511,28 @@ void StarSED::writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
   // number of filters
   int nbFlt = mag.size();
   // Write the library in a binary file
-  ofsBin.write((char *)&nummod, sizeof(int));  // Index du template
-  ofsBin.write((char *)&nbFlt, sizeof(int));   // Number of filters
+  ofsBin.write((char*)&nummod, sizeof(int));  // Index du template
+  ofsBin.write((char*)&nbFlt, sizeof(int));   // Number of filters
 
   // Write the predicted magnitudes
   for (int k = 0; k < nbFlt; k++)
-    ofsBin.write((char *)&(mag[k]), sizeof(double));
+    ofsBin.write((char*)&(mag[k]), sizeof(double));
+
+  // Write the extinction values
+  if (has_mw_galametz) {
+    for (int k = 0; k < nbFlt; k++) {
+      ofsBin.write((char*)&(milky_way_extinction[k]), sizeof(double));
+    }
+    ofsBin.write((char*)&(band_pass_correction), sizeof(double));
+  }
 
   // Write the spectra
   int nbLamb = lamb_flux.size();
-  ofsBin.write((char *)&(nbLamb), sizeof(int));
+  ofsBin.write((char*)&(nbLamb), sizeof(int));
   for (size_t k = 0; k < lamb_flux.size(); k++)
-    ofsBin.write((char *)&(lamb_flux[k].lamb), sizeof(double));
+    ofsBin.write((char*)&(lamb_flux[k].lamb), sizeof(double));
   for (size_t k = 0; k < lamb_flux.size(); k++)
-    ofsBin.write((char *)&(lamb_flux[k].val), sizeof(double));
+    ofsBin.write((char*)&(lamb_flux[k].val), sizeof(double));
 
   // Case with the ascii file
   if (outasc) {
@@ -1476,6 +1548,13 @@ void StarSED::writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
         ofsDat << setw(6) << mag[k] + allFilters[k].ab << " ";
       }
     }
+    // Write the extinction values
+    if (has_mw_galametz) {
+      for (int k = 0; k < nbFlt; k++) {
+        ofsDat << setw(6) << milky_way_extinction[k] << " ";
+      }
+      ofsDat << setw(6) << band_pass_correction << " ";
+    }
     ofsDat << endl;
   }
 
@@ -1485,9 +1564,9 @@ void StarSED::writeMag(bool outasc, ofstream &ofsBin, ofstream &ofsDat,
 /*
    compute the magnitudes in each of the filters
 */
-void SED::compute_magnitudes(const vector<flt> &filters) {
+void SED::compute_magnitudes(const vector<flt>& filters) {
   double val;
-  for (const auto &filter : filters) {
+  for (const auto& filter : filters) {
     // Derive the AB magnitudes in each filter
     vector<double> intFlux;
     intFlux = integrateSED(filter);
@@ -1504,7 +1583,7 @@ void SED::compute_magnitudes(const vector<flt> &filters) {
   }
 }
 
-vector<double> SED::compute_fluxes(const vector<flt> &filters) {
+vector<double> SED::compute_fluxes(const vector<flt>& filters) {
   size_t imagm = filters.size();
   vector<double> result(imagm, NULL_FLUX);
   // check that the SED is defined
@@ -1517,7 +1596,97 @@ vector<double> SED::compute_fluxes(const vector<flt> &filters) {
   return result;
 }
 
-vector<double> SED::integrateSED(const flt &filter) {
+double interpolate(const std::vector<double>& x, const std::vector<double>& y,
+                   double xq) {
+  auto it = std::lower_bound(x.begin(), x.end(), xq);
+
+  if (it == x.begin()) return y.front();
+  if (it == x.end()) return y.back();
+
+  size_t i = std::distance(x.begin(), it);
+
+  double x1 = x[i - 1], x2 = x[i];
+  double y1 = y[i - 1], y2 = y[i];
+
+  return y1 + (y2 - y1) * (xq - x1) / (x2 - x1);
+}
+
+void SED::compute_milky_way_extinction(const ext& oneExt,
+                                       const vector<flt>& filters) {
+  // Temporary SED object to do the computation
+  SED tmp(*this);
+
+  // Reference E(B-V) value used to estimate extinction coefficients
+  // assuming the extinction scales linearly with reddening.
+  // Following the approach described in Galametz Appendix A.
+  double reference_ebv = 0.1;
+
+  // Store the unreddened integrated flux for each filter.
+  for (const auto& filter : filters) {
+    auto result = tmp.integrateSED(filter);
+    tmp.milky_way_extinction.push_back(result[3]);
+  }
+
+  // compute the BPC for the SED using  B and V band filters
+  auto resultB = tmp.integrateSED(filterB)[3];
+  auto resultV = tmp.integrateSED(filterV)[3];
+
+  // Use 0.1 as a default value for the extinction, to be able to rescale it
+  tmp.apply_extinction(reference_ebv, oneExt, false);
+
+  auto resultB_red = tmp.integrateSED(filterB)[3];
+  auto resultV_red = tmp.integrateSED(filterV)[3];
+
+  float eb, ev;
+
+  // If the integral fails take the extinction at the upper edge of the filter.
+  if (!(resultB_red > 0)) {
+    auto [x, y] = to_tuple(oneExt.lamb_ext);
+    eb = reference_ebv * interpolate(x, y, 5600.0);
+  } else {
+    eb = -2.5 * LOG10D(resultB_red / resultB);
+  }
+
+  if (!(resultV_red > 0)) {
+    auto [x, y] = to_tuple(oneExt.lamb_ext);
+    ev = reference_ebv * interpolate(x, y, 7000.0);
+  } else {
+    ev = -2.5 * LOG10D(resultV_red / resultV);
+  }
+
+  // Band-pass correction term E(B-V).
+  // It is used as a denominator later, so default value
+  // in case of failure is set to 1 (thus, no band pass correction).
+  if (abs(eb - ev) < std::numeric_limits<float>::epsilon())
+    tmp.band_pass_correction = 1.;
+  else
+    tmp.band_pass_correction = eb - ev;
+
+  // Convert flux attenuation into extinction coefficients for each filter.
+  for (size_t i = 0; i < filters.size(); ++i) {
+    auto result = tmp.integrateSED(filters[i]);
+
+    if (!(result[3] > 0)) {
+      // If the integral fails take the extinction at the upper limit of the
+      // filter.:
+      auto [x, y] = to_tuple(oneExt.lamb_ext);
+      double filt_max = filters[i].lmax();
+      tmp.milky_way_extinction[i] = interpolate(x, y, filt_max);
+
+    } else {
+      tmp.milky_way_extinction[i] =
+          -2.5 * LOG10D(result[3] / tmp.milky_way_extinction[i]) /
+          reference_ebv;
+    }
+  }
+  // copy over the resulting computation
+  milky_way_extinction = tmp.milky_way_extinction;
+  band_pass_correction = tmp.band_pass_correction;
+  has_mw_galametz = true;
+  tmp.clean();
+}
+
+vector<double> SED::integrateSED(const flt& filter) {
   vector<double> results(6, 0.);
 
   // don't integrate if:

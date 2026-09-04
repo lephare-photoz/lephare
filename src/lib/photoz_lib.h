@@ -35,6 +35,11 @@ class PhotoZ {
                 /// true/spectro z
       methz,    /// If true, set z to the MEDIAN solution rather than the BEST
                 /// solution, when computing physical parameters.
+      mw_galametz = false,  /// Whether or not to apply a Milky Way extinction
+                            /// correction to the SEDs with Galametz method
+      mw_classic_extinction = false,
+      /// apply equal extinction to all SEDs, as opposed
+      /// to a different value for each SED
       colAnalysis;  /// if true, measure the PDF to get unceratinties
                     /// associated to the rest-frame colors.
 
@@ -48,74 +53,117 @@ class PhotoZ {
   vector<int> bapp, bappOp, pdz_fabs, emMod;
   cosmo lcdm;
   vector<opa> opaOut;
+  double mw_global_ebv;
+  string mwExtCurve;
 
  public:
-  vector<vector<double>> flux, fluxIR;
+  vector<vector<double>> flux, flux_no_mw, fluxIR, reddening;
+  string mw_ref_mod;
   vector<double> zLib, zLibIR;
-  vector<SED *> fullLib, fullLibIR;
+  vector<SED*> fullLib, fullLibIR;
   SEDlight lightLib;
   vector<flt> allFilters;
   vector<double> gridz;
   vector<string> outkeywords, pdftype;
   int imagm;
   string outputHeader, outpara;
-
-  PhotoZ(keymap &key_analysed);
+  bool one_mw_ebv =
+      false;  ///< Whether or not a single MW E(B-V) value is applied to
+              ///< all sources, as opposed to a different value for each
+              ///< source read from a file
+  vector<double>
+      mw_classic_extinction_values;  ///< If mw_classic_extinction is true, this
+                                     ///< vector contains the extinction values
+                                     ///< to apply to each filter for all SEDs.
+                                     ///< It is computed once at the beginning
+                                     ///< of the code, based on the selected
+                                     ///< Milky Way extinction curve and the
+                                     ///< filter transmission curves.
+  PhotoZ(keymap& key_analysed);
 
   // LCOV_EXCL_START
   virtual ~PhotoZ() {
-    for (auto &sed : fullLib) delete sed;
-    for (auto &sed : fullLibIR) delete sed;
+    for (auto& sed : fullLib) delete sed;
+    for (auto& sed : fullLibIR) delete sed;
     fullLib.clear();
     fullLibIR.clear();
   }
   // LCOV_EXCL_STOP
 
-  vector<double> compute_offsets(vector<onesource *> adaptSources);
+  vector<double> compute_offsets(vector<onesource*> adaptSources);
 
-  vector<double> run_autoadapt(vector<onesource *>);
+  vector<double> run_autoadapt(vector<onesource*>);
 
-  void run_photoz(vector<onesource *> sources, const vector<double> &a0);
+  void run_photoz(vector<onesource*> sources, const vector<double>& a0);
 
-  void fit_onesource(onesource &sources);
+  /*! Fit a source based on the PhotoZ configuration
+   * \param source: the onesource object under consideration
+   * \param mag_shifts: magnitude shifts to apply prior to fit (zero points)
+   */
+  void fit(onesource& source, const vector<double>& mag_shifts);
 
-  void uncertainties_onesource(onesource &src);
+  /*! Compute the fit uncertainties of a source
+   * \param source: the onesource object under consideration
+   */
+  void fit_uncertainties(onesource& source);
 
-  void physpara_onesource(onesource &src);
+  /*! Compute the physical parameters derived from the fit to a source
+   * \param source: the onesource object under consideration
+   */
+  void physical_parameters(onesource& src);
 
-  pair<vector<double>, vector<double>> besttemplate_onesource(
-      onesource &src, int const templateType, double const minl,
-      double const maxl);
+  /*! Get the spectrum of one of the template of one solution to the fit of
+   * a source
+   * \param source: the onesource object under consideration
+   * \param templateType: which object type (GAL:0, GAL 2nd solution:1, GAL
+   * FIR:2, QSO:3, STAR:4)
+   * \param minl: lower bound in wavelength for the returned spectrum
+   * \param maxl: upper bound in wavelength for the returned
+   * spectrum
+   *
+   * \return a pair of vectors for the wavelengths and spectral energy density.
+   */
+  pair<vector<double>, vector<double>> best_template(onesource& source,
+                                                     int const templateType,
+                                                     double const minl,
+                                                     double const maxl);
 
-  inline void writeSpec_onesource(const onesource &src,
-                                  const string outdir = ".") {
-    src.writeSpec(fullLib, fullLibIR, lcdm, allFilters, outdir);
+  /*! Write out the spectrum solutions to ascii
+   * \param source: the onesource object under consideration
+   * \param outputDir: output directory
+   * The ascii file will be outputDir/Id<source.spec>.spec
+   */
+  inline void write_spectrum(const onesource& src,
+                             const string outputDir = ".") {
+    src.writeSpec(fullLib, fullLibIR, lcdm, allFilters, outputDir);
   }
 
   string prep_header(vector<string> outkeywords);
 
-  void write_outputs(vector<onesource *> sources);
+  void write_outputs(vector<onesource*> sources);
 
-  void read_lib(vector<SED *> &fullLib, int &ind, int nummodpre[3],
-                const string libName, string &filtname, vector<int> emMod,
-                int &babs);
+  void read_lib(vector<SED*>& fullLib, int& ind, int nummodpre[3],
+                const string libName, string& filtname, vector<int> emMod,
+                int& babs);
 
-  void check_consistency(keymap &keys);
+  void check_consistency(keymap& keys);
 
-  void readsource(onesource *oneObj, const string line);
+  void readsource(onesource* oneObj, const string line);
   // LCOV_EXCL_START
-  onesource *yield(const int nobj, const string line) {
-    onesource *oneObj = new onesource(nobj, gridz);
+  onesource* yield(const int nobj, const string line) {
+    onesource* oneObj = new onesource(nobj, gridz);
     readsource(oneObj, line);
     prep_data(oneObj);
     return oneObj;
   };
   // LCOV_EXCL_STOP
 
-  vector<onesource *> read_autoadapt_sources();
-  vector<onesource *> read_photoz_sources();
-  void prep_data(vector<onesource *> sources);
-  void prep_data(onesource *oneObj);
+  vector<onesource*> read_autoadapt_sources();
+  vector<onesource*> read_photoz_sources();
+  void read_mw_ebv(vector<onesource*> sources);
+  void read_externalz(vector<onesource*> sources);
+  void prep_data(vector<onesource*> sources);
+  void prep_data(onesource* oneObj);
 
   //! Return the indexes over zlib vector on which to run the fit
   /*!
@@ -125,26 +173,33 @@ class PhotoZ {
 
     \return Vector of indexes for templates set with `redshift` as redshift.
   */
-  vector<size_t> validLib(const double &redshift, const bool &ir = false);
+  vector<size_t> validLib(const double& redshift, const bool& ir = false);
+
+  /*! Check that the source belon to the auto-adapt sample
+   * i.e. selected magnitude and redshift range
+   *
+   * \return a boolean
+   */
+  bool belong_autoadapt(onesource* src);
 };
 
 keymap read_keymap_from_doc(const string libName);
 
 vector<string> readOutKeywords(const string outpara);
 
-void auto_adapt(const vector<onesource *> adaptSources, vector<double> &a0,
-                int &converge, int &iteration);
+void auto_adapt(const vector<onesource*> adaptSources, vector<double>& a0,
+                int& converge, int& iteration);
 
 vector<vector<int>> bestFilter(int nbFlt, vector<double> gridz,
-                               vector<SED *> fullLib, int method,
+                               vector<SED*> fullLib, int method,
                                vector<long> magabscont, vector<int> bapp,
                                vector<int> bappOp, vector<double> zbmin,
                                vector<double> zbmax);
 
-vector<vector<double>> maxkcolor(vector<double> gridz, vector<SED *> fullLib,
+vector<vector<double>> maxkcolor(vector<double> gridz, vector<SED*> fullLib,
                                  vector<vector<int>> bestFlt);
 
-void minimizekcolor(vector<double> gridz, vector<SED *> fulllib,
-                    vector<vector<int>> &bestFlt, vector<long> magabscont);
+void minimizekcolor(vector<double> gridz, vector<SED*> fulllib,
+                    vector<vector<int>>& bestFlt, vector<long> magabscont);
 
 #endif

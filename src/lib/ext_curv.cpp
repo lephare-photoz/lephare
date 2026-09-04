@@ -25,16 +25,16 @@ using namespace std;
 
 // Declare prototypes
 void get_lephare_env();
-vector<keyword> analyse_keywords(int argc, char *argv[],
-                                 const string *list_keywords, int nb_ref_key);
-void write_output_filter(ofstream &stfiltfile, ofstream &stfiltdoc,
+vector<keyword> analyse_keywords(int argc, char* argv[],
+                                 const string* list_keywords, int nb_ref_key);
+void write_output_filter(ofstream& stfiltfile, ofstream& stfiltdoc,
                          vector<flt> vecFlt);
 
 int SED::nrec = 0;  // Even if SED used in the class FLT, still need to
                     // instantiate this variable (used in sedtolib)
 
 // START
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   // Declare variables
   vector<flt> vecFlt;
 
@@ -52,7 +52,8 @@ int main(int argc, char *argv[]) {
   */
 
   // List of the keywords to be found in the config file/command line
-  string list_keywords[] = {"FILTER_FILE", "EXT_CURVE", "GAL_CURVE", "OUTPUT"};
+  string list_keywords[] = {"FILTER_FILE", "EXT_ATMOS_CURVE", "EXT_MW_CURVE",
+                            "OUTPUT"};
   // Number of keywords
   int nb_ref_key = (int)(sizeof(list_keywords) / sizeof(list_keywords[0]));
 
@@ -176,10 +177,10 @@ int main(int argc, char *argv[]) {
 }
 
 // compute atmospheric extinction
-double comp_atm(flt *oneFlt, ext *oneExt) { return comp_ext(oneFlt, &oneExt); }
+double comp_atm(flt* oneFlt, ext* oneExt) { return comp_ext(oneFlt, &oneExt); }
 
 // compute galactic extinction based on Cardelli et al., 1989, ApJ 345
-double comp_gal(flt *oneFlt) {
+double comp_gal(flt* oneFlt) {
   double lmin = oneFlt->lmin();
   double lmax = oneFlt->lmax();
   ext oneExt("DUMMY", 2);
@@ -199,7 +200,7 @@ double comp_gal(flt *oneFlt) {
 }
 
 // compute extinction
-double comp_ext(flt *oneFlt, ext *oneExt) {
+double comp_ext(flt* oneFlt, ext* oneExt) {
   // work with the original lamb_flux
   vector<oneElLambda> lamb_all = oneFlt->lamb_trans;
 

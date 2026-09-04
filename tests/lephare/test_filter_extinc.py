@@ -14,8 +14,8 @@ def test_filter_extinc():
     out_file = os.path.join(test_dir, "../tmp", "filter_extinc.dat")
     options = {
         "FILTER_FILE": os.path.join(test_dir, "../data", "filt", "LSST_FILTERS.dat"),
-        "EXT_CURVE": "SB_calzetti.dat",
-        "GAL_CURVE": "CARDELLI",
+        "EXT_ATMOS_CURVE": "SB_calzetti.dat",
+        "EXT_MW_CURVE": "CARDELLI",
         "OUTPUT": out_file,
     }
     runner = lp.FiltExt(config_keymap=lp.all_types_to_keymap(lp.default_cosmos_config), **options)
@@ -25,7 +25,7 @@ def test_filter_extinc():
     assert os.path.exists(out_file)
     with open(out_file, "r") as f:
         contents = f.read()
-    assert float(contents.split()[-1]) == pytest.approx(1.3039147701114893)
+    assert float(contents.split()[-1]) == pytest.approx(1.3038307748211582)
 
     # check computation
     atmoext = lp.ext("atmo", 0)
