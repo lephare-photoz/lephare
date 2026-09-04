@@ -261,7 +261,8 @@ void onesource::adapt_mag(vector<double> a0) {
 }
 
 /*
- APPLY THE MILKY WAY EBV CORRECTION WITH A CLASSIC METHOD (NO MODEL DEPENDENCY)
+ Apply the MW dust correction with a classic method (no model dependency)
+ to the observed flux, error
 */
 void onesource::correct_classic_mw(const vector<double>& Alamb_corr,
                                    const double mw_global_ebv) {
@@ -270,6 +271,7 @@ void onesource::correct_classic_mw(const vector<double>& Alamb_corr,
   // Replace by the global ebv when exist.
   // So, the global EBV overwrite all others
   ebv = mw_global_ebv >= 0 ? mw_global_ebv : ebv;
+  // Don't do anything if ebv=0
   if (ebv == 0.) return;
 
   // Loop over each filter
@@ -289,11 +291,13 @@ void onesource::correct_classic_mw(const vector<double>& Alamb_corr,
 }
 
 /*
- APPLY THE MILKY WAY EBV COORECTION WITH THE GALAMETZ METHOD (MODEL DEPENDENCY)
+ Apply the MW dust correction with the galametz method (model dependency)
+ to the observed flux, error
 */
 void onesource::correct_galametz_mw(const vector<vector<double>>& reddening) {
   if (indmin[0] < 0 || this->mw_ebv <= 0) return;
 
+  // Take the reddening at the template position which minimize chi2
   vector<double> sed_reddening_correction = reddening[indmin[0]];
 
   // Loop over each filter
@@ -396,8 +400,9 @@ void onesource::rescale_flux_errors(const vector<double> min_err,
 }
 
 /*
- redden the fluxes according to the galactic E(B-V) value
- */
+ redden the modeled fluxes according to the galactic E(B-V) value
+ of the considered galaxy, and the SED
+*/
 vector<vector<double>> onesource::redden_flux(
     const vector<vector<double>>& flux,
     const vector<vector<double>>& reddening) const {

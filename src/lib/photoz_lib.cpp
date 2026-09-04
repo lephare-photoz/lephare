@@ -507,6 +507,14 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
       // reddening in each band
       auto& sed = fullLib[i];
       const auto& mw = sed->milky_way_extinction;
+      // Check that the number of filters used to compute the extinction
+      // in the library matches the number of filters in the input
+      if (imagm != mw.size()) {
+        throw runtime_error(
+            "Option MW dust correction is used with galametz, but "
+            "the number of filters used to compute the extinction in "
+            "the library do not match the number of filters in the input.");
+      }
       double bpc_i = sed->band_pass_correction;
       double scaled_bpc_i = bpc_i / refBPC;  // updated BPC
       sed->band_pass_correction = scaled_bpc_i;
@@ -519,7 +527,7 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
       const double* __restrict in = mw.data();
       // explicit directive for good measure
 #pragma omp simd
-      for (size_t j = 0; j < mw.size(); j++) {
+      for (size_t j = 0; j < imagm; j++) {
         reddening[i][j] = mw[j] * inv_scaled_bpc_i;
       }
     }
@@ -1942,7 +1950,7 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
     nobj++;
     // auto-adapt
     // Apply offset anyway (should be 0 if no auto-adapt or no systematic
-    // shifts Start from the original flux ab_ori
+    // shifts. Start from the original flux ab_ori
     oneObj->adapt_mag(a0_checked);
     // Apply the milky way ebv correction to the observed mag if CLASSIC
     // method
