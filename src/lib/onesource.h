@@ -58,7 +58,6 @@ class onesource {
       mabs, emabs, ab_ori, sab_ori, mab_ori, abIR, sabIR;
   vector<int> busnorma, busul, busfir, bscfir, absfilt;
   string spec, str_inp;
-  bool belong_adapt;
   int pos, nbused, nbul, nbusIR, indminSec, indminIR, imasminIR;
   double zs, dm, consiz;
   array<double, 3> zmin, chimin, dmmin;
@@ -92,7 +91,6 @@ class onesource {
     zs = INVALID_Z;  // spectroscopic redshift
     cont = 0;        // context
     str_inp = ' ';
-    belong_adapt = true;  // satisfy the condition to autoadapt
     for (int k = 0; k < 3; k++) {
       zmin[k] = INVALID_Z;
       indmin[k] = INVALID_INDEX;

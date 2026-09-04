@@ -371,6 +371,7 @@ PYBIND11_MODULE(_lephare, mod) {
                      &PhotoZ::mw_classic_extinction_values)
       .def(py::init<keymap&>())
       .def("read_autoadapt_sources", &PhotoZ::read_autoadapt_sources)
+      .def("belong_autoadapt", &PhotoZ::belong_autoadapt)
       .def("read_photoz_sources", &PhotoZ::read_photoz_sources)
       .def("read_mw_ebv", &PhotoZ::read_mw_ebv)
       .def("prep_data", static_cast<void (PhotoZ::*)(vector<onesource*>)>(
@@ -500,7 +501,6 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("mabs", &onesource::mabs)
       .def_readonly("emabs", &onesource::emabs)
       .def_readonly("str_inp", &onesource::str_inp)
-      .def_readonly("belong_adapt", &onesource::belong_adapt)
       // output parameters:
       .def_readonly("results", &onesource::results)
       .def_readonly("zgmin", &onesource::zgmin)

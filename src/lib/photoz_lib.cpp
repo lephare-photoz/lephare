@@ -1200,6 +1200,29 @@ vector<onesource*> PhotoZ::read_autoadapt_sources() {
 }
 
 /*
+  Check if the source belong to the auto-adapt sample
+ */
+bool PhotoZ::belong_autoadapt(onesource* src) {
+  bool belongauto = false;
+
+  // Keep only sources with a spectroscopic redshift in the range
+  if (src->zs > adzmin && src->zs < adzmax) {
+    // extract the magnitude in the fl_auto filter
+    double magSel;
+    if (src->ab[fl_auto] > 0)
+      magSel = src->mab[fl_auto];
+    else
+      magSel = HIGH_MAG;
+    // Keep all the objects in the mag range
+    if (magSel > auto_thresmin && magSel < auto_thresmax) {
+      belongauto = true;
+    }
+  }
+
+  return belongauto;
+}
+
+/*
    Decide which offsets to be used depending on the AUTO_ADAPT and
    APPLY_SYSSHIFT option
 */

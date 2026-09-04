@@ -88,7 +88,7 @@ def process(
         one_obj = create_and_prep_source(i)
         photozlist.append(one_obj)
         # Add the source in the list only if it satisfies the autoadapt selection criteria
-        if one_obj.belong_adapt:
+        if photz.belong_autoadapt(one_obj):
             # Need to recreate the source to have independant objects
             adaptlist.append(create_and_prep_source(i))
 
@@ -172,7 +172,8 @@ def calculate_offsets_from_input(
         if mw_ebv_arg:
             one_obj.mw_ebv = mw_ebv[i]
         photz.prep_data(one_obj)
-        adaptlist.append(one_obj)
+        if photz.belong_autoadapt(one_obj):
+            adaptlist.append(one_obj)
 
     if not mw_ebv_arg:
         # Read the EBV from an external file, if not given in argument

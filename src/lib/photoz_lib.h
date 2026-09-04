@@ -174,6 +174,13 @@ class PhotoZ {
     \return Vector of indexes for templates set with `redshift` as redshift.
   */
   vector<size_t> validLib(const double& redshift, const bool& ir = false);
+
+  /*! Check that the source belon to the auto-adapt sample
+   * i.e. selected magnitude and redshift range
+   *
+   * \return a boolean
+   */
+  bool belong_autoadapt(onesource* src);
 };
 
 keymap read_keymap_from_doc(const string libName);
