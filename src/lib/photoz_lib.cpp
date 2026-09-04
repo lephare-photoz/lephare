@@ -1755,8 +1755,10 @@ void PhotoZ::read_mw_ebv(vector<onesource*> sources) {
       // Check if the file exist
       mw_ebv_ifstream.open(mw_ebv_file.c_str());
       if (!mw_ebv_ifstream) {
-        throw std::runtime_error("External MW_EBV_FILE not found: " +
-                                 mw_ebv_file);
+        throw std::runtime_error(
+            "External MW_EBV_FILE not found: " + mw_ebv_file +
+            " and global EBV not defined." +
+            "Can not apply MW dust correction" + "as required.");
       }
 
       // Build a lookup from source ID -> source pointer
