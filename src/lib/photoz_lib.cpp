@@ -1794,11 +1794,11 @@ void PhotoZ::read_mw_ebv(vector<onesource*> sources) {
             " Stop because MW dust correction can not be " +
             " applied to all sources while the option is used.");
       }
+    } else {
+      throw std::runtime_error("External MW_EBV_FILE not found: " +
+                               mw_ebv_file + " and global EBV not defined." +
+                               "Can not apply MW dust correction as required.");
     }
-  } else {
-    throw std::runtime_error("External MW_EBV_FILE not found: " + mw_ebv_file +
-                             " and global EBV not defined." +
-                             "Can not apply MW dust correction as required.");
   }
 
   return;
