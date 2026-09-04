@@ -341,7 +341,7 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
   };
   outputHeader += '\n';
   outputHeader += "# APPLY_MW_EXTINCTION    : " + red_type + '\n';
-  if (mw_galametz) {
+  if (mw_galametz || mw_classic_extinction) {
     outputHeader +=
         "# MW_GLOBAL_EBV          : " + to_string(mw_global_ebv) + '\n';
   }
@@ -2109,6 +2109,7 @@ void PhotoZ::fit(onesource& src, const vector<double>& a0) {
   if (mw_classic_extinction) {
     src.correct_classic_mw(mw_classic_extinction_values, mw_global_ebv);
     // Apply MW reddening first if Galametz option on
+    // And not already done with global MW EBV
   } else if (!one_mw_ebv && mw_galametz) {
     flux = src.redden_flux(flux_no_mw, reddening);
   }

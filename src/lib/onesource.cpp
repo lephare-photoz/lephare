@@ -265,13 +265,18 @@ void onesource::adapt_mag(vector<double> a0) {
 */
 void onesource::correct_classic_mw(const vector<double>& Alamb_corr,
                                    const double mw_global_ebv) {
+  // Initialise by the individual MW EBV if positive
   double ebv = this->mw_ebv > 0 ? this->mw_ebv : 0.;
+  // Replace by the global ebv when exist.
+  // So, the global EBV overwrite all others
   ebv = mw_global_ebv >= 0 ? mw_global_ebv : ebv;
   if (ebv == 0.) return;
 
   // Loop over each filter
   for (size_t k = 0; k < ab.size(); k++) {
+    // Define the MW dust correction
     double corr = pow(10., 0.4 * Alamb_corr[k] * ebv);
+    // Apply the correction to the flux and associated error
     ab[k] *= corr;
     // note: corr>0 so if sab negative, it stays so.
     sab[k] *= corr;

@@ -500,6 +500,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("mabs", &onesource::mabs)
       .def_readonly("emabs", &onesource::emabs)
       .def_readonly("str_inp", &onesource::str_inp)
+      .def_readonly("belong_adapt", &onesource::belong_adapt)
       // output parameters:
       .def_readonly("results", &onesource::results)
       .def_readonly("zgmin", &onesource::zgmin)
