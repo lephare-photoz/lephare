@@ -1191,9 +1191,10 @@ vector<onesource*> PhotoZ::read_autoadapt_sources() {
     }
   }
 
-  // If MW should be corrected with different EBV value,
-  // try to read a file with these values
+  // Read external file with MW EBV
   this->read_mw_ebv(adaptSources);
+  // Read external file with redshifts
+  this->read_externalz(adaptSources);
 
   return adaptSources;
 }
@@ -1615,37 +1616,6 @@ void minimizekcolor(vector<double> gridz, vector<SED*> fulllib,
 
 vector<onesource*> PhotoZ::read_photoz_sources() {
   vector<onesource*> photoz_sources;
-  // open the external file with zspec
-  ifstream szex;
-  string externalzfile = ((keys["EXTERNALZ_FILE"]).split_string("NONE", 1))[0];
-
-  if (externalzfile.substr(0, 4) != "NONE") {
-    szex.open(externalzfile.c_str());
-    if (!szex) {
-      cout << "External spec-z option, but no file " << externalzfile << endl;
-      exit(0);
-    }
-    string linezex;
-    // Ignore the comments
-    int nbcomments = 0;
-    while (!(check_first_char(linezex))) {
-      getline(szex, linezex);
-      nbcomments++;
-    }
-    // back to the beginning of the file
-    szex.seekg(0, ios::beg);
-    ;
-    // Go directly to the right lines, skip commented lines
-    for (int k = 1; k < nbcomments; k++) {
-      getline(szex, linezex);
-      cout << "skip comments " << '\n';
-    }  // go to the right starting row of the file
-    // Go directly to the right lines, skipping lines if CAT_LINES
-    for (unsigned int k = 1; k < rowmin; k++) {
-      getline(szex, linezex);
-      cout << "done skip " << k << " " << rowmin << '\n';
-    }  // go to the right starting row of the file
-  }
 
   // Take the stream line by line
   unsigned int nobj = 0;
@@ -1672,45 +1642,87 @@ vector<onesource*> PhotoZ::read_photoz_sources() {
       onesource* oneObj = yield(nobj, line);
       oneObj->set_verbosity(verbose);
 
-      // Use zspec from external file
-      // open the external file with zspec
-      if (externalzfile.substr(0, 4) != "NONE") {
-        string idzex, linezex;
-        getline(szex, linezex);
-        stringstream sszex(linezex);
-        sszex >> idzex;
-        if (idzex != oneObj->spec)
-          cout << endl
-               << "ERROR: mismatch in the external file " << idzex << " "
-               << oneObj->spec << endl;
-        sszex >> oneObj->zs;
-      }
-
       // Add the source
       photoz_sources.push_back(oneObj);
     }
   }
 
-  // If MW should be corrected with different EBV vlue, try to read a file with
-  // thiese values
+  // Read external file with MW EBV
   this->read_mw_ebv(photoz_sources);
+  // Read external file with redshifts
+  this->read_externalz(photoz_sources);
 
   return photoz_sources;
+}
+
+/*
+  Read the file with the external redshifts stored
+  Replace the zs read in input
+  Based on a unique Id
+ */
+void PhotoZ::read_externalz(vector<onesource*> sources) {
+  // open the external file with zspec
+  ifstream zex_ifstream;
+  string zex_file = ((keys["EXTERNALZ_FILE"]).split_string("NONE", 1))[0];
+  // check that the file exists
+  if (zex_file.substr(0, 4) != "NONE") {
+    zex_ifstream.open(zex_file.c_str());
+    if (!zex_ifstream) {
+      throw std::runtime_error("Associating external redshift file " +
+                               zex_file +
+                               " which is not found. EXTERNALZ_FILE option.");
+    }
+
+    // Build a lookup from source ID -> source pointer
+    std::unordered_map<std::string, onesource*> source_map;
+    for (auto* src : sources) {
+      source_map[src->spec] = src;
+    }
+
+    // Read zex stream
+    string linezex;
+    size_t matched = 0;
+    while (getline(zex_ifstream, linezex)) {
+      // check for comments
+      if (check_first_char(linezex)) {
+        stringstream ss(linezex);
+        string id;
+        double val;
+        // Expect Id and spec-z
+        ss >> id >> val;
+
+        // Find the input source with the same id
+        auto it = source_map.find(id);
+        if (it != source_map.end()) {
+          // Update its spec-z
+          it->second->zs = val;
+          matched++;
+        }
+      }
+    }
+
+    // If the number of external z does not match the number of sources
+    // Display a warning
+    if (matched != sources.size()) {
+      cout << "Warning: only matched " + std::to_string(matched) + " of " +
+                  to_string(sources.size()) +
+                  " sources when associating external redshift file." +
+                  " Not all zs replaced.";
+    }
+  }
+  return;
 }
 
 /*
   Read the file with the MW E(B-V)
   One value per source is expected
   The E(B-V) should be sorted as the source list
+  Based on a unique Id
  */
 void PhotoZ::read_mw_ebv(vector<onesource*> sources) {
   // MW_EBV file
   ifstream mw_ebv_ifstream;
   string mw_ebv_file = keys["MW_EBV_FILE"].split_string("NONE", 1)[0];
-
-  size_t mw_ebv_nlines = 0;
-  size_t matched = 0;
-  vector<double> mw_ebv_values;
 
   // If MW should be corrected with different EBV value,
   // and if the one single global MW EBV value is not defined
@@ -1731,6 +1743,7 @@ void PhotoZ::read_mw_ebv(vector<onesource*> sources) {
       }
 
       // Read ebv stream
+      size_t matched = 0;
       string linemwebv;
       while (getline(mw_ebv_ifstream, linemwebv)) {
         if (check_first_char(linemwebv)) {
@@ -1749,9 +1762,12 @@ void PhotoZ::read_mw_ebv(vector<onesource*> sources) {
 
       // If the number of read MW E(B-V) does not match the number of sources
       if (matched != sources.size()) {
-        throw std::runtime_error("Only matched " + std::to_string(matched) +
-                                 " of " + std::to_string(sources.size()) +
-                                 " sources.");
+        throw std::runtime_error(
+            "Only matched " + std::to_string(matched) + " of " +
+            std::to_string(sources.size()) +
+            " sources (associating MW_EBV_FILE to input)." +
+            " Stop because MW dust correction can not be " +
+            " applied to all sources while the option is used.");
       }
     }
   }

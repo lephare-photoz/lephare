@@ -161,6 +161,7 @@ class PhotoZ {
   vector<onesource*> read_autoadapt_sources();
   vector<onesource*> read_photoz_sources();
   void read_mw_ebv(vector<onesource*> sources);
+  void read_externalz(vector<onesource*> sources);
   void prep_data(vector<onesource*> sources);
   void prep_data(onesource* oneObj);
 
