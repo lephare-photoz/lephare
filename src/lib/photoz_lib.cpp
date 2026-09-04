@@ -1193,9 +1193,7 @@ vector<onesource*> PhotoZ::read_autoadapt_sources() {
 
   // If MW should be corrected with different EBV value,
   // try to read a file with these values
-  if ((mw_galametz || mw_classic_extinction) && !one_mw_ebv) {
-    this->read_mw_ebv(adaptSources);
-  }
+  this->read_mw_ebv(adaptSources);
 
   return adaptSources;
 }
@@ -1695,9 +1693,7 @@ vector<onesource*> PhotoZ::read_photoz_sources() {
 
   // If MW should be corrected with different EBV vlue, try to read a file with
   // thiese values
-  if ((mw_galametz || mw_classic_extinction) && !one_mw_ebv) {
-    this->read_mw_ebv(photoz_sources);
-  }
+  this->read_mw_ebv(photoz_sources);
 
   return photoz_sources;
 }
@@ -1716,43 +1712,47 @@ void PhotoZ::read_mw_ebv(vector<onesource*> sources) {
   size_t matched = 0;
   vector<double> mw_ebv_values;
 
-  // Build a lookup from source ID -> source pointer
-  std::unordered_map<std::string, onesource*> source_map;
-  for (auto* src : sources) {
-    source_map[src->spec] = src;
-  }
+  // If MW should be corrected with different EBV value,
+  // and if the one single global MW EBV value is not defined
+  if ((mw_galametz || mw_classic_extinction) && !one_mw_ebv) {
+    // If a file name is defined
+    if (mw_ebv_file.substr(0, 4) != "NONE") {
+      // Check if the file exist
+      mw_ebv_ifstream.open(mw_ebv_file.c_str());
+      if (!mw_ebv_ifstream) {
+        throw std::runtime_error("External MW_EBV_FILE not found: " +
+                                 mw_ebv_file);
+      }
 
-  // If a file name is defined
-  if (mw_ebv_file.substr(0, 4) != "NONE") {
-    // Check if the file exist
-    mw_ebv_ifstream.open(mw_ebv_file.c_str());
-    if (!mw_ebv_ifstream) {
-      throw std::runtime_error("External MW_EBV_FILE not found: " +
-                               mw_ebv_file);
-    }
+      // Build a lookup from source ID -> source pointer
+      std::unordered_map<std::string, onesource*> source_map;
+      for (auto* src : sources) {
+        source_map[src->spec] = src;
+      }
 
-    // Read ebv stream
-    string linemwebv;
-    while (getline(mw_ebv_ifstream, linemwebv)) {
-      if (check_first_char(linemwebv)) {
-        stringstream ss(linemwebv);
-        string id;
-        double val;
-        ss >> id >> val;
+      // Read ebv stream
+      string linemwebv;
+      while (getline(mw_ebv_ifstream, linemwebv)) {
+        if (check_first_char(linemwebv)) {
+          stringstream ss(linemwebv);
+          string id;
+          double val;
+          ss >> id >> val;
 
-        auto it = source_map.find(id);
-        if (it != source_map.end()) {
-          it->second->mw_ebv = val;
-          matched++;
+          auto it = source_map.find(id);
+          if (it != source_map.end()) {
+            it->second->mw_ebv = val;
+            matched++;
+          }
         }
       }
-    }
 
-    // If the number of read MW E(B-V) does not match the number of sources
-    if (matched != sources.size()) {
-      throw std::runtime_error("Only matched " + std::to_string(matched) +
-                               " of " + std::to_string(sources.size()) +
-                               " sources.");
+      // If the number of read MW E(B-V) does not match the number of sources
+      if (matched != sources.size()) {
+        throw std::runtime_error("Only matched " + std::to_string(matched) +
+                                 " of " + std::to_string(sources.size()) +
+                                 " sources.");
+      }
     }
   }
   return;
