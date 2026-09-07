@@ -12,6 +12,7 @@
 #include <fstream>   // print output file
 #include <iomanip>   // std::set precision
 #include <iostream>  // print standard file
+#include <limits>    //std::numeric_limits
 #include <sstream>
 #include <string>
 #include <vector>
@@ -50,6 +51,8 @@ SED::SED(const string nameC, int nummodC, string type) {
   dm = -999.;        // Rescaling of the template
   distMod = 0;
   qi = {0., 0., 0., 0.};
+
+  band_pass_correction = 1.;
 
   // Initialise the B and V filters for the band pass correction
   initialise_filters();
@@ -1625,35 +1628,39 @@ void SED::compute_milky_way_extinction(const ext& oneExt,
   }
 
   // compute the BPC for the SED using  B and V band filters
-  auto resultB = tmp.integrateSED(filterB);
-  auto resultV = tmp.integrateSED(filterV);
+  auto resultB = tmp.integrateSED(filterB)[3];
+  auto resultV = tmp.integrateSED(filterV)[3];
 
   // Use 0.1 as a default value for the extinction, to be able to rescale it
   tmp.apply_extinction(reference_ebv, oneExt, false);
 
-  auto resultB_red = tmp.integrateSED(filterB);
-  auto resultV_red = tmp.integrateSED(filterV);
+  auto resultB_red = tmp.integrateSED(filterB)[3];
+  auto resultV_red = tmp.integrateSED(filterV)[3];
 
-  float eb;
-  float ev;
+  float eb, ev;
 
-  // If the integral fails take the extinction at the upper limit of the filter.
-  if (!(resultB_red[3] > 0)) {
+  // If the integral fails take the extinction at the upper edge of the filter.
+  if (!(resultB_red > 0)) {
     auto [x, y] = to_tuple(oneExt.lamb_ext);
     eb = reference_ebv * interpolate(x, y, 5600.0);
   } else {
-    eb = -2.5 * LOG10D(resultB_red[3] / resultB[3]);
+    eb = -2.5 * LOG10D(resultB_red / resultB);
   }
 
-  if (!(resultV_red[3] > 0)) {
+  if (!(resultV_red > 0)) {
     auto [x, y] = to_tuple(oneExt.lamb_ext);
     ev = reference_ebv * interpolate(x, y, 7000.0);
   } else {
-    ev = -2.5 * LOG10D(resultV_red[3] / resultV[3]);
+    ev = -2.5 * LOG10D(resultV_red / resultV);
   }
 
   // Band-pass correction term E(B-V).
-  tmp.band_pass_correction = eb - ev;
+  // It is used as a denominator later, so default value
+  // in case of failure is set to 1 (thus, no band pass correction).
+  if (abs(eb - ev) < std::numeric_limits<float>::epsilon())
+    tmp.band_pass_correction = 1.;
+  else
+    tmp.band_pass_correction = eb - ev;
 
   // Convert flux attenuation into extinction coefficients for each filter.
   for (size_t i = 0; i < filters.size(); ++i) {

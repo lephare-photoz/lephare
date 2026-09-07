@@ -290,7 +290,7 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
   // model dependence
   if (red_type == "CLASSIC") mw_classic_extinction = true;
 
-  // read the kweywords associated to these two both options
+  // read the keywords associated to these two both options
   mwExtCurve = (key_analysed["EXT_MW_CURVE"]).split_string("CARDELLI", 1)[0];
   ext milkyWayExtinction(mwExtCurve);
   if (mw_galametz || mw_classic_extinction) {
@@ -341,7 +341,7 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
   };
   outputHeader += '\n';
   outputHeader += "# APPLY_MW_EXTINCTION    : " + red_type + '\n';
-  if (mw_galametz) {
+  if (mw_galametz || mw_classic_extinction) {
     outputHeader +=
         "# MW_GLOBAL_EBV          : " + to_string(mw_global_ebv) + '\n';
   }
@@ -498,18 +498,37 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
           "(EXT_MW_CURVE : " +
           milkyWayExtinction.name + ").");
     }
+
+    // 10000 for the threshold is a generic default from Claude.ai.
+    // It may need optimization through profiling
+#pragma omp parallel for schedule(static) if (fullLib.size() > 10000)
     for (size_t i = 0; i < fullLib.size(); i++) {
       // Scale every SED BPC by the reference model BPC, and compute the
       // reddening in each band
       auto& sed = fullLib[i];
       const auto& mw = sed->milky_way_extinction;
+      // Check that the number of filters used to compute the extinction
+      // in the library matches the number of filters in the input
+      if (imagm != mw.size()) {
+        throw runtime_error(
+            "Option MW dust correction is used with galametz, but "
+            "the number of filters used to compute the extinction in "
+            "the library do not match the number of filters in the input.");
+      }
       double bpc_i = sed->band_pass_correction;
       double scaled_bpc_i = bpc_i / refBPC;  // updated BPC
       sed->band_pass_correction = scaled_bpc_i;
-      // Edge case, not a real situation.
-      if (scaled_bpc_i < 1e-100) scaled_bpc_i = 1.;
-      for (size_t j = 0; j < mw.size(); j++) {
-        reddening[i][j] = mw[j] / scaled_bpc_i;
+
+      // tell the compiler that there is no risk of aliased vector element
+      // use inverse of scaled_bpc_i as divide is much more expensive than
+      // multiply and can even block vectorization
+      double inv_scaled_bpc_i = 1.0 / scaled_bpc_i;
+      double* __restrict out = reddening[i].data();
+      const double* __restrict in = mw.data();
+      // explicit directive for good measure
+#pragma omp simd
+      for (size_t j = 0; j < imagm; j++) {
+        reddening[i][j] = mw[j] * inv_scaled_bpc_i;
       }
     }
   } else if (mw_classic_extinction) {
@@ -1180,13 +1199,35 @@ vector<onesource*> PhotoZ::read_autoadapt_sources() {
     }
   }
 
-  // If MW should be corrected with different EBV value,
-  // try to read a file with these values
-  if ((mw_galametz || mw_classic_extinction) && !one_mw_ebv) {
-    this->read_mw_ebv(adaptSources);
-  }
+  // Read external file with MW EBV
+  this->read_mw_ebv(adaptSources);
+  // Read external file with redshifts
+  this->read_externalz(adaptSources);
 
   return adaptSources;
+}
+
+/*
+  Check if the source belong to the auto-adapt sample
+ */
+bool PhotoZ::belong_autoadapt(onesource* src) {
+  bool belongauto = false;
+
+  // Keep only sources with a spectroscopic redshift in the range
+  if (src->zs > adzmin && src->zs < adzmax) {
+    // extract the magnitude in the fl_auto filter
+    double magSel;
+    if (src->ab[fl_auto] > 0)
+      magSel = src->mab[fl_auto];
+    else
+      magSel = HIGH_MAG;
+    // Keep all the objects in the mag range
+    if (magSel > auto_thresmin && magSel < auto_thresmax) {
+      belongauto = true;
+    }
+  }
+
+  return belongauto;
 }
 
 /*
@@ -1606,37 +1647,6 @@ void minimizekcolor(vector<double> gridz, vector<SED*> fulllib,
 
 vector<onesource*> PhotoZ::read_photoz_sources() {
   vector<onesource*> photoz_sources;
-  // open the external file with zspec
-  ifstream szex;
-  string externalzfile = ((keys["EXTERNALZ_FILE"]).split_string("NONE", 1))[0];
-
-  if (externalzfile.substr(0, 4) != "NONE") {
-    szex.open(externalzfile.c_str());
-    if (!szex) {
-      cout << "External spec-z option, but no file " << externalzfile << endl;
-      exit(0);
-    }
-    string linezex;
-    // Ignore the comments
-    int nbcomments = 0;
-    while (!(check_first_char(linezex))) {
-      getline(szex, linezex);
-      nbcomments++;
-    }
-    // back to the beginning of the file
-    szex.seekg(0, ios::beg);
-    ;
-    // Go directly to the right lines, skip commented lines
-    for (int k = 1; k < nbcomments; k++) {
-      getline(szex, linezex);
-      cout << "skip comments " << '\n';
-    }  // go to the right starting row of the file
-    // Go directly to the right lines, skipping lines if CAT_LINES
-    for (unsigned int k = 1; k < rowmin; k++) {
-      getline(szex, linezex);
-      cout << "done skip " << k << " " << rowmin << '\n';
-    }  // go to the right starting row of the file
-  }
 
   // Take the stream line by line
   unsigned int nobj = 0;
@@ -1663,88 +1673,142 @@ vector<onesource*> PhotoZ::read_photoz_sources() {
       onesource* oneObj = yield(nobj, line);
       oneObj->set_verbosity(verbose);
 
-      // Use zspec from external file
-      // open the external file with zspec
-      if (externalzfile.substr(0, 4) != "NONE") {
-        string idzex, linezex;
-        getline(szex, linezex);
-        stringstream sszex(linezex);
-        sszex >> idzex;
-        if (idzex != oneObj->spec)
-          cout << endl
-               << "ERROR: mismatch in the external file " << idzex << " "
-               << oneObj->spec << endl;
-        sszex >> oneObj->zs;
-      }
-
       // Add the source
       photoz_sources.push_back(oneObj);
     }
   }
 
-  // If MW should be corrected with different EBV vlue, try to read a file with
-  // thiese values
-  if ((mw_galametz || mw_classic_extinction) && !one_mw_ebv) {
-    this->read_mw_ebv(photoz_sources);
-  }
+  // Read external file with MW EBV
+  this->read_mw_ebv(photoz_sources);
+  // Read external file with redshifts
+  this->read_externalz(photoz_sources);
 
   return photoz_sources;
+}
+
+/*
+  Read the file with the external redshifts stored
+  Replace the zs read in input
+  Based on a unique Id
+ */
+void PhotoZ::read_externalz(vector<onesource*> sources) {
+  // open the external file with zspec
+  ifstream zex_ifstream;
+  string zex_file = ((keys["EXTERNALZ_FILE"]).split_string("NONE", 1))[0];
+  // check that the file exists
+  if (zex_file.substr(0, 4) != "NONE") {
+    zex_ifstream.open(zex_file.c_str());
+    if (!zex_ifstream) {
+      throw std::runtime_error("Associating external redshift file " +
+                               zex_file +
+                               " which is not found. EXTERNALZ_FILE option.");
+    }
+
+    // Build a lookup from source ID -> source pointer
+    std::unordered_map<std::string, onesource*> source_map;
+    for (auto* src : sources) {
+      source_map[src->spec] = src;
+    }
+
+    // Read zex stream
+    string linezex;
+    size_t matched = 0;
+    while (getline(zex_ifstream, linezex)) {
+      // check for comments
+      if (check_first_char(linezex)) {
+        stringstream ss(linezex);
+        string id;
+        double val;
+        // Expect Id and spec-z
+        ss >> id >> val;
+
+        // Find the input source with the same id
+        auto it = source_map.find(id);
+        if (it != source_map.end()) {
+          // Update its spec-z
+          it->second->zs = val;
+          matched++;
+        }
+      }
+    }
+
+    // If the number of external z does not match the number of sources
+    // Display a warning
+    if (matched != sources.size()) {
+      cout << "Warning: only matched " + std::to_string(matched) + " of " +
+                  to_string(sources.size()) +
+                  " sources when associating external redshift file." +
+                  " Not all zs replaced.";
+    }
+  }
+  return;
 }
 
 /*
   Read the file with the MW E(B-V)
   One value per source is expected
   The E(B-V) should be sorted as the source list
+  Based on a unique Id
  */
 void PhotoZ::read_mw_ebv(vector<onesource*> sources) {
   // MW_EBV file
   ifstream mw_ebv_ifstream;
   string mw_ebv_file = keys["MW_EBV_FILE"].split_string("NONE", 1)[0];
 
-  size_t mw_ebv_nlines = 0;
-  size_t matched = 0;
-  vector<double> mw_ebv_values;
+  // If MW should be corrected with different EBV value,
+  // and if the one single global MW EBV value is not defined
+  if ((mw_galametz || mw_classic_extinction) && !one_mw_ebv) {
+    // If a file name is defined
+    if (mw_ebv_file.substr(0, 4) != "NONE") {
+      // Check if the file exist
+      mw_ebv_ifstream.open(mw_ebv_file.c_str());
+      if (!mw_ebv_ifstream) {
+        throw std::runtime_error(
+            "External MW_EBV_FILE not found: " + mw_ebv_file +
+            " and global EBV not defined." +
+            "Can not apply MW dust correction as required.");
+      }
 
-  // Build a lookup from source ID -> source pointer
-  std::unordered_map<std::string, onesource*> source_map;
-  for (auto* src : sources) {
-    source_map[src->spec] = src;
-  }
+      // Build a lookup from source ID -> source pointer
+      std::unordered_map<std::string, onesource*> source_map;
+      for (auto* src : sources) {
+        source_map[src->spec] = src;
+      }
 
-  // If a file name is defined
-  if (mw_ebv_file.substr(0, 4) != "NONE") {
-    // Check if the file exist
-    mw_ebv_ifstream.open(mw_ebv_file.c_str());
-    if (!mw_ebv_ifstream) {
-      cout << "External MW_EBV_FILE indicated, but no existing file "
-           << mw_ebv_file << endl;
-      exit(0);
-    }
+      // Read ebv stream
+      size_t matched = 0;
+      string linemwebv;
+      while (getline(mw_ebv_ifstream, linemwebv)) {
+        if (check_first_char(linemwebv)) {
+          stringstream ss(linemwebv);
+          string id;
+          double val;
+          ss >> id >> val;
 
-    // Read ebv stream
-    string linemwebv;
-    while (getline(mw_ebv_ifstream, linemwebv)) {
-      if (check_first_char(linemwebv)) {
-        stringstream ss(linemwebv);
-        string id;
-        double val;
-        ss >> id >> val;
-
-        auto it = source_map.find(id);
-        if (it != source_map.end()) {
-          it->second->mw_ebv = val;
-          matched++;
+          auto it = source_map.find(id);
+          if (it != source_map.end()) {
+            it->second->mw_ebv = val;
+            matched++;
+          }
         }
       }
-    }
 
-    // If the number of read MW E(B-V) does not match the number of sources
-    if (matched != sources.size()) {
-      throw std::runtime_error("Only matched " + std::to_string(matched) +
-                               " of " + std::to_string(sources.size()) +
-                               " sources.");
+      // If the number of read MW E(B-V) does not match the number of sources
+      if (matched != sources.size()) {
+        throw std::runtime_error(
+            "Only matched " + std::to_string(matched) + " of " +
+            std::to_string(sources.size()) +
+            " sources (associating MW_EBV_FILE to input)." +
+            " Stop because MW dust correction can not be " +
+            " applied to all sources while the option is used.");
+      }
+    } else {
+      throw std::runtime_error("External MW_EBV_FILE not found: " +
+                               mw_ebv_file + " and global EBV not defined." +
+                               "Can not apply MW dust correction as required.");
     }
   }
+
   return;
 }
 
@@ -1886,7 +1950,7 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
     nobj++;
     // auto-adapt
     // Apply offset anyway (should be 0 if no auto-adapt or no systematic
-    // shifts Start from the original flux ab_ori
+    // shifts. Start from the original flux ab_ori
     oneObj->adapt_mag(a0_checked);
     // Apply the milky way ebv correction to the observed mag if CLASSIC
     // method
@@ -2056,7 +2120,7 @@ vector<size_t> PhotoZ::validLib(const double& redshift, const bool& ir) {
 /*
   Propose a function to fit only one source
 */
-void PhotoZ::fit_onesource(onesource& src, const vector<double>& a0) {
+void PhotoZ::fit(onesource& src, const vector<double>& a0) {
   // Threshold in chi2 to consider. Remove <3 bands, stop when below this
   // chi2
   double thresholdChi2 =
@@ -2083,6 +2147,7 @@ void PhotoZ::fit_onesource(onesource& src, const vector<double>& a0) {
   if (mw_classic_extinction) {
     src.correct_classic_mw(mw_classic_extinction_values, mw_global_ebv);
     // Apply MW reddening first if Galametz option on
+    // And not already done with global MW EBV
   } else if (!one_mw_ebv && mw_galametz) {
     flux = src.redden_flux(flux_no_mw, reddening);
   }
@@ -2120,7 +2185,7 @@ void PhotoZ::fit_onesource(onesource& src, const vector<double>& a0) {
 /*
   Associate PDF and analysis of the PDF to the source which has been fit
 */
-void PhotoZ::uncertainties_onesource(onesource& src) {
+void PhotoZ::fit_uncertainties(onesource& src) {
   // Parabolic interpolation of the redshift
   bool zintp = keys["Z_INTERP"].split_bool("NO", 1)[0];
   // DZ_WIN minimal delta z window to search - 0.25 by default
@@ -2159,7 +2224,7 @@ void PhotoZ::uncertainties_onesource(onesource& src) {
 /*
   Compute physical parameters for one source
 */
-void PhotoZ::physpara_onesource(onesource& src) {
+void PhotoZ::physical_parameters(onesource& src) {
   /* Define what are the filters to be used for the absolute magnitude
    * depending on the method adopted */
   // MABS_METHOD method to compute the absolute magnitudes
@@ -2220,7 +2285,7 @@ void PhotoZ::physpara_onesource(onesource& src) {
     // Select the index of the templates that have a redshift closest to
     // zgmed We only work on GAL solutions here
     auto valid = validLib(src.zgmed[0]);
-    // Use the flux with no  MW since ab mag corrected in fit_onesource
+    // Use the flux with no  MW since ab mag corrected in fit
     src.fit(lightLib, flux_no_mw, valid, funz0, bp, restrict_rf);
   } else {
     src.consiz = src.zmin[0];
@@ -2262,7 +2327,7 @@ void PhotoZ::physpara_onesource(onesource& src) {
 /*
   return the best fit template
 */
-pair<vector<double>, vector<double>> PhotoZ::besttemplate_onesource(
+pair<vector<double>, vector<double>> PhotoZ::best_template(
     onesource& src, int const templateType, double const minl,
     double const maxl) {
   pair<vector<double>, vector<double>> tmp;
@@ -2289,8 +2354,9 @@ pair<vector<double>, vector<double>> PhotoZ::besttemplate_onesource(
       tmp = src.best_spec_vec(4, fullLib, lcdm, minl, maxl);
       break;
     default:
-      // Gestion d'erreur si 'case' n'est pas entre 1 et 5
-      throw std::invalid_argument("Case between 1 and 5.");
+      // Gestion d'erreur si 'case' n'est pas entre 0 et 4
+      throw std::invalid_argument(
+          "templateType needs to be an integer between 0 and 4.");
   }
 
   return tmp;

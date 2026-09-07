@@ -84,7 +84,7 @@ def test_photoz_cosmos():
     print("Done with offsets")
     assert len(a0) == 6
 
-    photz.fit_onesource(src, a0)
+    photz.fit(src, a0)
     print("Done with fit")
 
     # test the value of the minimisation
@@ -94,7 +94,7 @@ def test_photoz_cosmos():
     assert src.chimin[0] < src.chimin[1] < src.chimin[2]
 
     # Test the estimate of the median, mode, min computation and associated errors
-    photz.uncertainties_onesource(src)
+    photz.fit_uncertainties(src)
     print("Done with uncertainties")
     max_position = np.argmax(src.pdfmap[11].vPDF)
     assert max_position == 13
@@ -107,7 +107,7 @@ def test_photoz_cosmos():
     assert src.zgmode[3] < src.zgmode[1] < src.zgmode[0] < src.zgmode[2] < src.zgmode[4]
 
     # Test the absolute magnitude estimate
-    photz.physpara_onesource(src)
+    photz.physical_parameters(src)
     print("Done with physical parameters")
     assert src.mabs[5] == pytest.approx(26.6285 - 42.9504 - src.kap[5], abs=3e-2)
     assert src.mabs[0] == pytest.approx(30.9393 - 42.9504 - src.kap[0], abs=3e-2)
@@ -116,11 +116,11 @@ def test_photoz_cosmos():
     # Test how spectra are generated
     minl = 3000.0
     maxl = 13000.0
-    gal1 = photz.besttemplate_onesource(src, 0, minl, maxl)
-    gal2 = photz.besttemplate_onesource(src, 1, minl, maxl)
-    fir = photz.besttemplate_onesource(src, 2, minl, maxl)
-    qso = photz.besttemplate_onesource(src, 3, minl, maxl)
-    star = photz.besttemplate_onesource(src, 4, minl, maxl)
+    gal1 = photz.best_template(src, 0, minl, maxl)
+    gal2 = photz.best_template(src, 1, minl, maxl)
+    fir = photz.best_template(src, 2, minl, maxl)
+    qso = photz.best_template(src, 3, minl, maxl)
+    star = photz.best_template(src, 4, minl, maxl)
     print("Done with templates generation")
     assert len(gal2[0]) == 0
     assert len(fir[0]) == 0
@@ -206,7 +206,7 @@ def test_rm_discrepant():
 
     photz.prep_data(src)
     a0 = photz.compute_offsets([])
-    photz.fit_onesource(src, a0)
+    photz.fit(src, a0)
     assert src.nbused == 5
     assert src.zmin[0] == pytest.approx(0.65)
     assert src.dmmin[0] == pytest.approx(1.0000, abs=1e-04)
@@ -350,20 +350,20 @@ def test_physicalpara_bc03():
     print("Done with offsets")
     assert len(a0) == 10
 
-    photz.fit_onesource(src, a0)
+    photz.fit(src, a0)
     print("Done with fit")
     assert src.zmin[0] == 0.40
     print("src.dmmin[0]: ", src.dmmin[0])
     assert src.dmmin[0] == pytest.approx(1.0000e10, 1.0e4)
     assert src.imasmin[0] == 2
 
-    photz.uncertainties_onesource(src)
+    photz.fit_uncertainties(src)
     print("Done with uncertainties")
     max_position = np.argmax(src.pdfmap[11].vPDF)
     assert max_position == 2
     assert len(src.pdfmap[11].xaxis) == 6
     assert src.zs == pytest.approx(0.4, abs=1e-02)
-    photz.physpara_onesource(src)
+    photz.physical_parameters(src)
     print("Done with physical parameters")
     assert src.consiz == 0.4
 
@@ -570,20 +570,20 @@ def test_fit_fir():
 
     photz.prep_data(src)
     a0 = photz.compute_offsets([])
-    photz.fit_onesource(src, a0)
+    photz.fit(src, a0)
     print("Done with fit")
     assert src.zmin[0] == 0.40
     assert src.dmmin[0] == pytest.approx(1.0000e10, 1.0e4)
     assert src.imasmin[0] == 2
 
-    photz.uncertainties_onesource(src)
+    photz.fit_uncertainties(src)
     print("Done with uncertainties")
     max_position = np.argmax(src.pdfmap[11].vPDF)
     assert max_position == 2
     assert len(src.pdfmap[11].xaxis) == 6
     assert src.zs == pytest.approx(0.4, abs=1e-02)
 
-    photz.physpara_onesource(src)
+    photz.physical_parameters(src)
     print("Done with physical parameters")
     print(src.results)
     assert src.consiz == 0.4
@@ -620,11 +620,11 @@ def test_fit_fir():
 
     minl = 3000.0
     maxl = 200000.0
-    gal1 = photz.besttemplate_onesource(src, 0, minl, maxl)
-    gal2 = photz.besttemplate_onesource(src, 1, minl, maxl)
-    fir = photz.besttemplate_onesource(src, 2, minl, maxl)
-    qso = photz.besttemplate_onesource(src, 3, minl, maxl)
-    star = photz.besttemplate_onesource(src, 4, minl, maxl)
+    gal1 = photz.best_template(src, 0, minl, maxl)
+    gal2 = photz.best_template(src, 1, minl, maxl)
+    fir = photz.best_template(src, 2, minl, maxl)
+    qso = photz.best_template(src, 3, minl, maxl)
+    star = photz.best_template(src, 4, minl, maxl)
     print("Done with templates generation")
     assert all(2999.0 < x < 200001.0 for x in gal1[0])
     assert all(10.0 < x < 1000.1 for x in gal1[1])
@@ -729,7 +729,7 @@ def test_photoz_galametz():
     print("Done with offsets")
     assert len(a0) == 6
 
-    photz.fit_onesource(src, a0)
+    photz.fit(src, a0)
     print("Done with fit")
 
     assert np.testing.assert_almost_equal(-2.5 * np.log10(src.ab) - 48.60, mag_source, decimal=2) is None
@@ -741,7 +741,7 @@ def test_photoz_galametz():
     assert src.chimin[0] < src.chimin[1] < src.chimin[2]
 
     # Test the estimate of the median, mode, min computation and associated errors
-    photz.uncertainties_onesource(src)
+    photz.fit_uncertainties(src)
     print("Done with uncertainties")
     max_position = np.argmax(src.pdfmap[11].vPDF)
     assert max_position == 13
@@ -754,7 +754,7 @@ def test_photoz_galametz():
     assert src.zgmode[3] < src.zgmode[1] < src.zgmode[0] < src.zgmode[2] < src.zgmode[4]
 
     # Test the absolute magnitude estimate
-    photz.physpara_onesource(src)
+    photz.physical_parameters(src)
     print("Done with physical parameters")
     assert src.mabs[5] == pytest.approx(26.6285 - 42.9504 - src.kap[5], abs=3e-2)
     assert src.mabs[0] == pytest.approx(30.9393 - 42.9504 - src.kap[0], abs=3e-2)
@@ -762,11 +762,11 @@ def test_photoz_galametz():
     # Test how spectra are generated
     minl = 3000.0
     maxl = 13000.0
-    gal1 = photz.besttemplate_onesource(src, 0, minl, maxl)
-    gal2 = photz.besttemplate_onesource(src, 1, minl, maxl)
-    fir = photz.besttemplate_onesource(src, 2, minl, maxl)
-    qso = photz.besttemplate_onesource(src, 3, minl, maxl)
-    star = photz.besttemplate_onesource(src, 4, minl, maxl)
+    gal1 = photz.best_template(src, 0, minl, maxl)
+    gal2 = photz.best_template(src, 1, minl, maxl)
+    fir = photz.best_template(src, 2, minl, maxl)
+    qso = photz.best_template(src, 3, minl, maxl)
+    star = photz.best_template(src, 4, minl, maxl)
     print("Done with templates generation")
     assert len(gal2[0]) == 0
     assert len(fir[0]) == 0
