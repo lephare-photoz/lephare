@@ -375,3 +375,88 @@ def test_quality_flags():
     assert pdf.number_mod() == 1
     assert pdf.tail_mass(0, n_window=6) == pytest.approx(1.0e-4, 1.0e-2)
     assert pdf.compute_quality_flag(0)[0] == 3
+
+
+@pytest.mark.filterwarnings("ignore:Covariance of the parameters could not be estimated")
+def test_tail_mass_ignores_narrow_pdfs():
+    """A PDF narrower than good_sigma is treated as having no tail mass."""
+    pdf = lp.PDF(-5, 5, 10001)
+    pdf.setYvals(sp.stats.norm(loc=0, scale=0.005).pdf(pdf.xaxis), is_chi2=False)
+
+    # The fitted width is below the default good_sigma, so the tails are ignored
+    assert pdf.approximate_gaussian(0) < 0.01
+    assert pdf.tail_mass(0) == 0.0
+    # Raising good_sigma above the fitted width re-enables the integration
+    assert pdf.tail_mass(0, good_sigma=0.0) >= 0.0
+
+
+@pytest.mark.filterwarnings("ignore:Covariance of the parameters could not be estimated")
+def test_quality_flag_bits_for_broad_pdf():
+    """A very broad PDF trips the variance, peak-ratio and extreme-error bits."""
+    pdf = lp.PDF(0, 6, 601)
+    # A near-flat PDF: huge variance, high mean/max ratio, no distinct peak
+    pdf.setYvals(np.full(len(pdf.xaxis), 1.0 / 6.0), is_chi2=False)
+
+    score, estimate, error, peak_ratio, tail_mass, number_mod, sigma = pdf.compute_quality_flag(3.0)
+
+    assert estimate == 3.0
+    # A flat PDF has mean == max, so the peak ratio bit (2) is set
+    assert peak_ratio == pytest.approx(1.0)
+    # A flat PDF has no local maximum at all, so the multi-mode bit (8) is clear
+    assert number_mod == 0
+    # The spread exceeds error_thresh but stays under max(xaxis) / 2, setting bit 0
+    assert 0.2 < error < np.max(pdf.xaxis) / 2
+    assert tail_mass < 0.2
+    assert score == 1 + 2
+
+
+@pytest.mark.filterwarnings("ignore:Covariance of the parameters could not be estimated")
+def test_quality_flag_extreme_error_bit():
+    """An estimate far from the PDF's mass gives an error large enough to set bit 4."""
+    pdf = lp.PDF(0, 6, 601)
+    pdf.setYvals(np.full(len(pdf.xaxis), 1.0 / 6.0), is_chi2=False)
+
+    # Measuring the spread about the edge of the grid rather than its centre
+    score, _, error, _, _, _, _ = pdf.compute_quality_flag(0.0)
+
+    assert error > np.max(pdf.xaxis) / 2.5
+    assert score & 16
+    # Beyond max(xaxis) / 2 the lower-threshold bit 0 is deliberately not set
+    assert not score & 1
+
+
+@pytest.mark.filterwarnings("ignore:Covariance of the parameters could not be estimated")
+def test_quality_flag_bits_for_multimodal_pdf():
+    """Two well-separated peaks set the multi-mode bit and inflate the tail mass."""
+    pdf = lp.PDF(0, 6, 601)
+    x = np.array(pdf.xaxis)
+    yvals = sp.stats.norm(loc=1.5, scale=0.1).pdf(x) + sp.stats.norm(loc=4.5, scale=0.1).pdf(x)
+    pdf.setYvals(yvals / np.trapezoid(yvals, x), is_chi2=False)
+
+    assert pdf.number_mod() == 2
+    score, _, _, _, tail_mass, number_mod, _ = pdf.compute_quality_flag(1.5)
+
+    assert number_mod == 2
+    # Bit 3 (value 8) flags more than nb_peak_thresh peaks
+    assert score & 8
+    # The second peak sits well outside the window around the estimate
+    assert tail_mass > 0.2
+    assert score & 4
+
+
+@pytest.mark.filterwarnings("ignore:Covariance of the parameters could not be estimated")
+def test_quality_flag_for_sharp_pdf_is_clean():
+    """A single narrow, well-located peak trips none of the quality bits."""
+    pdf = lp.PDF(0, 6, 601)
+    x = np.array(pdf.xaxis)
+    yvals = sp.stats.norm(loc=3.0, scale=0.02).pdf(x)
+    pdf.setYvals(yvals / np.trapezoid(yvals, x), is_chi2=False)
+
+    score, _, error, peak_ratio, tail_mass, number_mod, _ = pdf.compute_quality_flag(3.0)
+
+    assert number_mod == 1
+    assert error < 0.2
+    assert peak_ratio < 0.25
+    # Some mass leaks outside the fitted window, but stays under tail_thresh
+    assert 0.0 < tail_mass < 0.2
+    assert score == 0

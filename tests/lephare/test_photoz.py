@@ -100,3 +100,43 @@ def test_reddening(test_data_dir: str):
     # Test the band pass correction
     bpc = lp.compute_band_pass_correction(config)
     assert np.isclose(np.sum(bpc), 12.141620831207208)
+
+
+def test_build_output_tables_fills_missing_values_with_nan(test_data_dir, tmp_path, monkeypatch):
+    """Output keys that index past the end of a source attribute become NaN.
+
+    alloutputkeys.txt maps each output name onto an attribute of the source
+    object, sometimes with an index. If that index (or dict key) is absent the
+    column is filled with NaN rather than raising.
+    """
+    test_dir = os.path.abspath(os.path.dirname(__file__))
+    os.environ["LEPHAREWORK"] = os.path.join(test_dir, "../tmp")
+    os.environ["LEPHAREDIR"] = os.path.join(test_dir, "../data")
+
+    config = lp.read_config(os.path.join(test_data_dir, "examples/COSMOS.para"))
+    lp.prepare(config)
+    input_table = Table.read(os.path.join(test_data_dir, "examples/COSMOS_first100specz.fits"))
+    reduced_cols = [c for c in input_table.colnames if not c.startswith("f") or "IB527" in c or "IB679" in c]
+    _, srclist = lp.process(config, input_table[reduced_cols][:5], write_outputs=False)
+
+    # A key table pointing at one valid value, one out-of-range index and one
+    # absent dict key.
+    key_table = tmp_path / "alloutputkeys.txt"
+    key_table.write_text(
+        "Z_BEST\tfloat\tzgmin[0]\n"
+        "OUT_OF_RANGE\tfloat\tzgmin[9]\n"
+        'MISSING_KEY\tfloat\tresults["NOT_A_REAL_KEY"]\n'
+    )
+    para_out = tmp_path / "custom_output.para"
+    para_out.write_text("Z_BEST\nOUT_OF_RANGE\nMISSING_KEY\n")
+
+    monkeypatch.setenv("LEPHAREDIR", str(tmp_path))
+    photz = lp.PhotoZ(lp.all_types_to_keymap(config))
+    table = photz.build_output_tables(srclist, para_out=str(para_out))
+
+    assert set(table.colnames) >= {"Z_BEST", "OUT_OF_RANGE", "MISSING_KEY"}
+    # The valid index produced real redshifts
+    assert np.all(np.isfinite(table["Z_BEST"]))
+    # Both unavailable values fell back to NaN
+    assert np.all(np.isnan(table["OUT_OF_RANGE"]))
+    assert np.all(np.isnan(table["MISSING_KEY"]))

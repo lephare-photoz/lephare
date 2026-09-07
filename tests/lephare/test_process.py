@@ -79,6 +79,73 @@ def test_load_sed_list(test_data_dir):
     with open(os.path.join(test_dir, "../tmp/seds/ONE_SED_ABS.list"), "w") as file:
         file.write(os.path.join(test_dir, "../tmp/seds/o5v.sed.ext"))
     lp.load_sed_list(os.path.join(test_dir, "../tmp/seds/ONE_SED_ABS.list"), "QSO", absolute_paths=True)
-    # Clear the copied folders
+    # The sed named by absolute path was copied into the type folder
+    assert os.path.exists(os.path.join(test_dir, "../data/sed/QSO/ONE_SED_ABS/o5v.sed.ext"))
+    # Clear the copied folders. ONE_SED_ABS must go too, or a re-run of this test
+    # takes the "list file already exists" short cut and never copies anything.
     shutil.rmtree(os.path.join(test_dir, "../tmp/seds"))
     shutil.rmtree(os.path.join(test_dir, "../data/sed/QSO/ONE_SED"))
+    shutil.rmtree(os.path.join(test_dir, "../data/sed/QSO/ONE_SED_ABS"))
+
+
+def _reduced_input(test_data_dir):
+    """Load the example catalogue, keeping only the two filters the tests build."""
+    input_file = os.path.join(test_data_dir, "examples/COSMOS_first100specz.fits")
+    input = Table.read(input_file)
+    reduced_cols = [c for c in input.colnames if not c.startswith("f") or "IB527" in c or "IB679" in c]
+    return input[reduced_cols]
+
+
+def test_process_rejects_mismatched_mw_ebv(test_data_dir):
+    """An mw_ebv array of the wrong length is rejected rather than zipped short."""
+    config = lp.read_config(os.path.join(test_data_dir, "examples/COSMOS.para"))
+    input_table = _reduced_input(test_data_dir)
+
+    with pytest.raises(ValueError, match=r"Length of mw_ebv \(3\) does not match number of objects"):
+        lp.process(config, input_table, write_outputs=False, mw_ebv=[0.1, 0.2, 0.3])
+
+
+def test_calculate_offsets_rejects_mismatched_mw_ebv(test_data_dir):
+    """calculate_offsets_from_input applies the same length check."""
+    config = lp.read_config(os.path.join(test_data_dir, "examples/COSMOS.para"))
+    input_table = _reduced_input(test_data_dir)
+
+    with pytest.raises(ValueError, match=r"Length of mw_ebv \(2\) does not match number of objects"):
+        lp.calculate_offsets_from_input(config, input_table, mw_ebv=[0.1, 0.2])
+
+
+def test_calculate_offsets_with_mw_ebv(test_data_dir):
+    """Supplying mw_ebv to the offset calculation warns and changes the offsets."""
+    config = lp.read_config(os.path.join(test_data_dir, "examples/COSMOS.para"))
+    input_table = _reduced_input(test_data_dir)
+
+    baseline = lp.calculate_offsets_from_input(config, input_table)
+    with pytest.warns(UserWarning, match="Milky Way E\\(B-V\\) values provided"):
+        reddened = lp.calculate_offsets_from_input(config, input_table, mw_ebv=[0.3] * len(input_table))
+
+    # One offset per filter, whether or not reddening was supplied
+    assert len(reddened) == len(baseline) == 2
+    # With AUTO_ADAPT off in COSMOS.para the offsets are all zero
+    np.testing.assert_allclose(baseline, 0.0)
+    np.testing.assert_allclose(reddened, 0.0)
+
+
+def test_calculate_offsets_reads_mw_ebv_file(test_data_dir, capsys):
+    """An MW_EBV_FILE in the config is read during the offset calculation."""
+    config = lp.read_config(os.path.join(test_data_dir, "examples/COSMOS.para"))
+    input_table = _reduced_input(test_data_dir)
+
+    ebv_file = os.path.join(test_data_dir, "examples/mw_ebv.dat")
+    ebv_table = Table()
+    ebv_table["id"] = input_table[input_table.colnames[0]]
+    ebv_table["ebv"] = np.linspace(0.0, 0.3, len(input_table))
+    ebv_table.write(ebv_file, format="ascii.no_header", overwrite=True)
+
+    config["MW_EBV_FILE"] = ebv_file
+    config["CAT_IN"] = os.path.join(test_data_dir, "examples/COSMOS_first100specz_reduced.in")
+    input_table.write(config["CAT_IN"], format="ascii.no_header", overwrite=True)
+
+    a0 = lp.calculate_offsets_from_input(config, input_table)
+
+    assert f"Reading offsets from file {ebv_file}" in capsys.readouterr().out
+    assert len(a0) == 2

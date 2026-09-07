@@ -100,11 +100,17 @@ def test_check_downloaded_files_missing(mock_getsize):
 
 
 @patch("os.path.getsize")
-def test_check_downloaded_files_empty(mock_getsize):
-    file_names = ["file1.txt", "file2.txt"]
+def test_check_downloaded_files_empty(mock_getsize, capsys):
+    """A downloaded file of zero length fails the check.
+
+    file_names must match downloaded_files here, otherwise the missing-file
+    check short-circuits and the empty-file branch is never reached.
+    """
+    file_names = ["/tmp/file1.txt", "/tmp/file2.txt"]
     downloaded_files = ["/tmp/file1.txt", "/tmp/file2.txt"]
     mock_getsize.side_effect = [10, 0]
     assert not _check_downloaded_files(file_names, downloaded_files)
+    assert "The file /tmp/file2.txt is empty." in capsys.readouterr().out
 
 
 def test_download_single_file(data_registry_file: str):
@@ -243,3 +249,102 @@ def test_get_auxiliary_data(test_data_dir: str):
     os.remove(new_list_file_path)
     assert not os.path.exists(new_sed_file_path)
     assert not os.path.exists(new_list_file_path)
+
+
+def test_read_list_file_infers_sed_prefix(tmp_path):
+    """A list file under a sed/ path has its prefix inferred from that path."""
+    sed_dir = tmp_path / "sed" / "GAL" / "COSMOS_SED"
+    sed_dir.mkdir(parents=True)
+    list_file = sed_dir / "COSMOS_MOD.list"
+    list_file.write_text("# a comment line\nEll1_A_0.sed\nEll2_A_0.sed\n")
+
+    assert read_list_file(str(list_file)) == [
+        "sed/GAL/COSMOS_SED/Ell1_A_0.sed",
+        "sed/GAL/COSMOS_SED/Ell2_A_0.sed",
+    ]
+
+
+def test_read_list_file_infers_filt_prefix(tmp_path):
+    """A list file under a filt/ path has its prefix inferred the same way."""
+    filt_dir = tmp_path / "filt" / "lsst"
+    filt_dir.mkdir(parents=True)
+    list_file = filt_dir / "filters.list"
+    list_file.write_text("total_g.dat\ntotal_r.dat\n")
+
+    assert read_list_file(str(list_file)) == ["filt/lsst/total_g.dat", "filt/lsst/total_r.dat"]
+
+
+def test_read_list_file_explicit_prefix_wins(tmp_path):
+    """An explicit prefix is used verbatim instead of being inferred."""
+    sed_dir = tmp_path / "sed" / "GAL"
+    sed_dir.mkdir(parents=True)
+    list_file = sed_dir / "some.list"
+    list_file.write_text("a.sed\n")
+
+    assert read_list_file(str(list_file), prefix="my/prefix") == ["my/prefix/a.sed"]
+
+
+def test_download_all_files_reports_future_timeout(data_registry_file: str, capsys):
+    """A worker that times out is reported and does not abort the whole download."""
+    retriever = make_retriever(registry_file=data_registry_file)
+    file_names = ["file1.txt", "file2.txt"]
+
+    def flaky_download(_retriever, file_name, **kwargs):
+        if file_name == "file1.txt":
+            raise TimeoutError("took too long")
+        return f"/tmp/{file_name}"
+
+    with patch("lephare.data_retrieval.download_file", side_effect=flaky_download):
+        with patch("os.path.getsize", return_value=10):
+            with patch("os.path.exists", return_value=True):
+                lp.data_retrieval.download_all_files(retriever, file_names, retry=1)
+
+    out = capsys.readouterr().out
+    assert "Future completed with a timeout exception: took too long" in out
+    # The surviving download still completed
+    assert "1 completed." in out
+
+
+def test_config_to_required_files_warns_on_missing_keyword(test_data_dir: str):
+    """A config lacking one of the SED list keywords warns instead of raising."""
+    config = lp.default_cosmos_config.copy()
+    del config["QSO_SED"]
+
+    with pytest.warns(UserWarning, match="QSO_SED keyword not set or not present"):
+        required = lp.data_retrieval.config_to_required_files(
+            lp.all_types_to_keymap(config), lephare_dir=test_data_dir
+        )
+
+    # The other object types were still collected
+    assert any("sed/GAL" in f for f in required)
+
+
+def test_get_auxiliary_data_skips_existing_clone(test_data_dir: str, monkeypatch):
+    """With no keymap and data already present, nothing is downloaded."""
+    # Avoid hitting the network for the registry
+    monkeypatch.setattr(lp.data_retrieval, "download_registry_from_github", lambda: "file1.txt hash1")
+
+    called = []
+    monkeypatch.setattr(lp.data_retrieval.os, "system", lambda cmd: called.append(cmd))
+
+    with pytest.warns(UserWarning, match="Some data appears present. Not downloading."):
+        lp.data_retrieval.get_auxiliary_data(lephare_dir=test_data_dir, keymap=None, clone=True)
+
+    # The filt/ directory exists in the test data, so no git clone was attempted
+    assert not any("git clone" in cmd for cmd in called)
+
+
+def test_get_auxiliary_data_clones_when_absent(tmp_path, monkeypatch, capsys):
+    """With no keymap and an empty target directory, the whole repo is cloned."""
+    monkeypatch.setattr(lp.data_retrieval, "download_registry_from_github", lambda: "file1.txt hash1")
+
+    called = []
+    monkeypatch.setattr(lp.data_retrieval.os, "system", lambda cmd: called.append(cmd))
+
+    lp.data_retrieval.get_auxiliary_data(lephare_dir=str(tmp_path), keymap=None, clone=True)
+
+    out = capsys.readouterr().out
+    assert "Downloading all auxiliary data" in out
+    assert [cmd for cmd in called if cmd.startswith("git clone")] == [
+        f"git clone https://github.com/lephare-photoz/lephare-data {tmp_path}"
+    ]

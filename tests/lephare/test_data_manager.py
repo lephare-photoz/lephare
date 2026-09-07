@@ -220,3 +220,38 @@ def test_remove_empty_skips_nonempty_non_symlinked_run(unset_env_vars):
             new_dm.remove_empty_run_directories()
             # Assert there's two run directories: the non-empty one and the new one
             assert len(os.listdir(os.path.join(tmpdir, "runs"))) == 2
+
+
+def test_create_new_run_with_descriptive_name(unset_env_vars):
+    """A descriptive name is used for the run directory instead of a timestamp."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        with patch("lephare.data_manager.user_cache_dir", return_value=tmpdir):
+            new_dm = dm.DataManager()
+            new_dm.configure_directories()
+            run_directory = new_dm.create_new_run("my_named_run")
+
+            assert os.path.basename(run_directory) == "my_named_run"
+            assert os.path.isdir(run_directory)
+            # The work symlink points at the newly named run
+            assert os.path.realpath(os.path.join(tmpdir, "work")) == os.path.realpath(run_directory)
+            # ...and it has the standard subdirectory layout
+            for sub_dir in ["filt", "lib_bin", "lib_mag", "zphota"]:
+                assert os.path.isdir(os.path.join(run_directory, sub_dir))
+
+
+def test_create_new_run_rejects_duplicate_name(unset_env_vars):
+    """Reusing a descriptive name is refused, so an existing run is never clobbered."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        with patch("lephare.data_manager.user_cache_dir", return_value=tmpdir):
+            new_dm = dm.DataManager()
+            new_dm.configure_directories()
+            run_directory = new_dm.create_new_run("duplicate")
+            # Leave a file behind to prove it survives the failed second attempt
+            marker = os.path.join(run_directory, "filt", "marker.dat")
+            with open(marker, "w") as handle:
+                handle.write("keep me")
+
+            with pytest.raises(FileExistsError, match="already exists"):
+                new_dm.create_new_run("duplicate")
+
+            assert os.path.exists(marker)

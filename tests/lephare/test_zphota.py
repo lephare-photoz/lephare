@@ -77,3 +77,21 @@ def test_run_zp_config_file(monkeypatch):
     zp = Zphota(config_file=config_file_path)
 
     run_configured_zp(zp, config_file_path)
+
+
+def test_zphota_end_reports_timer(capsys):
+    """Zphota.end() delegates to the base class, which prints the elapsed time."""
+    runner = Zphota()
+    runner.timer = True
+    runner.start = 0.0
+    runner.end()
+
+    assert "execution time:" in capsys.readouterr().out
+
+
+def test_zphota_end_silent_without_timer(capsys):
+    """With the timer off, end() prints nothing."""
+    runner = Zphota()
+    runner.end()
+
+    assert capsys.readouterr().out == ""

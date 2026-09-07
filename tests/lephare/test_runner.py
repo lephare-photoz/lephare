@@ -119,3 +119,88 @@ def test_kwargs_arguments():
     with pytest.raises(RuntimeError) as excinfo:
         runner = lp.Runner(config_keys={"key1": "help"}, key2="unauthorized key")
         assert excinfo.value == f"key2 is not a recognized argument of {runner.__class__.__name__}."
+
+
+def test_runner_timer_reports_elapsed(capsys):
+    """With the timer on, end() prints how long the run took."""
+    runner = lp.Runner(config_keys={"A": "help"})
+    runner.timer = True
+    runner.run()
+    runner.end()
+
+    out = capsys.readouterr().out
+    assert "execution time:" in out
+
+
+def test_runner_end_is_silent_without_timer(capsys):
+    """Without the timer, end() prints nothing (and needs no start time)."""
+    runner = lp.Runner(config_keys={"A": "help"})
+    runner.run()
+    runner.end()
+
+    assert capsys.readouterr().out == ""
+
+
+def test_runner_run_updates_keymap():
+    """run() only copies through kwargs that are recognised config keys."""
+    runner = lp.Runner(config_keys={"A": "help", "B": "help"})
+    runner.run(a=1, b="two", unknown="ignored")
+
+    assert runner.keymap["A"].value == "1"
+    assert runner.keymap["B"].value == "two"
+    assert "UNKNOWN" not in runner.keymap
+
+
+def test_runner_run_verbose_kwarg():
+    """VERBOSE passed to run() flips verbosity and is not stored as a config key."""
+    runner = lp.Runner(config_keys={"A": "help"})
+    assert not runner.verbose
+
+    runner.run(VERBOSE="YES")
+    assert runner.verbose
+
+    runner.run(VERBOSE="NO")
+    assert not runner.verbose
+
+
+def test_runner_run_typ_kwarg():
+    """typ is upper-cased by run(), but only for runners that declare it."""
+    runner = lp.Runner(config_keys={"typ": "help", "A": "help"})
+    runner.run(typ="gal")
+    assert runner.typ == "GAL"
+
+    # A runner without a "typ" config key leaves the attribute alone
+    other = lp.Runner(config_keys={"A": "help"})
+    other.run(typ="gal")
+    assert other.typ is None
+
+
+def test_runner_typ_key_is_accepted():
+    """TYP is allowed as a kwarg when the runner declares a lower-case "typ" key."""
+    runner = lp.Runner(config_keys={"typ": "help"})
+    runner.validate_config_dict({"TYP": "GAL"}, no_raise=False)
+
+    # ...but not when the runner has no typ key at all
+    with pytest.raises(RuntimeError, match="TYP is not a recognized argument"):
+        lp.Runner(config_keys={"A": "help"}).validate_config_dict({"TYP": "GAL"}, no_raise=False)
+
+
+def test_runner_config_file_skips_comments_and_short_lines(tmp_path):
+    """Comments, blank lines and one-token lines are ignored when reading a .para."""
+    config_file = tmp_path / "sparse.para"
+    config_file.write_text(
+        "# a comment\n"
+        "\n"
+        "   \n"
+        "LONELY\n"  # only one token, so no value
+        "A first_value trailing comment text\n"
+        "IGNORED not_a_config_key\n"
+    )
+    runner = lp.Runner(config_keys={"A": "help", "B": "help"}, config_file=str(config_file))
+
+    assert runner.keymap["A"].value == "first_value"
+    # Keys not present in the file still get an empty keyword
+    assert runner.keymap["B"].value == ""
+    # Keys in the file but not in config_keys are dropped
+    assert "IGNORED" not in runner.keymap
+    assert "LONELY" not in runner.keymap

@@ -38,18 +38,17 @@ class FilterSvc:
             Array of wavelengths in Angstrom and filter transmissivity.
         """
         config = yaml.load(open(yaml_file), Loader=yaml.BaseLoader)["filters"]  # noqa: SIM115
-        if "calib" in config:
-            default_calib = config["calib"]
-        if "trans" in config:
-            default_trans = config["trans"]
+        # BaseLoader yields every scalar as a string, so calib/trans need casting
+        default_calib = int(config.get("calib", 0))
+        default_trans = int(config.get("trans", 0))
         flt_array = []
         counter = 0
         for entry in config["list"]:
             name = entry["name"]
             # filters are ordered starting from one (FORTRAN legacy)
             counter += 1  # noqa: SIM113
-            calib = entry.get("calib", default_calib)
-            trans = entry.get("trans", default_trans)
+            calib = int(entry.get("calib", default_calib))
+            trans = int(entry.get("trans", default_trans))
             if name[:4] == "svo:":
                 flt_obj = cls.from_svo(counter, name[4:], "AB", calib)
             else:

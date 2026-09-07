@@ -146,7 +146,7 @@ class PlotUtils:
         # Check if sel_filt is within valid range
         if sel_filt >= n_cols or sel_filt < 0:
             print("Warning: sel_filt out of bounds. Setting to 0.")
-            self.sel_filt = 0  # Valeur par défaut
+            sel_filt = 0  # Valeur par défaut
 
         # Check if each element in pos_filt is within valid range
         for i, filt in enumerate(pos_filt):
