@@ -30,6 +30,9 @@ class PhotoZ:  # noqa: F811
     }
 
     def build_output_tables(self, srclist, para_out=None, filename=None):
+        t = Table()
+        if len(srclist) == 0:
+            return srclist
         # BUILD THE TABLE OF THE OUTPUT PARAMETERS
         d = np.loadtxt(os.path.join(os.environ["LEPHAREDIR"], "alloutputkeys.txt"), dtype="str")
         allkeys = {}
@@ -37,7 +40,6 @@ class PhotoZ:  # noqa: F811
             allkeys[label] = (d[count, 1], d[count, 2])
         outkeys = readOutKeywords(self.outpara) if para_out is None else readOutKeywords(para_out)
         outputs = {}
-        t = Table()
         for key in outkeys:
             # Extract the type and the attribute of src to be extracted
             # for a given keyword (first coloumn)
