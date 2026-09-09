@@ -7,6 +7,22 @@ import pytest
 from astropy.table import Table
 
 
+def test_empty_srclist():
+    config = lp.default_cosmos_config.copy()
+    filters = config["FILTER_LIST"].split(",")
+    # Construct an empty table matching table_to_data format
+    cols = {"id": np.array([], dtype=int)}
+    for f in filters:
+        cols[f"f_{f}"] = np.array([], dtype=float)
+        cols[f"ferr_{f}"] = np.array([], dtype=float)
+        cols["context"] = np.array([], dtype=int)
+        cols["zspec"] = np.array([], dtype=float)
+        cols["string_input"] = np.array([], dtype=str)
+
+    t = Table(cols)
+    lp.process(config, t, standard_names=True)
+
+
 def test_process(test_data_dir: str):
     test_dir = os.path.abspath(os.path.dirname(__file__))
     os.environ["LEPHAREDIR"] = os.path.join(test_dir, "../data")
