@@ -27,6 +27,15 @@ using namespace std;
 // the corresponding environment variables.
 extern string lepharedir, lepharework;
 
+// declare globally the two filters used for the band pass correction
+// computation
+// forward declaration
+class flt;
+extern flt filterB;
+extern flt filterV;
+
+void initialise_filters();
+
 constexpr const char nonestring[] = "NONE";
 constexpr double c = 2.99792458e+18;  // en A/s
 constexpr double ckms = 2.99792458e+5;
@@ -40,11 +49,11 @@ constexpr double pi = 3.14159265359;
 constexpr double hc = 12398.42;  // [eV.A]
 constexpr double f_ga = 1;
 
-const vector<opa> &get_opa_vector();
+const vector<opa>& get_opa_vector();
 
 void get_lephare_env();
 
-bool check_first_char(const string &maligne);
+bool check_first_char(const string& maligne);
 
 double blackbody(double T, double lambda);
 
@@ -58,8 +67,8 @@ double blackbody(double T, double lambda);
 
   \return the vector of indexes in `vector` of the matching values.
 */
-vector<size_t> indexes_in_vec(const double &value, const vector<double> &vec,
-                              const float &precision);
+vector<size_t> indexes_in_vec(const double& value, const vector<double>& vec,
+                              const float& precision);
 
 /*! For a curve defined by vectors (x,y), return the values interpolated
  * at points z
@@ -72,12 +81,12 @@ vector<size_t> indexes_in_vec(const double &value, const vector<double> &vec,
  * = z.size(), instead of O(m*log(n)), owing to the assumption that x and z are
  * sorted.
  */
-vector<double> fast_interpolate(const std::vector<double> &x,
-                                const std::vector<double> &y,
-                                const std::vector<double> &z, double d);
+vector<double> fast_interpolate(const std::vector<double>& x,
+                                const std::vector<double>& y,
+                                const std::vector<double>& z, double d);
 
 // LCOV_EXCL_START
-inline string bool2string(const bool &b) {
+inline string bool2string(const bool& b) {
   string sb;
   b ? sb = "YES" : sb = "NO";
   return sb;

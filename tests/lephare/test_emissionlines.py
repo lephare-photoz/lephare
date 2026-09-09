@@ -120,24 +120,23 @@ def test_emlines():
 
     photz.prep_data(src)
     a0 = photz.compute_offsets([])
-    src.adapt_mag(a0)
     print("Done with offsets")
     assert len(a0) == 6
 
-    photz.fit_onesource(src)
+    photz.fit(src, a0)
     print("Done with fit")
     assert src.zmin[0] == 0.40
     print("src.dmmin[0]: ", src.dmmin[0])
     assert src.dmmin[0] == pytest.approx(1.0000e10, 1.0e4)
     assert src.imasmin[0] == 1
 
-    photz.uncertainties_onesource(src)
+    photz.fit_uncertainties(src)
     print("Done with uncertainties")
     max_position = np.argmax(src.pdfmap[11].vPDF)
     assert max_position == 2
     assert len(src.pdfmap[11].xaxis) == 6
     assert src.zs == pytest.approx(0.4, abs=1e-02)
-    photz.physpara_onesource(src)
+    photz.physical_parameters(src)
     print("Done with physical parameters")
     assert src.consiz == 0.4
 

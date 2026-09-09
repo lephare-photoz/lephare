@@ -9,6 +9,7 @@
 #define ONEEL_H  // define the keyword to be checked
 
 #include <algorithm>
+#include <iostream>
 #include <tuple>
 #include <vector>
 
