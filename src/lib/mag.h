@@ -40,12 +40,6 @@ class Mag {
   ifstream ssedIn;
   ofstream sdocOut, sbinOut, sdatOut;
 
-  vector<ext> extAll;
-  vector<flt> allFlt;
-  vector<GalSED> B12SED;
-  vector<double> gridz;
-  vector<double> gridT, gridDM;
-
   ext milkyWayExtinction;
   bool applyMilkyWayExtinction;
 
@@ -88,7 +82,6 @@ class Mag {
   virtual void read_SED() = 0;
 
   vector<ext> extAll;
-
   vector<flt> allFlt;
   vector<GalSED> B12SED;
   vector<double> gridz;

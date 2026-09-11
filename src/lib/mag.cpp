@@ -551,8 +551,7 @@ vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
 
     // Compute Milky Way extinction
     if (applyMilkyWayExtinction) {
-	oneSEDInt.compute_milky_way_extinction(milkyWayExtinction,
-					       allFlt);
+      oneSEDInt.compute_milky_way_extinction(milkyWayExtinction, allFlt);
     }
 
     // If z>0, no need to keep the spectra
@@ -832,10 +831,9 @@ vector<QSOSED> QSOMag::make_maglib(const QSOSED& oneSED) {
 
     // Compute Milky Way extinction
     if (applyMilkyWayExtinction) {
-	oneSEDInt.compute_milky_way_extinction(milkyWayExtinction,
-					       allFlt);
+      oneSEDInt.compute_milky_way_extinction(milkyWayExtinction, allFlt);
     }
-    
+
     // If z>0, no need to keep the spectra
     if (oneSEDInt.red > 1.e-10) oneSEDInt.lamb_flux.clear();
   }
