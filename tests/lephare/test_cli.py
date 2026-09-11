@@ -41,9 +41,11 @@ def test_cli_invokes_with_config(cli, tmp_path):
     assert "FOO" in DummyRunner.kwargs if hasattr(DummyRunner, "kwargs") else True
 
 
-def test_cli_timer_flag(cli):
+def test_cli_timer_flag(cli, tmp_path):
+    config_file = tmp_path / "config.para"
+    config_file.write_text("FOO dummy\nBAR dummy\n")
     runner = CliRunner()
-    result = runner.invoke(cli, ["--timer"], standalone_mode=False)
+    result = runner.invoke(cli, ["--timer", "--config", str(config_file)], standalone_mode=False)
     assert result.exit_code == 0
 
 

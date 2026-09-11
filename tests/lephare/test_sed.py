@@ -23,9 +23,8 @@ def test_apply_ext():
 
     sed.set_vector(x2, y2)
     sed.apply_extinction(1.0, onext)
-    res1 = sed.lamb_flux
-    print([el.lamb for el in res1])
-    res1y = [el.val for el in res1]
+    res1x, res1y = sed.data()
+    print(res1x)
     print(res1y)
     assert np.allclose(res1y, np.array(y2) / 10.0)
 
@@ -138,8 +137,9 @@ def test_emplace_back():
     sed = SED("toto", 10, "GAL")
     sed.emplace_back(100, 1)
     assert sed.size() == 1
-    assert sed.lamb_flux[0].lamb == 100
-    assert sed.lamb_flux[0].val == 1
+    x, y = sed.data()
+    assert x[0] == 100
+    assert y[0] == 1
 
 
 def test_set_vector():
@@ -150,8 +150,9 @@ def test_set_vector():
         sed.set_vector(x, np.linspace(0, 1, 500))
     sed.set_vector(x, np.ones_like(x))
     assert len(x) == sed.size()
-    for el in sed.lamb_flux:
-        assert el.val == 1
+    sedx, sedy = sed.data()
+    for yy in sedy:
+        assert yy == 1
     # test clearing
     sed.set_vector(x, x)
     assert len(x) == sed.size()
@@ -247,12 +248,6 @@ def test_sedproperties():
 
     assert sed.ltir == lp.INVALID_VAL
 
-    # need to turn qi as a vector to extract qi[2]
-    # edge = 12398.42/13.60
-    # res = sciint.quad(interp, sed.lamb_flux[0].lamb, edge, limit=500, epsabs=1.0e-4, epsrel=1.0e-4)
-    # print(sed.qi)
-    # assert res[0] == pytest.approx(sed.qi[2], res[1])
-
     sed.read(os.path.join(TESTDATADIR, "sed/dale_1.sed"))
     x, y = sed.data()
     sed.compute_luminosities()
@@ -302,14 +297,14 @@ def test_sumspectra():
     x1, y1 = sed1.data()
     sed2 = GalSED("toto", 11)
     sed1.sumSpectra(sed2, 0)  # case of empty additional sed
-    for xx1, yy1, o1 in zip(x1, y1, sed1.lamb_flux):
-        assert o1.lamb == xx1
-        assert o1.val == yy1
+    newx, newy = sed1.data()
+    assert np.all(newx == x1)
+    assert np.all(newy == y1)
     sed2.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
     sed1.sumSpectra(sed2, 0)  # case of nul rescale factor
-    for xx1, yy1, o1 in zip(x1, y1, sed1.lamb_flux):
-        assert o1.lamb == xx1
-        assert o1.val == yy1
+    newx, newy = sed1.data()
+    assert np.all(newx == x1)
+    assert np.all(newy == y1)
 
     # easy case : sum the same SED with a rescal factor of 2
     # here in practice there is no interpolation and so the

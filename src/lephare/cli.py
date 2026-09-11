@@ -7,6 +7,7 @@ def build_cli(runner_class, config_keys):
     @click.option(
         "-c",
         "--config",
+        default="",  # avoid having None as a default
         type=click.Path(exists=True),
         help="Path to ASCII config file",
     )
