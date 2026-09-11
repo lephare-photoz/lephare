@@ -2159,7 +2159,10 @@ The code also searches for secondary solutions (``DZ_WIN``, ``MIN_THRES``) in th
 If ``PDZ_OUT`` has been specified, an output file containing the pdfs has been created during zphota. With 
 
 .. code-block:: bash
-  python pdz_flagger.py --pdz bay_zg.prob --cat cat.out --cat_flagged cat_flagged.out --zgrid dz,zmin,zmax
+  
+   python pdz_flagger.py --pdz bay_zg.prob --cat cat.out --cat_flagged cat_flagged.out --zgrid dz,zmin,zmax
+
+
 
 the user can make a copy of the output catalog with a new added column ``Z_FLAG`` column.
 
