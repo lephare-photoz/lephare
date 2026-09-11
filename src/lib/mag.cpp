@@ -852,22 +852,6 @@ vector<QSOSED> QSOMag::make_maglib(const QSOSED& oneSED) {
     if (oneSEDInt.red > 1.e-10) oneSEDInt.lamb_flux.clear();
   }
 
-  // Display in the right order, even when the code is
-  // parrallelized
-  if (verbose) {
-    for (size_t itr = 0; itr != valid; ++itr) {
-      auto search_idx = itr / gridz.size();
-      auto search = valid_indices[search_idx];
-      auto i = search.i;
-      auto j = search.j;
-      auto k = itr % gridz.size();
-      QSOSED& oneSEDInt = allSED[itr];
-      cout << "SED " << oneSEDInt.name << " z " << setw(6) << oneSEDInt.red;
-      cout << " Ext law " << extlaw[i] << "  E(B-V) " << ebv[j] << "  \r "
-           << flush;
-    }
-  }
-
   std::vector<double> magko(allFlt.size());
   // Now take all the SED for the current initial template
   // Compute the K-correction
