@@ -170,7 +170,7 @@ class SED {
   /// the file, and is finally sorted by ascending lambda. More complex input
   /// types are treated in inherited class methods.
   void read(const string& sedFile);
-  void warning_integrateSED(const vector<flt>& filters, bool verbose = false);
+  bool warning_integrateSED(const vector<flt>& filters, bool display_warning);
 
   /*! integrate the SED between bounds
    * @param lmin : lower lambda bound

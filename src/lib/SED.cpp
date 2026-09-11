@@ -192,42 +192,53 @@ void SED::readSEDBin(ifstream& ins) {
 }
 
 /*
-  Check that we can integrate within a filter. If a risk, issue a warning, then
-  extrapolate
+  Check that we can integrate within a filter.
+  Should be applied twice (one for the warning, the other for the change).
+  first_check indicates if warning or change.
+  Return a boolean to indicate if the message has been displayed (only needed
+  for blue)
 */
-void SED::warning_integrateSED(const vector<flt>& filters, bool verbose) {
+bool SED::warning_integrateSED(const vector<flt>& filters, bool first_check) {
+  bool display_done = false;
+
   // Loop over the filters
   for (const auto& filter : filters) {
     if (((lamb_flux.begin())->lamb) * (1. + red) > filter.lmin()) {
-      // if(verbose){
-      // cout << "A problem could occur since minimum of SED " <<
-      // (lamb_flux.begin())->lamb << " above min of the filter " <<
-      // filter.lmin() ; cout << " with filters bluer than " << filter.name << "
-      // and SED " << name << " and z " << red << "." ; cout << " Add lambda=0 ;
-      // flux=0 to extralolate in blue.  " << endl;
-      //}
-      // Put the extreme value at 0, in order to define the SED in the blue part
-      lamb_flux.emplace(lamb_flux.begin(), 0, 0);
+      if (first_check) {
+        cout << "Minimum lambda of SED " << name << "("
+             << (lamb_flux.begin())->lamb << "A) above the minimum "
+             << "lambda of filter " << filter.name << " at redshift > " << red
+             << "." << endl;
+        cout << "Template extrapolation done in blue with lambda=0 ; flux=0."
+             << endl;
+        display_done = true;
+      } else {
+        // Put the extreme value at 0, in order to define the SED in the blue
+        // part
+        lamb_flux.emplace(lamb_flux.begin(), 0, 0);
+      }
     }
 
     if (((lamb_flux.end() - 1)->lamb) * (1. + red) < filter.lmax()) {
-      if (verbose && (red == 0)) {
-        cout << "A problem could occur since maximum of SED "
-             << lamb_flux.back().lamb << " below max of the filter "
-             << filter.lmax();
-        cout << " with filters redder than " << filter.name << " and SED "
-             << name << " and z " << red << ".";
-        cout << " Add lambda=1.e8 ; flux=0 to extralolate in red. Really "
-                "risky: check templates. linear extrapolation not physical. "
-             << endl;
+      if (first_check && (red == 0)) {
+        cout << "Maximum lambda of SED " << name << "(" << lamb_flux.back().lamb
+             << "A) below the maximum lambda " << "of the filter "
+             << filter.name << endl;
+        cout
+            << "Template extrapolation done in red with lambda=1.e8A ; flux=0. "
+            << endl;
+        cout << "Extrapolation is not physical. Better to check." << endl;
+      } else {
+        // Put the extreme value at lambda=1e8 and flux=0, in order to define
+        // the SED in the red part This is a linear extrapolation from the last
+        // point defined in the SED. The extrapolation should be done in the
+        // template itself, with a physical meaning. Need to avoid such
+        // situation.
+        lamb_flux.emplace_back(1.e8 * (1. + red), 0);
       }
-      // Put the extreme value at lambda=1e8 and flux=0, in order to define the
-      // SED in the red part This is a linear extrapolation from the last point
-      // defined in the SED. The extrapolation should be done in the template
-      // itself, with a physical meaning. Need to avoid such situation.
-      lamb_flux.emplace_back(1.e8 * (1. + red), 0);
     }
   }
+  return display_done;
 }
 
 double SED::integrate(const double lmin, const double lmax) {

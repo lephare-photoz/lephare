@@ -453,8 +453,10 @@ struct valid_extinction {
 };
 
 vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
-  // build the emission line SED. This changes the state of oneSED
-  GalSED oneEm = oneSED.generateEmSED(emlines);
+  // Display the considered template
+  if (verbose) {
+    cout << "start SED " << oneSED.name << "  \r " << flush;
+  }
 
   // Read the MW extinction curve to be applied to emission lines
   // use extlaw.size() as a counter past the last standard extinction file
@@ -462,9 +464,8 @@ vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
   string mwFile = lepharedir + "/ext/MW_seaton.dat";
   mw_ext.read(mwFile);
 
-  // TODO is gridT monotonically decreasing? if so then we could just only use
-  // the first N values claude suggests the cosmo::time function is
-  // monotonically decreasing
+  // Keep only the redshifts in the various grids corresponding to an
+  // age lower than the age of the Universe
   std::vector<double> gridz_filtered;
   std::vector<double> gridDM_filtered;
   std::vector<GalSED*> B12SED_filtered;
@@ -479,10 +480,22 @@ vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
     }
   }
 
-  std::vector<valid_extinction> valid_indices;
+  // Check if this SED needs to be extrapolated en blue
+  bool display_warn = false;
+  GalSED oneSEDtest(oneSED);
+  for (int k = 0; k < gridz_filtered.size(); k++) {
+    if (!display_warn) {
+      oneSEDtest.red = gridz_filtered[k];
+      display_warn = oneSEDtest.warning_integrateSED(allFlt, true);
+    }
+  }
+
+  // build the emission line SED. This changes the state of oneSED
+  GalSED oneEm = oneSED.generateEmSED(emlines);
 
   // extlaw.size()*ebv.size() is likely to be relatively low, so doing this
   // sequentially is fine
+  std::vector<valid_extinction> valid_indices;
   for (int i = 0; i < extlaw.size(); i++) {
     for (int j = 0; j < ebv.size(); j++) {
       // Select case which need to be considered (no extinction or
@@ -506,9 +519,13 @@ vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
     auto search_idx = itr / (fracEm.size() * gridz_filtered.size());
     auto inner_start = itr % (fracEm.size() * gridz_filtered.size());
     auto search = valid_indices[search_idx];
+    // extinction law index
     auto i = search.i;
+    // EBV index
     auto j = search.j;
+    // Emission line ratio index
     auto l = inner_start / gridz_filtered.size();
+    // Redshift index
     auto k = inner_start % gridz_filtered.size();
     GalSED& oneSEDInt = allSED[itr];
 
@@ -516,8 +533,8 @@ vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
     oneSEDInt.red = gridz_filtered[k];
     oneSEDInt.distMod = gridDM_filtered[k];
 
-    // Check that the lambda coverage is correct
-    oneSEDInt.warning_integrateSED(allFlt, verbose);
+    // Extrapolate if the lambda coverage isn't correct
+    display_warn = oneSEDInt.warning_integrateSED(allFlt, false);
 
     double LbeforeExt = oneSEDInt.trapzd();
 
@@ -594,24 +611,6 @@ vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
       oneSEDInt.has_emlines = true;
       oneSEDInt.fracEm = fracEm[l];
       if (oneSEDInt.red > 1.e-10) oneEmInt.lamb_flux.clear();
-    }
-  }
-
-  // Display in the right order, even when the code is
-  // parrallelized
-  if (verbose) {
-    for (size_t itr = 0; itr != valid; ++itr) {
-      auto search_idx = itr / (fracEm.size() * gridz_filtered.size());
-      auto inner_start = itr % (fracEm.size() * gridz_filtered.size());
-      auto search = valid_indices[search_idx];
-      auto i = search.i;
-      auto j = search.j;
-      auto l = inner_start / gridz_filtered.size();
-      auto k = inner_start % gridz_filtered.size();
-      GalSED& oneSEDInt = allSED[itr];
-      cout << "SED " << oneSEDInt.name << " z " << setw(6) << oneSEDInt.red;
-      cout << " Ext law " << extlaw[i] << "  E(B-V) " << ebv[j] << "  Age "
-           << oneSEDInt.age << "  \r " << flush;
     }
   }
 
@@ -780,6 +779,11 @@ void QSOMag::read_SED() {
 }
 
 vector<QSOSED> QSOMag::make_maglib(const QSOSED& oneSED) {
+  // Display the considered template
+  if (verbose) {
+    cout << "start SED " << oneSED.name << "  \r " << flush;
+  }
+
   std::vector<valid_extinction> valid_indices;
   // extlaw.size()*ebv.size() is likely to be relatively low, so doing this
   // sequentially is fine
@@ -797,6 +801,16 @@ vector<QSOSED> QSOMag::make_maglib(const QSOSED& oneSED) {
   }
   size_t valid = valid_indices.size() * gridz.size();
 
+  // Check if this SED needs to be extrapolated en blue
+  bool display_warn = false;
+  QSOSED oneSEDtest(oneSED);
+  for (int k = 0; k < gridz.size(); k++) {
+    if (!display_warn) {
+      oneSEDtest.red = gridz[k];
+      display_warn = oneSEDtest.warning_integrateSED(allFlt, true);
+    }
+  }
+
   // Generate intermediate Continuum SED, since original one must not
   // change
   vector<QSOSED> allSED(valid, oneSED);
@@ -813,8 +827,8 @@ vector<QSOSED> QSOMag::make_maglib(const QSOSED& oneSED) {
     oneSEDInt.red = gridz[k];
     oneSEDInt.distMod = gridDM[k];
 
-    // Check that the lambda coverage is correct
-    oneSEDInt.warning_integrateSED(allFlt, verbose);
+    // Extrapolate if the lambda coverage isn't correct
+    display_warn = oneSEDInt.warning_integrateSED(allFlt, false);
 
     // product of the SED with the extinction law
     oneSEDInt.apply_extinction(ebv[j], extAll[i]);
@@ -927,8 +941,10 @@ void StarMag::read_SED() {
     StarSED oneSED("");
     // read one SED in the binary file
     oneSED.readSEDBin(ssedIn);
-    // Check that the lambda coverage is correct
-    oneSED.warning_integrateSED(allFlt, verbose);
+    //  Extrapolate if the lambda coverage isn't correct
+    // first message then extrapolation
+    bool display_warn = oneSED.warning_integrateSED(allFlt, true);
+    display_warn = oneSED.warning_integrateSED(allFlt, false);
 
     vector<StarSED> seds = make_maglib(oneSED);
     write_mag(seds);
