@@ -470,8 +470,6 @@ PYBIND11_MODULE(_lephare, mod) {
            py::arg("context"), py::arg("z_spec"), py::arg("additional_input"))
       .def("set_verbosity", &onesource::set_verbosity, py::arg("verbose"))
       .def("get_verbosity", &onesource::get_verbosity)
-      .def("computePredAbsMag", &onesource::computePredMag)
-      .def("computePredAbsMag", &onesource::computePredAbsMag)
       .def("fltUsed", &onesource::fltUsed,
            "Flag which bands are used in the fit and which are upper limits.",
            py::arg("gbcont"), py::arg("contforb"))
@@ -523,6 +521,10 @@ PYBIND11_MODULE(_lephare, mod) {
            "Compute the faint-end absolute-magnitude limit for this source.",
            py::arg("fulllib"), py::arg("limits_zbin"), py::arg("limits_ref"),
            py::arg("limits_sel"), py::arg("limits_cut"))
+      .def("computePredMag", &onesource::computePredMag,
+           "Compute predicted apparent magnitudes in additional filters.")
+      .def("computePredAbsMag", &onesource::computePredAbsMag,
+           "Compute predicted absolute magnitudes in additional filters.")
       .def("computeEmFlux", &onesource::computeEmFlux,
            "Compute the emission-line flux/EW of the best-fit template.")
       .def("generatePDF_IR", &onesource::generatePDF_IR,
@@ -607,9 +609,9 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("zsecExtlaw", &onesource::zsecExtlaw)
       .def_readonly("zsec", &onesource::zsec)
       .def_readonly("zsecEbv", &onesource::zsecEbv)
-      .def_readonly("zsecProb", &onesource::zsecMod)
-      .def_readonly("zsecChi2", &onesource::zsecMod)
-      .def_readonly("zsecScale", &onesource::zsecMod)
+      .def_readonly("zsecProb", &onesource::zsecProb)
+      .def_readonly("zsecChi2", &onesource::zsecChi2)
+      .def_readonly("zsecScale", &onesource::zsecScale)
       .def_readonly("zsecAge", &onesource::zsecAge);
 
   py::class_<PDF>(mod, "PDF")
