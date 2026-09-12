@@ -58,9 +58,6 @@ class onesource {
   /// computeEmFlux()
   unordered_map<string, double> results_emission_lines;
 
-      dm,           ///< unused legacy member (kept for ABI/output-format
-                    ///< stability; see SED::dm for the per-template scaling
-                    ///< actually used in the fit)
   long cont,     ///< input context: bitmask of bands used, as read from the
                  ///< catalogue (see globals.h CHECK_CONTEXT_BIT)
       new_cont;  ///< context rebuilt after masking bands with invalid flux
@@ -134,10 +131,6 @@ class onesource {
       priorLib;  ///< absolute magnitude prior range, as [bright,faint] for
                  ///< the galaxy library followed by [bright,faint] for the
                  ///< AGN library (see setPriors())
-
-  vector<double> chibay;
-  vector<double> gridzg, gridLdustIR, gridEbv, gridLIR;
-  PDF PDFebv;
 
   /// Marginalized redshift PDF summary for galaxy templates: median (resp.
   /// chi2-minimum, PDF mode) at index 0, followed by the 68/90/99% credible
@@ -270,7 +263,6 @@ class onesource {
 
   // erase all entries in onesource
   ~onesource() {
-    chibay.clear();
     ab.clear();
     sab.clear();
     abIR.clear();
@@ -397,7 +389,6 @@ class onesource {
                      const vector<size_t>& valid, const double funz0,
                      const array<int, 2> bp, double thresholdChi2,
                      const bool restrict);
-  void deredden_observed_mag(const vector<double>& ext_values);
 
   /*! Apply a per-template, per-band reddening correction to a predicted
    * flux array

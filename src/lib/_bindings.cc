@@ -559,7 +559,6 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("busul", &onesource::busul)
       .def_readonly("nbused", &onesource::nbused)
       .def_readonly("nbul", &onesource::nbul)
-      .def_readonly("dm", &onesource::dm)
       .def_readonly("zs", &onesource::zs)
       .def_readonly("ab", &onesource::ab)
       .def_readonly("abIR", &onesource::abIR)
