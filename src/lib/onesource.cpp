@@ -1938,7 +1938,7 @@ void onesource::computePredMag(vector<SED*>& fulllib, cosmo lcdm,
     // emission lines
     if (consiz > 0) SED_gal.generate_spectra(consiz, dmmin[0]);
     // check that the filter cover a SED
-    SED_gal.warning_integrateSED(allFltAdd, true);
+    bool display_warn = SED_gal.warning_integrateSED(allFltAdd, false);
 
     magPred.clear();
     // Loop over the filters
@@ -1982,8 +1982,8 @@ void onesource::computePredAbsMag(vector<SED*>& fulllib, cosmo lcdm,
     // can change with z Generate the spectra at the right redshift, opacity,
     // emission lines
     if (consiz > 0) SED_gal.generate_spectra(0., dmmin[0]);
-    // check that the filter cover a SED
-    SED_gal.warning_integrateSED(allFltAdd, true);
+    // check that the filter cover a SED and extrapolate
+    bool display_warn = SED_gal.warning_integrateSED(allFltAdd, false);
 
     absmagPred.clear();
     // Loop over the filters

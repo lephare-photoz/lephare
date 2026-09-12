@@ -447,10 +447,16 @@ void GalMag::read_SED() {
   }  // end of while loop
 }
 
+struct valid_extinction {
+  int i;  // extlaw index
+  int j;  // ebv index
+};
+
 vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
-  vector<GalSED> allSED;
-  // build the emission line SED. This changes the state of oneSED
-  GalSED oneEm = oneSED.generateEmSED(emlines);
+  // Display the considered template
+  if (verbose) {
+    cout << "start SED " << oneSED.name << "  \r " << flush;
+  }
 
   // Read the MW extinction curve to be applied to emission lines
   // use extlaw.size() as a counter past the last standard extinction file
@@ -458,140 +464,158 @@ vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
   string mwFile = lepharedir + "/ext/MW_seaton.dat";
   mw_ext.read(mwFile);
 
-// PARALLELIZE all the 4 loops  [Iary, 12 March 2018]
-#pragma omp parallel for ordered schedule(dynamic) collapse(4)
-  // Loop over each extinction law
-  for (int i = 0; i < extlaw.size(); i++) {
-    // loop over each E(B-V)
-    for (int j = 0; j < ebv.size(); j++) {
-      // loop over each fraction of emission line flux (add a dispersion in
-      // emission lines as a new template)
-      for (size_t l = 0; l < fracEm.size(); l++) {
-        // Loop over the redshift grid
-        for (size_t k = 0; k < gridz.size(); k++) {
-          // Select case which need to be considered (no extinction or
-          // extinction in the right model range) Remove all cases with
-          // extinction not in the right model range The condition i==0 only
-          // means that for null extinction the templates are computed only
-          // once, using the first extinction law, and it does not matter
-          // which one this extinction law is.
-          if ((ebv[j] < 1.e-10 && i == 0) ||
-              (ebv[j] > 0 && oneSED.nummod >= modext[i * 2] &&
-               oneSED.nummod <= modext[i * 2 + 1])) {
-            // Generate intermediate Continuum SED, since original one must
-            // not change
-            GalSED oneSEDInt(oneSED);
-
-            // galaxy redshift/distance in the grid
-            oneSEDInt.red = gridz[k];
-            oneSEDInt.distMod = gridDM[k];
-
-            // Check that the lambda coverage is correct
-            oneSEDInt.warning_integrateSED(allFlt, verbose);
-
-            // Not older than the age of the Universe
-            if (gridT[k] > oneSEDInt.age) {
-              double LbeforeExt = oneSEDInt.trapzd();
-
-              // product of the SED with the extinction law
-              oneSEDInt.apply_extinction(ebv[j], extAll[i]);
-
-              // Difference between the integrated flux with and without
-              // extinction (without is computed just above) flux integrate of
-              // the lambda range -> erg/s/cm2. It was for the source at 10pc,
-              // and then convert erg/s in Lsol
-              double dL = (LbeforeExt - oneSEDInt.trapzd()) / Lsol *
-                          (4 * pi * 100 * pow(pc, 2));
-              if (oneSEDInt.ltir < 0 && dL > 0) oneSEDInt.ltir = log10(dL);
-              // Rescale the B12 to the right dust luminosity (with energy
-              // balance) and sum to the stellar continuum is option on.
-              if (add_dust) {
-                oneSEDInt.sumSpectra(B12SED[k], dL);
-              }
-
-              // Opacity applied in rest-frame, depending on the redshift of
-              // the source
-              oneSEDInt.applyOpa(get_opa_vector());
-
-              // redshift the SED, and restrict it to the union of the filters
-              // support.
-              oneSEDInt.redshift();
-              oneSEDInt.reduce_memory(allFlt);
-              // Compute magnitude
-              // Loop over the filters
-              oneSEDInt.compute_magnitudes(allFlt);
-
-              // Compute Milky Way extinction
-              if (applyMilkyWayExtinction) {
-                oneSEDInt.compute_milky_way_extinction(milkyWayExtinction,
-                                                       allFlt);
-              }
-
-              // If z>0, no need to keep the spectra
-              if (oneSEDInt.red > 1.e-10) oneSEDInt.lamb_flux.clear();
-
-              // Derive the emission line flux in each filter
-              if (emlines[0] == 'E' || emlines[0] == 'P') {
-                // Generate intermediate EM SED, since original one must not
-                // change
-                GalSED oneEmInt(oneEm);
-                oneEmInt.ebv = ebv[j];
-                oneEmInt.red = gridz[k];
-                // For the emission lines, use only the MW. Change fac_line
-                oneEmInt.apply_extinction_to_lines(ebv[j], mw_ext);
-                // rescale the lines as a free parameter
-                oneEmInt.fracEm = fracEm[l];
-                oneEmInt.rescaleEmLines();
-                /*
-                // Decide to not applied.
-                // apply a z dependence of the emission line ratio for OIII
-                oneEmInt.zdepEmLines(1);
-                */
-                // Generate the spectra with the emission lines
-                oneEmInt.generateEmSpectra(40);
-                // Opacity applied in rest-frame, depending on the redshift of
-                // the source
-                oneEmInt.applyOpa(get_opa_vector());
-                // Save the emission lines rest-frame in the continuum SED
-                oneSEDInt.fac_line = oneEmInt.fac_line;
-                //
-                oneEmInt.redshift();
-                oneEmInt.rescale(pow(10., -0.4 * oneSEDInt.distMod));
-                oneEmInt.reduce_memory(allFlt);
-                if (oneEmInt.lamb_flux.size() > 0) {
-                  oneSEDInt.flEm = oneEmInt.compute_fluxes(allFlt);
-                } else {
-                  oneSEDInt.flEm.assign(allFlt.size(), 0.);
-                }
-                // indicate that the emission lines have been computed
-                oneSEDInt.has_emlines = true;
-                oneSEDInt.fracEm = fracEm[l];
-                if (oneSEDInt.red > 1.e-10) oneEmInt.lamb_flux.clear();
-                oneEmInt.clean();
-              }
-
-#pragma omp ordered
-              {
-                // add to all SED (one time if ebv==0)
-                allSED.push_back(oneSEDInt);
-
-                // Display in the right order, even when the code is
-                // parrallelized
-                if (verbose) {
-                  cout << "SED " << oneSEDInt.name << " z " << setw(6)
-                       << oneSEDInt.red;
-                  cout << " Ext law " << extlaw[i] << "  E(B-V) " << ebv[j]
-                       << "  Age " << oneSEDInt.age << "  \r " << flush;
-                }
-                // Cleaning
-                oneSEDInt.clean();
-              }
-            }  // close age condition
-          }
-        }
+  // Keep only the redshifts in the various grids corresponding to an
+  // age lower than the age of the Universe
+  std::vector<double> gridz_filtered;
+  std::vector<double> gridDM_filtered;
+  std::vector<GalSED*> B12SED_filtered;
+  for (size_t k = 0; k < gridz.size(); ++k) {
+    // Not older than the age of the Universe
+    if (gridT[k] > oneSED.age) {
+      gridz_filtered.push_back(gridz[k]);
+      gridDM_filtered.push_back(gridDM[k]);
+      if (add_dust) {
+        B12SED_filtered.push_back(&B12SED[k]);
       }
     }
   }
+
+  // Check if this SED needs to be extrapolated en blue
+  bool display_warn = false;
+  GalSED oneSEDtest(oneSED);
+  for (int k = 0; k < gridz_filtered.size(); k++) {
+    if (!display_warn) {
+      oneSEDtest.red = gridz_filtered[k];
+      display_warn = oneSEDtest.warning_integrateSED(allFlt, true);
+    }
+  }
+
+  // build the emission line SED. This changes the state of oneSED
+  GalSED oneEm = oneSED.generateEmSED(emlines);
+
+  // extlaw.size()*ebv.size() is likely to be relatively low, so doing this
+  // sequentially is fine
+  std::vector<valid_extinction> valid_indices;
+  for (int i = 0; i < extlaw.size(); i++) {
+    for (int j = 0; j < ebv.size(); j++) {
+      // Select case which need to be considered (no extinction or
+      // extinction in the right model range) Remove all cases with
+      // extinction not in the right model range The condition i==0 only
+      // means that for null extinction the templates are computed only
+      // once, using the first extinction law, and it does not matter which
+      // one this extinction law is.
+      if ((ebv[j] < 1.e-10 && i == 0) ||
+          (ebv[j] > 0 && oneSED.nummod >= modext[i * 2] &&
+           oneSED.nummod <= modext[i * 2 + 1])) {
+        valid_indices.push_back({i, j});
+      }
+    }
+  }
+  size_t valid = valid_indices.size() * fracEm.size() * gridz_filtered.size();
+  vector<GalSED> allSED(valid, oneSED);
+
+#pragma omp parallel for schedule(dynamic)
+  for (size_t itr = 0; itr != valid; ++itr) {
+    auto search_idx = itr / (fracEm.size() * gridz_filtered.size());
+    auto inner_start = itr % (fracEm.size() * gridz_filtered.size());
+    auto search = valid_indices[search_idx];
+    // extinction law index
+    auto i = search.i;
+    // EBV index
+    auto j = search.j;
+    // Emission line ratio index
+    auto l = inner_start / gridz_filtered.size();
+    // Redshift index
+    auto k = inner_start % gridz_filtered.size();
+    GalSED& oneSEDInt = allSED[itr];
+
+    // galaxy redshift/distance in the grid
+    oneSEDInt.red = gridz_filtered[k];
+    oneSEDInt.distMod = gridDM_filtered[k];
+
+    // Extrapolate if the lambda coverage isn't correct
+    display_warn = oneSEDInt.warning_integrateSED(allFlt, false);
+
+    double LbeforeExt = oneSEDInt.trapzd();
+
+    // product of the SED with the extinction law
+    oneSEDInt.apply_extinction(ebv[j], extAll[i]);
+
+    // Difference between the integrated flux with and without
+    // extinction (without is computed just above) flux integrate of
+    // the lambda range -> erg/s/cm2. It was for the source at 10pc,
+    // and then convert erg/s in Lsol
+    double dL =
+        (LbeforeExt - oneSEDInt.trapzd()) / Lsol * (4 * pi * 100 * pow(pc, 2));
+    if (oneSEDInt.ltir < 0 && dL > 0) oneSEDInt.ltir = log10(dL);
+    // Rescale the B12 to the right dust luminosity (with energy
+    // balance) and sum to the stellar continuum is option on.
+    if (add_dust) {
+      oneSEDInt.sumSpectra(*B12SED_filtered[k], dL);
+    }
+
+    // Opacity applied in rest-frame, depending on the redshift of the
+    // source
+    oneSEDInt.applyOpa(get_opa_vector());
+
+    // redshift the SED, and restrict it to the union of the filters
+    // support.
+    oneSEDInt.redshift();
+    oneSEDInt.reduce_memory(allFlt);
+    // Compute magnitude
+    // Loop over the filters
+    oneSEDInt.compute_magnitudes(allFlt);
+
+    // Compute Milky Way extinction
+    if (applyMilkyWayExtinction) {
+      oneSEDInt.compute_milky_way_extinction(milkyWayExtinction, allFlt);
+    }
+
+    // If z>0, no need to keep the spectra
+    if (oneSEDInt.red > 1.e-10) oneSEDInt.lamb_flux.clear();
+
+    // Derive the emission line flux in each filter
+    if (emlines[0] == 'E' || emlines[0] == 'P') {
+      // Generate intermediate EM SED, since original one must not
+      // change
+      GalSED oneEmInt(oneEm);
+      oneEmInt.ebv = ebv[j];
+      oneEmInt.red = gridz_filtered[k];
+      // For the emission lines, use only the MW. Change fac_line
+      oneEmInt.apply_extinction_to_lines(ebv[j], mw_ext);
+      // rescale the lines as a free parameter
+      oneEmInt.fracEm = fracEm[l];
+      oneEmInt.rescaleEmLines();
+      /*
+      // Decide to not applied.
+      // apply a z dependence of the emission line ratio for OIII
+      oneEmInt.zdepEmLines(1);
+      */
+      // Generate the spectra with the emission lines
+      oneEmInt.generateEmSpectra(40);
+      // Opacity applied in rest-frame, depending on the redshift of
+      // the source
+      oneEmInt.applyOpa(get_opa_vector());
+      // Save the emission lines rest-frame in the continuum SED
+      oneSEDInt.fac_line = oneEmInt.fac_line;
+      //
+      oneEmInt.redshift();
+      oneEmInt.rescale(pow(10., -0.4 * oneSEDInt.distMod));
+      oneEmInt.reduce_memory(allFlt);
+      if (oneEmInt.lamb_flux.size() > 0) {
+        oneSEDInt.flEm = oneEmInt.compute_fluxes(allFlt);
+      } else {
+        oneSEDInt.flEm.assign(allFlt.size(), 0.);
+      }
+      // indicate that the emission lines have been computed
+      oneSEDInt.has_emlines = true;
+      oneSEDInt.fracEm = fracEm[l];
+      if (oneSEDInt.red > 1.e-10) oneEmInt.lamb_flux.clear();
+    }
+  }
+
+  std::vector<double> magko(allFlt.size());
+
   // Now take all the SED for the current initial template
   // Compute the K-correction, and save to file.
   for (size_t k = 0; k < allSED.size(); k++) {
@@ -610,6 +634,7 @@ vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
       }
     }
   }
+
   return allSED;
 }
 
@@ -754,72 +779,80 @@ void QSOMag::read_SED() {
 }
 
 vector<QSOSED> QSOMag::make_maglib(const QSOSED& oneSED) {
-  vector<QSOSED> allSED;
-#pragma omp parallel for ordered schedule(dynamic) collapse(3)
-  // Loop over each extinction law
+  // Display the considered template
+  if (verbose) {
+    cout << "start SED " << oneSED.name << "  \r " << flush;
+  }
+
+  std::vector<valid_extinction> valid_indices;
+  // extlaw.size()*ebv.size() is likely to be relatively low, so doing this
+  // sequentially is fine
   for (int i = 0; i < extlaw.size(); i++) {
-    // loop over each E(B-V)
     for (int j = 0; j < ebv.size(); j++) {
-      // Loop over the redshift grid
-      for (size_t k = 0; k < gridz.size(); k++) {
-        // Select case which need to be considered (no extinction or
-        // extinction in the right model range) Remove all cases with
-        // extinction not in the right model range
-        if ((ebv[j] < 1.e-10 && i == 0) ||
-            (ebv[j] > 0 && oneSED.nummod >= (modext[i * 2]) &&
-             oneSED.nummod <= (modext[i * 2 + 1]))) {
-          // Generate intermediate Continuum SED, since original one must not
-          // change
-          QSOSED oneSEDInt(oneSED);
-
-          // galaxy redshift/distance in the grid
-          oneSEDInt.red = gridz[k];
-          oneSEDInt.distMod = gridDM[k];
-
-          // Check that the lambda coverage is correct
-          oneSEDInt.warning_integrateSED(allFlt, verbose);
-
-          // product of the SED with the extinction law
-          oneSEDInt.apply_extinction(ebv[j], extAll[i]);
-
-          // Opacity applied in rest-frame, depending on the redshift of the
-          // source
-          oneSEDInt.applyOpa(get_opa_vector());
-
-          // redshift the SED
-          oneSEDInt.redshift();
-
-          // Compute magnitude
-          oneSEDInt.compute_magnitudes(allFlt);
-
-          // Compute Milky Way extinction
-          if (applyMilkyWayExtinction) {
-            oneSEDInt.compute_milky_way_extinction(milkyWayExtinction, allFlt);
-          }
-
-          // If z>0, no need to keep the spectra
-          if (oneSEDInt.red > 1.e-10) oneSEDInt.lamb_flux.clear();
-
-#pragma omp ordered
-          {
-            // add to all SED (one time if ebv==0)
-            allSED.push_back(oneSEDInt);
-
-            // Info screen
-            // Display in the right order, even when the code is parrallelized
-            if (verbose) {
-              cout << "SED " << oneSEDInt.name << " z " << setw(6)
-                   << oneSEDInt.red;
-              cout << " Ext law " << extlaw[i] << "  E(B-V) " << ebv[j]
-                   << "  \r " << flush;
-            }
-            // Cleaning
-            oneSEDInt.clean();
-          }
-        }
+      // Select case which need to be considered (no extinction or extinction
+      // in the right model range) Remove all cases with extinction not in the
+      // right model range
+      if ((ebv[j] < 1.e-10 && i == 0) ||
+          (ebv[j] > 0 && oneSED.nummod >= (modext[i * 2]) &&
+           oneSED.nummod <= (modext[i * 2 + 1]))) {
+        valid_indices.push_back({i, j});
       }
     }
   }
+  size_t valid = valid_indices.size() * gridz.size();
+
+  // Check if this SED needs to be extrapolated en blue
+  bool display_warn = false;
+  QSOSED oneSEDtest(oneSED);
+  for (int k = 0; k < gridz.size(); k++) {
+    if (!display_warn) {
+      oneSEDtest.red = gridz[k];
+      display_warn = oneSEDtest.warning_integrateSED(allFlt, true);
+    }
+  }
+
+  // Generate intermediate Continuum SED, since original one must not
+  // change
+  vector<QSOSED> allSED(valid, oneSED);
+#pragma omp parallel for schedule(dynamic)
+  for (size_t itr = 0; itr != valid; ++itr) {
+    auto search_idx = itr / gridz.size();
+    auto search = valid_indices[search_idx];
+    auto i = search.i;
+    auto j = search.j;
+    auto k = itr % gridz.size();
+    QSOSED& oneSEDInt = allSED[itr];
+
+    // galaxy redshift/distance in the grid
+    oneSEDInt.red = gridz[k];
+    oneSEDInt.distMod = gridDM[k];
+
+    // Extrapolate if the lambda coverage isn't correct
+    display_warn = oneSEDInt.warning_integrateSED(allFlt, false);
+
+    // product of the SED with the extinction law
+    oneSEDInt.apply_extinction(ebv[j], extAll[i]);
+
+    // Opacity applied in rest-frame, depending on the redshift of the
+    // source
+    oneSEDInt.applyOpa(get_opa_vector());
+
+    // redshift the SED
+    oneSEDInt.redshift();
+
+    // Compute magnitude
+    oneSEDInt.compute_magnitudes(allFlt);
+
+    // Compute Milky Way extinction
+    if (applyMilkyWayExtinction) {
+      oneSEDInt.compute_milky_way_extinction(milkyWayExtinction, allFlt);
+    }
+
+    // If z>0, no need to keep the spectra
+    if (oneSEDInt.red > 1.e-10) oneSEDInt.lamb_flux.clear();
+  }
+
+  std::vector<double> magko(allFlt.size());
   // Now take all the SED for the current initial template
   // Compute the K-correction
   for (size_t k = 0; k < allSED.size(); k++) {
@@ -892,8 +925,10 @@ void StarMag::read_SED() {
     StarSED oneSED("");
     // read one SED in the binary file
     oneSED.readSEDBin(ssedIn);
-    // Check that the lambda coverage is correct
-    oneSED.warning_integrateSED(allFlt, verbose);
+    //  Extrapolate if the lambda coverage isn't correct
+    // first message then extrapolation
+    bool display_warn = oneSED.warning_integrateSED(allFlt, true);
+    display_warn = oneSED.warning_integrateSED(allFlt, false);
 
     vector<StarSED> seds = make_maglib(oneSED);
     write_mag(seds);

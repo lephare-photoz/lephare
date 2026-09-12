@@ -82,7 +82,6 @@ class Mag {
   virtual void read_SED() = 0;
 
   vector<ext> extAll;
-
   vector<flt> allFlt;
   vector<GalSED> B12SED;
   vector<double> gridz;

@@ -84,7 +84,7 @@ double cosmo::distMet(double z) const {
   Note : use lambda0 non zero if Omega_o+lambda_o=1
 */
 double cosmo::time(double z) const {
-  double timy = 0., val;
+  double timy = 0.;
   double hy = h0 * 1.0224e-12;
 
   if (abs(om0 - 1) < 1.e-6 && l0 == 0) {
@@ -94,7 +94,7 @@ double cosmo::time(double z) const {
     timy = 1. / (hy * (1 + z));
 
   } else if (om0 < 1 && om0 > 0 && l0 == 0) {
-    val = (om0 * z - om0 + 2.) / (om0 * (1 + z));
+    double val = (om0 * z - om0 + 2.) / (om0 * (1 + z));
     timy = 2. * sqrt((1 - om0) * (om0 * z + 1)) / (om0 * (1 + z));
     timy = timy - log10(val + sqrt(val * val - 1));
     timy = timy * om0 / (2. * hy * pow((1 - om0), 1.5));
@@ -105,7 +105,7 @@ double cosmo::time(double z) const {
     timy = timy * om0 / (2 * hy * pow((om0 - 1), 1.5));
 
   } else if (om0 < 1 && abs(om0 + l0 - 1) < 1.e-5) {
-    val = sqrt(1 - om0) / (sqrt(om0) * pow((1 + z), 1.5));
+    double val = sqrt(1 - om0) / (sqrt(om0) * pow((1 + z), 1.5));
     timy = log(val + sqrt(val * val + 1));
     timy = timy * 2. / (3. * hy * sqrt(1 - om0));
 
