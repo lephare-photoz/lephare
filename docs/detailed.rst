@@ -693,12 +693,12 @@ vista/K                0.100            0.118    0.364
 ====================== ================ ======== ============
 
 | 
-| Col 2 : Mean atmospheric extinction (mag/airmass) using (EXT_CURVE):
+| Col 2 : Mean atmospheric extinction (mag/airmass) using (EXT_ATMOS_CURVE):
   :math:`A_{\lambda}= \int R_{\lambda} Ext(\lambda) d\lambda / \int R_{\lambda} d\lambda`
 | :math:`Ext(\lambda)` comes from any atmospheric extinction curve that
   is put in $\ *LEPHAREDIR*/ext/.
 | Col 3 : Mean galactic attenuation (in :math:`A(\lambda)/A_V`) using
-  the galactic extinction law (GAL_CURVE). Col 4 : Mean galactic
+  the galactic extinction law (EXT_MW_CURVE). Col 4 : Mean galactic
   attenuation (in :math:`A(\lambda)//E(B-V)`) as a function of color
   excess (E(B-V)) assuming :math:`A_V=R_V\times E(B-V)`.
 | For :math:`R_V` coefficients, we assume :math:`R_V=3.1` for most
@@ -1410,8 +1410,56 @@ Finally, one can modify the properties of the input library by considering emiss
 +----------------+--------------------+-----------------+-----------------+
 
 
+Milky Way Reddening
+~~~~~~~~~~~~~~~~~~~
 
-  
+Measured photometric fluxes are affected by the Milky Way extinction. Usually the inpute fluxes are 'dereddened' to account for this effect. The code can correct for this effect if the user provides the E(B-V) value for each source in the input catalog. The reddening is applied to the predicted fluxes using the MW extinction law (Seaton 1979). The reddening value can be provided in the input catalog as an additional column (format LONG) or as a separate file (see ``MW_REDDENING`` keyword). In this case, the file should contain two columns: Id and E(B-V). The Id must match the one in the input catalog.
+
+`Galametz et al. (2017) <https://www.aanda.org/articles/aa/abs/2017/02/aa29333-16/aa29333-16.html>`_ investigated the impact of SED dependent reddening on the photo-z. They found that the effect is small, but it can be significant for some specific SEDs. The code can apply a SED dependent reddening if the user provides a file with the E(B-V) values for each source. The file should contain two columns: object ID and E(B-V). The SED number must match the one in the library. It is important to note that the GALAMETZ method adds significant cpu time to all stages of the code. For large area runs where CPU time is critical we recommend using the CLASSIC method or dereddening the input catalogues.
+
+It is also possible to apply a global reddening correction to all sources in the input catalog using the keyword ``MW_EBV_FILE``. In this case, the value of E(B-V) is provided directly in the configuration file.
+
+.. list-table:: 
+   :widths: 20 10 10 55
+   :header-rows: 1
+
+   * - Parameters
+     - Type
+     - Default val.
+     - Description
+   * - EXT_MW_CURVE
+     - string
+     - CARDELLI[def] 
+       or NONE
+     - Extinction curve for the Milky Way extinction. Should be in $LEPHAREDIR/ext if relative.
+   * - EXT_ATMOS_CURVE
+     - string
+     - NONE[def] or e.g. 
+       SB_calzetti.dat
+     - Extinction curve for the atmospheric extinction. Should be in $LEPHAREDIR/ext if relative.
+   * - APPLY_MW_EXTINCTION
+     - string
+     - NONE[DEF], CLASSIC, 
+       GALAMETZ
+     - Method to apply the Milky Way extinction to the templates. If CLASSIC, the extinction is applied using the E(B-V) value and the extinction curve. If GALAMETZ, the extinction is applied using the E(B-V) value and the extinction curve, but also taking into account the SED dependence of the extinction (see Galametz et al. 2017). In this case, the MW_REFERENCE_MODEL keyword must be set to define the reference SED for which the E(B-V) value is defined.
+   * - MW_REFERENCE_MODEL
+     - string
+     - sed/STAR/PICKLES/
+       b5i.sed[DEF]
+     - Reference SED for which the E(B-V) value is defined when using the GALAMETZ method to apply the Milky Way extinction. Should be in $LEPHAREDIR if relative.
+   * - MW_GLOBAL_EBV
+     - string
+     - NONE[def] 
+       or float 
+     - Global E(B-V) value to apply to all templates when using the GALAMETZ method to apply the Milky Way extinction. If 0, the E(B-V) value is read from the file defined by MW_EBV_FILE.
+   * - MW_EBV_FILE
+     - string
+     - NONE[def] 
+       or string 
+     - Name of the file containing the E(B-V) values to apply to each template when using the GALAMETZ method to apply the Milky Way extinction. The file should have two columns: source ID and E(B-V) value. Should be absolute path.
+
+
+
 
 .. _fit:
 
@@ -1775,7 +1823,7 @@ The predicted apparent magnitudes and absolute magnitudes can be computed in a d
 Physical parameters derived from BC03 templates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Physical parameters are derived as soon as you use a library including physical information like the normalisation of the template in stellar mass. In *LePHARE++* , such measurement is possible only with the BC03 templates (but we plan to integrate the PEGASE or MARASTON libraries on the long term). You don’t need to turn on any keyword to have these measurements. As long as you are using BC03 templates and that the corresponding keywords (as ``MASS_MED``, or ``SFR_MED``) appear in the output parameter file, you should get the physical parameters in output.
+Physical parameters are derived as soon as you use a library including physical information like the normalisation of the template in stellar mass. In *LePHARE++* , such measurement is currently possible with the BC03 or PEGASE2 template libraries (we plan to integrate the MARASTON libraries in the future). You don’t need to turn on any keyword to have these measurements. As long as you are using BC03 templates and that the corresponding keywords (as ``MASS_MED``, or ``SFR_MED``) appear in the output parameter file, you should get the physical parameters in output.
 
 As for the photo-z, you will find physical parameters measured at the minimum :math:`\chi^2` value (indicated with ``_BEST``) and the ones obtained by taken the median of the PDF marginalized over the relevant parameter.
 
@@ -2221,6 +2269,9 @@ The output parameters
 +---------------+-------------------------------------------+---+---+
 | SCALE_SEC     |                                           |   |   |
 +---------------+-------------------------------------------+---+---+
+| Z_FLAG        | Redshift quality flag from PDF(Z)         |   |   |
++---------------+---------------------------------------------------+
+   
 
 +-----------------+-----------------------------+---+---+
 |                 | QSO solutions               |   |   |
@@ -2316,6 +2367,8 @@ The output parameters
 +-----------------+-----------------------------+---+---+
 | MOD_QSO         |                             |   |   |
 +-----------------+-----------------------------+---+---+
+| SCALE_QSO       |                             |   |   |
++-----------------+-----------------------------+---+---+
 | Z_ML            | Zphot from Median of ML     |   |   |
 |                 | distribution                |   |   |
 +-----------------+-----------------------------+---+---+
@@ -2332,6 +2385,8 @@ The output parameters
 | MOD_STAR        |                             |   |   |
 +-----------------+-----------------------------+---+---+
 | CHI_STAR        |                             |   |   |
++-----------------+-----------------------------+---+---+
+| SCALE_STAR      |                             |   |   |
 +-----------------+-----------------------------+---+---+
 
 +---------------+-------------------------------------------+---+---+

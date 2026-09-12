@@ -15,9 +15,13 @@
 #include <string>
 #include <vector>
 
+#include "ext.h"
+
 // Constructor of the basis class which read the keywords common to the
 // QSO/STARS/GAL
-Mag::Mag(keymap &key_analysed) {
+Mag::Mag(keymap& key_analysed)
+    : milkyWayExtinction(
+          key_analysed["EXT_MW_CURVE"].split_string("CARDELLI", 1)[0]) {
   /*
     ENVIRONMENT VARIABLES LEPHAREDIR and LEPHAREWORK
   */
@@ -40,7 +44,7 @@ Mag::Mag(keymap &key_analysed) {
   filtFile = ((key_analysed["FILTER_FILE"]).split_string("filters", 1))[0];
   // Full path to the input filter file
   string fltFile = lepharework + "/filt/" + filtFile + ".dat";
-  allFlt = read_flt(fltFile);
+  allFlt = read_filters_from_file(fltFile);
 
   // mag type AB/VEGA
   magtyp = ((key_analysed["MAGTYPE"]).split_string("AB", 1))[0];
@@ -48,26 +52,28 @@ Mag::Mag(keymap &key_analysed) {
   // extinction laws, multiple laws are possible, number of expected laws
   // unknown in advance -> -1
   extlaw = (key_analysed["EXTINC_LAW"]).split_string("calzetti.dat", -1);
-  nextlaw = int(extlaw.size());
   read_ext();
 
   // possible E(B-V) values, multiple values are possible, number of expected
   // values unknown in advance -> -1
   ebv = (key_analysed["EB_V"]).split_double("0", -1);
-  nebv = int(ebv.size());
   // model ranges for each extinction curve
-  modext = (key_analysed["MOD_EXTINC"]).split_int("0,0", nextlaw * 2);
+  modext = (key_analysed["MOD_EXTINC"]).split_int("0,0", extlaw.size() * 2);
 
   // define the grid in redshift
-  dz = ((key_analysed["Z_STEP"]).split_double("0.04", 3))[0];
-  zmin = ((key_analysed["Z_STEP"]).split_double("0.", 3))[1];
-  zmax = ((key_analysed["Z_STEP"]).split_double("6.", 3))[2];
+  dz = key_analysed["Z_STEP"].split_double("0.04", 3)[0];
+  zmin = key_analysed["Z_STEP"].split_double("0.", 3)[1];
+  zmax = key_analysed["Z_STEP"].split_double("6.", 3)[2];
+  // LCOV_EXCL_START
   if (zmax < zmin) {
     throw runtime_error(
         "You are probably using the old parametrisation of "
         "Z_STEP since Z MIN > Z MAX in Z_STEP. Stop here. ");
   }
-  // Output file in ascii ?
+  def_zgrid();
+
+  // LCOV_EXCL_STOP
+  //  Output file in ascii ?
   outasc = ((key_analysed["LIB_ASCII"]).split_bool("NO", 1))[0];
 
   // keyword to add the LDUST component to the stellar component (e.g. in BC03)
@@ -77,8 +83,38 @@ Mag::Mag(keymap &key_analysed) {
   // VERBOSE output  file -  YES default
   verbose = key_analysed["VERBOSE"].split_bool("YES", 1)[0];
 
-  // Read the extragalactic opacity files into a vector
-  opaAll = read_opa();
+  // Galametz Milky Way attenuation values
+  // Milky Way extinction file
+  if (milkyWayExtinction.name != "CARDELLI") {
+    milkyWayExtinction.read(
+        lepharedir + "/ext/" +
+        key_analysed["EXT_MW_CURVE"].split_string("CARDELLI", 1)[0]);
+  } else {
+    double lmin = 300.;
+    double lmax = 10000000;
+    double lextg, extg;
+
+    // computes the galactic extinction
+    double dlbd = (lmax - lmin) / 10000.;
+    for (int i = 0; i < 10001; i++) {
+      lextg = lmin + double(i) * dlbd;
+      extg = cardelli_law(lextg);
+      milkyWayExtinction.add_element(lextg, extg);
+    }
+  }
+  string red_type =
+      key_analysed["APPLY_MW_EXTINCTION"].split_string("NO", 1)[0];
+  // If it is GALAMETZ we compute per model values
+  if (red_type == "GALAMETZ") {
+    applyMilkyWayExtinction = true;
+    // If it is CLASSIC we apply that in photzlib stage
+  } else {
+    applyMilkyWayExtinction = false;
+  }
+  // need to call it here so that it is guaranteed
+  // that the vector has been created before each thread in make_maglib
+  // uses it.
+  auto opas = get_opa_vector();
 }
 
 // destructor of the class Mag cleaning all the vectors
@@ -90,7 +126,6 @@ Mag::~Mag() {
   modext.clear();
 
   extAll.clear();
-  opaAll.clear();
   allFlt.clear();
   gridz.clear();
   gridT.clear();
@@ -142,7 +177,7 @@ void Mag::open_files() {
 
     sdatOut << "# Filter list: \n";
     if (allFlt.size() != 0) {
-      for (const auto f : allFlt) {
+      for (const auto& f : allFlt) {
         sdatOut << "#" << f.name << "\n";
       }
     }
@@ -150,36 +185,29 @@ void Mag::open_files() {
     // header of the .dat file
     switch (object) {
       case object_type::GAL:
-        sdatOut
-            << "# model ext_law E(B-V) L_T(IR) redshift dist_modulus age "
-               "N_filt magnitude[N_filt] kcorr[N_filt] em_lines_fluxes[N_filt] "
-            << endl;
+        sdatOut << "# model ext_law E(B-V) frac_EmLines redshift "
+                   "dist_modulus age "
+                   "N_filt magnitude[N_filt] kcorr[N_filt] ";
+        if (applyMilkyWayExtinction)
+          sdatOut << " MW_extinction[N_filt] Band-pass-correct ";
+        sdatOut << endl;
         break;
       case object_type::QSO:
         sdatOut << "# model ext_law E(B-V) redshift dist_modulus "
-                   "N_filt magnitude[N_filt] kcorr[N_filt] "
-                << endl;
+                   "N_filt magnitude[N_filt] kcorr[N_filt] ";
+        if (applyMilkyWayExtinction)
+          sdatOut << " MW_extinction[N_filt] Band-pass-correct ";
+        sdatOut << endl;
         break;
       case object_type::STAR:
-        sdatOut << "# model N_filt magnitude[N_filt]" << endl;
+        sdatOut << "# model N_filt magnitude[N_filt] " << endl;
+        if (applyMilkyWayExtinction)
+          sdatOut << " MW_extinction[N_filt] Band-pass-correct ";
         break;
     }
   }
 
   if (verbose) cout << " All files opened " << endl;
-}
-
-// open the opacity files
-ifstream Mag::open_opa_files() {
-  ifstream stream;
-  // open the ascii file with all the opacity file listed
-  string opaListFile = lepharedir + "/opa/OPACITY.dat";
-  stream.open(opaListFile.c_str());
-  // Check if file is opened
-  if (!stream) {
-    throw invalid_argument("Can't open file with opacity " + opaListFile);
-  }
-  return stream;
 }
 
 void Mag::close_files() {
@@ -192,100 +220,30 @@ void Mag::close_files() {
 // Function of the basis class which read the extinction laws
 void Mag::read_ext() {
   // Loop over the possible extinction laws
-  for (int k = 0; k < nextlaw; k++) {
+  int count = 0;
+  for (auto& filename : extlaw) {
     // Instance one ext object
-    ext oneext(extlaw[k], k);
+    ext oneext(filename, count++);
     // Name of the extinction law file
-    string extFile = lepharedir + "/ext/" + extlaw[k];
+    string extFile = lepharedir + "/ext/" + filename;
     // read the extinction law file
     oneext.read(extFile);
     // store it into the vector of exction laws
     extAll.push_back(oneext);
   }
-  // Read the MW extinction curve and store it into the last item
-  // Do not increment nextlaw
-  ext oneext("MW_seaton.dat", nextlaw);
-  string extFile = lepharedir + "/ext/MW_seaton.dat";
-  oneext.read(extFile);
-  extAll.push_back(oneext);
 }
 
-// Function of the basis class which read the IGM opacity
-vector<opa> Mag::read_opa() {
-  string name;
-  double red;
-
-  // In oder to fill the two last elements around Lyman alpha
-  // Put 1 for the last element
-  // Put the last value of the opa below 1215.67 just before
-  oneElLambda beflastOpa(1215.66, 1., 3);
-  oneElLambda lastOpa(1215.67, 1., 3);
-
-  ifstream stream = Mag::open_opa_files();
-  vector<opa> result;
-
-  // Take the stream line by line: list of each opa file
-  for (int i = 0; i < 81; i++) {
-    stream >> red >> name;
-    opa oneOpa(red, name);
-    oneOpa.read();
-    // Put as last element a lambda at the Lyman-alpha wavelength with
-    // transmission=1 Meiksin case : remove the last element which is after the
-    // Lya line
-    if (oneOpa.lamb_opa.back().lamb > 1215.66) oneOpa.lamb_opa.pop_back();
-    // Put the last transmission value very close to Lyman alpha
-    beflastOpa.val = oneOpa.lamb_opa.back().val;
-    // Add the two last values close to Lyman alpha
-    oneOpa.lamb_opa.push_back(beflastOpa);
-    oneOpa.lamb_opa.push_back(lastOpa);
-    oneOpa.lmax = 1215.67;
-    // Add to the list of opacity
-    result.push_back(oneOpa);
-  }
-  return result;
-}
-
-// Function of the basis class which read all the filters
-vector<flt> Mag::read_flt(const string &inputfile) {
-  vector<flt> flts;
-
-  ifstream sfiltIn;
-  sfiltIn.open(inputfile.c_str());
-  // Check if file is opened
-  if (!sfiltIn) {
-    throw invalid_argument("Can't open file compiling all filters in " +
-                           inputfile);
-  }
-
-  string dummy;
-  int imag;
-  // read the number of filter
-  sfiltIn >> dummy >> imag;
-
-  // Loop over each filter
-  for (int k = 0; k < imag; k++) {
-    // Generate one object "flt" and read it
-    flt oneFilt(k, sfiltIn, 0, 0);
-    // store all filters in a vector
-    flts.push_back(oneFilt);
-  }
-
-  sfiltIn.close();
-
-  return flts;
-}
-
-// Read the long wavelength Bethermin+2012 templates to add the dust emission to
-// the BC03 templates Associate a b12 SED to each redshift of the grid in
+// Read the long wavelength Bethermin+2012 templates to add the dust emission
+// to the BC03 templates Associate a b12 SED to each redshift of the grid in
 // redshift
 void Mag::read_B12() {
   /*
   IMPORTANT NOTE
   There is one limitation with current implementation of the code:
-  If several templates from B12 are used (not the first one by default), the fit
-  and predicted magnitudes will be correct. But the best-fit template in the
-  .spec file will be off in FIR since it is based on the z=0 full template to be
-  reconstructed No easy fix yet.
+  If several templates from B12 are used (not the first one by default), the
+  fit and predicted magnitudes will be correct. But the best-fit template in
+  the .spec file will be off in FIR since it is based on the z=0 full template
+  to be reconstructed No easy fix yet.
   */
 
   // Open the file with the list of B12 templates
@@ -295,8 +253,8 @@ void Mag::read_B12() {
   if (!b12mod)
     throw invalid_argument("Can't open Bethermin+12 list " + b12List);
 
-  // Create a list of SED with the B12 templates. Need one SED for each redshift
-  // of gridz.
+  // Create a list of SED with the B12 templates. Need one SED for each
+  // redshift of gridz.
   string lit, nameSED, bid;
   double b12z;
   size_t gr = 0;
@@ -386,18 +344,21 @@ void Mag::write_doc() {
   sdocOut << endl << "Z_STEP   " << dz << "," << zmin << "," << zmax << endl;
   sdocOut << "COSMOLOGY   " << lcdm << endl;
   sdocOut << "EXTINC_LAW   ";
-  for (int k = 0; k < nextlaw; k++) {
-    sdocOut << extlaw[k] << ",";
+  for (auto& law : extlaw) {
+    sdocOut << law << ",";
   };
   sdocOut << endl << "MOD_EXTINC   ";
-  for (int k = 0; k < nextlaw; k++) {
-    sdocOut << modext[k * 2] << "," << modext[2 * k + 1] << ",";
+  for (auto& mod : modext) {
+    sdocOut << mod << ",";
   };
   sdocOut << endl << "EB_V   ";
-  for (int k = 0; k < nebv; k++) {
-    sdocOut << ebv[k] << ",";
+  for (auto& tmp : ebv) {
+    sdocOut << tmp << ",";
   };
   sdocOut << endl << "EM_LINES   " << emlines << endl;
+  sdocOut << "MW_GALAMETZ   " << (applyMilkyWayExtinction ? "YES" : "NO")
+          << endl;
+  sdocOut << "EXT_MW_CURVE   " << milkyWayExtinction.name << endl;
   sdocOut << "LIB_ASCII   " << (outasc ? "YES" : "NO") << endl;
   time_t result = time(nullptr);
   sdocOut << "CREATION_DATE " << asctime(std::localtime(&result));
@@ -410,7 +371,7 @@ void Mag::write_doc() {
 
 // constructure of the Galaxy case
 // read the keywords missed by the constructor of the basis class
-GalMag::GalMag(keymap &key_analysed) : Mag(key_analysed) {
+GalMag::GalMag(keymap& key_analysed) : Mag(key_analysed) {
   // Name of the input file, default value "SED"
   lib = ((key_analysed["GAL_LIB_IN"]).split_string("SED", 1))[0];
   // Name of the output file, default value "LIB"
@@ -418,7 +379,8 @@ GalMag::GalMag(keymap &key_analysed) : Mag(key_analysed) {
 
   // Emission lines in output
   emlines = ((key_analysed["EM_LINES"]).split_string("EMP_UV", 1))[0];
-  // If 'yes' as the old keyword, swich to EMP_UV which should be always working
+  // If 'yes' as the old keyword, swich to EMP_UV which should be always
+  // working
   if (emlines[0] == 'y' || emlines[0] == 'Y') emlines = "EMP_UV";
   // Check the the keyword has an expected value, otherwise stop
   if (emlines.substr(0, 6).compare("EMP_UV") != 0 &&
@@ -474,7 +436,8 @@ void GalMag::read_SED() {
         cout << "Need to stop the process. Not enough memory.";
         cout << "Free RAM (MegaB) " << si.freeram / megabyte << endl;
         cout << "Total RAM (MegaB) " << si.totalram / megabyte << endl;
-        cout << "Possible to subdivide the library if necessary, or reduce the "
+        cout << "Possible to subdivide the library if necessary, or reduce "
+                "the "
                 "parameter space."
              << endl;
         throw runtime_error();
@@ -484,145 +447,183 @@ void GalMag::read_SED() {
   }  // end of while loop
 }
 
-vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
-  vector<GalSED> allSED;
-  // build the emission line SED. This changes the state of oneSED
-  GalSED oneEm = oneSED.generateEmSED(emlines);
+struct valid_extinction {
+  int i;  // extlaw index
+  int j;  // ebv index
+};
 
-// PARALLELIZE all the 4 loops  [Iary, 12 March 2018]
-#pragma omp parallel for ordered schedule(dynamic) collapse(4)
-  // Loop over each extinction law
-  for (int i = 0; i < nextlaw; i++) {
-    // loop over each E(B-V)
-    for (int j = 0; j < nebv; j++) {
-      // loop over each fraction of emission line flux (add a dispersion in
-      // emission lines as a new template)
-      for (size_t l = 0; l < fracEm.size(); l++) {
-        // Loop over the redshift grid
-        for (size_t k = 0; k < gridz.size(); k++) {
-          // Select case which need to be considered (no extinction or
-          // extinction in the right model range) Remove all cases with
-          // extinction not in the right model range The condition i==0 only
-          // means that for null extinction the templates are computed only
-          // once, using the first extinction law, and it does not matter which
-          // one this extinction law is.
-          if ((ebv[j] < 1.e-10 && i == 0) ||
-              (ebv[j] > 0 && oneSED.nummod >= modext[i * 2] &&
-               oneSED.nummod <= modext[i * 2 + 1])) {
-            // Generate intermediate Continuum SED, since original one must not
-            // change
-            GalSED oneSEDInt(oneSED);
+vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
+  // Display the considered template
+  if (verbose) {
+    cout << "start SED " << oneSED.name << "  \r " << flush;
+  }
 
-            // galaxy redshift/distance in the grid
-            oneSEDInt.red = gridz[k];
-            oneSEDInt.distMod = gridDM[k];
+  // Read the MW extinction curve to be applied to emission lines
+  // use extlaw.size() as a counter past the last standard extinction file
+  ext mw_ext("MW_seaton.dat", extlaw.size());
+  string mwFile = lepharedir + "/ext/MW_seaton.dat";
+  mw_ext.read(mwFile);
 
-            // Check that the lambda coverage is correct
-            oneSEDInt.warning_integrateSED(allFlt, verbose);
-
-            // Not older than the age of the Universe
-            if (gridT[k] > oneSEDInt.age) {
-              double LbeforeExt = oneSEDInt.trapzd();
-
-              // product of the SED with the extinction law
-              oneSEDInt.applyExt(ebv[j], extAll[i]);
-
-              // Difference between the integrated flux with and without
-              // extinction (without is computed just above) flux integrate of
-              // the lambda range -> erg/s/cm2. It was for the source at 10pc,
-              // and then convert erg/s in Lsol
-              double dL = (LbeforeExt - oneSEDInt.trapzd()) / Lsol *
-                          (4 * pi * 100 * pow(pc, 2));
-              if (oneSEDInt.ltir < 0 && dL > 0) oneSEDInt.ltir = log10(dL);
-              // Rescale the B12 to the right dust luminosity (with energy
-              // balance) and sum to the stellar continuum is option on.
-              if (add_dust) {
-                oneSEDInt.sumSpectra(B12SED[k], dL);
-              }
-
-              // Opacity applied in rest-frame, depending on the redshift of the
-              // source
-              oneSEDInt.applyOpa(opaAll);
-
-              // redshift the SED, and restrict it to the union of the filters
-              // support.
-              oneSEDInt.redshift();
-              oneSEDInt.reduce_memory(allFlt);
-              // Compute magnitude
-              // Loop over the filters
-              oneSEDInt.compute_magnitudes(allFlt);
-              // If z>0, no need to keep the spectra
-              if (oneSEDInt.red > 1.e-10) oneSEDInt.lamb_flux.clear();
-
-              // Derive the emission line flux in each filter
-              if (emlines[0] == 'E' || emlines[0] == 'P') {
-                // Generate intermediate EM SED, since original one must not
-                // change
-                GalSED oneEmInt(oneEm);
-                oneEmInt.ebv = ebv[j];
-                // set the value of fracEm
-                oneEmInt.fracEm = fracEm[l];
-                oneEmInt.red = gridz[k];
-                // For the emission lines, use only the MW. Change fac_line
-                oneEmInt.applyExtLines(extAll[nextlaw]);
-                // rescale the lines as a free parameter
-                oneEmInt.rescaleEmLines();
-                /*
-                // Decide to not applied.
-                // apply a z dependence of the emission line ratio for OIII
-                oneEmInt.zdepEmLines(1);
-                */
-                // Generate the spectra with the emission lines
-                oneEmInt.generateEmSpectra(40);
-                // Opacity applied in rest-frame, depending on the redshift of
-                // the source
-                oneEmInt.applyOpa(opaAll);
-                // Save the emission lines rest-frame in the continuum SED
-                oneSEDInt.fac_line = oneEmInt.fac_line;
-                //
-                oneEmInt.redshift();
-                oneEmInt.rescale(pow(10., -0.4 * oneSEDInt.distMod));
-                oneEmInt.reduce_memory(allFlt);
-                if (oneEmInt.lamb_flux.size() > 0) {
-                  oneSEDInt.flEm = oneEmInt.compute_fluxes(allFlt);
-                } else {
-                  oneSEDInt.flEm.assign(allFlt.size(), 0.);
-                }
-                // indicate that the emission lines have been computed
-                oneSEDInt.has_emlines = true;
-                oneSEDInt.fracEm = fracEm[l];
-                if (oneSEDInt.red > 1.e-10) oneEmInt.lamb_flux.clear();
-                oneEmInt.clean();
-              }
-
-#pragma omp ordered
-              {
-                // add to all SED (one time if ebv==0)
-                allSED.push_back(oneSEDInt);
-
-                // Display in the right order, even when the code is
-                // parrallelized
-                if (verbose) {
-                  cout << "SED " << oneSEDInt.name << " z " << setw(6)
-                       << oneSEDInt.red;
-                  cout << " Ext law " << extlaw[i] << "  E(B-V) " << ebv[j]
-                       << "  Age " << oneSEDInt.age << "  \r " << flush;
-                }
-                // Cleaning
-                oneSEDInt.clean();
-              }
-            }  // close age condition
-          }
-        }
+  // Keep only the redshifts in the various grids corresponding to an
+  // age lower than the age of the Universe
+  std::vector<double> gridz_filtered;
+  std::vector<double> gridDM_filtered;
+  std::vector<GalSED*> B12SED_filtered;
+  for (size_t k = 0; k < gridz.size(); ++k) {
+    // Not older than the age of the Universe
+    if (gridT[k] > oneSED.age) {
+      gridz_filtered.push_back(gridz[k]);
+      gridDM_filtered.push_back(gridDM[k]);
+      if (add_dust) {
+        B12SED_filtered.push_back(&B12SED[k]);
       }
     }
   }
+
+  // Check if this SED needs to be extrapolated en blue
+  bool display_warn = false;
+  GalSED oneSEDtest(oneSED);
+  for (int k = 0; k < gridz_filtered.size(); k++) {
+    if (!display_warn) {
+      oneSEDtest.red = gridz_filtered[k];
+      display_warn = oneSEDtest.warning_integrateSED(allFlt, true);
+    }
+  }
+
+  // build the emission line SED. This changes the state of oneSED
+  GalSED oneEm = oneSED.generateEmSED(emlines);
+
+  // extlaw.size()*ebv.size() is likely to be relatively low, so doing this
+  // sequentially is fine
+  std::vector<valid_extinction> valid_indices;
+  for (int i = 0; i < extlaw.size(); i++) {
+    for (int j = 0; j < ebv.size(); j++) {
+      // Select case which need to be considered (no extinction or
+      // extinction in the right model range) Remove all cases with
+      // extinction not in the right model range The condition i==0 only
+      // means that for null extinction the templates are computed only
+      // once, using the first extinction law, and it does not matter which
+      // one this extinction law is.
+      if ((ebv[j] < 1.e-10 && i == 0) ||
+          (ebv[j] > 0 && oneSED.nummod >= modext[i * 2] &&
+           oneSED.nummod <= modext[i * 2 + 1])) {
+        valid_indices.push_back({i, j});
+      }
+    }
+  }
+  size_t valid = valid_indices.size() * fracEm.size() * gridz_filtered.size();
+  vector<GalSED> allSED(valid, oneSED);
+
+#pragma omp parallel for schedule(dynamic)
+  for (size_t itr = 0; itr != valid; ++itr) {
+    auto search_idx = itr / (fracEm.size() * gridz_filtered.size());
+    auto inner_start = itr % (fracEm.size() * gridz_filtered.size());
+    auto search = valid_indices[search_idx];
+    // extinction law index
+    auto i = search.i;
+    // EBV index
+    auto j = search.j;
+    // Emission line ratio index
+    auto l = inner_start / gridz_filtered.size();
+    // Redshift index
+    auto k = inner_start % gridz_filtered.size();
+    GalSED& oneSEDInt = allSED[itr];
+
+    // galaxy redshift/distance in the grid
+    oneSEDInt.red = gridz_filtered[k];
+    oneSEDInt.distMod = gridDM_filtered[k];
+
+    // Extrapolate if the lambda coverage isn't correct
+    display_warn = oneSEDInt.warning_integrateSED(allFlt, false);
+
+    double LbeforeExt = oneSEDInt.trapzd();
+
+    // product of the SED with the extinction law
+    oneSEDInt.apply_extinction(ebv[j], extAll[i]);
+
+    // Difference between the integrated flux with and without
+    // extinction (without is computed just above) flux integrate of
+    // the lambda range -> erg/s/cm2. It was for the source at 10pc,
+    // and then convert erg/s in Lsol
+    double dL =
+        (LbeforeExt - oneSEDInt.trapzd()) / Lsol * (4 * pi * 100 * pow(pc, 2));
+    if (oneSEDInt.ltir < 0 && dL > 0) oneSEDInt.ltir = log10(dL);
+    // Rescale the B12 to the right dust luminosity (with energy
+    // balance) and sum to the stellar continuum is option on.
+    if (add_dust) {
+      oneSEDInt.sumSpectra(*B12SED_filtered[k], dL);
+    }
+
+    // Opacity applied in rest-frame, depending on the redshift of the
+    // source
+    oneSEDInt.applyOpa(get_opa_vector());
+
+    // redshift the SED, and restrict it to the union of the filters
+    // support.
+    oneSEDInt.redshift();
+    oneSEDInt.reduce_memory(allFlt);
+    // Compute magnitude
+    // Loop over the filters
+    oneSEDInt.compute_magnitudes(allFlt);
+
+    // Compute Milky Way extinction
+    if (applyMilkyWayExtinction) {
+      oneSEDInt.compute_milky_way_extinction(milkyWayExtinction, allFlt);
+    }
+
+    // If z>0, no need to keep the spectra
+    if (oneSEDInt.red > 1.e-10) oneSEDInt.lamb_flux.clear();
+
+    // Derive the emission line flux in each filter
+    if (emlines[0] == 'E' || emlines[0] == 'P') {
+      // Generate intermediate EM SED, since original one must not
+      // change
+      GalSED oneEmInt(oneEm);
+      oneEmInt.ebv = ebv[j];
+      oneEmInt.red = gridz_filtered[k];
+      // For the emission lines, use only the MW. Change fac_line
+      oneEmInt.apply_extinction_to_lines(ebv[j], mw_ext);
+      // rescale the lines as a free parameter
+      oneEmInt.fracEm = fracEm[l];
+      oneEmInt.rescaleEmLines();
+      /*
+      // Decide to not applied.
+      // apply a z dependence of the emission line ratio for OIII
+      oneEmInt.zdepEmLines(1);
+      */
+      // Generate the spectra with the emission lines
+      oneEmInt.generateEmSpectra(40);
+      // Opacity applied in rest-frame, depending on the redshift of
+      // the source
+      oneEmInt.applyOpa(get_opa_vector());
+      // Save the emission lines rest-frame in the continuum SED
+      oneSEDInt.fac_line = oneEmInt.fac_line;
+      //
+      oneEmInt.redshift();
+      oneEmInt.rescale(pow(10., -0.4 * oneSEDInt.distMod));
+      oneEmInt.reduce_memory(allFlt);
+      if (oneEmInt.lamb_flux.size() > 0) {
+        oneSEDInt.flEm = oneEmInt.compute_fluxes(allFlt);
+      } else {
+        oneSEDInt.flEm.assign(allFlt.size(), 0.);
+      }
+      // indicate that the emission lines have been computed
+      oneSEDInt.has_emlines = true;
+      oneSEDInt.fracEm = fracEm[l];
+      if (oneSEDInt.red > 1.e-10) oneEmInt.lamb_flux.clear();
+    }
+  }
+
+  std::vector<double> magko(allFlt.size());
+
   // Now take all the SED for the current initial template
   // Compute the K-correction, and save to file.
   for (size_t k = 0; k < allSED.size(); k++) {
     // compute k-correction
     if (allSED[k].red < 1.e-5) {
       // keep the magnitude at z=0 and put the k-correction at 0
+      // note: magko is saved here, just to be used in the else statement
+      // coming next. The ordering is guaranteed in the main loop
       magko = allSED[k].mag;
       allSED[k].kcorr.assign(allFlt.size(), 0.);
     } else {
@@ -633,12 +634,13 @@ vector<GalSED> GalMag::make_maglib(GalSED &oneSED) {
       }
     }
   }
+
   return allSED;
 }
 
-void GalMag::write_mag(const vector<GalSED> &seds) {
+void GalMag::write_mag(const vector<GalSED>& seds) {
   // write the output files
-  for (const auto &sed : seds) {
+  for (const auto& sed : seds) {
     sed.writeMag(outasc, sbinOut, sdatOut, allFlt, magtyp);
   }
 }
@@ -656,23 +658,27 @@ void GalMag::print_info() {
   cout << "# Z_STEP   :" << dz << " " << zmin << " " << zmax << endl;
   cout << "# COSMOLOGY   :" << lcdm << endl;
   cout << "# EXTINC_LAW   :";
-  for (int k = 0; k < nextlaw; k++) {
-    cout << extlaw[k] << " ";
+  for (auto& law : extlaw) {
+    cout << law << " ";
   };
   cout << endl << "# MOD_EXTINC   :";
-  for (int k = 0; k < nextlaw; k++) {
-    cout << modext[k * 2] << " " << modext[2 * k + 1] << " ";
+  for (auto& mod : modext) {
+    cout << mod << " ";
   };
   cout << endl << "# EB_V   :";
-  for (int k = 0; k < nebv; k++) {
-    cout << ebv[k] << " ";
+  for (auto& tmp : ebv) {
+    cout << tmp << " ";
   };
   cout << endl << "# EM_LINES   " << emlines << endl;
   cout << "# EM_DISPERSION   ";
-  for (size_t k = 0; k < fracEm.size(); k++) {
-    cout << fracEm[k] << ",";
+  for (auto& tmp : fracEm) {
+    cout << tmp << ",";
   };
-  cout << endl << "# LIB_ASCII   " << (outasc ? "YES" : "NO") << endl;
+  cout << endl
+       << "# MW_GALAMETZ   " << (applyMilkyWayExtinction ? "YES" : "NO")
+       << endl;
+  cout << "# EXT_MW_CURVE   " << milkyWayExtinction.name << endl;
+  cout << "# LIB_ASCII   " << (outasc ? "YES" : "NO") << endl;
   time_t result = time(nullptr);
   cout << "# CREATION_DATE " << asctime(std::localtime(&result));
   cout << "#############################################" << endl;
@@ -684,7 +690,7 @@ void GalMag::print_info() {
 
 // constructor for the QSO adding the missing keywords from the basis
 // constructor
-QSOMag::QSOMag(keymap &key_analysed) : Mag(key_analysed) {
+QSOMag::QSOMag(keymap& key_analysed) : Mag(key_analysed) {
   // Name of the input file, default value "SED"
   lib = ((key_analysed["QSO_LIB_IN"]).split_string("SED", 1))[0];
   // Name of the output file, default value "LIB"
@@ -704,17 +710,21 @@ void QSOMag::print_info() {
   cout << "# Z_STEP   :" << dz << " " << zmin << " " << zmax << endl;
   cout << "# COSMOLOGY   :" << lcdm << endl;
   cout << "# EXTINC_LAW   :";
-  for (int k = 0; k < nextlaw; k++) {
-    cout << extlaw[k] << " ";
+  for (auto& law : extlaw) {
+    cout << law << " ";
   };
   cout << endl << "# MOD_EXTINC   :";
-  for (int k = 0; k < nextlaw; k++) {
-    cout << modext[k * 2] << " " << modext[k + 1] << " ";
+  for (auto& mod : modext) {
+    cout << mod << " ";
   };
   cout << endl << "# EB_V   :";
-  for (int k = 0; k < nebv; k++) {
-    cout << ebv[k] << " ";
+  for (auto& tmp : ebv) {
+    cout << tmp << " ";
   };
+  cout << endl
+       << "# MW_GALAMETZ   " << (applyMilkyWayExtinction ? "YES" : "NO")
+       << endl;
+  cout << "# EXT_MW_CURVE   " << milkyWayExtinction.name << endl;
   cout << "# LIB_ASCII   " << (outasc ? "YES" : "NO") << endl;
   time_t result = time(nullptr);
   cout << "# CREATION_DATE " << asctime(std::localtime(&result));
@@ -756,7 +766,8 @@ void QSOMag::read_SED() {
         cout << "Need to stop the process. Not enough memory.";
         cout << "Free RAM (MegaB) " << si.freeram / megabyte << endl;
         cout << "Total RAM (MegaB) " << si.totalram / megabyte << endl;
-        cout << "Possible to subdivide the library if necessary, or reduce the "
+        cout << "Possible to subdivide the library if necessary, or reduce "
+                "the "
                 "parameter space."
              << endl;
         throw runtime_error();
@@ -767,74 +778,89 @@ void QSOMag::read_SED() {
   return;
 }
 
-vector<QSOSED> QSOMag::make_maglib(const QSOSED &oneSED) {
-  vector<QSOSED> allSED;
-#pragma omp parallel for ordered schedule(dynamic) collapse(3)
-  // Loop over each extinction law
-  for (int i = 0; i < nextlaw; i++) {
-    // loop over each E(B-V)
-    for (int j = 0; j < nebv; j++) {
-      // Loop over the redshift grid
-      for (size_t k = 0; k < gridz.size(); k++) {
-        // Select case which need to be considered (no extinction or extinction
-        // in the right model range) Remove all cases with extinction not in the
-        // right model range
-        if ((ebv[j] < 1.e-10 && i == 0) ||
-            (ebv[j] > 0 && oneSED.nummod >= (modext[i * 2]) &&
-             oneSED.nummod <= (modext[i * 2 + 1]))) {
-          // Generate intermediate Continuum SED, since original one must not
-          // change
-          QSOSED oneSEDInt(oneSED);
+vector<QSOSED> QSOMag::make_maglib(const QSOSED& oneSED) {
+  // Display the considered template
+  if (verbose) {
+    cout << "start SED " << oneSED.name << "  \r " << flush;
+  }
 
-          // galaxy redshift/distance in the grid
-          oneSEDInt.red = gridz[k];
-          oneSEDInt.distMod = gridDM[k];
-
-          // Check that the lambda coverage is correct
-          oneSEDInt.warning_integrateSED(allFlt, verbose);
-
-          // product of the SED with the extinction law
-          oneSEDInt.applyExt(ebv[j], extAll[i]);
-
-          // Opacity applied in rest-frame, depending on the redshift of the
-          // source
-          oneSEDInt.applyOpa(opaAll);
-
-          // redshift the SED
-          oneSEDInt.redshift();
-
-          // Compute magnitude
-          oneSEDInt.compute_magnitudes(allFlt);
-
-          // If z>0, no need to keep the spectra
-          if (oneSEDInt.red > 1.e-10) oneSEDInt.lamb_flux.clear();
-
-#pragma omp ordered
-          {
-            // add to all SED (one time if ebv==0)
-            allSED.push_back(oneSEDInt);
-
-            // Info screen
-            // Display in the right order, even when the code is parrallelized
-            if (verbose) {
-              cout << "SED " << oneSEDInt.name << " z " << setw(6)
-                   << oneSEDInt.red;
-              cout << " Ext law " << extlaw[i] << "  E(B-V) " << ebv[j]
-                   << "  \r " << flush;
-            }
-            // Cleaning
-            oneSEDInt.clean();
-          }
-        }
+  std::vector<valid_extinction> valid_indices;
+  // extlaw.size()*ebv.size() is likely to be relatively low, so doing this
+  // sequentially is fine
+  for (int i = 0; i < extlaw.size(); i++) {
+    for (int j = 0; j < ebv.size(); j++) {
+      // Select case which need to be considered (no extinction or extinction
+      // in the right model range) Remove all cases with extinction not in the
+      // right model range
+      if ((ebv[j] < 1.e-10 && i == 0) ||
+          (ebv[j] > 0 && oneSED.nummod >= (modext[i * 2]) &&
+           oneSED.nummod <= (modext[i * 2 + 1]))) {
+        valid_indices.push_back({i, j});
       }
     }
   }
+  size_t valid = valid_indices.size() * gridz.size();
+
+  // Check if this SED needs to be extrapolated en blue
+  bool display_warn = false;
+  QSOSED oneSEDtest(oneSED);
+  for (int k = 0; k < gridz.size(); k++) {
+    if (!display_warn) {
+      oneSEDtest.red = gridz[k];
+      display_warn = oneSEDtest.warning_integrateSED(allFlt, true);
+    }
+  }
+
+  // Generate intermediate Continuum SED, since original one must not
+  // change
+  vector<QSOSED> allSED(valid, oneSED);
+#pragma omp parallel for schedule(dynamic)
+  for (size_t itr = 0; itr != valid; ++itr) {
+    auto search_idx = itr / gridz.size();
+    auto search = valid_indices[search_idx];
+    auto i = search.i;
+    auto j = search.j;
+    auto k = itr % gridz.size();
+    QSOSED& oneSEDInt = allSED[itr];
+
+    // galaxy redshift/distance in the grid
+    oneSEDInt.red = gridz[k];
+    oneSEDInt.distMod = gridDM[k];
+
+    // Extrapolate if the lambda coverage isn't correct
+    display_warn = oneSEDInt.warning_integrateSED(allFlt, false);
+
+    // product of the SED with the extinction law
+    oneSEDInt.apply_extinction(ebv[j], extAll[i]);
+
+    // Opacity applied in rest-frame, depending on the redshift of the
+    // source
+    oneSEDInt.applyOpa(get_opa_vector());
+
+    // redshift the SED
+    oneSEDInt.redshift();
+
+    // Compute magnitude
+    oneSEDInt.compute_magnitudes(allFlt);
+
+    // Compute Milky Way extinction
+    if (applyMilkyWayExtinction) {
+      oneSEDInt.compute_milky_way_extinction(milkyWayExtinction, allFlt);
+    }
+
+    // If z>0, no need to keep the spectra
+    if (oneSEDInt.red > 1.e-10) oneSEDInt.lamb_flux.clear();
+  }
+
+  std::vector<double> magko(allFlt.size());
   // Now take all the SED for the current initial template
   // Compute the K-correction
   for (size_t k = 0; k < allSED.size(); k++) {
     // compute k-correction
     if (allSED[k].red < 1.e-5) {
       // keep the magnitude at z=0 and put the k-correction at 0
+      // note: magko is saved here, just to be used in the else statement
+      // coming next. The ordering is guaranteed in the main loop
       magko = allSED[k].mag;
       allSED[k].kcorr.assign(allFlt.size(), 0.);
     } else {
@@ -847,9 +873,9 @@ vector<QSOSED> QSOMag::make_maglib(const QSOSED &oneSED) {
   return allSED;
 }
 
-void QSOMag::write_mag(const vector<QSOSED> &seds) {
+void QSOMag::write_mag(const vector<QSOSED>& seds) {
   // write the output files
-  for (const auto &sed : seds) {
+  for (const auto& sed : seds) {
     sed.writeMag(outasc, sbinOut, sdatOut, allFlt, magtyp);
   }
 }
@@ -860,7 +886,7 @@ void QSOMag::write_mag(const vector<QSOSED> &seds) {
 
 // Constructor of the stars adding the keywords missing in the basis class
 // constructor
-StarMag::StarMag(keymap &key_analysed) : Mag(key_analysed) {
+StarMag::StarMag(keymap& key_analysed) : Mag(key_analysed) {
   // Name of the input file, default value "SED"
   lib = ((key_analysed["STAR_LIB_IN"]).split_string("SED", 1))[0];
   // Name of the output file, default value "LIB"
@@ -877,6 +903,9 @@ void StarMag::print_info() {
   cout << "# STAR_LIB_OUT   :"
        << lepharework + "/lib_mag/" + colib + "(.doc & .bin)" << endl;
   cout << "# LIB_ASCII   " << (outasc ? "YES" : "NO") << endl;
+  cout << "# MW_GALAMETZ   " << (applyMilkyWayExtinction ? "YES" : "NO")
+       << endl;
+  cout << "# EXT_MW_CURVE   " << milkyWayExtinction.name << endl;
   time_t result = time(nullptr);
   cout << "# CREATION_DATE " << asctime(std::localtime(&result));
   cout << "#############################################" << endl;
@@ -896,8 +925,10 @@ void StarMag::read_SED() {
     StarSED oneSED("");
     // read one SED in the binary file
     oneSED.readSEDBin(ssedIn);
-    // Check that the lambda coverage is correct
-    oneSED.warning_integrateSED(allFlt, verbose);
+    //  Extrapolate if the lambda coverage isn't correct
+    // first message then extrapolation
+    bool display_warn = oneSED.warning_integrateSED(allFlt, true);
+    display_warn = oneSED.warning_integrateSED(allFlt, false);
 
     vector<StarSED> seds = make_maglib(oneSED);
     write_mag(seds);
@@ -909,21 +940,25 @@ void StarMag::read_SED() {
   }
 }
 
-vector<StarSED> StarMag::make_maglib(const StarSED &sed) {
+vector<StarSED> StarMag::make_maglib(const StarSED& sed) {
   vector<StarSED> allSED;
   StarSED newsed(sed);
   // compute magnitude for the template directly,
   // as for a star no other extinction or redshifting is applied
   newsed.compute_magnitudes(allFlt);
-  // return singleton vector in order to have the same structure as for QSO and
-  // Gal
+  // Compute Milky Way extinction
+  if (applyMilkyWayExtinction) {
+    newsed.compute_milky_way_extinction(milkyWayExtinction, allFlt);
+  }
+  // return singleton vector in order to have the same structure as for QSO
+  // and Gal
   allSED.push_back(newsed);
   return allSED;
 }
 
-void StarMag::write_mag(const vector<StarSED> &seds) {
+void StarMag::write_mag(const vector<StarSED>& seds) {
   // write the output files
-  for (const auto &sed : seds) {
+  for (const auto& sed : seds) {
     sed.writeMag(outasc, sbinOut, sdatOut, allFlt, magtyp);
   }
 }

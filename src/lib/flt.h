@@ -31,11 +31,11 @@ class flt {
    * This transformation leaves the transmission curve integral invariant.
    */
   void trans();
+
+ public:
   /// Sort the filter in lambda, remove the values with a low transmission on
   /// the edge, be sure that the extreme points are ending with 0
   void clean();
-
- public:
   vector<oneElLambda> lamb_trans;
   int id;
   string name;
@@ -81,7 +81,7 @@ class flt {
   /// @param filestream filter file stream
   /// @param transt configuration keyword TRANS_TYPE
   /// @param calibt configuration keyword FILTER_CALIB
-  flt(const int k, ifstream &cname, const int transt, const int calibt)
+  flt(const int k, ifstream& cname, const int transt, const int calibt)
       : flt() {
     id = k;
     transtyp = transt;
@@ -98,23 +98,22 @@ class flt {
   /// @param lmax upper bound of the Heaviside function
   /// @param nsteps number of steps in \f$\lambda\f$ from lmin to lmax
   flt(const double lmin, const double lmax, const int nsteps) : flt() {
+    name = "Heavy";
     id = 0;
     transtyp = 0;
     calibtyp = 0;
     // Generate a heavyside filter. Transmission at 1. Not renormalized.
     // Delta lambda
     double dlamb = (lmax - lmin) / double(nsteps);
+    auto lambdas = make_regular_grid(lmin, lmax, dlamb);
+    lamb_trans.reserve(lambdas.size());
     // First element at T=0
-    oneElLambda litBeg(lmin - 1, 0, 0);
-    lamb_trans.push_back(litBeg);
-    for (int k = 0; k <= nsteps; k++) {
-      double lamb = lmin + double(k) * dlamb;
-      oneElLambda litOne(lamb, 1, 0);
-      lamb_trans.push_back(litOne);
+    // lamb_trans.emplace_back(lmin - 1, 0);
+    for (auto lamb : lambdas) {
+      lamb_trans.emplace_back(lamb, 1);
     }
     // Last element at T=0
-    oneElLambda litFin(lmax + 1, 0, 0);
-    lamb_trans.push_back(litFin);
+    // lamb_trans.emplace_back(lmax + 1, 0);
   }
 
   /* MP: erase all entries in lamb_trans */
@@ -123,9 +122,9 @@ class flt {
   // Prototype of the functions declared in flt.cpp
   /// read a filter ascii file and store its content as a vector of oneElLambda
   /// elements
-  void read(const string &fltFile);
+  void read(const string& fltFile);
   /// build the vector of oneElLambda elements out of a filter stream directly
-  void read(ifstream &sfiltIn);
+  void read(ifstream& sfiltIn);
   /// Mean wavelength of the filter: \f$\lambda_{mean} = \frac{\int
   /// T(\lambda)\lambda d\lambda}{\int T(\lambda) d\lambda}\f$.
   double lambdaMean();
@@ -140,6 +139,7 @@ class flt {
   /// V(\lambda)\, T(\lambda)\, \lambda\, d\lambda}{\int V(\lambda)\,
   /// T(\lambda)\, d\lambda}\f$.
   double lambdaEff();
+
   /// \brief effective wavelength based on a specific calibration SED.
   ///
   /// If \f$C(\lambda)\f$
@@ -150,6 +150,7 @@ class flt {
   double lambdaEff2();
   /// absolute magnitude of the Sun
   double magsun();
+
   /// Vega magnitude in this filter: \f$mag(Vega)
   /// = 2.5\cdot\log10\left(\frac{\int Vega(\lambda)\, T(\lambda)\,
   /// d\lambda}{\int T(\lambda)\, d\lambda}\right)\f$ where \f$Vega(\lambda)\f$
@@ -194,7 +195,15 @@ class flt {
   void compute_all();
 };
 
-void write_output_filter(string &filtfile, string &filtdoc, vector<flt> vecFlt);
+/*! read the filter curve and build the corresponding vectors stored in
+ * attribute allFlt
+ * @param filter_file: file with all the considered filters, as produced by
+ * the filter executable/runner.
+ * @return the vector of flt objects recorded in the input ascii files.
+ */
+vector<flt> read_filters_from_file(const string&);
+
+void write_output_filter(string& filtfile, string& filtdoc, vector<flt> vecFlt);
 vector<flt> read_doc_filters(const string filtFile);
 
 #endif

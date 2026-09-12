@@ -1,6 +1,6 @@
 import os
 import shutil
-import time
+import warnings
 
 import numpy as np
 
@@ -13,11 +13,12 @@ object_types = ["STAR", "GAL", "QSO"]
 
 def process(
     config,
-    input,
+    input_table,
     col_names=None,
     standard_names=False,
     filename=None,
     write_outputs=False,
+    mw_ebv=None,
 ):
     """Run all required steps to produce photometric redshift estimates
 
@@ -25,7 +26,7 @@ def process(
     ==========
     config : dict of lephare.keyword
         The configuration for the run
-    input : astropy.table.Table
+    input_table : astropy.table.Table
         The input table which must satisfy column name requirements depending
         on other optional inputs.
     col_names : list
@@ -37,6 +38,9 @@ def process(
     write_outputs : bool
         Whether to write the output spectra, PDF, and ascii file if specified
         in the config. By default these are not written to save space.
+    mw_ebv: np.array or None
+        Array of Milky Way E(B-V) values for each object in the input catalogue. This
+        will be override by the global MW EBV value if set in the config.
 
     Returns
     =======
@@ -48,50 +52,74 @@ def process(
     # ensure that all values in the keymap are keyword objects
     config = lp.all_types_to_keymap(config)
 
+    # Extract the standard information from astropy table
     id, flux, flux_err, context, zspec, string_data = table_to_data(
-        config, input, col_names=col_names, standard_names=standard_names
+        config, input_table, col_names=col_names, standard_names=standard_names
     )
     ng = len(id)
     n_filters = len(config["FILTER_LIST"].value.split(","))
     print(f"Processing {ng} objects with {n_filters} bands")
-    photz = lp.PhotoZ(config)
-    if config["AUTO_ADAPT"].split_bool("", 1):
-        print("AUTO_ADAPT is set to YES. Computing offsets.")
-        # Loop over all ng galaxies!
-        srclist = []
-        for i in range(ng):
-            one_obj = lp.onesource(i, photz.gridz)
-            one_obj.readsource(str(id[i]), flux[i], flux_err[i], context[i], zspec[i], str(string_data[i]))
-            photz.prep_data(one_obj)
-            srclist.append(one_obj)
 
-        # compute the offset, depending on the option in the code (AUTO_ADAPT, or APPLY_SYSSHIFT
-        a0 = photz.compute_offsets(srclist)
-    else:
-        a0 = np.zeros(len(config["FILTER_LIST"].value.split(",")))
+    # Check that the number of MW EBV given in argument match the number of sources in the table
+    mw_ebv_arg = mw_ebv is not None
+    if mw_ebv_arg:
+        warnings.warn("Milky Way E(B-V) values provided to process. Do not consider the MW external file.")
+        if len(mw_ebv) != ng:
+            raise ValueError(
+                f"Length of mw_ebv {len(mw_ebv)} provide to process does not match number of objects {ng}."
+            )
+
+    # initialize the photoz run
+    photz = lp.PhotoZ(config)
+
+    # Function to initialise one source
+    def create_and_prep_source(i):
+        obj = lp.onesource(i, photz.gridz)
+        obj.readsource(str(id[i]), flux[i], flux_err[i], context[i], zspec[i], str(string_data[i]))
+        if mw_ebv_arg:
+            obj.mw_ebv = mw_ebv[i]
+        photz.prep_data(obj)
+        return obj
+
+    # Define the list of sources to run the photoz and adaptation
+    photozlist = []
+    adaptlist = []
+    for i in range(ng):
+        one_obj = create_and_prep_source(i)
+        photozlist.append(one_obj)
+        # Add the source in the list only if it satisfies the autoadapt selection criteria
+        if photz.belong_autoadapt(one_obj):
+            # Need to recreate the source to have independant objects
+            adaptlist.append(create_and_prep_source(i))
+
+    if not mw_ebv_arg:
+        # Read the EBV from an external file, if not given in argument
+        photz.read_mw_ebv(photozlist)
+        photz.read_mw_ebv(adaptlist)
+
+    # compute the offset, depending on the option in the code (AUTO_ADAPT, or APPLY_SYSSHIFT)
+    a0 = photz.compute_offsets(adaptlist)
     offsets = ",".join(np.array(a0).astype(str))
     offsets = "# Offsets added to the modeled magnitudes (or substracted to the observed): " + offsets + "\n"
     print(offsets)
-
-    # create the onesource objects
-    photozlist = []
-    for i in range(ng):
-        one_obj = lp.onesource(i, photz.gridz)
-        one_obj.readsource(str(id[i]), flux[i], flux_err[i], context[i], zspec[i], str(string_data[i]))
-        photz.prep_data(one_obj)
-        photozlist.append(one_obj)
 
     # Perform the main run
     photz.run_photoz(photozlist, a0)
     # Write outputs if requested
     if write_outputs:
-        photz.write_outputs(photozlist, int(time.time()))
+        photz.write_outputs(photozlist)
     output = photz.build_output_tables(photozlist, para_out=None, filename=filename)
     # Return the table and all the onesource objects
     return output, photozlist
 
 
-def calculate_offsets_from_input(config, input, col_names=None, standard_names=False):
+def calculate_offsets_from_input(
+    config,
+    input_table,
+    col_names=None,
+    standard_names=False,
+    mw_ebv=None,
+):
     """Calculate the zero point offsets for objects with spectroscopic redshifts
 
     We want to have this available as an independent method so that it can be
@@ -101,13 +129,16 @@ def calculate_offsets_from_input(config, input, col_names=None, standard_names=F
     ==========
     config : dict of lephare.keyword
         The configuration for the run
-    input : astropy.table.Table
+    input_table : astropy.table.Table
         The input table which must satisfy column name requirements depending
         on other optional inputs.
     col_names : list
         Input catalogue column names. We will use ordering to determine meaning
     standard_names : bool
         If true we assume standard names.
+    mw_ebv: np.array or None
+        Array of Milky Way E(B-V) values for each object in the input catalogue. This
+        will be override by the global MW EBV value if set in the config.
 
     Returns
     =======
@@ -116,28 +147,46 @@ def calculate_offsets_from_input(config, input, col_names=None, standard_names=F
     """
     config = lp.all_types_to_keymap(config)
     id, flux, flux_err, context, zspec, string_data = table_to_data(
-        config, input, col_names=col_names, standard_names=standard_names
+        config, input_table, col_names=col_names, standard_names=standard_names
     )
     ng = len(id)
     n_filters = len(config["FILTER_LIST"].value.split(","))
     print(f"Processing {ng} objects with {n_filters} bands")
+
+    # Check that the number of MW EBV given in argument match the number of sources in the table
+    mw_ebv_arg = mw_ebv is not None
+    if mw_ebv_arg:
+        warnings.warn("Milky Way E(B-V) values provided to process. Do not consider the MW external file.")
+        if len(mw_ebv) != ng:
+            raise ValueError(
+                f"Length of mw_ebv {len(mw_ebv)} provide to process does not match number of objects {ng}."
+            )
+
     photz = lp.PhotoZ(config)
+
     # Loop over all ng galaxies!
-    srclist = []
+    adaptlist = []
     for i in range(ng):
         one_obj = lp.onesource(i, photz.gridz)
         one_obj.readsource(str(id[i]), flux[i], flux_err[i], context[i], zspec[i], str(string_data[i]))
+        if mw_ebv_arg:
+            one_obj.mw_ebv = mw_ebv[i]
         photz.prep_data(one_obj)
-        srclist.append(one_obj)
+        if photz.belong_autoadapt(one_obj):
+            adaptlist.append(one_obj)
 
-    a0 = photz.compute_offsets(srclist)
+    if not mw_ebv_arg:
+        # Read the EBV from an external file, if not given in argument
+        photz.read_mw_ebv(adaptlist)
+
+    a0 = photz.compute_offsets(adaptlist)
     offsets = ",".join(np.array(a0).astype(str))
     offsets = "Offsets from auto-adapt: " + offsets + "\n"
     print(offsets)
     return a0
 
 
-def table_to_data(config, input, col_names=None, standard_names=False):
+def table_to_data(config, input_table, col_names=None, standard_names=False):
     """Take an astropy table and return the arrays required for a run.
 
     We assume that either the columns are in the standard LePHARE order or
@@ -152,7 +201,7 @@ def table_to_data(config, input, col_names=None, standard_names=False):
     config : dict of lephare.keyword
         The config keymap. We need this to know if we have magnitudes or
         fluxes and to get the filter names.
-    input : astropy.table.Table
+    input_table : astropy.table.Table
         The input catalogue.
     col_names : list of str
         The column names in the default order.
@@ -178,7 +227,7 @@ def table_to_data(config, input, col_names=None, standard_names=False):
     n_filters = len(config["FILTER_LIST"].value.split(","))
     if col_names is not None:
         print("Using user defined column names based on ordering.")
-        assert len(input.colnames) == 2 * n_filters + 4
+        assert len(input_table.colnames) == 2 * n_filters + 4
 
     elif standard_names:
         print(
@@ -194,31 +243,31 @@ def table_to_data(config, input, col_names=None, standard_names=False):
     else:
         cat_fmt = config.get("CAT_FMT", lp.keyword("CAT_FMT", "MEME"))
         print(f"Using user columns from input table assuming they are in the standard {cat_fmt.value} order.")
-        assert len(input.colnames) == 2 * n_filters + 4
+        assert len(input_table.colnames) == 2 * n_filters + 4
         col_names = list(np.full(2 * n_filters + 4, ""))
-        col_names[0] = input.colnames[0]
+        col_names[0] = input_table.colnames[0]
         if cat_fmt.value == "MEME":
-            col_names[1 : 2 * n_filters : 2] = input.colnames[1 : 2 * n_filters : 2]
-            col_names[2 : 2 * n_filters + 1 : 2] = input.colnames[2 : 2 * n_filters + 1 : 2]
+            col_names[1 : 2 * n_filters : 2] = input_table.colnames[1 : 2 * n_filters : 2]
+            col_names[2 : 2 * n_filters + 1 : 2] = input_table.colnames[2 : 2 * n_filters + 1 : 2]
         elif cat_fmt.value == "MMEE":
-            col_names[1 : 2 * n_filters : 2] = input.colnames[1 : n_filters + 1]
-            col_names[2 : 2 * n_filters + 1 : 2] = input.colnames[n_filters + 1 : 2 * n_filters + 1]
-        col_names[-3] = input.colnames[-3]
-        col_names[-2] = input.colnames[-2]
-        col_names[-1] = input.colnames[-1]
+            col_names[1 : 2 * n_filters : 2] = input_table.colnames[1 : n_filters + 1]
+            col_names[2 : 2 * n_filters + 1 : 2] = input_table.colnames[n_filters + 1 : 2 * n_filters + 1]
+        col_names[-3] = input_table.colnames[-3]
+        col_names[-2] = input_table.colnames[-2]
+        col_names[-1] = input_table.colnames[-1]
         # print(col_names)
 
     assert len(col_names) == 2 * n_filters + 4
-    id = [str(i) for i in input[col_names[0]]]
-    flux = input[col_names[1 : 2 * n_filters : 2]]
+    id = [str(i) for i in input_table[col_names[0]]]
+    flux = input_table[col_names[1 : 2 * n_filters : 2]]
     flux = np.array([np.array(flux[c]) for c in flux.colnames])
     flux = flux.T
-    flux_err = input[col_names[2 : 2 * n_filters + 1 : 2]]
+    flux_err = input_table[col_names[2 : 2 * n_filters + 1 : 2]]
     flux_err = np.array([np.array(flux_err[c]) for c in flux_err.colnames])
     flux_err = flux_err.T
-    context = input[col_names[-3]]
-    zspec = input[col_names[-2]]
-    string_data = input[col_names[-1]]
+    context = input_table[col_names[-3]]
+    zspec = input_table[col_names[-2]]
+    string_data = input_table[col_names[-1]]
 
     # Perform basic checks on table
     # Replace nans with -99

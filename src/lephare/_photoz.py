@@ -30,6 +30,9 @@ class PhotoZ:  # noqa: F811
     }
 
     def build_output_tables(self, srclist, para_out=None, filename=None):
+        t = Table()
+        if len(srclist) == 0:
+            return srclist
         # BUILD THE TABLE OF THE OUTPUT PARAMETERS
         d = np.loadtxt(os.path.join(os.environ["LEPHAREDIR"], "alloutputkeys.txt"), dtype="str")
         allkeys = {}
@@ -37,10 +40,12 @@ class PhotoZ:  # noqa: F811
             allkeys[label] = (d[count, 1], d[count, 2])
         outkeys = readOutKeywords(self.outpara) if para_out is None else readOutKeywords(para_out)
         outputs = {}
-        t = Table()
         for key in outkeys:
+            # Extract the type and the attribute of src to be extracted
+            # for a given keyword (first coloumn)
             typ, attr = allkeys[key]
             is_array = False
+            # In case the attribute is an array
             if "[" in attr:
                 tmp = attr.split("[")
                 attr = tmp[0]
@@ -50,11 +55,21 @@ class PhotoZ:  # noqa: F811
                     index = tmp[1][1:-2]
                 is_array = True
             outputs[key] = []
+            # Loop over all sources
             for src in srclist:
-                if is_array is False:
+                # computing the flag on the redshit if requested
+                if key == "Z_FLAG":
+                    outputs[key].append(src.compute_quality_flag())
+                elif is_array is False:
                     outputs[key].append(getattr(src, attr))
                 else:
-                    outputs[key].append(getattr(src, attr)[index])
+                    getarr = getattr(src, attr)
+                    # Check the value exists at [index] (otherwise put nan)
+                    try:
+                        outputs[key].append(getarr[index])
+                    except (KeyError, IndexError, TypeError):
+                        outputs[key].append(np.nan)
+            # Add all the valiues to a table
             t.add_column(Column(name=key, dtype=typ, data=outputs[key]))
         # NOW THE PDFS, IN THE SAME TABLE FOR NOW
         for typ in self.pdftype:
@@ -67,10 +82,10 @@ class PhotoZ:  # noqa: F811
             # use the last src object to get the x-axis values
             t.meta[typ] = " ".join(str(e) for e in pdf.xaxis)
 
-        if filename is not None:
+        if filename is not None:  # pragma no cover
             self.save_table(t, filename)
         return t
 
-    def save_table(self, table, filename, fmt="fits", overwrite=True):
+    def save_table(self, table, filename, fmt="fits", overwrite=True):  # pragma no cover
         if fmt == "fits":
             table.write(filename, "fits", overwrite)

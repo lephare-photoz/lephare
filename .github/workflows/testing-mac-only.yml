@@ -41,6 +41,7 @@ jobs:
           channels:
             - conda-forge
         init-shell: bash
+        generate-run-shell: false
 
     - name: Install lephare and dependencies
       run: |

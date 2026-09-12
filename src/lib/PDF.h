@@ -87,8 +87,9 @@ class PDF {
    *
    * @param inVal: input value
    * @return : return i so that pdf[i]<=inVal<pdf[i+1] if possible
-   * else return i=0 if inVal<pdf[0] or i=size-1 if inVal>pdf[size-1]
-   !*/
+   * else return i=0 if inVal<pdf[0] or i=size-1 if inVal>pdf[size-1].
+   * In other words, overflows go to boundary bins.
+   */
   size_t index(
       const double inVal) const;     ///< return the vector index where the
                                      ///< pdf vector is closest to inVal
@@ -111,14 +112,14 @@ class PDF {
    * and any of the other 2 points is more than 0.5 in x.
    *
    * In all these cases, the returned pair is current min and its y value.
-   !*/
+   */
   pair<double, double> improve_extremum(bool is_chi2) const;
 
   /*! Compute the confidence interval around the chi2min
    *  @param level: confidence level (value to add to the min chi2
    * to define the interval)
    * @return pair: the bounds of the interval
-  !*/
+   */
   pair<double, double> confidence_interval(float level);
 
   /*! Compute a credible interval on the PDF
@@ -128,7 +129,7 @@ class PDF {
    * side of `val`, unless the boundaries are met. In this case
    * the mass is maximised to the boundary, and the rest is allocated on
    * the other side
-  !*/
+   */
   pair<double, double> credible_interval(float level, double val);
 
   //! Get the index of the PDF max value
@@ -149,7 +150,7 @@ class PDF {
  * obtain a parabolic approximation around them
  *
  * @return (xmin, ymin): the pair of the approximate minimum
- !*/
+ */
 pair<double, double> quadratic_extremum(double x1, double x2, double x3,
                                         double y1, double y2, double y3);
 #endif
