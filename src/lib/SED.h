@@ -77,9 +77,9 @@ class SED {
       sfr,      ///< Star Formation Rate in \f$M_\odot\f$/yr
       ssfr;     ///< Specific SFR, defined as sfr / mass
 
-  double ebv,  ///< E(B-V) extinction value applied to the SED
-      mag0,      ///< z=0 magnitude in the reference band used to derive
-                 ///< absolute magnitudes (see onesource::absmag)
+  double ebv,   ///< E(B-V) extinction value applied to the SED
+      mag0,     ///< z=0 magnitude in the reference band used to derive
+                ///< absolute magnitudes (see onesource::absmag)
       distMod;  ///< Distance modulus of the SED object.
 
   int extlawId;  ///< index of the extinction law when dust attenuation has been
@@ -441,12 +441,12 @@ class GalSED : public SED {
  public:
   vector<double> flEm;  ///< emission-line flux added on top of the continuum,
                         ///< one value per #lamb_flux point
-  string format;         ///< SED input format code (e.g. 'A' for ASCII)
-  double tau,   ///< e-folding timescale (yr) of an exponentially declining
-                ///< star-formation history, SFR(t) \f$\propto e^{-t/\tau}\f$
-      zmet,       ///< stellar metallicity
-      d4000,      ///< 4000 Angstrom break amplitude, defined as the ratio of
-                  ///< the integrated flux in [4050,4250] A over [3750,3950] A
+  string format;        ///< SED input format code (e.g. 'A' for ASCII)
+  double tau,  ///< e-folding timescale (yr) of an exponentially declining
+               ///< star-formation history, SFR(t) \f$\propto e^{-t/\tau}\f$
+      zmet,    ///< stellar metallicity
+      d4000,   ///< 4000 Angstrom break amplitude, defined as the ratio of
+               ///< the integrated flux in [4050,4250] A over [3750,3950] A
       fracEm;  ///< fraction of the emmission line considered
 
   /// Copy constructor from base class
@@ -629,23 +629,23 @@ class StarSED : public SED {
  */
 struct SEDlight {
   vector<object_type> nlib;  ///< object type (GAL/QSO/STAR) of each template
-  vector<int> index,      ///< index in the full SED library
-      nummod,             ///< index in the initial list of rest-frame SEDs
-      extlawId,           ///< index of the extinction law applied
-      index_z0;           ///< index of the z=0 version of the template
-  vector<double> red,   ///< redshift
-      chi2,             ///< best-fit chi2
-      dm,               ///< normalization of the SED
-      luv,              ///< monochromatic UV luminosity (see SED::luv)
-      lopt,             ///< monochromatic optical luminosity (see SED::lopt)
-      lnir,             ///< monochromatic NIR luminosity (see SED::lnir)
-      mag0;             ///< z=0 reference-band magnitude (see SED::mag0)
-  vector<double> ebv,     ///< E(B-V) extinction value
-      lgage,              ///< log age (yr)
-      lgmass,             ///< log stellar mass
-      lgsfr,              ///< log SFR
-      lgssfr,             ///< log specific SFR
-      ltir;               ///< IR luminosity (see SED::ltir)
+  vector<int> index,         ///< index in the full SED library
+      nummod,                ///< index in the initial list of rest-frame SEDs
+      extlawId,              ///< index of the extinction law applied
+      index_z0;              ///< index of the z=0 version of the template
+  vector<double> red,        ///< redshift
+      chi2,                  ///< best-fit chi2
+      dm,                    ///< normalization of the SED
+      luv,                   ///< monochromatic UV luminosity (see SED::luv)
+      lopt,            ///< monochromatic optical luminosity (see SED::lopt)
+      lnir,            ///< monochromatic NIR luminosity (see SED::lnir)
+      mag0;            ///< z=0 reference-band magnitude (see SED::mag0)
+  vector<double> ebv,  ///< E(B-V) extinction value
+      lgage,           ///< log age (yr)
+      lgmass,          ///< log stellar mass
+      lgsfr,           ///< log SFR
+      lgssfr,          ///< log specific SFR
+      ltir;            ///< IR luminosity (see SED::ltir)
   vector<array<double, 3>> colRF;  ///< rest-frame colors of each template
 
   /*! Append the relevant attributes of a SED template to this light library

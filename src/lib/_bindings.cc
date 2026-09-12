@@ -149,8 +149,10 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("lambdaEff2", &flt::lambdaEff2,
            "Effective wavelength of the filter for a flat-flambda source.")
       .def("vega", &flt::vega, "Vega magnitude of the filter.")
-      .def("magsun", &flt::magsun, "Absolute magnitude of the Sun in this filter.")
-      .def("abcorr", &flt::abcorr, "AB-to-Vega magnitude offset for this filter.")
+      .def("magsun", &flt::magsun,
+           "Absolute magnitude of the Sun in this filter.")
+      .def("abcorr", &flt::abcorr,
+           "AB-to-Vega magnitude offset for this filter.")
       .def("width", &flt::width, "Effective width of the filter.")
       .def("lmin", &flt::lmin, "Lower bound of the filter transmission curve.")
       .def("lmax", &flt::lmax, "Upper bound of the filter transmission curve.")
@@ -229,8 +231,8 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("compute_fluxes", &SED::compute_fluxes,
            "Compute synthetic fluxes in a set of filters.")
       .def("generate_spectra", &SED::generate_spectra,
-           "Generate the redshifted, normalized spectrum.", py::arg("zin") = 0.0,
-           py::arg("dmin") = 1.0)
+           "Generate the redshifted, normalized spectrum.",
+           py::arg("zin") = 0.0, py::arg("dmin") = 1.0)
       .def("emplace_back", &SED::emplace_back)
       .def("set_vector", &SED::set_vector)
       .def("redshift", &SED::redshift)
@@ -324,7 +326,8 @@ PYBIND11_MODULE(_lephare, mod) {
            "Apply a redshift-dependent correction to the [OIII] doublet.",
            py::arg("flag"))
       .def("calc_ph", &GalSED::calc_ph,
-           "Compute the number of ionizing photons shortward of the H/He edges.");
+           "Compute the number of ionizing photons shortward of the H/He "
+           "edges.");
 
   /******** CLASS SEDLib *********/
   applySEDLibTemplate<StarSED>(mod, "StarSEDLib");
@@ -336,31 +339,30 @@ PYBIND11_MODULE(_lephare, mod) {
   mod.def("readPEGASE", &readPEGASE);
 
   /******** CLASS MAG *********/
-#define MAGDEFS(c, n)                                     \
-  (py::class_<c>(mod, n)                                  \
-       .def(py::init<keymap&>(), py::arg("key_analysed")) \
-       .def(py::init<>())                                 \
-       .def("open_files", &c::open_files,                 \
-            "Open the input/output streams needed for the library build.") \
-       .def("close_files", &c::close_files, "Close all opened files.") \
-       .def("print_info", &c::print_info,                 \
-            "Print a summary of the run configuration.")  \
-       .def("read_ext", &c::read_ext,                     \
-            "Read the extinction laws into extAll.")       \
-       .def("read_B12", &c::read_B12,                     \
-            "Read the Bethermin et al. (2012) dust emission templates.") \
-       .def("set_zgrid", &c::set_zgrid,                   \
-            "Set the redshift grid (dz, zmin, zmax).")     \
-       .def("read_SED", &c::read_SED,                     \
-            "Read the SED files and apply extinction corrections.") \
-       .def("write_doc", &c::write_doc,                   \
-            "Write the library documentation file.")       \
-       .def("make_maglib", &c::make_maglib,                \
-            "Build the synthetic magnitude library for one SED.") \
-       .def("write_mag", &c::write_mag,                    \
-            "Write the computed magnitudes to the output library.") \
-       .def_readonly("extAll", &c::extAll)                \
-       .def_readonly("opaAll", &c::opaAll)                \
+#define MAGDEFS(c, n)                                                          \
+  (py::class_<c>(mod, n)                                                       \
+       .def(py::init<keymap&>(), py::arg("key_analysed"))                      \
+       .def(py::init<>())                                                      \
+       .def("open_files", &c::open_files,                                      \
+            "Open the input/output streams needed for the library build.")     \
+       .def("close_files", &c::close_files, "Close all opened files.")         \
+       .def("print_info", &c::print_info,                                      \
+            "Print a summary of the run configuration.")                       \
+       .def("read_ext", &c::read_ext, "Read the extinction laws into extAll.") \
+       .def("read_B12", &c::read_B12,                                          \
+            "Read the Bethermin et al. (2012) dust emission templates.")       \
+       .def("set_zgrid", &c::set_zgrid,                                        \
+            "Set the redshift grid (dz, zmin, zmax).")                         \
+       .def("read_SED", &c::read_SED,                                          \
+            "Read the SED files and apply extinction corrections.")            \
+       .def("write_doc", &c::write_doc,                                        \
+            "Write the library documentation file.")                           \
+       .def("make_maglib", &c::make_maglib,                                    \
+            "Build the synthetic magnitude library for one SED.")              \
+       .def("write_mag", &c::write_mag,                                        \
+            "Write the computed magnitudes to the output library.")            \
+       .def_readonly("extAll", &c::extAll)                                     \
+       .def_readonly("opaAll", &c::opaAll)                                     \
        .def_readonly("allFlt", &c::allFlt))
   MAGDEFS(StarMag, "StarMag");
   MAGDEFS(QSOMag, "QSOMag");
@@ -455,7 +457,8 @@ PYBIND11_MODULE(_lephare, mod) {
   mod.attr("maptype") = maptype;
   py::class_<onesource>(mod, "onesource", py::dynamic_attr())
       .def(py::init<>())
-      .def(py::init<const int, vector<double>>(), py::arg("pos"), py::arg("gridz"))
+      .def(py::init<const int, vector<double>>(), py::arg("pos"),
+           py::arg("gridz"))
       .def("setPriors", &onesource::setPriors,
            "Set the absolute magnitude prior range for the fit.",
            py::arg("magabsB"), py::arg("magabsF"))
@@ -474,7 +477,8 @@ PYBIND11_MODULE(_lephare, mod) {
            "Flag which bands are used in the fit and which are upper limits.",
            py::arg("gbcont"), py::arg("contforb"))
       .def("convertFlux", &onesource::convertFlux,
-           "Convert the input magnitudes/fluxes to the internal flux convention.",
+           "Convert the input magnitudes/fluxes to the internal flux "
+           "convention.",
            py::arg("catmag"), py::arg("allFilters"))
       .def("convertMag", &onesource::convertMag,
            "Convert fluxes to AB magnitudes and their errors.")
@@ -490,8 +494,8 @@ PYBIND11_MODULE(_lephare, mod) {
            py::arg("lightLib"), py::arg("flux"), py::arg("valid"),
            py::arg("funz0"), py::arg("bp"), py::arg("restrict"))
       .def("nzprior", &onesource::nzprior,
-           "Compute the N(z) prior weight applied to the chi2.",
-           py::arg("luv"), py::arg("lnir"), py::arg("reds"), py::arg("bp"))
+           "Compute the N(z) prior weight applied to the chi2.", py::arg("luv"),
+           py::arg("lnir"), py::arg("reds"), py::arg("bp"))
       .def("mode", &onesource::mode,
            "Compute the mode of the marginalized redshift PDFs.")
       .def("rm_discrepant", &onesource::rm_discrepant,
@@ -533,7 +537,8 @@ PYBIND11_MODULE(_lephare, mod) {
            "Write this source's output line in the LePHARE ASCII format.",
            py::arg("stout"), py::arg("outkeywords"))
       .def("redden_flux", &onesource::redden_flux,
-           "Apply a per-template reddening correction to a predicted flux array.",
+           "Apply a per-template reddening correction to a predicted flux "
+           "array.",
            py::arg("flux"), py::arg("reddening"))
       .def("writeSpec", &onesource::writeSpec,
            "Write the best-fit spectra to a per-source output file.")
@@ -542,8 +547,8 @@ PYBIND11_MODULE(_lephare, mod) {
            py::arg("lightLib"))
       .def("best_spec_vec", &onesource::best_spec_vec,
            "Flux-averaged best-fit spectrum between two wavelengths.",
-           py::arg("sol"), py::arg("fulllib"), py::arg("lcdm"),
-           py::arg("minl"), py::arg("maxl"))
+           py::arg("sol"), py::arg("fulllib"), py::arg("lcdm"), py::arg("minl"),
+           py::arg("maxl"))
       .def_readwrite("spec", &onesource::spec)
       .def_readwrite("consiz", &onesource::consiz)
       .def_readwrite("mw_ebv", &onesource::mw_ebv)

@@ -21,14 +21,15 @@
 class Mag {
  private:
  protected:
-  object_type object;  ///< type of object (GAL/QSO/STAR) handled by this instance
-  string config;        ///< path to the configuration file (arg -c)
-  cosmo lcdm;            ///< fiducial cosmology used to build the redshift grid
-  string filtFile,       ///< path to the filter list file (keyword FILTER_FILE)
-      magtyp;            ///< magnitude system, "AB" or "VEGA" (keyword MAGTYPE)
-  bool outasc,           ///< whether to also write the library in ASCII format
-      verbose,           ///< verbosity flag
-      add_dust;          ///< whether dust attenuation should be applied
+  object_type
+      object;       ///< type of object (GAL/QSO/STAR) handled by this instance
+  string config;    ///< path to the configuration file (arg -c)
+  cosmo lcdm;       ///< fiducial cosmology used to build the redshift grid
+  string filtFile,  ///< path to the filter list file (keyword FILTER_FILE)
+      magtyp;       ///< magnitude system, "AB" or "VEGA" (keyword MAGTYPE)
+  bool outasc,      ///< whether to also write the library in ASCII format
+      verbose,      ///< verbosity flag
+      add_dust;     ///< whether dust attenuation should be applied
   vector<string> extlaw;  ///< list of extinction law file names to apply
   vector<double> ebv,     ///< grid of E(B-V) values to apply
       magko;              ///< scratch buffer holding the k-corrected
@@ -37,12 +38,12 @@ class Mag {
   vector<int> modext;  ///< (min,max) SED model index ranges to which each
                        ///< extinction law is restricted (keyword MOD_EXTINC),
                        ///< stored as consecutive pairs
-  double dz,   ///< redshift step of the grid
-      zmin,    ///< minimum redshift of the grid
-      zmax;    ///< maximum redshift of the grid
-  string lib,    ///< name of the input SED library
-      colib;     ///< base name (without extension) of the output magnitude
-                 ///< library (keyword GAL_LIB_OUT/QSO_LIB_OUT/STAR_LIB_OUT)
+  double dz,           ///< redshift step of the grid
+      zmin,            ///< minimum redshift of the grid
+      zmax;            ///< maximum redshift of the grid
+  string lib,          ///< name of the input SED library
+      colib;  ///< base name (without extension) of the output magnitude
+              ///< library (keyword GAL_LIB_OUT/QSO_LIB_OUT/STAR_LIB_OUT)
 
   // only for the galaxy, but much easier to keep them here
   string emlines = "NO";  ///< emission line treatment (e.g. "NO", "EMP",
@@ -52,13 +53,13 @@ class Mag {
       docFile,        ///< path to the output .doc file describing the library
       binOutFile,     ///< path to the output binary magnitude library file
       datFile;        ///< path to the output .dat physical parameter file
-  ifstream ssedIn;              ///< input stream for the binary SED library
-  ofstream sdocOut,             ///< output stream for #docFile
-      sbinOut,                  ///< output stream for #binOutFile
-      sdatOut;                  ///< output stream for #datFile
+  ifstream ssedIn;    ///< input stream for the binary SED library
+  ofstream sdocOut,   ///< output stream for #docFile
+      sbinOut,        ///< output stream for #binOutFile
+      sdatOut;        ///< output stream for #datFile
 
-  ext milkyWayExtinction;  ///< Milky Way extinction law, applied when
-                           ///< #applyMilkyWayExtinction is true
+  ext milkyWayExtinction;        ///< Milky Way extinction law, applied when
+                                 ///< #applyMilkyWayExtinction is true
   bool applyMilkyWayExtinction;  ///< whether to apply a Milky Way extinction
                                  ///< correction to the library
 
@@ -104,12 +105,12 @@ class Mag {
   /// instances of class SED
   virtual void read_SED() = 0;
 
-  vector<ext> extAll;      ///< extinction laws read from #extlaw
-  vector<flt> allFlt;      ///< filters read from #filtFile
-  vector<GalSED> B12SED;   ///< Bethermin et al. (2012) dust emission templates
-  vector<double> gridz;    ///< redshift grid values
-  vector<double> gridT,    ///< age of the Universe at each #gridz step
-      gridDM;              ///< distance modulus at each #gridz step
+  vector<ext> extAll;     ///< extinction laws read from #extlaw
+  vector<flt> allFlt;     ///< filters read from #filtFile
+  vector<GalSED> B12SED;  ///< Bethermin et al. (2012) dust emission templates
+  vector<double> gridz;   ///< redshift grid values
+  vector<double> gridT,   ///< age of the Universe at each #gridz step
+      gridDM;             ///< distance modulus at each #gridz step
 
   vector<opa> opaAll;  ///< extragalactic opacity curves used along the line
                        ///< of sight

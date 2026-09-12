@@ -58,67 +58,67 @@ class onesource {
   /// computeEmFlux()
   unordered_map<string, double> results_emission_lines;
 
-  long cont,      ///< input context: bitmask of bands used, as read from the
-                  ///< catalogue (see globals.h CHECK_CONTEXT_BIT)
-      new_cont;   ///< context rebuilt after masking bands with invalid flux
-                  ///< or error, see fltUsed()
-  vector<double> ab,       ///< observed flux, one value per band
-      sab,                 ///< uncertainty on #ab
-      mab,                 ///< observed AB magnitude, one value per band
-      msab,                ///< uncertainty on #mab
-      magm,                ///< predicted (model) apparent magnitude for the
-                           ///< best-fit template, one value per band
-      magm0,               ///< predicted magnitude at z=0 for the best-fit
-                           ///< template, one value per band
-      absmagPred,          ///< predicted absolute magnitude, one value per
-                           ///< band
-      magPred,             ///< predicted apparent magnitude, one value per
-                           ///< band
-      kap,                 ///< k-correction, one value per band
-      mabs,                ///< absolute magnitude, one value per band (see
-                           ///< absmag())
-      emabs,               ///< uncertainty on #mabs, one value per band
-      ab_ori,              ///< copy of #ab before the MW-dust / zero-point
-                           ///< corrections, see keepOri()
-      sab_ori,             ///< copy of #sab before the corrections applied
-                           ///< to #ab_ori, see keepOri()
-      mab_ori,             ///< copy of #mab before the corrections applied to
-                           ///< #ab_ori, see keepOri()
-      abIR,                ///< observed flux used for the FIR fit, i.e. #ab
-                           ///< minus the stellar predicted flux where
-                           ///< applicable (see subtract_stellar_component())
-      sabIR;               ///< uncertainty on #abIR
-  vector<int> busnorma,   ///< per-band flag: 1 if the band is used in the
-                          ///< main fit, 0 otherwise (see fltUsed())
-      busul,              ///< per-band flag: 1 if the band is treated as an
-                          ///< upper limit, 0 otherwise
-      busfir,             ///< per-band flag: 1 if the band is used in the
-                          ///< FIR fit, 0 otherwise (see fltUsedIR())
-      bscfir,             ///< per-band flag: 1 if the band is used to scale
-                          ///< the FIR fit, 0 otherwise
-      absfilt;            ///< index of the filter used to compute the
-                          ///< absolute magnitude, one value per element of
-                          ///< #mabs (see absmag())
-  string spec,     ///< identifier of the source (catalogue "spec" column)
-      str_inp;     ///< additional free-form input string carried through to
-                   ///< the output (see readsource())
-  int pos,          ///< position (row index) of the source in the catalogue
-      nbused,       ///< number of bands used in the main fit
-      nbul,         ///< number of bands treated as upper limits
-      nbusIR,       ///< number of bands used to scale the FIR fit
-      indminSec,    ///< index in the library of the secondary chi2 minimum
-                    ///< (see secondpeak())
-      indminIR,     ///< index in the FIR library of the chi2 minimum
-      imasminIR;    ///< model number of the FIR fit minimum
-  double zs,        ///< spectroscopic redshift, as read from the catalogue
       dm,           ///< unused legacy member (kept for ABI/output-format
                     ///< stability; see SED::dm for the per-template scaling
                     ///< actually used in the fit)
-      consiz;       ///< redshift adopted for this source when computing
-                    ///< derived/rest-frame quantities (e.g. absolute
-                    ///< magnitudes, k-corrections); typically the best-fit
-                    ///< or median photo-z depending on the calling context
-  array<double, 3> zmin,   ///< redshift of the chi2 minimum, for GAL/QSO/STAR
+  long cont,     ///< input context: bitmask of bands used, as read from the
+                 ///< catalogue (see globals.h CHECK_CONTEXT_BIT)
+      new_cont;  ///< context rebuilt after masking bands with invalid flux
+                 ///< or error, see fltUsed()
+  vector<double> ab,     ///< observed flux, one value per band
+      sab,               ///< uncertainty on #ab
+      mab,               ///< observed AB magnitude, one value per band
+      msab,              ///< uncertainty on #mab
+      magm,              ///< predicted (model) apparent magnitude for the
+                         ///< best-fit template, one value per band
+      magm0,             ///< predicted magnitude at z=0 for the best-fit
+                         ///< template, one value per band
+      absmagPred,        ///< predicted absolute magnitude, one value per
+                         ///< band
+      magPred,           ///< predicted apparent magnitude, one value per
+                         ///< band
+      kap,               ///< k-correction, one value per band
+      mabs,              ///< absolute magnitude, one value per band (see
+                         ///< absmag())
+      emabs,             ///< uncertainty on #mabs, one value per band
+      ab_ori,            ///< copy of #ab before the MW-dust / zero-point
+                         ///< corrections, see keepOri()
+      sab_ori,           ///< copy of #sab before the corrections applied
+                         ///< to #ab_ori, see keepOri()
+      mab_ori,           ///< copy of #mab before the corrections applied to
+                         ///< #ab_ori, see keepOri()
+      abIR,              ///< observed flux used for the FIR fit, i.e. #ab
+                         ///< minus the stellar predicted flux where
+                         ///< applicable (see subtract_stellar_component())
+      sabIR;             ///< uncertainty on #abIR
+  vector<int> busnorma,  ///< per-band flag: 1 if the band is used in the
+                         ///< main fit, 0 otherwise (see fltUsed())
+      busul,             ///< per-band flag: 1 if the band is treated as an
+                         ///< upper limit, 0 otherwise
+      busfir,            ///< per-band flag: 1 if the band is used in the
+                         ///< FIR fit, 0 otherwise (see fltUsedIR())
+      bscfir,            ///< per-band flag: 1 if the band is used to scale
+                         ///< the FIR fit, 0 otherwise
+      absfilt;           ///< index of the filter used to compute the
+                         ///< absolute magnitude, one value per element of
+                         ///< #mabs (see absmag())
+  string spec,           ///< identifier of the source (catalogue "spec" column)
+      str_inp;    ///< additional free-form input string carried through to
+                  ///< the output (see readsource())
+  int pos,        ///< position (row index) of the source in the catalogue
+      nbused,     ///< number of bands used in the main fit
+      nbul,       ///< number of bands treated as upper limits
+      nbusIR,     ///< number of bands used to scale the FIR fit
+      indminSec,  ///< index in the library of the secondary chi2 minimum
+                  ///< (see secondpeak())
+      indminIR,   ///< index in the FIR library of the chi2 minimum
+      imasminIR;  ///< model number of the FIR fit minimum
+  double zs,      ///< spectroscopic redshift, as read from the catalogue
+      consiz;     ///< redshift adopted for this source when computing
+                  ///< derived/rest-frame quantities (e.g. absolute
+                  ///< magnitudes, k-corrections); typically the best-fit
+                  ///< or median photo-z depending on the calling context
+  array<double, 3> zmin,  ///< redshift of the chi2 minimum, for GAL/QSO/STAR
                           ///< (indices 0/1/2 respectively)
       chimin,             ///< chi2 of the minimum, for GAL/QSO/STAR
       dmmin;              ///< template scaling of the minimum, for
@@ -127,9 +127,9 @@ class onesource {
                           ///< GAL/QSO/STAR
       imasmin;            ///< model (template) number of the chi2 minimum,
                           ///< for GAL/QSO/STAR
-  double zminIR,    ///< redshift of the FIR fit chi2 minimum
-      chiminIR,     ///< chi2 of the FIR fit minimum
-      dmminIR;      ///< template scaling of the FIR fit minimum
+  double zminIR,          ///< redshift of the FIR fit chi2 minimum
+      chiminIR,           ///< chi2 of the FIR fit minimum
+      dmminIR;            ///< template scaling of the FIR fit minimum
   array<double, 4>
       priorLib;  ///< absolute magnitude prior range, as [bright,faint] for
                  ///< the galaxy library followed by [bright,faint] for the
@@ -142,9 +142,9 @@ class onesource {
   /// Marginalized redshift PDF summary for galaxy templates: median (resp.
   /// chi2-minimum, PDF mode) at index 0, followed by the 68/90/99% credible
   /// interval [low,high] bounds at indices 1-6 (see generatePDF())
-  vector<double> zgmed,   ///< median of the marginalized PDF, and CI bounds
-      zgmin,              ///< chi2-minimum solution, and CI bounds
-      zgmode;             ///< mode of the marginalized PDF, and CI bounds
+  vector<double> zgmed,  ///< median of the marginalized PDF, and CI bounds
+      zgmin,             ///< chi2-minimum solution, and CI bounds
+      zgmode;            ///< mode of the marginalized PDF, and CI bounds
   /// Same as zgmed/zgmin/zgmode, for the QSO/AGN library
   vector<double> zqmed,  ///< median of the marginalized PDF, and CI bounds
       zqmin,             ///< chi2-minimum solution, and CI bounds
@@ -160,7 +160,7 @@ class onesource {
       Ldustmed,            ///< log dust luminosity, and CI bounds
       col1med,             ///< first rest-frame color, and CI bounds
       col2med,             ///< second rest-frame color, and CI bounds
-      ebvmed,   ///< E(B-V), same layout as #massmed
+      ebvmed,              ///< E(B-V), same layout as #massmed
       Mrefmed;  ///< reference absolute magnitude, same layout as #massmed
   /// log IR luminosity marginalized PDF summary (median, then 68/90/99%
   /// credible interval bounds), filled by uncertaintiesBayIR()
@@ -169,21 +169,21 @@ class onesource {
   /// Emission-line flux of the best-fit template rescaled to this source,
   /// indexed as in SED::fac_line (see computeEmFlux())
   array<double, 65> fluxEL_SED = {0};
-  double limits_zmax = 20.;   ///< faint-end redshift limit used by limits()
-  double limits_Mfaint = 0;   ///< faint absolute magnitude limit, computed by
-                              ///< limits()
+  double limits_zmax = 20.;  ///< faint-end redshift limit used by limits()
+  double limits_Mfaint = 0;  ///< faint absolute magnitude limit, computed by
+                             ///< limits()
   /// Marginalized PDF for each physical/redshift quantity, keyed by the
   /// index defined in #maptype (e.g. 0 for stellar mass, 9 for the galaxy
   /// redshift); see the onesource(pos, gridz) constructor for the binning
   unordered_map<int, PDF> pdfmap;
-  double zsec,       ///< redshift of the secondary chi2 minimum
-      zsecChi2,      ///< chi2 of the secondary minimum
-      zsecEbv,       ///< E(B-V) of the secondary minimum
-      zsecScale,     ///< template scaling of the secondary minimum
-      zsecProb,      ///< PDF probability of the secondary minimum
-      zsecAge;       ///< age of the secondary minimum
-  int zsecMod,       ///< model (template) number of the secondary minimum
-      zsecExtlaw;    ///< extinction law index of the secondary minimum
+  double zsec,     ///< redshift of the secondary chi2 minimum
+      zsecChi2,    ///< chi2 of the secondary minimum
+      zsecEbv,     ///< E(B-V) of the secondary minimum
+      zsecScale,   ///< template scaling of the secondary minimum
+      zsecProb,    ///< PDF probability of the secondary minimum
+      zsecAge;     ///< age of the secondary minimum
+  int zsecMod,     ///< model (template) number of the secondary minimum
+      zsecExtlaw;  ///< extinction law index of the secondary minimum
 
   /// Milky Way E(B-V) for this source (galactic coordinates), used by
   /// correct_classic_mw()/correct_galametz_mw(); -99. if not set
