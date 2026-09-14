@@ -141,7 +141,7 @@ def compute_pdz_score(pdz, zgrid, nb_peak_thresh=2, height_thresh=0.43,
         sigma = pdz_stats.approximate_gaussian(zbest, error=error)
         good_sigma = zgrid[1] - zgrid[0]
         tail_mass = pdz_stats.tail_mass(zbest, sigma=sigma, good_sigma=good_sigma)
-        number_mod = pdz_stats.number_mod(threshold=height_thresh, distance=10)
+        number_mod = pdz_stats.number_mod(threshold=height_thresh, distance=5)
         peak_ratio = pdz_stats.peak_ratio()
 
         score = 0
