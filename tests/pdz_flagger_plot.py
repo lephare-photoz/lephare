@@ -97,7 +97,7 @@ class PDZStats:
         except (RuntimeError, ValueError):
             return error
 
-    def number_mod(self, threshold=0.43, distance=10):
+    def number_mod(self, threshold=0.43, distance=5):
         """Count significant local maxima."""
         if not np.any(self.pdz):
             return 0
@@ -139,7 +139,7 @@ def compute_pdz_score(pdz, zgrid, nb_peak_thresh=2, height_thresh=0.43,
         sigma = pdz_stats.approximate_gaussian(zbest, error=error)
         good_sigma = zgrid[1] - zgrid[0]
         tail_mass = pdz_stats.tail_mass(zbest, sigma=sigma, good_sigma=good_sigma)
-        number_mod = pdz_stats.number_mod(threshold=height_thresh, distance=1)
+        number_mod = pdz_stats.number_mod(threshold=height_thresh, distance=5)
         peak_ratio = pdz_stats.peak_ratio()
 
         score = 0
