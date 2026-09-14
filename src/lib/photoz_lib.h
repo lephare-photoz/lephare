@@ -57,16 +57,33 @@ class PhotoZ {
   string mwExtCurve;
 
  public:
-  vector<vector<double>> flux, flux_no_mw, fluxIR, reddening;
-  string mw_ref_mod;
-  vector<double> zLib, zLibIR;
-  vector<SED*> fullLib, fullLibIR;
-  SEDlight lightLib;
-  vector<flt> allFilters;
-  vector<double> gridz;
-  vector<string> outkeywords, pdftype;
-  int imagm;
-  string outputHeader, outpara;
+  vector<vector<double>> flux,  ///< predicted flux of each GAL/QSO library
+                                ///< template, in each band, after any MW
+                                ///< dust correction
+      flux_no_mw,               ///< same as #flux, before MW dust correction
+      fluxIR,                   ///< predicted flux of each FIR library
+                                ///< template, in each band
+      reddening;                ///< per-template, per-band Galametz MW
+                                ///< reddening correction (see
+                                ///< onesource::redden_flux)
+  string mw_ref_mod;     ///< path (relative to $LEPHAREDIR) of the reference
+                         ///< stellar SED used to normalise the Milky Way
+                         ///< extinction correction (MW_REFERENCE_MODEL keyword)
+  vector<double> zLib,   ///< redshift of each GAL/QSO library template
+      zLibIR;            ///< redshift of each FIR library template
+  vector<SED*> fullLib,  ///< GAL/QSO/STAR library templates (owned)
+      fullLibIR;         ///< FIR library templates (owned)
+  SEDlight lightLib;     ///< lightweight (memory-reduced) copy of #fullLib used
+                         ///< during the fit
+  vector<flt> allFilters;      ///< filter set the libraries were built with
+  vector<double> gridz;        ///< redshift grid of the GAL/QSO libraries
+  vector<string> outkeywords,  ///< requested output column keywords
+                               ///< (OUTPUT_PARA / CAT_OUT_PARA)
+      pdftype;                 ///< requested output PDF types (PDZ_OUT)
+  int imagm;                   ///< number of filters/bands
+  string outputHeader,         ///< accumulated header text describing the run
+                        ///< configuration, written atop the output catalogue
+      outpara;  ///< accumulated documentation of the output columns
   bool one_mw_ebv =
       false;  ///< Whether or not a single MW E(B-V) value is applied to
               ///< all sources, as opposed to a different value for each
@@ -79,6 +96,13 @@ class PhotoZ {
                                      ///< of the code, based on the selected
                                      ///< Milky Way extinction curve and the
                                      ///< filter transmission curves.
+  /*! Build a PhotoZ instance: parse every keyword needed to run the fit
+   * (input catalogue format, priors, Milky Way extinction options, output
+   * format...), then read and merge the GAL/QSO/STAR (and, if configured,
+   * FIR) binary magnitude libraries built beforehand by mag_gal, checking
+   * their cosmology/redshift-grid consistency
+   * @param key_analysed: map of keyword/value pairs
+   */
   PhotoZ(keymap& key_analysed);
 
   // LCOV_EXCL_START
@@ -90,10 +114,32 @@ class PhotoZ {
   }
   // LCOV_EXCL_STOP
 
+  /*! Determine the per-band magnitude zero-point offsets (a0) to apply
+   * before fitting, either from the APPLY_SYSSHIFT keyword if it matches
+   * the number of filters, or by running the auto-adaptation procedure
+   * (AUTO_ADAPT=YES) on @p adaptSources, or 0 for every band otherwise
+   * @param adaptSources: sources (typically with a reliable spec-z) used
+   * for the auto-adaptation procedure
+   * @return the per-band offset, one value per filter
+   */
   vector<double> compute_offsets(vector<onesource*> adaptSources);
 
-  vector<double> run_autoadapt(vector<onesource*>);
+  /*! Iteratively fit @p adaptSources at their spec-z and derive, for each
+   * band, the median magnitude offset between the observed and predicted
+   * magnitudes, until convergence or 10 iterations
+   * @param adaptSources: sources (typically with a reliable spec-z) used
+   * for the auto-adaptation procedure
+   * @return the per-band offset, one value per filter
+   */
+  vector<double> run_autoadapt(vector<onesource*> adaptSources);
 
+  /*! Fit every source in the given list against the GAL/QSO/STAR (and, if
+   * configured, FIR) libraries, compute their uncertainties and physical
+   * parameters, and write the per-source outputs (ascii catalogue, spectra,
+   * PDFs) as configured
+   * @param sources: sources to fit
+   * @param a0: per-band magnitude zero-point offset to apply before fitting
+   */
   void run_photoz(vector<onesource*> sources, const vector<double>& a0);
 
   /*! Fit a source based on the PhotoZ configuration
@@ -108,7 +154,7 @@ class PhotoZ {
   void fit_uncertainties(onesource& source);
 
   /*! Compute the physical parameters derived from the fit to a source
-   * \param source: the onesource object under consideration
+   * \param src: the onesource object under consideration
    */
   void physical_parameters(onesource& src);
 
@@ -129,7 +175,7 @@ class PhotoZ {
                                                      double const maxl);
 
   /*! Write out the spectrum solutions to ascii
-   * \param source: the onesource object under consideration
+   * \param src: the onesource object under consideration
    * \param outputDir: output directory
    * The ascii file will be outputDir/Id<source.spec>.spec
    */
@@ -138,18 +184,62 @@ class PhotoZ {
     src.writeSpec(fullLib, fullLibIR, lcdm, allFilters, outputDir);
   }
 
+  /*! Build the header line(s) of the output ascii catalogue from the list
+   * of requested output keywords
+   * @param outkeywords: output column keywords (OUTPUT_PARA / CAT_OUT_PARA)
+   * @return the formatted header, ready to be written to the output file
+   */
   string prep_header(vector<string> outkeywords);
 
+  /*! Write the per-source outputs (ascii catalogue line, spectra, PDFs,
+   * .chi files) for every source in the list, as configured by the
+   * relevant keywords (CAT_OUT, SPEC_OUT, PDZ_OUT, FULL_CHI_OUT...)
+   * @param sources: sources to write out
+   */
   void write_outputs(vector<onesource*> sources);
 
-  void read_lib(vector<SED*>& fullLib, int& ind, int nummodpre[3],
+  /*! Read a binary SED/magnitude library (and its .doc file) into memory,
+   * checking cosmology/redshift-grid consistency with any library already
+   * read via check_consistency()
+   * @param libFull: SED library to append the read templates to
+   * @param ind: running count of templates read so far, updated in place
+   * @param nummodpre: per-type (GAL/QSO/STAR) running count of models read
+   * so far, used to renumber templates across successive libraries
+   * @param libName: base name of the library to read (in
+   * $LEPHAREWORK/lib_mag/)
+   * @param filtname: filled with the FILTER_FILE used to build this library
+   * @param emMod: [min,max] model index range with emission lines, filled
+   * from the library's EM_LINES keyword
+   * @param babs: filled with the reference-band index for absolute
+   * magnitudes (MAG_REF keyword)
+   */
+  void read_lib(vector<SED*>& libFull, int& ind, int nummodpre[3],
                 const string libName, string& filtname, vector<int> emMod,
                 int& babs);
 
+  /*! Verify that the cosmology and redshift grid of the library being read
+   * are consistent with any library already read (all GAL/QSO libraries
+   * used together must share the same cosmology and redshift grid), and
+   * that the Milky Way Galametz option matches between the library and the
+   * current run
+   * @param keys: keywords read from the library's .doc file
+   */
   void check_consistency(keymap& keys);
 
+  /*! Parse one catalogue line into a source's identifier, fluxes/magnitudes
+   * and errors, and (for the LONG format) its context and spectroscopic
+   * redshift
+   * @param oneObj: the source to fill in place
+   * @param line: one line of the input catalogue (CAT_IN)
+   */
   void readsource(onesource* oneObj, const string line);
   // LCOV_EXCL_START
+  /*! Build, read and prepare a single source from one catalogue line
+   * @param nobj: position (row index) to give the new source
+   * @param line: one line of the input catalogue (CAT_IN)
+   * @return the newly allocated, ready-to-fit source (ownership passed to
+   * the caller)
+   */
   onesource* yield(const int nobj, const string line) {
     onesource* oneObj = new onesource(nobj, gridz);
     readsource(oneObj, line);
@@ -158,11 +248,43 @@ class PhotoZ {
   };
   // LCOV_EXCL_STOP
 
+  /*! Read the input catalogue (CAT_IN) and keep only the sources eligible
+   * for the auto-adaptation of zero-points: those with a spec-z within
+   * [adzmin, adzmax] and a magnitude in the #fl_auto band within
+   * [auto_thresmin, auto_thresmax]. Also applies read_mw_ebv() and
+   * read_externalz() to the selected sources.
+   * @return the selected sources (heap-allocated; ownership passed to the
+   * caller)
+   */
   vector<onesource*> read_autoadapt_sources();
+  /*! Read every source of the input catalogue (CAT_IN), regardless of
+   * spec-z or magnitude, applying read_mw_ebv() and read_externalz()
+   * @return all sources (heap-allocated; ownership passed to the caller)
+   */
   vector<onesource*> read_photoz_sources();
+  /*! Set each source's Milky Way E(B-V) (onesource::mw_ebv), either from a
+   * single global value (MW_GLOBAL_EBV, #one_mw_ebv true) or by matching
+   * each source's Id against a per-source file (MW_EBV_FILE)
+   * @param sources: sources to set the E(B-V) of, in place
+   */
   void read_mw_ebv(vector<onesource*> sources);
+  /*! Override each source's spectroscopic redshift (onesource::zs) by
+   * matching its Id against an external file (EXTERNALZ_FILE); sources not
+   * found in the file keep their catalogue redshift. No-op if
+   * EXTERNALZ_FILE is "NONE".
+   * @param sources: sources to override the redshift of, in place
+   */
   void read_externalz(vector<onesource*> sources);
+  /*! Prepare every source in the list for fitting (see the single-source
+   * overload)
+   * @param sources: sources to prepare, in place
+   */
   void prep_data(vector<onesource*> sources);
+  /*! Prepare a source for fitting: convert magnitudes to fluxes if needed,
+   * rescale the flux errors, derive magnitudes, keep a copy of the
+   * original values, and flag which bands are used based on the context
+   * @param oneObj: the source to prepare, in place
+   */
   void prep_data(onesource* oneObj);
 
   //! Return the indexes over zlib vector on which to run the fit

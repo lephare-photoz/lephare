@@ -29,11 +29,16 @@ void applySEDLibTemplate(modT& m, std::string name) {
       .def(py::init<string, string>(), py::arg("config"), py::arg("typ"))
       .def(py::init<keymap&, string, string>(), py::arg("key_analysed"),
            py::arg("config"), py::arg("typ"))
-      .def("print_info", &SEDLib<x>::print_info)
-      .def("read_model_list", &SEDLib<x>::read_model_list)
-      .def("readSED", &SEDLib<x>::readSED)
-      .def("write_SED_lib", &SEDLib<x>::write_SED_lib)
-      .def("close_output_files", &SEDLib<x>::close_output_files);
+      .def("print_info", &SEDLib<x>::print_info,
+           "Print the run configuration onscreen and to the doc file.")
+      .def("read_model_list", &SEDLib<x>::read_model_list,
+           "Read every SED listed in the input list into the library.")
+      .def("readSED", &SEDLib<x>::readSED,
+           "Read one SED file into the library.")
+      .def("write_SED_lib", &SEDLib<x>::write_SED_lib,
+           "Write the library to its binary/doc output files.")
+      .def("close_output_files", &SEDLib<x>::close_output_files,
+           "Close the library's output file streams.");
 }
 
 PYBIND11_MODULE(_lephare, mod) {
@@ -50,10 +55,15 @@ PYBIND11_MODULE(_lephare, mod) {
       .def(py::init<oneElLambda>(), py::arg("elIn"), "copy constructor")
       .def_readwrite("lamb", &oneElLambda::lamb)
       .def_readwrite("val", &oneElLambda::val);
-  mod.def("make_regular_grid", &make_regular_grid);
-  mod.def("make_union_grid", &make_union_grid);
-  mod.def("common_interpolate_combined", &common_interpolate_combined);
-  mod.def("restricted_resampling", &restricted_resampling);
+  mod.def("make_regular_grid", &make_regular_grid,
+          "Build a regularly-spaced wavelength grid between two bounds.");
+  mod.def("make_union_grid", &make_union_grid,
+          "Build the sorted union of two wavelength grids.");
+  mod.def("common_interpolate_combined", &common_interpolate_combined,
+          "Cross-interpolate two (x,y) functions onto their combined grid.");
+  mod.def("restricted_resampling", &restricted_resampling,
+          "Cross-interpolate two oneElLambda vectors restricted to their "
+          "wavelength intersection.");
   mod.def("concatenate_and_sort", &concatenate_and_sort,
           "concatenate and sort two vector of oneElLambda objects. Sorting is "
           "in increasing lambda.");
@@ -81,7 +91,7 @@ PYBIND11_MODULE(_lephare, mod) {
            "standard constructor")
       .def_readwrite("lamb_opa", &opa::lamb_opa)
       .def_readwrite("opared", &opa::red)
-      .def("read", &opa::read);
+      .def("read", &opa::read, "Read the opacity curve from its file.");
   //   .def("lmin", &opa::lmin, "return smallest wavelength stored")
   //   .def("lmax", &opa::lmax, "return largest wavelength stored")
 
@@ -95,8 +105,10 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("lmin", &ext::lmin, "return smallest wavelength stored")
       .def_readonly("lmax", &ext::lmax, "return largest wavelength stored")
       .def("read", &ext::read, py::arg("extFile"), "read an extinction file")
-      .def("add_element", &ext::add_element)
-      .def("set_vector", &ext::set_vector);
+      .def("add_element", &ext::add_element,
+           "Append one (lambda, value) point to the extinction curve.")
+      .def("set_vector", &ext::set_vector,
+           "Set the extinction curve from lambda and value arrays.");
   mod.def("compute_filter_extinction", &compute_filter_extinction,
           "Compute extinction in a filter band.");
   mod.def("cardelli_ext", &cardelli_ext,
@@ -113,23 +125,33 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readwrite("value", &keyword::value)
       .def(py::init())
       .def(py::init<string, string>(), py::arg("n"), py::arg("v"))
-      .def("expand_path", &keyword::expand_path)
-      .def("split_string", &keyword::split_string)
-      .def("split_int", &keyword::split_int)
-      .def("split_long", &keyword::split_long)
-      .def("split_double", &keyword::split_double)
-      .def("split_bool", &keyword::split_bool)
+      .def("expand_path", &keyword::expand_path,
+           "Expand $LEPHAREDIR/$LEPHAREWORK environment variables in value.")
+      .def("split_string", &keyword::split_string,
+           "Split value into a list of strings, using default_val if unset.")
+      .def("split_int", &keyword::split_int,
+           "Split value into a list of ints, using default_val if unset.")
+      .def("split_long", &keyword::split_long,
+           "Split value into a list of longs, using default_val if unset.")
+      .def("split_double", &keyword::split_double,
+           "Split value into a list of doubles, using default_val if unset.")
+      .def("split_bool", &keyword::split_bool,
+           "Split value into a list of bools, using default_val if unset.")
       .def("__repr__", [](const keyword& a) {
         return "(" + a.name + ", " + a.value + ")";
       });
 
-  mod.def("read_command", [](std::vector<std::string> args) {
-    std::vector<char*> cstrs;
-    cstrs.reserve(args.size());
-    for (auto& s : args) cstrs.push_back(const_cast<char*>(s.c_str()));
-    return read_command(cstrs.size(), cstrs.data());
-  });
-  mod.def("read_config", &read_config);
+  mod.def(
+      "read_command",
+      [](std::vector<std::string> args) {
+        std::vector<char*> cstrs;
+        cstrs.reserve(args.size());
+        for (auto& s : args) cstrs.push_back(const_cast<char*>(s.c_str()));
+        return read_command(cstrs.size(), cstrs.data());
+      },
+      "Parse command-line-style arguments into a keymap.");
+  mod.def("read_config", &read_config,
+          "Read a .para configuration file into a dict.");
 
   /******** CLASS FLT *********/
   py::class_<flt>(mod, "flt", py::dynamic_attr())
@@ -173,9 +195,12 @@ PYBIND11_MODULE(_lephare, mod) {
         }
         return result;
       });
-  mod.def("read_filters_from_file", &read_filters_from_file);
-  mod.def("write_output_filter", &write_output_filter);
-  mod.def("read_doc_filters", &read_doc_filters);
+  mod.def("read_filters_from_file", &read_filters_from_file,
+          "Read all filters listed in a filter documentation file.");
+  mod.def("write_output_filter", &write_output_filter,
+          "Write a filter set to its binary and doc output files.");
+  mod.def("read_doc_filters", &read_doc_filters,
+          "Read the filters described by a filter doc file.");
 
   /******** CLASS SED *********/
   py::class_<SED>(mod, "SED")
@@ -415,24 +440,45 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readwrite("mw_classic_extinction_values",
                      &PhotoZ::mw_classic_extinction_values)
       .def(py::init<keymap&>())
-      .def("read_autoadapt_sources", &PhotoZ::read_autoadapt_sources)
-      .def("belong_autoadapt", &PhotoZ::belong_autoadapt)
-      .def("read_photoz_sources", &PhotoZ::read_photoz_sources)
-      .def("read_mw_ebv", &PhotoZ::read_mw_ebv)
-      .def("prep_data", static_cast<void (PhotoZ::*)(vector<onesource*>)>(
-                            &PhotoZ::prep_data))
+      .def(
+          "read_autoadapt_sources", &PhotoZ::read_autoadapt_sources,
+          "Read the catalogue sources eligible for zero-point auto-adaptation.")
+      .def("belong_autoadapt", &PhotoZ::belong_autoadapt,
+           "Whether a source qualifies for the auto-adapt sample "
+           "(spec-z and magnitude in range).")
+      .def("read_photoz_sources", &PhotoZ::read_photoz_sources,
+           "Read every source of the input catalogue.")
+      .def("read_mw_ebv", &PhotoZ::read_mw_ebv,
+           "Set each source's Milky Way E(B-V), from a global value or a "
+           "per-source file.")
+      .def(
+          "prep_data",
+          static_cast<void (PhotoZ::*)(vector<onesource*>)>(&PhotoZ::prep_data),
+          "Prepare a list of sources for fitting.")
       .def("prep_data",
-           static_cast<void (PhotoZ::*)(onesource*)>(&PhotoZ::prep_data))
-      .def("run_autoadapt", &PhotoZ::run_autoadapt)
-      .def("run_photoz", &PhotoZ::run_photoz)
-      .def("fit", &PhotoZ::fit)
-      .def("fit_uncertainties", &PhotoZ::fit_uncertainties)
-      .def("physical_parameters", &PhotoZ::physical_parameters)
-      .def("best_template", &PhotoZ::best_template)
-      .def("write_spectrum", &PhotoZ::write_spectrum)
-      .def("write_outputs", &PhotoZ::write_outputs)
-      .def("validLib", &PhotoZ::validLib)
-      .def("compute_offsets", &PhotoZ::compute_offsets);
+           static_cast<void (PhotoZ::*)(onesource*)>(&PhotoZ::prep_data),
+           "Prepare a single source for fitting (fluxes, errors, context).")
+      .def("run_autoadapt", &PhotoZ::run_autoadapt,
+           "Derive per-band zero-point offsets from a set of spec-z sources.")
+      .def("run_photoz", &PhotoZ::run_photoz,
+           "Fit every source in the list and write the configured outputs.")
+      .def("fit", &PhotoZ::fit, "Fit a single source against the libraries.")
+      .def("fit_uncertainties", &PhotoZ::fit_uncertainties,
+           "Compute the marginalized PDFs and confidence intervals for a "
+           "fitted source.")
+      .def("physical_parameters", &PhotoZ::physical_parameters,
+           "Compute the physical parameters derived from a source's fit.")
+      .def("best_template", &PhotoZ::best_template,
+           "Spectrum of a source's best-fit template for one solution type.")
+      .def("write_spectrum", &PhotoZ::write_spectrum,
+           "Write a source's best-fit spectra to an ascii file.")
+      .def("write_outputs", &PhotoZ::write_outputs,
+           "Write the per-source outputs (catalogue, spectra, PDFs).")
+      .def("validLib", &PhotoZ::validLib,
+           "Indices of the library templates compatible with a redshift.")
+      .def(
+          "compute_offsets", &PhotoZ::compute_offsets,
+          "Determine the per-band zero-point offsets to apply before fitting.");
   // mod.def("read_lib", [](const string& libName, int ind, vector<int>
   // emMod, int babs) { 			vector<SED*> libFull; int
   // nummodpre[3]; 			string filtname; vector<double>
@@ -450,9 +496,14 @@ PYBIND11_MODULE(_lephare, mod) {
   // std::make_tuple(allFilters, Fexiste);
   // 			      }
   // );
-  mod.def("readOutKeywords", &readOutKeywords);
-  mod.def("bestFilter", &bestFilter);
-  mod.def("maxkcolor", &maxkcolor);
+  mod.def("readOutKeywords", &readOutKeywords,
+          "Parse the requested output column keywords.");
+  mod.def("bestFilter", &bestFilter,
+          "Filter(s) best matching a rest-frame reference wavelength per "
+          "redshift bin.");
+  mod.def("maxkcolor", &maxkcolor,
+          "Maximum rest-frame color allowed for the k-correction, per "
+          "redshift bin.");
 
   mod.attr("maptype") = maptype;
   py::class_<onesource>(mod, "onesource", py::dynamic_attr())
@@ -621,20 +672,33 @@ PYBIND11_MODULE(_lephare, mod) {
   py::class_<PDF>(mod, "PDF")
       .def(py::init<double, double, size_t>(), py::arg("min"), py::arg("max"),
            py::arg("size"))
-      .def("normalization", &PDF::normalization)
-      .def("chi2toPDF", &PDF::chi2toPDF)
-      .def("chi2mini", &PDF::chi2mini)
-      .def("uncMin", &PDF::uncMin)
-      .def("index", &PDF::index)
-      .def("get_max", &PDF::get_max)
-      .def("get_maxid", &PDF::get_maxid)
-      .def("secondMax", &PDF::secondMax)
-      .def("size", &PDF::size)
-      .def("cumulant", &PDF::cumulant)
-      .def("levelCumu2x", &PDF::levelCumu2x)
-      .def("credible_interval", &PDF::credible_interval)
-      .def("confidence_interval", &PDF::confidence_interval)
-      .def("improve_extremum", &PDF::improve_extremum)
+      .def("normalization", &PDF::normalization,
+           "Normalize the PDF to unit integral (trapezoidal rule).")
+      .def("chi2toPDF", &PDF::chi2toPDF,
+           "Convert the stored chi2 curve to a probability density.")
+      .def("chi2mini", &PDF::chi2mini, "Index of the chi2 minimum.")
+      .def("uncMin", &PDF::uncMin,
+           "Confidence interval bounds around the chi2 minimum.",
+           py::arg("dchi"))
+      .def("index", &PDF::index,
+           "Index of the xaxis bin closest to a given value.", py::arg("inVal"))
+      .def("get_max", &PDF::get_max, "Maximum value of the PDF.")
+      .def("get_maxid", &PDF::get_maxid, "Index of the PDF maximum.")
+      .def("secondMax", &PDF::secondMax,
+           "Find secondary peaks in the PDF, sorted by probability.",
+           py::arg("win"))
+      .def("size", &PDF::size, "Number of points on the xaxis grid.")
+      .def("cumulant", &PDF::cumulant,
+           "Un-normalized cumulative distribution of the PDF.")
+      .def("levelCumu2x", &PDF::levelCumu2x,
+           "xaxis value at a given cumulative-probability level.",
+           py::arg("xval"))
+      .def("credible_interval", &PDF::credible_interval,
+           "Bayesian credible interval around the PDF median.")
+      .def("confidence_interval", &PDF::confidence_interval,
+           "Confidence interval from the cumulative distribution.")
+      .def("improve_extremum", &PDF::improve_extremum,
+           "Refine the grid extremum by quadratic interpolation.")
       .def_readwrite("vPDF", &PDF::vPDF)
       .def_readwrite("xaxis", &PDF::xaxis)
       .def_readwrite("chi2", &PDF::chi2)
@@ -642,5 +706,6 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readwrite("secondP", &PDF::secondP)
       .def_readwrite("ind", &PDF::ind)
       .def_readwrite("secondInd", &PDF::secondInd);
-  mod.def("quadratic_extremum", &quadratic_extremum);
+  mod.def("quadratic_extremum", &quadratic_extremum,
+          "Quadratic-interpolation extremum of three (x,y) points.");
 }  // PYBIND11_MODULE

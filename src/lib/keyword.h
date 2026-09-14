@@ -30,6 +30,9 @@ class keyword {
     name = "No name";
     value = "";
   };
+  /// Build a keyword with an explicit name and raw string value
+  /// @param n: keyword name, stored in #name
+  /// @param v: raw string value, stored in #value
   keyword(string n, string v) {
     name = n;
     value = v;

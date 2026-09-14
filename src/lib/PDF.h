@@ -37,9 +37,25 @@ class PDF {
   }
 
  public:
-  vector<double> vPDF;
-  vector<double> chi2, xaxis, secondX, secondP;
-  vector<int> ind, secondInd;
+  vector<double> vPDF;  ///< probability density value at each #xaxis point
+  vector<double> chi2,  ///< chi2 value at each #xaxis point (alternative
+                        ///< storage to #vPDF for the chi2 curve)
+      xaxis,            ///< linearly-sampled grid the PDF/chi2 is stored on
+      secondX,          ///< x position of each secondary peak found by
+                        ///< secondMax(), sorted from highest to smallest
+      secondP;          ///< probability of each secondary peak in #secondX
+  /// @warning intended (per the constructor's comment) to hold, for each
+  /// #xaxis bin, the index of the best-matching SED template at that
+  /// redshift/parameter value, but it is initialised to 0 and never
+  /// populated anywhere in the current codebase. As a result secondMax()'s
+  /// #secondInd output is always 0, which onesource::secondpeak() then uses
+  /// to index the SED library: every secondary-solution attribute it
+  /// reports other than the redshift itself and its probability (i.e.
+  /// zsecEbv, zsecExtlaw, zsecScale, zsecMod, zsecAge, indminSec) is
+  /// silently wrong.
+  vector<int> ind,
+      secondInd;  ///< rank-sorted #ind value at each secondary peak found
+                  ///< by secondMax(); see the @warning on #ind above
 
   //! Empty constructor, needed by \ref onesource constructor
   PDF() { ; }
@@ -67,6 +83,9 @@ class PDF {
    */
   double normalization();
 
+  /// Compute the cumulative distribution of #vPDF over #xaxis (trapezoidal
+  /// rule), un-normalized (starts at 0, ends at the total integral)
+  /// @return the cumulative distribution, one value per #xaxis point
   vector<double> cumulant();
 
   /*!
@@ -96,8 +115,14 @@ class PDF {
   void secondMax(const double win);  ///< search for high peaks in The ML
                                      ///< function vs xaxis, and sort them from
                                      ///< highest to smallest peaks in ML
-  double levelCumu2x(float xval);    // find the xaxis value corresponding to a
-                                     // level in the cumulative function
+  /*! Find the #xaxis value corresponding to a given level of the normalized
+   * cumulative distribution
+   * @param xval: target cumulative-probability level, in [0,1] (or in
+   * percent, i.e. up to 100, which is converted internally)
+   * @return the interpolated #xaxis value at that cumulative level, or
+   * -99.9 if it could not be bracketed
+   */
+  double levelCumu2x(float xval);
 
   /*!
    * Improve the the grid extremum by quadratic approximation around it

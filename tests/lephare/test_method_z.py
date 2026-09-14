@@ -1,9 +1,8 @@
 import os
 
+import lephare as lp
 import numpy as np
 import pytest
-
-import lephare as lp
 
 
 def _build_cosmos_lsst_photoz(z_method):
