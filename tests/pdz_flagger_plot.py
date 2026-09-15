@@ -22,12 +22,15 @@ def parse_args():
 
     parser.add_argument("--zgrid", required=True, help="Redshift grid as ZSTEP,ZMIN,ZMAX (dz,zmin,zmax)")
 
+    parser.add_argument("--cat", default=None, help="Path to the LePHARE catalog")
+
     parser.add_argument("--row", type=int, default=0, help="Maximum number of PDZ rows to process (None)")
 
     return parser.parse_args()
 
 args = parse_args()
 PDZ_PATH = args.pdz
+CAT_PATH = args.cat
 row = args.row
 ZGRID = args.zgrid
 ZSTEP, ZMIN, ZMAX = np.asarray(ZGRID.split(',')).astype(float)
@@ -157,8 +160,9 @@ def compute_pdz_score(pdz, zgrid, nb_peak_thresh=2, height_thresh=0.43,
 
         return int(score), zbest, error, peak_ratio, tail_mass, number_mod, sigma
 
-def plot_single_pdz(pdz_path, zgrid, row=None, nb_peak_thresh=2, height_thresh=0.43,
+def plot_single_pdz(pdz_path, zgrid, row=None, CAT_OUT_zspec=None, nb_peak_thresh=2, height_thresh=0.43,
                     tail_thresh=0.23, peak_ratio_thresh=0.1, error_thresh=0.1):
+
     row = row if row is not None else 0
     pdz_file = np.loadtxt(pdz_path)
     pdz_row = pdz_file[row][1:] / np.max(pdz_file[row][1:])
@@ -183,15 +187,34 @@ def plot_single_pdz(pdz_path, zgrid, row=None, nb_peak_thresh=2, height_thresh=0
     plt.legend()
 
     # Annotate metrics
-    plt.text(0.02, 0.95, f"σ ≈ {sigma:.3f}\nTail mass ≈ {tail_mass:.3f}\nFlag = {score}", 
-             transform=plt.gca().transAxes, fontsize=10, va='top')
+    if CAT_OUT_zspec is not None:
+        def read_zspec(CAT_OUT_zspec, row):
+            with open(CAT_OUT_zspec, "r") as f:
+                lines = f.readlines()
+                header_line = None
+                for line in lines:
+                    if line.startswith("# IDENT  Z_BEST"): #line used for the header, always starts like this
+                        header_line = line
+                        break
+            if header_line:
+                column_names = header_line.strip("#").strip().split()
+                i_zspec = column_names.index('ZSPEC')
+                zspec = np.loadtxt(CAT_OUT_zspec)[row, i_zspec]
+                return zspec
+
+        zspec = read_zspec(CAT_OUT_zspec, row)
+        plt.text(0.02, 0.95, f"σ ≈ {sigma:.3f}\nTail mass ≈ {tail_mass:.3f}\nFlag = {score}\nz spec = {zspec}", 
+                transform=plt.gca().transAxes, fontsize=10, va='top')
+    else:
+        plt.text(0.02, 0.95, f"σ ≈ {sigma:.3f}\nTail mass ≈ {tail_mass:.3f}\nFlag = {score}", 
+                transform=plt.gca().transAxes, fontsize=10, va='top')
 
 
     plt.tight_layout()
     plt.show()
 
 #plot one pdz for example
-plot_single_pdz(PDZ_PATH, z_grid, row = row)
+plot_single_pdz(PDZ_PATH, z_grid, row = row, CAT_OUT_zspec=CAT_PATH)
 
 
 # #display statistics from given catalog
