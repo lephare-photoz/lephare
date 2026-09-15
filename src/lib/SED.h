@@ -45,7 +45,7 @@ class SED {
   vector<double>
       milky_way_extinction;     ///< attenuation of the model in each band
   double band_pass_correction;  ///< bpc of the model
-  string name;
+  string name;                  ///< name identifying this SED
   bool has_emlines;  ///< True if the emission lines have been computed, false
                      ///< if not
 
@@ -77,8 +77,9 @@ class SED {
       sfr,      ///< Star Formation Rate in \f$M_\odot\f$/yr
       ssfr;     ///< Specific SFR, defined as sfr / mass
 
-  double ebv,  ///< E(B-V) extinction value applied to the SED
-      mag0,
+  double ebv,   ///< E(B-V) extinction value applied to the SED
+      mag0,     ///< z=0 magnitude in the reference band used to derive
+                ///< absolute magnitudes (see onesource::absmag)
       distMod;  ///< Distance modulus of the SED object.
 
   int extlawId;  ///< index of the extinction law when dust attenuation has been
@@ -99,8 +100,20 @@ class SED {
    * \param type One of g/G, q/Q or s/S for GAL, QSO, or Star type objects
    */
   SED(const string name, int nummod = 0, string type = "G");
+  /*! Constructor additionally setting the age and age-grid index of the SED
+   * \param nameC Arbitrary name for the SED object
+   * \param tauC currently unused in this base-class constructor (kept for
+   * signature compatibility; see GalSED::tau for the star-formation
+   * e-folding timescale)
+   * \param ageC age of the stellar population, stored in #age
+   * \param nummodC Identification number of the SED object
+   * \param typeC One of g/G, q/Q or s/S for GAL, QSO, or Star type objects
+   * \param idAgeC index of the age for this SED object, stored in #idAge
+   */
   SED(const string nameC, double tauC, double ageC, int nummodC, string typeC,
       int idAgeC);
+  /// Copy constructor
+  /// @param p: the SED object to copy
   SED(SED const& p) {
     idAge = p.idAge;
     lamb_flux = p.lamb_flux;
@@ -170,6 +183,15 @@ class SED {
   /// the file, and is finally sorted by ascending lambda. More complex input
   /// types are treated in inherited class methods.
   void read(const string& sedFile);
+  /*! Check that the SED spectral range fully covers the given filters, once
+   * redshifted, and extend #lamb_flux with zero-flux points at the blue
+   * and/or red end if not
+   * \param filters: filters the SED will need to be integrated against
+   * \param display_warning: if true (and the SED is at rest-frame, red==0
+   * for the red-end check), print a warning describing the extrapolation
+   * instead of silently applying it
+   * \return true if a warning was printed for the blue end of the SED
+   */
   bool warning_integrateSED(const vector<flt>& filters, bool display_warning);
 
   /*! integrate the SED between bounds
@@ -181,6 +203,16 @@ class SED {
    */
   double integrate(const double lmin, const double lmax);
 
+  /*! Integrate the SED within the bandpass of a given filter, after
+   * resampling both onto their combined wavelength grid
+   * @param filter: the filter to integrate against
+   * @return a 6-element vector of auxiliary integrals (\f$\int T\,d\lambda\f$,
+   * \f$c\int T/\lambda^2\,d\lambda\f$, \f$\int T\lambda\,d\lambda\f$,
+   * \f$\int FT\,d\lambda\f$, \f$\int FT\lambda\,d\lambda\f$,
+   * \f$\int T/\lambda^2\,d\lambda\f$) used to derive the flux/magnitude in
+   * the filter; returns INVALID_VAL if the SED does not fully cover the
+   * filter bandpass
+   */
   vector<double> integrateSED(const flt& filter);
 
   /*! \brief Generate a calibration SED based on the argument calib
@@ -222,14 +254,40 @@ class SED {
    */
   void compute_milky_way_extinction(const ext& oneExt,
                                     const vector<flt>& filters);
+  /// Integrate #lamb_flux over its full wavelength range using the
+  /// trapezoidal rule
+  /// @return the integrated value
   double trapzd();
+  /*! Add another SED's flux to this one, after resampling both onto a common
+   * wavelength grid
+   * @param addSED: the SED to add
+   * @param rescal: scaling factor applied to @p addSED before summation
+   */
   void sumSpectra(SED addSED, const double rescal);
+  /*! Reduce the memory footprint of #lamb_flux by keeping only the points
+   * needed to integrate the SED within the given filters (plus the two
+   * extreme points, kept for interpolation), when the SED has been
+   * redshifted (red > 0)
+   * @param allFlt: filters the reduced SED must remain compatible with
+   */
   void reduce_memory(vector<flt> allFlt);
 
   /*
    * These functions are different depending on the type of SED
    */
+  /*! Write this SED to the binary/physical-parameters/doc output streams.
+   * Behaviour is specialised in the GalSED/QSOSED/StarSED subclasses.
+   * @param ofs: binary output stream for the SED
+   * @param ofsPhys: output stream for the physical parameters (GAL only)
+   * @param ofsDoc: output stream for the human-readable documentation file
+   */
   virtual void writeSED(ofstream& ofs, ofstream& ofsPhys, ofstream& ofsDoc);
+  /*! Convenience overload of writeSED() opening the output files from their
+   * paths before delegating to the stream-based overload
+   * @param binFile: path to the output binary SED file
+   * @param physFile: path to the output physical parameters file (GAL only)
+   * @param docFile: path to the output documentation file
+   */
   inline void writeSED(const string& binFile, const string& physFile,
                        const string& docFile) {
     ofstream sdocOut, sphysOut, sbinOut;
@@ -253,9 +311,21 @@ class SED {
     writeSED(sbinOut, sphysOut, sdocOut);
   };
 
+  /*! Write the synthetic magnitudes of this SED to the magnitude library
+   * output streams. No-op in the base class; specialised in the
+   * GalSED/QSOSED/StarSED subclasses.
+   * @param outasc: whether to also write an ASCII representation
+   * @param ofsBin: binary output stream for the magnitude library
+   * @param ofsDat: output stream for the physical parameters (GAL only)
+   * @param allFilters: filters the magnitudes were computed for
+   * @param magtyp: magnitude system, "AB" or "VEGA"
+   */
   virtual void writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
                         vector<flt> allFilters, string magtyp) {};
 
+  /// Convenience overload of readSEDBin() opening the input file from its
+  /// path before delegating to the stream-based overload
+  /// @param fname: path to the binary SED library file to read
   inline void readSEDBin(const string& fname) {
     ifstream sbinIn;
     sbinIn.open(fname.c_str(), ios::binary);
@@ -267,23 +337,31 @@ class SED {
   }
   /// read the SED library when it is in binary format
   virtual void readSEDBin(ifstream& ins);
+  /// Read the synthetic magnitudes of this SED from a binary magnitude
+  /// library stream. No-op in the base class; specialised in the
+  /// GalSED/QSOSED/StarSED subclasses.
+  /// @param ins: input stream positioned at this SED's magnitude record
   virtual void readMagBin(ifstream& ins) {};
+  /// Sum the emission-line contribution into the SED flux. No-op in the base
+  /// class; only implemented for GalSED.
   virtual void sumEmLines() {};
   /// for each magnitude \a #mag[k] compute kcorr = mag[k] - mag_z0[k] - distMod
   virtual void kcorrec(const vector<double>& magz0) {};
 
+  /// Compute the physical parameters (mass, SFR, age, luminosities...) of
+  /// the SED. No-op in the base class; only implemented for GalSED (see
+  /// GalSED::compute_luminosities).
   virtual void compute_luminosities() {};
 
   /*! Generate spectrum at given redshift, with given normalization, and
-   * adding emission lines and extragalactic extinction
+   * adding emission lines and extragalactic extinction (using the opacity
+   * curve returned by get_opa_vector() for this SED's redshift)
    * \param zin Redshift of the SED
    * \param dmin Scale normalization of the SED
-   * \param opaAll Vector of opacities to compute extinction along the line of
-   * sight
    */
   void generate_spectra(double zin = 0.0, double dmin = 1.0);
 
-  ///< clean content of base class
+  /// Clear #lamb_flux, #mag, #kcorr and #fac_line
   virtual void clean() {
     lamb_flux.clear();
     mag.clear();
@@ -320,7 +398,7 @@ class SED {
 
   /*! Apply dust extinction to the SED (GAL and GSO only)
    * \param ebv value of E(B-V)
-   * \param obj instance of class ext
+   * \param oneext instance of class ext
    * \param update_ebv: if true, update the stored value of ebv in the SED
    */
   void apply_extinction(const double ebv, const ext& oneext,
@@ -361,10 +439,15 @@ class SED {
 /// concrete SED implementation for galaxy objects (object_type GAL)
 class GalSED : public SED {
  public:
-  vector<double> flEm;
-  string format;
-  double tau, zmet, d4000,
-      fracEm;  //< fraction of the emmission line considered
+  vector<double> flEm;  ///< emission-line flux added on top of the continuum,
+                        ///< one value per #lamb_flux point
+  string format;        ///< SED input format code (e.g. 'A' for ASCII)
+  double tau,  ///< e-folding timescale (yr) of an exponentially declining
+               ///< star-formation history, SFR(t) \f$\propto e^{-t/\tau}\f$
+      zmet,    ///< stellar metallicity
+      d4000,   ///< 4000 Angstrom break amplitude, defined as the ratio of
+               ///< the integrated flux in [4050,4250] A over [3750,3950] A
+      fracEm;  ///< fraction of the emmission line considered
 
   /// Copy constructor from base class
   GalSED(SED const& p) : SED(p) { nlib = GAL; };
@@ -383,6 +466,16 @@ class GalSED : public SED {
 
   /// Standard constructor
   GalSED(const string nameC, int nummodC = 0);
+  /*! Extended constructor also setting the star-formation history
+   * timescale and format
+   * \param name Arbitrary name for the SED object, stored via SED::name
+   * \param tau e-folding timescale (yr) of the star formation history,
+   * stored in #tau
+   * \param age age of the stellar population
+   * \param format SED input format code, stored in #format
+   * \param nummod Identification number of the SED object
+   * \param idAge index of the age for this SED object
+   */
   GalSED(const string name, double tau, double age, string format, int nummod,
          int idAge);
   ~GalSED() { flEm.clear(); }
@@ -402,18 +495,53 @@ class GalSED : public SED {
    *
    */
   void compute_luminosities();
-  vector<double> add_neb_cont(double);
+  /*! Compute the nebular continuum emission from the ionizing photon flux,
+   * add it to #lamb_flux, and return it
+   * @param qi: number flux of H-ionizing photons (see SED::qi)
+   * @return the nebular continuum flux added to each point of #lamb_flux
+   */
+  vector<double> add_neb_cont(double qi);
+  /*! Build a GalSED holding only the emission lines for this template,
+   * dispatching to the physical or empirical recipe selected by @p emtype
+   * @param emtype: emission line method, "PHYS" for the photoionization-based
+   * recipe (requires calc_ph()/add_neb_cont() to have been called
+   * beforehand), "EMP_UV" or "EMP_SFR" for the empirical recipes based
+   * respectively on the UV luminosity or the SFR
+   * @return a new GalSED containing the emission-line spectrum
+   */
   GalSED generateEmSED(const string& emtype);
+  /*! Empirical emission-line recipe based on the absolute UV magnitude
+   * @param MNUV_int: intrinsic absolute NUV magnitude
+   * @param NUVR: NUV-R rest-frame color
+   */
   void generateEmEmpUV(double MNUV_int, double NUVR);
+  /*! Empirical emission-line recipe based on the star formation rate
+   * @param MNUV_int: star formation rate (\f$M_\odot\f$/yr)
+   * @param NUVR: NUV-R rest-frame color
+   */
   void generateEmEmpSFR(double MNUV_int, double NUVR);
+  /*! Physically-motivated emission-line recipe based on photoionization
+   * @param zmet: stellar metallicity
+   * @param qi: number flux of H-ionizing photons (see SED::qi)
+   */
   void generateEmPhys(double zmet, double qi);
+  /// Resample the emission lines onto a spectrum with @p nstep points per
+  /// line, to be summed with the continuum by sumEmLines()
+  /// @param nstep: number of wavelength steps used to sample each line
   void generateEmSpectra(int nstep);
+  /// Add the emission-line flux (#flEm) to the continuum flux
   void sumEmLines();
 
   /// Compute the k-correction in each filter as :
   /// \f$k = mag(z) - mag(z=0) - \mu\f$
   void kcorrec(const vector<double>& magz0);
+  /// Rescale all emission-line fluxes in #fac_line by #fracEm
   void rescaleEmLines();
+  /*! Apply a redshift-dependent correction to the [OIII] doublet flux
+   * relative to H-beta
+   * @param flag: 0 to reference the OIII/Hbeta ratio at z=0, non-zero to
+   * reference it at z=2.12 (needed to match the physical recipe)
+   */
   void zdepEmLines(int flag);
   /*!
    * Compute the number flux of photons able to ionize HeII, HeI, H, and H2
@@ -426,7 +554,7 @@ class GalSED : public SED {
    * In practice the integral is approximated by :
    \f$\sum_{\lambda_{min}}^{w_k}\frac{SED_{j-1}+SED_j}{2}\cdot(\lambda_j-\lambda_{j-1})\cdot\frac{\lambda_j}{hc}\f$.
    *
-   * Results are stored in the \f$q_i$\f array member of size 4 of the SED
+   * Results are stored in the \f$q_i\f$ array member of size 4 of the SED
    instance.
    */
   void calc_ph();
@@ -434,11 +562,13 @@ class GalSED : public SED {
   void writeSED(ofstream& ofs, ofstream& ofsPhys, ofstream& ofsDoc);
   void readSEDBin(ifstream& ins);
 
+  /// Write the synthetic magnitudes and physical parameters of this galaxy
+  /// SED to the magnitude library output streams (see SED::writeMag)
   void writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
                 vector<flt> allFilters, string magtyp) const;
   void readMagBin(ifstream& ins);
 
-  ///< clean content of class
+  /// Clear the base class content (see SED::clean) as well as #flEm
   void clean() {
     SED::clean();
     flEm.clear();
@@ -448,14 +578,23 @@ class GalSED : public SED {
 /// concrete SED implementation for AGN/QSO objects (object_type QSO)
 class QSOSED : public SED {
  public:
+  /// Copy constructor from base class
   QSOSED(SED const& p) : SED(p) { nlib = QSO; };
+  /// Copy constructor
   QSOSED(QSOSED const& p) : SED(p){};
+  /// Standard constructor
+  /// @param nameC: name given to the SED object
+  /// @param nummodC: identification number given to the SED object
   QSOSED(const string nameC, int nummodC = 0) : SED(nameC, nummodC, "QSO"){};
   ~QSOSED(){};
 
+  /// Write the synthetic magnitudes of this QSO SED to the magnitude
+  /// library output streams (see SED::writeMag)
   void writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
                 vector<flt> allFilters, string magtyp) const;
 
+  /// Read the synthetic magnitudes of this QSO SED from a binary magnitude
+  /// library stream (see SED::readMagBin)
   void readMagBin(ifstream& ins);
 };
 
@@ -474,8 +613,12 @@ class StarSED : public SED {
   /// destructor (does nothing)
   ~StarSED() { ; }
 
+  /// Write the synthetic magnitudes of this star SED to the magnitude
+  /// library output streams (see SED::writeMag)
   void writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
                 vector<flt> allFilters, string magtyp) const;
+  /// Read the synthetic magnitudes of this star SED from a binary magnitude
+  /// library stream (see SED::readMagBin)
   void readMagBin(ifstream& ins);
 };
 
@@ -485,12 +628,30 @@ class StarSED : public SED {
  * It propose a light version to be used in fit
  */
 struct SEDlight {
-  vector<object_type> nlib;
-  vector<int> index, nummod, extlawId, index_z0;
-  vector<double> red, chi2, dm, luv, lopt, lnir, mag0;
-  vector<double> ebv, lgage, lgmass, lgsfr, lgssfr, ltir;
-  vector<array<double, 3>> colRF;
+  vector<object_type> nlib;  ///< object type (GAL/QSO/STAR) of each template
+  vector<int> index,         ///< index in the full SED library
+      nummod,                ///< index in the initial list of rest-frame SEDs
+      extlawId,              ///< index of the extinction law applied
+      index_z0;              ///< index of the z=0 version of the template
+  vector<double> red,        ///< redshift
+      chi2,                  ///< best-fit chi2
+      dm,                    ///< normalization of the SED
+      luv,                   ///< monochromatic UV luminosity (see SED::luv)
+      lopt,            ///< monochromatic optical luminosity (see SED::lopt)
+      lnir,            ///< monochromatic NIR luminosity (see SED::lnir)
+      mag0;            ///< z=0 reference-band magnitude (see SED::mag0)
+  vector<double> ebv,  ///< E(B-V) extinction value
+      lgage,           ///< log age (yr)
+      lgmass,          ///< log stellar mass
+      lgsfr,           ///< log SFR
+      lgssfr,          ///< log specific SFR
+      ltir;            ///< IR luminosity (see SED::ltir)
+  vector<array<double, 3>> colRF;  ///< rest-frame colors of each template
 
+  /*! Append the relevant attributes of a SED template to this light library
+   * @param src: the SED template to append
+   * @param colRFin: rest-frame colors of @p src, stored in #colRF
+   */
   void push_sed(SED const& src, const array<double, 3>& colRFin) {
     nlib.push_back(src.nlib);
     index.push_back(src.index);

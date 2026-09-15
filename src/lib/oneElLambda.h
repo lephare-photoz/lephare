@@ -47,8 +47,12 @@ class oneElLambda {
     return lamb < rhs.lamb;
   }
 
+  /// Check that current lamb < rhs (comparison against a bare wavelength)
+  /// @param rhs: the wavelength value to compare to
   inline bool operator<(const double rhs) const { return lamb < rhs; }
 
+  /// Check that current lamb == rhs.lamb
+  /// @param rhs: the other object to compare lambda equality to
   inline bool operator==(const oneElLambda& rhs) const {
     return lamb == rhs.lamb;
   }
@@ -139,6 +143,8 @@ common_interpolate_combined(const std::vector<double>& x1,
  * return the cross interpolation of them restricted to their intersection
  * @param v1 : first vector of oneElLambda
  * @param v2 :  second vector of oneElLambda
+ * @param dx : grid interval if positive, else indicates that the grid is
+ * defined by the union of v1 and v2's lambda values
  * @return x, y1, y2 : x is the restricted union of the x vectors of v1 and v2
  * and y1, y2 are respectively the interpolated vector of v1 and v2 values at x.
  */

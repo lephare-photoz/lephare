@@ -1,3 +1,15 @@
+"""Python-only additions to the C++-bound :class:`lephare.PhotoZ` class.
+
+This module does not define a new class: ``@continueClass`` (see
+:mod:`lephare._utils`) monkey-patches the methods defined below directly
+onto the compiled ``lephare._lephare.PhotoZ`` class (exposed as
+:class:`lephare.PhotoZ`). The full attribute/method reference for that
+class --- ``run_photoz``, ``fit``, ``physical_parameters``,
+``read_photoz_sources``, etc. --- is in the C++ API documentation
+(``PhotoZ`` in ``src/lib/photoz_lib.h``); this module only adds the
+pure-Python convenience method(s) below, which have no C++ equivalent.
+"""
+
 import os
 
 import numpy as np

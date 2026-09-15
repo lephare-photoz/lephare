@@ -96,7 +96,7 @@ double cosmo::time(double z) const {
   } else if (om0 < 1 && om0 > 0 && l0 == 0) {
     double val = (om0 * z - om0 + 2.) / (om0 * (1 + z));
     timy = 2. * sqrt((1 - om0) * (om0 * z + 1)) / (om0 * (1 + z));
-    timy = timy - log10(val + sqrt(val * val - 1));
+    timy = timy - log(val + sqrt(val * val - 1));
     timy = timy * om0 / (2. * hy * pow((1 - om0), 1.5));
 
   } else if (om0 > 1 && l0 == 0) {

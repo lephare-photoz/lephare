@@ -36,11 +36,24 @@ class flt {
   /// Sort the filter in lambda, remove the values with a low transmission on
   /// the edge, be sure that the extreme points are ending with 0
   void clean();
-  vector<oneElLambda> lamb_trans;
-  int id;
-  string name;
-  int transtyp, calibtyp;
-  double leff, lmean, dwidth, ab, tg, veg, msun, fcorr, tpeak;
+  vector<oneElLambda> lamb_trans;  ///< tabulated (lambda, transmission) curve
+  int id;                          ///< index of this filter in the filter set
+  string name;                     ///< filter name (typically its file name)
+  int transtyp,  ///< TRANS_TYPE keyword: 0=energy units, 1=photon units
+                 ///< (converted to energy units at read time, see #trans)
+      calibtyp;  ///< FILTER_CALIB keyword: reference spectrum used by
+                 ///< fcorrec() (0=flat fnu, 1=flat flambda, 2=Bnu=nu,
+                 ///< 3/4/5=other reference spectra, see SED::generateCalib)
+  double leff,   ///< effective wavelength for a flat-fnu source (lambdaEff())
+      lmean,     ///< mean wavelength of the transmission curve (lambdaMean())
+      dwidth,    ///< effective width of the filter (width())
+      ab,        ///< AB-to-Vega magnitude offset for this filter (abcorr())
+      tg,        ///< Thuan-Gunn magnitude correction for this filter
+                 ///< (tgcorr())
+      veg,       ///< Vega magnitude of a flat-fnu source (vega())
+      msun,      ///< absolute magnitude of the Sun in this filter (magsun())
+      fcorr,     ///< flux calibration correction factor (fcorrec())
+      tpeak;     ///< peak transmission value of the filter
 
   flt() {
     leff = -999999.;
@@ -78,7 +91,7 @@ class flt {
   /// \brief generic constructor, with all internals set to unphysical defaults
   ///
   /// @param k index of the filter in the list of filters
-  /// @param filestream filter file stream
+  /// @param cname filter file stream
   /// @param transt configuration keyword TRANS_TYPE
   /// @param calibt configuration keyword FILTER_CALIB
   flt(const int k, ifstream& cname, const int transt, const int calibt)
@@ -192,16 +205,17 @@ class flt {
   /// highest stored lambda value
   double lmax() const { return lamb_trans.back().lamb; }
 
+  /// Compute and cache #fcorr (fcorrec()) and #ab (abcorr())
   void compute_all();
 };
 
 /*! read the filter curve and build the corresponding vectors stored in
  * attribute allFlt
- * @param filter_file: file with all the considered filters, as produced by
+ * @param inputfile: file with all the considered filters, as produced by
  * the filter executable/runner.
  * @return the vector of flt objects recorded in the input ascii files.
  */
-vector<flt> read_filters_from_file(const string&);
+vector<flt> read_filters_from_file(const string& inputfile);
 
 void write_output_filter(string& filtfile, string& filtdoc, vector<flt> vecFlt);
 vector<flt> read_doc_filters(const string filtFile);

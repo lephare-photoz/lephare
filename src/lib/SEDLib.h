@@ -113,8 +113,10 @@ class SEDLib {
                      ///< #physFile (only for typ=GAL)
   string ageFile;  ///< optional file providing the selection of ages to keep in
                    ///< the SED library;
-  double agemin, agemax;
-  vector<double> ageSel;
+  double agemin,   ///< minimum age (yr) to keep, read from #ageFile (GAL only)
+      agemax;      ///< maximum age (yr) to keep, read from #ageFile (GAL only)
+  vector<double> ageSel;  ///< explicit list of ages (yr) to keep, read from
+                          ///< #ageFile (GAL only)
   string physFile;  ///< output file name, locate in $LEPHAREWORK/lib_bin/; used
                     ///< only for typ GAL
 
@@ -123,13 +125,33 @@ class SEDLib {
    * vector, containing the SEDs for the particular type, that will be unique in
    * the derived class
    */
-  vector<T> allSED, resultSED;
+  vector<T> allSED,  ///< SED templates read from #modList
+      resultSED;     ///< SED templates actually written to the library
+                     ///< (after any age selection)
 
   string docFile,  ///< output file for the doc file
       binFile;     ///< output file for the binary SED library
-  string modList, libOut, path;
-  double fscale;
+  string modList,  ///< list of input SED files to read (the "TYPE"_SED
+                   ///< keyword, e.g. GAL_SED)
+      libOut,      ///< base name of the output library (the "TYPE"_LIB
+                   ///< keyword, e.g. GAL_LIB)
+      path;        ///< $LEPHAREDIR-relative directory the SEDs live in
+                   ///< (/sed/STAR, /sed/QSO or /sed/GAL)
+  double fscale;   ///< flux rescaling factor applied to every SED (the
+                   ///< "TYPE"_FSCALE keyword, e.g. GAL_FSCALE)
+  /// Build a SEDLib for a given config file and object type, without
+  /// reading any keyword (used internally as a delegate constructor)
+  /// @param config: configuration file (arg -c), stored in #config
+  /// @param typ: object type (S/Q/G, case-insensitive), normalised and
+  /// stored in #typ
   SEDLib(string config, string typ);
+  /// Build a SEDLib and read the keywords needed to locate the input SED
+  /// list and the output library (#modList, #libOut, #fscale), then open
+  /// the output files
+  /// @param key_analysed: map of keyword/value pairs
+  /// @param config: configuration file (arg -c), stored in #config
+  /// @param typ: object type (S/Q/G, case-insensitive), normalised and
+  /// stored in #typ
   SEDLib(keymap &key_analysed, string config, string typ);
   virtual ~SEDLib();
 
@@ -137,12 +159,13 @@ class SEDLib {
   virtual void print_info();
   /// open the output files in $LEPHAREWORK/lib_bin
   virtual void open_output_files();
-  // close the output files
+  /// close the output files (#sdocOut, #sbinOut, #sphysOut)
   virtual void close_output_files();
-  // read the SEDs from the files
+  /// Read every SED listed in #modList into #allSED, applying the age
+  /// selection (#ageFile/#agemin/#agemax/#ageSel) for galaxies
   void read_model_list();
-  // writes the SED library to the output files (bin and doc)
-  // template class<T>
+  /// Write #resultSED to the output binary/doc (and, for galaxies,
+  /// physical-parameters) files
   void write_SED_lib();
 
   /*! \brief read content of one SED file into a SED vector
@@ -151,7 +174,6 @@ class SEDLib {
    * @param sedFormat format of \a sedFile : can be B(C03), P or F for PEGASE
    * type, or else plain ASCII
    * @param nummod index of the SED; see SED
-   * @param type type of the SED S|Q|G for star|qso|galaxy; see SED
    !*/
   virtual void readSED(string sedFile, string sedFormat, int nummod);
 };
@@ -185,6 +207,13 @@ SEDLib<T>::SEDLib(keymap &key_analysed, string config, string t)
   open_output_files();
 }
 
+/*! GalSED specialization of the keymap constructor: in addition to the
+ * generic behaviour, reads the age-selection keywords (SEL_AGE, AGE_RANGE)
+ * into #ageFile/#agemin/#agemax/#ageSel
+ * @param key_analysed: map of keyword/value pairs
+ * @param config: configuration file (arg -c), stored in #config
+ * @param t: object type, normalised and stored in #typ (always "GAL" here)
+ */
 template <>
 SEDLib<GalSED>::SEDLib(keymap &key_analysed, string config, string t)
     : SEDLib(config, t) {
@@ -355,6 +384,15 @@ void SEDLib<T>::read_model_list() {
   sdocOut << "NUMBER_SED " << nbSED << endl;
 }
 
+/*! \brief GalSED specialization of readSED: additionally applies the age
+ * selection (#ageFile/#agemin/#agemax/#ageSel) and, if provided, only keeps
+ * the requested ages from a multi-age SED file
+ *
+ * @param sedFile the file to read the SED from
+ * @param sedFormat format of \a sedFile : can be B(C03), P or F for PEGASE
+ * type, or else plain ASCII
+ * @param nummod index of the SED; see SED
+ */
 template <>
 void SEDLib<GalSED>::readSED(string sedFile, string sedFormat, int nummod) {
   resultSED.clear();

@@ -126,3 +126,58 @@ def test_adapt_mag():
     # Offset of +2.5 mag multiplies the flux by 10 (like dividing model by 10)
     src.adapt_mag([2.5, 2.5, 2.5])
     assert np.testing.assert_almost_equal(src.ab, [6.414e-31, 1.3182e-30, 1.6905e-30]) is None
+
+
+def _make_src_for_error_rescaling():
+    src = onesource(101, [0, 0.1, 1])
+    ab = [10.0, 20.0, 30.0]
+    sab = [1.0, 2.0, 3.0]  # 10% relative flux error in every band
+    src.readsource("1", ab, sab, 7, 0.5, "test")
+    return src, np.array(ab), np.array(sab)
+
+
+def test_rescale_flux_errors_per_band():
+    # one min_err/fac_err value per band: previously the only branch tested
+    src, ab, sab = _make_src_for_error_rescaling()
+    min_err = np.array([0.05, 0.02, 0.0])
+    fac_err = np.array([1.0, 2.0, 0.5])
+    src.rescale_flux_errors(list(min_err), list(fac_err))
+
+    # replicate the documented formula (fractional error added in quadrature
+    # to min_err, in magnitude space, then rescaled back to flux and by
+    # fac_err)
+    frac_err = 1.086 * sab / ab
+    frac_err = np.sqrt(frac_err**2 + min_err**2)
+    expected = np.abs(ab) * frac_err / 1.086
+    expected = expected * fac_err
+    assert np.allclose(src.sab, expected)
+
+
+def test_rescale_flux_errors_scalar():
+    # a single-element min_err/fac_err is meant to apply to every band alike;
+    # this branch had zero test coverage before this addition
+    src, ab, sab = _make_src_for_error_rescaling()
+    min_err_scalar = 0.03
+    fac_err_scalar = 1.5
+    src.rescale_flux_errors([min_err_scalar], [fac_err_scalar])
+
+    frac_err = 1.086 * sab / ab
+    frac_err = np.sqrt(frac_err**2 + min_err_scalar**2)
+    expected = np.abs(ab) * frac_err / 1.086
+    expected = expected * fac_err_scalar
+    assert np.allclose(src.sab, expected)
+
+    # a scalar and a uniform per-band array with the same value must agree
+    src2, _, _ = _make_src_for_error_rescaling()
+    src2.rescale_flux_errors([min_err_scalar, min_err_scalar, min_err_scalar], [fac_err_scalar] * 3)
+    assert np.allclose(src.sab, src2.sab)
+
+
+def test_rescale_flux_errors_size_mismatch_is_noop():
+    # neither a single value nor one per band: lephare can't apply the
+    # correction and must leave sab untouched (and not crash) rather than
+    # silently guessing; this is the kind of defensive branch that matters
+    # because a silent wrong-size mismatch would otherwise corrupt fits
+    src, ab, sab = _make_src_for_error_rescaling()
+    src.rescale_flux_errors([0.05, 0.05], [1.0, 1.0])
+    assert np.allclose(src.sab, sab)

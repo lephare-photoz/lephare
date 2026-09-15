@@ -1,11 +1,14 @@
 # This workflow will install Python dependencies, run tests and report code coverage with a variety of Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+#
+# Coverage instrumentation (C++ via gcov/lcov, Python via coverage.py) is
+# noticeably slower than a plain test run, so it is reserved for pull
+# requests against main/rc1.0.0 rather than every push. See
+# unit-tests.yml for the fast push/PR test-only workflow.
 
 name: Unit test and code coverage
 
 on:
-  push:
-    branches: [ main, rc1.0.0, 393-cleaning-up-cmakeliststxt-and-fixing-up-an-issue-wrt-pypi ]
   pull_request:
     branches: [ main, rc1.0.0 ]
 

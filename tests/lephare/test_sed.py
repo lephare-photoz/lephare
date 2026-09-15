@@ -291,6 +291,39 @@ def test_calc_ph():
         assert sed.qi[i] == pytest.approx(0.5 * (hc / e) ** 2, 1.0e-3)
 
 
+def test_compute_fluxes():
+    # compute_fluxes() had zero test coverage before this addition. Cross-check
+    # it against an independent scipy integration of the raw SED data, using
+    # the same top-hat filter trick as test_integration2.
+    sed = SED("toto", 10, "GAL")
+    sed.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
+    x, y = sed.data()
+
+    def interp(z):
+        return np.interp(z, x, y, 0, 0)
+
+    c_light = 2.99792458e18  # Angstrom/s, see globals.h
+
+    for lmin, lmax in [(5000, 7000), (5001, 6999)]:
+        hat = flt(lmin, lmax, 100)
+        # top-hat filter: T=1 over [lmin, lmax], so
+        # flux = int(F dlambda) / (c * int(dlambda/lambda^2))
+        num, _ = sciint.quad(interp, lmin, lmax, limit=500, epsabs=1.0e-4, epsrel=1.0e-4)
+        denom, _ = sciint.quad(lambda z: 1.0 / z**2, lmin, lmax, limit=500)
+        expected_flux = num / (c_light * denom)
+
+        result = sed.compute_fluxes([hat])
+        assert len(result) == 1
+        assert result[0] == pytest.approx(expected_flux, rel=1e-3)
+
+    # a filter entirely outside the SED range must return NULL_FLUX, not crash
+    # NB: globals.h's INVALID_FLUX is not exposed to python, but has the same
+    # numeric value as the exposed INVALID_VAL (-9999.0)
+    out_of_range = flt(1, 2, 10)
+    result = sed.compute_fluxes([out_of_range])
+    assert result[0] == lp.INVALID_VAL
+
+
 def test_sumspectra():
     sed1 = GalSED("toto", 10)
     sed1.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
