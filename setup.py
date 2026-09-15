@@ -4,9 +4,9 @@ import platform
 import re
 import subprocess
 import sys
-from distutils.version import LooseVersion
 
-from setuptools import Command, Extension, setup
+from packaging.version import Version
+from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 
 here = pathlib.Path(__file__).parent.resolve()
@@ -24,15 +24,15 @@ class CMakeBuild(build_ext):
     def run(self):
         try:
             out = subprocess.check_output(["cmake", "--version"])
-        except OSError:
+        except OSError as err:
             raise RuntimeError(
                 "CMake must be installed to build the following extensions: "
                 + ", ".join(e.name for e in self.extensions)
-            )
+            ) from err
 
         if platform.system() == "Windows":
-            cmake_version = LooseVersion(re.search(r"version\s*([\d.]+)", out.decode()).group(1))
-            if cmake_version < "3.1.0":
+            cmake_version = Version(re.search(r"version\s*([\d.]+)", out.decode()).group(1))
+            if cmake_version < Version("3.1.0"):
                 raise RuntimeError("CMake >= 3.1.0 is required on Windows")
 
         for ext in self.extensions:
@@ -70,20 +70,6 @@ class CMakeBuild(build_ext):
         print()  # Add an empty line for cleaner output
 
 
-class MakeDoc(Command):
-    user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        cmd = "doxygen Doxyfile"
-        subprocess.check_call(["doxygen", "Doxyfile"], cwd="doc")
-
-
 setup(
     name="lephare",
     url="https://lephare.readthedocs.io/en/latest/",
@@ -93,7 +79,7 @@ setup(
     ext_modules=[CMakeExtension("lephare._lephare")],
     include_package_data=True,
     # add custom build_ext command
-    cmdclass=dict(build_ext=CMakeBuild, doc=MakeDoc),
+    cmdclass=dict(build_ext=CMakeBuild),
     zip_safe=False,
     python_requires=">=3.9",
     extras_require={"test": "pytest"},
