@@ -1,3 +1,15 @@
+"""Python-only additions to the C++-bound :class:`lephare.PDF` class.
+
+This module does not define a new class: ``@continueClass`` (see
+:mod:`lephare._utils`) monkey-patches the methods defined below directly
+onto the compiled ``lephare._lephare.PDF`` class (exposed as
+:class:`lephare.PDF`). The full attribute/method reference for that class
+--- ``vPDF``, ``xaxis``, ``secondMax``, ``cumulant``, etc. --- is in the
+C++ API documentation (``PDF`` in ``src/lib/PDF.h``); this module only adds
+the pure-Python convenience methods below (plotting, peak-fitting helpers),
+which have no C++ equivalent.
+"""
+
 import warnings
 
 import numpy as np
