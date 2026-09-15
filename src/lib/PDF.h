@@ -44,18 +44,15 @@ class PDF {
       secondX,          ///< x position of each secondary peak found by
                         ///< secondMax(), sorted from highest to smallest
       secondP;          ///< probability of each secondary peak in #secondX
-  /// @warning intended (per the constructor's comment) to hold, for each
-  /// #xaxis bin, the index of the best-matching SED template at that
-  /// redshift/parameter value, but it is initialised to 0 and never
-  /// populated anywhere in the current codebase. As a result secondMax()'s
-  /// #secondInd output is always 0, which onesource::secondpeak() then uses
-  /// to index the SED library: every secondary-solution attribute it
-  /// reports other than the redshift itself and its probability (i.e.
-  /// zsecEbv, zsecExtlaw, zsecScale, zsecMod, zsecAge, indminSec) is
-  /// silently wrong.
+  /// Index, in the SED library, of the best-matching (lowest chi2) template
+  /// at each #xaxis bin. Populated for the GAL/QSO redshift PDFs
+  /// (pdfmap[9]/pdfmap[10]) by onesource::generatePDF() as the fit loop
+  /// runs; not populated for the other PDF types (physical parameters,
+  /// Bayesian redshift) since secondMax()/secondInd is only used for the
+  /// GAL redshift PDF by onesource::secondpeak().
   vector<int> ind,
       secondInd;  ///< rank-sorted #ind value at each secondary peak found
-                  ///< by secondMax(); see the @warning on #ind above
+                  ///< by secondMax()
 
   //! Empty constructor, needed by \ref onesource constructor
   PDF() { ; }
