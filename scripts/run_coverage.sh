@@ -34,6 +34,8 @@ geninfo --filter range \
 echo "===== Capturing C++ coverage ====="
 lcov --filter range \
      --ignore-errors gcov,gcov \
+     --ignore-errors mismatch \
+     --keep-going \
      --output-file coverage.cpp \
      --capture \
      --directory build
