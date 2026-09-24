@@ -148,13 +148,13 @@ inline double LOG10D_FAST(double x) {
 //
 // In [7]: %timeit lp.LOG10D_FASTV(np.random.random(100000000))
 // 6.2 s ± 21.5 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
-inline vector<double> LOG10D_SLOWV(vector<double> x) {
+inline vector<double> LOG10D_SLOWV(const vector<double>& x) {
   vector<double> res;
   res.reserve(x.size());
   for (auto xx : x) res.push_back(LOG10D_SLOW(xx));
   return res;
 }
-inline vector<double> LOG10D_FASTV(vector<double> x) {
+inline vector<double> LOG10D_FASTV(const vector<double>& x) {
   vector<double> res;
   res.reserve(x.size());
   for (auto xx : x) res.push_back(LOG10D_FAST(xx));
