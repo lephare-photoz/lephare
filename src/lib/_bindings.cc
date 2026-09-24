@@ -268,8 +268,8 @@ PYBIND11_MODULE(_lephare, mod) {
            "Generate the redshifted, normalized spectrum.",
            py::arg("zin") = 0.0, py::arg("dmin") = 1.0)
       .def("emplace_back", &SED::emplace_back,
-           "Append one (lambda, value) point to the SED.", py::arg("lambda"),
-           py::arg("value"))
+           "Append one (lambda, value) point to the SED.",
+           py::arg("wavelength"), py::arg("value"))
       .def("set_vector", &SED::set_vector,
            "Set the SED flux from lambda and value arrays.", py::arg("x"),
            py::arg("y"))

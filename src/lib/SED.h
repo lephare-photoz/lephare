@@ -417,10 +417,10 @@ class SED {
    */
   void applyOpa(const vector<opa>& opaAll);
 
-  /// Helper function to append the oneElLambda(lambda, value) object to the sed
-  /// vector
-  inline void emplace_back(const double lambda, const double value) {
-    lamb_flux.emplace_back(lambda, value);
+  /// Helper function to append the oneElLambda(wavelength, value) object to the
+  /// sed vector
+  inline void emplace_back(const double wavelength, const double value) {
+    lamb_flux.emplace_back(wavelength, value);
   }
 
   /*! Helper function to set the sed vector as lambda=x and val = y
