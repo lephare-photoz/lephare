@@ -157,7 +157,7 @@ inline vector<double> LOG10D_SLOWV(vector<double> x) {
 inline vector<double> LOG10D_FASTV(vector<double> x) {
   vector<double> res;
   res.reserve(x.size());
-  for (auto xx : x) res.push_back(LOG10D_SLOW(xx));
+  for (auto xx : x) res.push_back(LOG10D_FAST(xx));
   return res;
 }
 
