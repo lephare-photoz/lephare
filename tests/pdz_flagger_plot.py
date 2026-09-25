@@ -1,22 +1,24 @@
 import argparse
-import os
 import warnings
+
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.signal import find_peaks
 from scipy.integrate import trapezoid
 from scipy.optimize import curve_fit
-from pathlib import Path
+from scipy.signal import find_peaks
 
 ###LePHARE sorting script###
-'''
+"""
 A python cript to sort good from bad zphota computed data using :
  - source indents from OUTPUT_CAT[.out]
  - BAY_ZG.prob from PDZ_OUT keyword when running z_phota
-'''
+"""
+
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Compute PDZ quality flags and add them to a LePHARE catalog.")
+    parser = argparse.ArgumentParser(
+        description="Compute PDZ quality flags and add them to a LePHARE catalog."
+    )
 
     parser.add_argument("--pdz", required=True, help="Path to the PDZ file (bay_zg.prob)")
 
@@ -28,12 +30,13 @@ def parse_args():
 
     return parser.parse_args()
 
+
 args = parse_args()
 PDZ_PATH = args.pdz
 CAT_PATH = args.cat
 row = args.row
 ZGRID = args.zgrid
-ZSTEP, ZMIN, ZMAX = np.asarray(ZGRID.split(',')).astype(float)
+ZSTEP, ZMIN, ZMAX = np.asarray(ZGRID.split(",")).astype(float)
 z_grid = np.arange(ZMIN, ZMAX + ZSTEP, ZSTEP)
 
 args = parse_args()
@@ -78,6 +81,7 @@ class PDZStats:
 
     def approximate_gaussian(self, estimate, error=None):
         """Estimate the local Gaussian sigma around estimate."""
+
         def gauss(z, a, mu, sigma):
             return a * np.exp(-((z - mu) ** 2) / (2 * sigma**2))
 
@@ -86,8 +90,7 @@ class PDZStats:
         if error <= 0 or not np.any(self.pdz):
             return error
 
-        mask = ((self.zgrid >= estimate - error) &
-                (self.zgrid <= estimate + error))
+        mask = (self.zgrid >= estimate - error) & (self.zgrid <= estimate + error)
         pdz_local = np.where(mask, self.pdz, 0.0)
         p0 = [np.max(pdz_local), estimate, error]
 
@@ -125,16 +128,31 @@ class PDZStats:
             return 0.0
 
         bound = n_window * sigma
-        mask = ((self.zgrid < estimate - bound) |
-                (self.zgrid > estimate + bound))
+        mask = (self.zgrid < estimate - bound) | (self.zgrid > estimate + bound)
         return trapezoid(np.where(mask, self.pdz, 0.0), self.zgrid)
 
-def compute_pdz_score(pdz, zgrid, nb_peak_thresh=2, height_thresh=0.43,
-                    tail_thresh=0.23, peak_ratio_thresh=0.1, error_thresh=0.1, z_best=None):
 
+def compute_pdz_score(
+    pdz,
+    zgrid,
+    nb_peak_thresh=2,
+    height_thresh=0.43,
+    tail_thresh=0.23,
+    peak_ratio_thresh=0.1,
+    error_thresh=0.1,
+    z_best=None,
+):
     """Compute a 5-bit quality score (0-31), higher = worse."""
-    if pdz.sum()==0:
-        return -99, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, 
+    if pdz.sum() == 0:
+        return (
+            -99,
+            -99.0,
+            -99.0,
+            -99.0,
+            -99.0,
+            -99.0,
+            -99.0,
+        )
     else:
         pdz_stats = PDZStats(zgrid, pdz, z_best)
         zbest = pdz_stats.zbest()
@@ -160,67 +178,102 @@ def compute_pdz_score(pdz, zgrid, nb_peak_thresh=2, height_thresh=0.43,
 
         return int(score), zbest, error, peak_ratio, tail_mass, number_mod, sigma
 
-def plot_single_pdz(pdz_path, zgrid, row=None, CAT_OUT_zspec=None, nb_peak_thresh=2, height_thresh=0.43,
-                    tail_thresh=0.23, peak_ratio_thresh=0.1, error_thresh=0.1):
 
+def plot_single_pdz(
+    pdz_path,
+    zgrid,
+    row=None,
+    cat_out_zspec=None,
+    nb_peak_thresh=2,
+    height_thresh=0.43,
+    tail_thresh=0.23,
+    peak_ratio_thresh=0.1,
+    error_thresh=0.1,
+):
     row = row if row is not None else 0
     pdz_file = np.loadtxt(pdz_path)
     pdz_row = pdz_file[row][1:] / np.max(pdz_file[row][1:])
     # Compute metrics
-    score, zbest, error, peak_ratio, tail_mass, number_mod, sigma = compute_pdz_score(pdz_row, zgrid, nb_peak_thresh, height_thresh, tail_thresh, peak_ratio_thresh, error_thresh, z_best=None)
+    score, zbest, error, peak_ratio, tail_mass, number_mod, sigma = compute_pdz_score(
+        pdz_row,
+        zgrid,
+        nb_peak_thresh,
+        height_thresh,
+        tail_thresh,
+        peak_ratio_thresh,
+        error_thresh,
+        z_best=None,
+    )
 
     # Plot
     plt.figure(figsize=(8, 5))
-    plt.plot(zgrid, pdz_row, label='PDZ')
-    def gaussian(x, A, mu, s):
-        return A * np.exp(-((x - mu)**2) / (2 * s**2))
-    gauss_fit = gaussian(zgrid, np.max(pdz_row), zbest, sigma)
-    plt.plot(zgrid, gauss_fit, label='local gaussian', ls='--')
-    plt.axvline(zbest, color='purple', ls='--', label='Mode')
-    plt.axhline(height_thresh*np.max(pdz_row), color='red', ls='-', label='peak_threshold')
-    plt.axvspan(zbest - 2*sigma, zbest + 2*sigma, 
-                color='gray', alpha=0.1, label='±2σ region')
+    plt.plot(zgrid, pdz_row, label="PDZ")
 
-    plt.title(f'PDZ for IDENT={pdz_file[row][0]}')
-    plt.xlabel('Redshift (z)')
-    plt.ylabel('P(z)')
+    def gaussian(x, a, mu, s):
+        return a * np.exp(-((x - mu) ** 2) / (2 * s**2))
+
+    gauss_fit = gaussian(zgrid, np.max(pdz_row), zbest, sigma)
+    plt.plot(zgrid, gauss_fit, label="local gaussian", ls="--")
+    plt.axvline(zbest, color="purple", ls="--", label="Mode")
+    plt.axhline(height_thresh * np.max(pdz_row), color="red", ls="-", label="peak_threshold")
+    plt.axvspan(zbest - 2 * sigma, zbest + 2 * sigma, color="gray", alpha=0.1, label="±2σ region")
+
+    plt.title(f"PDZ for IDENT={pdz_file[row][0]}")
+    plt.xlabel("Redshift (z)")
+    plt.ylabel("P(z)")
     plt.legend()
 
     # Annotate metrics
-    if CAT_OUT_zspec is not None:
-        def read_zspec(CAT_OUT_zspec, row):
-            with open(CAT_OUT_zspec, "r") as f:
+    if cat_out_zspec is not None:
+
+        def read_zspec(cat_out_zspec, row):
+            with open(cat_out_zspec, "r") as f:
                 lines = f.readlines()
                 header_line = None
                 for line in lines:
-                    if line.startswith("# IDENT  Z_BEST"): #line used for the header, always starts like this
+                    if line.startswith(
+                        "# IDENT  Z_BEST"
+                    ):  # line used for the header, always starts like this
                         header_line = line
                         break
             if header_line:
                 column_names = header_line.strip("#").strip().split()
-                i_zspec = column_names.index('ZSPEC')
-                zspec = np.loadtxt(CAT_OUT_zspec)[row, i_zspec]
+                i_zspec = column_names.index("ZSPEC")
+                zspec = np.loadtxt(cat_out_zspec)[row, i_zspec]
                 return zspec
 
-        zspec = read_zspec(CAT_OUT_zspec, row)
-        plt.text(0.02, 0.95, f"σ ≈ {sigma:.3f}\nTail mass ≈ {tail_mass:.3f}\nFlag = {score}\nz spec = {zspec}", 
-                transform=plt.gca().transAxes, fontsize=10, va='top')
+        zspec = read_zspec(cat_out_zspec, row)
+        plt.text(
+            0.02,
+            0.95,
+            f"σ ≈ {sigma:.3f}\nTail mass ≈ {tail_mass:.3f}\nFlag = {score}\nz spec = {zspec}",
+            transform=plt.gca().transAxes,
+            fontsize=10,
+            va="top",
+        )
     else:
-        plt.text(0.02, 0.95, f"σ ≈ {sigma:.3f}\nTail mass ≈ {tail_mass:.3f}\nFlag = {score}", 
-                transform=plt.gca().transAxes, fontsize=10, va='top')
-
+        plt.text(
+            0.02,
+            0.95,
+            f"σ ≈ {sigma:.3f}\nTail mass ≈ {tail_mass:.3f}\nFlag = {score}",
+            transform=plt.gca().transAxes,
+            fontsize=10,
+            va="top",
+        )
 
     plt.tight_layout()
     plt.show()
 
-#plot one pdz for example
-plot_single_pdz(PDZ_PATH, z_grid, row = row, CAT_OUT_zspec=CAT_PATH)
+
+# plot one pdz for example
+plot_single_pdz(PDZ_PATH, z_grid, row=row, cat_out_zspec=CAT_PATH)
 
 
 # #display statistics from given catalog
 # def average_stats(pdz_path, zgrid):
 #     pdz_file = np.loadtxt(pdz_path)
-#     score_list, zbest_list, error_list, peak_ratio_list, tail_mass_list, number_mod_list, sigma_list =[],[],[],[],[],[],[]
+#     score_list, zbest_list, error_list, peak_ratio_list, \
+#    tail_mass_list, number_mod_list, sigma_list =[],[],[],[],[],[],[]
 #     for pdz in pdz_file:
 #         score, zbest, error, peak_ratio, tail_mass, number_mod, sigma = compute_pdz_score(pdz[1:], zgrid)
 #         score_list.append(score)
@@ -230,7 +283,7 @@ plot_single_pdz(PDZ_PATH, z_grid, row = row, CAT_OUT_zspec=CAT_PATH)
 #         tail_mass_list.append(tail_mass)
 #         number_mod_list.append(number_mod)
 #         sigma_list.append(sigma)
-    
+
 #     print('score', np.mean(score_list),
 #         '\nzbest', np.mean(zbest_list),
 #         '\nerror', np.mean(error_list),
@@ -241,6 +294,6 @@ plot_single_pdz(PDZ_PATH, z_grid, row = row, CAT_OUT_zspec=CAT_PATH)
 
 #     plt.figure()
 #     plt.hist(np.array(sigma_list), bins=100)
-#     plt.show()  
+#     plt.show()
 
 # average_stats(PDZ_PATH, z_grid)
