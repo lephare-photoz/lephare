@@ -56,8 +56,8 @@ def test_log10pow10():
     assert np.allclose(ps, pf)
     lf = lp.LOG10D_FASTV(x * 10)
     ls = lp.LOG10D_SLOWV(x * 10)
-    print(np.array(ls)-np.array(lf))
-    assert np.allclose(ls, lf, atol=1.e-3)
+    print(np.array(ls) - np.array(lf))
+    assert np.allclose(ls, lf, atol=1.0e-3)
 
 
 def test_mag2flux():
