@@ -1,3 +1,16 @@
+"""Python-only additions to the C++-bound :class:`lephare.onesource` class.
+
+This module does not define a new class: ``@continueClass`` (see
+:mod:`lephare._utils`) monkey-patches the methods defined below directly
+onto the compiled ``lephare._lephare.onesource`` class (exposed as
+:class:`lephare.onesource`). The full attribute/method reference for that
+class --- everything defined on the C++ side, including the fit itself,
+``ab``/``sab``/``mabs``, the PDFs in ``pdfmap``, etc. --- is in the C++ API
+documentation (``onesource`` in ``src/lib/onesource.h``); this module only
+adds the pure-Python convenience method(s) below, which have no C++
+equivalent.
+"""
+
 from ._lephare import onesource
 from ._utils import continueClass
 

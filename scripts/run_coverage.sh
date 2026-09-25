@@ -34,14 +34,17 @@ geninfo --filter range \
 echo "===== Capturing C++ coverage ====="
 lcov --filter range \
      --ignore-errors gcov,gcov \
+     --ignore-errors mismatch \
+     --keep-going \
      --output-file coverage.cpp \
      --capture \
-     --directory build  \
-     --exclude '*_bindings.cc'
+     --directory build
+
+lcov --output-file coverage.cpp \
+     --remove coverage.cpp '*_bindings.cc'
 
 lcov --output-file coverage.cpp \
      --extract coverage.cpp $PWD/src/"*"
-
 
 echo "===== Merging Python + C++ coverage ====="
 cat coverage.lcov coverage.cpp > coverage.txt

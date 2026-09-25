@@ -35,6 +35,9 @@ jobs:
     - name: Install notebook requirements
       run: |
         sudo apt-get install pandoc doxygen
+    - name: Generate pybind11 stub for the compiled extension
+      run: |
+        pybind11-stubgen lephare._lephare -o src
     - name: Build docs
       run: |
         sphinx-build -vvv -T -E -b html -d docs/build/doctrees ./docs docs/build/html

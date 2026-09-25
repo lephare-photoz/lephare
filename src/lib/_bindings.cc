@@ -29,11 +29,16 @@ void applySEDLibTemplate(modT& m, std::string name) {
       .def(py::init<string, string>(), py::arg("config"), py::arg("typ"))
       .def(py::init<keymap&, string, string>(), py::arg("key_analysed"),
            py::arg("config"), py::arg("typ"))
-      .def("print_info", &SEDLib<x>::print_info)
-      .def("read_model_list", &SEDLib<x>::read_model_list)
-      .def("readSED", &SEDLib<x>::readSED)
-      .def("write_SED_lib", &SEDLib<x>::write_SED_lib)
-      .def("close_output_files", &SEDLib<x>::close_output_files);
+      .def("print_info", &SEDLib<x>::print_info,
+           "Print the run configuration onscreen and to the doc file.")
+      .def("read_model_list", &SEDLib<x>::read_model_list,
+           "Read every SED listed in the input list into the library.")
+      .def("readSED", &SEDLib<x>::readSED,
+           "Read one SED file into the library.")
+      .def("write_SED_lib", &SEDLib<x>::write_SED_lib,
+           "Write the library to its binary/doc output files.")
+      .def("close_output_files", &SEDLib<x>::close_output_files,
+           "Close the library's output file streams.");
 }
 
 PYBIND11_MODULE(_lephare, mod) {
@@ -50,10 +55,15 @@ PYBIND11_MODULE(_lephare, mod) {
       .def(py::init<oneElLambda>(), py::arg("elIn"), "copy constructor")
       .def_readwrite("lamb", &oneElLambda::lamb)
       .def_readwrite("val", &oneElLambda::val);
-  mod.def("make_regular_grid", &make_regular_grid);
-  mod.def("make_union_grid", &make_union_grid);
-  mod.def("common_interpolate_combined", &common_interpolate_combined);
-  mod.def("restricted_resampling", &restricted_resampling);
+  mod.def("make_regular_grid", &make_regular_grid,
+          "Build a regularly-spaced wavelength grid between two bounds.");
+  mod.def("make_union_grid", &make_union_grid,
+          "Build the sorted union of two wavelength grids.");
+  mod.def("common_interpolate_combined", &common_interpolate_combined,
+          "Cross-interpolate two (x,y) functions onto their combined grid.");
+  mod.def("restricted_resampling", &restricted_resampling,
+          "Cross-interpolate two oneElLambda vectors restricted to their "
+          "wavelength intersection.");
   mod.def("concatenate_and_sort", &concatenate_and_sort,
           "concatenate and sort two vector of oneElLambda objects. Sorting is "
           "in increasing lambda.");
@@ -81,7 +91,7 @@ PYBIND11_MODULE(_lephare, mod) {
            "standard constructor")
       .def_readwrite("lamb_opa", &opa::lamb_opa)
       .def_readwrite("opared", &opa::red)
-      .def("read", &opa::read);
+      .def("read", &opa::read, "Read the opacity curve from its file.");
   //   .def("lmin", &opa::lmin, "return smallest wavelength stored")
   //   .def("lmax", &opa::lmax, "return largest wavelength stored")
 
@@ -95,8 +105,10 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("lmin", &ext::lmin, "return smallest wavelength stored")
       .def_readonly("lmax", &ext::lmax, "return largest wavelength stored")
       .def("read", &ext::read, py::arg("extFile"), "read an extinction file")
-      .def("add_element", &ext::add_element)
-      .def("set_vector", &ext::set_vector);
+      .def("add_element", &ext::add_element,
+           "Append one (lambda, value) point to the extinction curve.")
+      .def("set_vector", &ext::set_vector,
+           "Set the extinction curve from lambda and value arrays.");
   mod.def("compute_filter_extinction", &compute_filter_extinction,
           "Compute extinction in a filter band.");
   mod.def("cardelli_ext", &cardelli_ext,
@@ -113,23 +125,33 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readwrite("value", &keyword::value)
       .def(py::init())
       .def(py::init<string, string>(), py::arg("n"), py::arg("v"))
-      .def("expand_path", &keyword::expand_path)
-      .def("split_string", &keyword::split_string)
-      .def("split_int", &keyword::split_int)
-      .def("split_long", &keyword::split_long)
-      .def("split_double", &keyword::split_double)
-      .def("split_bool", &keyword::split_bool)
+      .def("expand_path", &keyword::expand_path,
+           "Expand $LEPHAREDIR/$LEPHAREWORK environment variables in value.")
+      .def("split_string", &keyword::split_string,
+           "Split value into a list of strings, using default_val if unset.")
+      .def("split_int", &keyword::split_int,
+           "Split value into a list of ints, using default_val if unset.")
+      .def("split_long", &keyword::split_long,
+           "Split value into a list of longs, using default_val if unset.")
+      .def("split_double", &keyword::split_double,
+           "Split value into a list of doubles, using default_val if unset.")
+      .def("split_bool", &keyword::split_bool,
+           "Split value into a list of bools, using default_val if unset.")
       .def("__repr__", [](const keyword& a) {
         return "(" + a.name + ", " + a.value + ")";
       });
 
-  mod.def("read_command", [](std::vector<std::string> args) {
-    std::vector<char*> cstrs;
-    cstrs.reserve(args.size());
-    for (auto& s : args) cstrs.push_back(const_cast<char*>(s.c_str()));
-    return read_command(cstrs.size(), cstrs.data());
-  });
-  mod.def("read_config", &read_config);
+  mod.def(
+      "read_command",
+      [](std::vector<std::string> args) {
+        std::vector<char*> cstrs;
+        cstrs.reserve(args.size());
+        for (auto& s : args) cstrs.push_back(const_cast<char*>(s.c_str()));
+        return read_command(cstrs.size(), cstrs.data());
+      },
+      "Parse command-line-style arguments into a keymap.");
+  mod.def("read_config", &read_config,
+          "Read a .para configuration file into a dict.");
 
   /******** CLASS FLT *********/
   py::class_<flt>(mod, "flt", py::dynamic_attr())
@@ -142,36 +164,46 @@ PYBIND11_MODULE(_lephare, mod) {
            "Read filter info from file")
       .def("read", static_cast<void (flt::*)(ifstream&)>(&flt::read),
            "Read filter info from stream")
-      .def("lambdaMean", &flt::lambdaMean)
-      .def("clean", &flt::clean)
-      .def("lambdaEff", &flt::lambdaEff)
-      .def("lambdaEff2", &flt::lambdaEff2)
-      .def("vega", &flt::vega)
-      .def("magsun", &flt::magsun)
-      .def("abcorr", &flt::abcorr)
-      .def("width", &flt::width)
-      .def("lmin", &flt::lmin)
-      .def("lmax", &flt::lmax)
+      .def("lambdaMean", &flt::lambdaMean, "Mean wavelength of the filter.")
+      .def("clean", &flt::clean, "Clear the filter transmission curve.")
+      .def("lambdaEff", &flt::lambdaEff,
+           "Effective wavelength of the filter for a flat-fnu source.")
+      .def("lambdaEff2", &flt::lambdaEff2,
+           "Effective wavelength of the filter for a flat-flambda source.")
+      .def("vega", &flt::vega, "Vega magnitude of the filter.")
+      .def("magsun", &flt::magsun,
+           "Absolute magnitude of the Sun in this filter.")
+      .def("abcorr", &flt::abcorr,
+           "AB-to-Vega magnitude offset for this filter.")
+      .def("width", &flt::width, "Effective width of the filter.")
+      .def("lmin", &flt::lmin, "Lower bound of the filter transmission curve.")
+      .def("lmax", &flt::lmax, "Upper bound of the filter transmission curve.")
       .def_readonly("name", &flt::name)
       .def_readonly("lmean", &flt::lmean)
       .def_readonly("fcorr", &flt::fcorr)
       .def_readonly("dwidth", &flt::dwidth)
       .def_readwrite("lamb_trans", &flt::lamb_trans)
-      .def("data", [](const flt& f) {
-        int N = f.lamb_trans.size();
-        // Create a 2D array with shape (2, N) (transposed)
-        py::array_t<double> result({2, N});
-        py::buffer_info buf = result.request();
-        double* ptr = static_cast<double*>(buf.ptr);
-        for (size_t i = 0; i < N; i++) {
-          ptr[i] = f.lamb_trans[i].lamb;     // First row
-          ptr[N + i] = f.lamb_trans[i].val;  // Second row
-        }
-        return result;
-      });
-  mod.def("read_filters_from_file", &read_filters_from_file);
-  mod.def("write_output_filter", &write_output_filter);
-  mod.def("read_doc_filters", &read_doc_filters);
+      .def(
+          "data",
+          [](const flt& f) {
+            int N = f.lamb_trans.size();
+            // Create a 2D array with shape (2, N) (transposed)
+            py::array_t<double> result({2, N});
+            py::buffer_info buf = result.request();
+            double* ptr = static_cast<double*>(buf.ptr);
+            for (size_t i = 0; i < N; i++) {
+              ptr[i] = f.lamb_trans[i].lamb;     // First row
+              ptr[N + i] = f.lamb_trans[i].val;  // Second row
+            }
+            return result;
+          },
+          "Transmission curve as a (2, N) array: [lambda, transmission].");
+  mod.def("read_filters_from_file", &read_filters_from_file,
+          "Read all filters listed in a filter documentation file.");
+  mod.def("write_output_filter", &write_output_filter,
+          "Write a filter set to its binary and doc output files.");
+  mod.def("read_doc_filters", &read_doc_filters,
+          "Read the filters described by a filter doc file.");
 
   /******** CLASS SED *********/
   py::class_<SED>(mod, "SED")
@@ -198,50 +230,80 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readwrite("index_z0", &SED::index_z0)
       .def_readwrite("milky_way_extinction", &SED::milky_way_extinction)
       .def_readwrite("band_pass_correction", &SED::band_pass_correction)
-      .def("string_to_object", &SED::string_to_object)
-      .def("redshift", &SED::redshift)
-      .def("is_gal", &SED::is_gal)
-      .def("is_star", &SED::is_star)
-      .def("is_qso", &SED::is_qso)
-      .def("read", &SED::read)
-      .def("size", &SED::size)
-      .def("sumSpectra", &SED::sumSpectra)
-      .def("integrateSED", &SED::integrateSED)
-      .def("apply_extinction", &SED::apply_extinction, py::arg("ebv"),
+      .def("string_to_object", &SED::string_to_object,
+           "Convert a G/Q/S type letter to an object_type.")
+      .def("redshift", &SED::redshift,
+           "Redshift the SED spectrum using the stored 'red' value.")
+      .def("is_gal", &SED::is_gal, "True if this SED is a galaxy template.")
+      .def("is_star", &SED::is_star, "True if this SED is a star template.")
+      .def("is_qso", &SED::is_qso, "True if this SED is a QSO template.")
+      .def("read", &SED::read, "Read the SED flux from an ASCII file.",
+           py::arg("sedFile"))
+      .def("size", &SED::size, "Number of points in the SED spectrum.")
+      .def("sumSpectra", &SED::sumSpectra,
+           "Add another SED's flux to this one, with a scaling factor.",
+           py::arg("addSED"), py::arg("rescal"))
+      .def("integrateSED", &SED::integrateSED,
+           "Integrate the SED within a filter bandpass.", py::arg("filter"))
+      .def("apply_extinction", &SED::apply_extinction,
+           "Apply dust extinction to the SED flux.", py::arg("ebv"),
            py::arg("oneext"), py::arg("update_ebv") = true)
-      .def("apply_extinction_to_lines", &SED::apply_extinction_to_lines)
-      .def("applyOpa", &SED::applyOpa)
-      .def("integrate", &SED::integrate)
-      .def("generateCalib", &SED::generateCalib)
-      .def("rescale", &SED::rescale)
-      .def("compute_magnitudes", &SED::compute_magnitudes)
-      .def("compute_fluxes", &SED::compute_fluxes)
-      .def("generate_spectra", &SED::generate_spectra)
-      .def("emplace_back", &SED::emplace_back)
-      .def("set_vector", &SED::set_vector)
-      .def("redshift", &SED::redshift)
+      .def("apply_extinction_to_lines", &SED::apply_extinction_to_lines,
+           "Apply dust extinction to the emission-line fluxes.")
+      .def("applyOpa", &SED::applyOpa,
+           "Apply intergalactic-medium opacity along the line of sight.")
+      .def("integrate", &SED::integrate,
+           "Integrate the SED flux between two wavelengths.", py::arg("lmin"),
+           py::arg("lmax"))
+      .def("generateCalib", &SED::generateCalib,
+           "Generate a reference calibration spectrum used by fcorrec().",
+           py::arg("lmin"), py::arg("lmax"), py::arg("Nsteps"),
+           py::arg("calib"))
+      .def("rescale", &SED::rescale, "Rescale the SED flux by a factor.")
+      .def("compute_magnitudes", &SED::compute_magnitudes,
+           "Compute synthetic magnitudes in a set of filters.")
+      .def("compute_fluxes", &SED::compute_fluxes,
+           "Compute synthetic fluxes in a set of filters.")
+      .def("generate_spectra", &SED::generate_spectra,
+           "Generate the redshifted, normalized spectrum.",
+           py::arg("zin") = 0.0, py::arg("dmin") = 1.0)
+      .def("emplace_back", &SED::emplace_back,
+           "Append one (lambda, value) point to the SED.",
+           py::arg("wavelength"), py::arg("value"))
+      .def("set_vector", &SED::set_vector,
+           "Set the SED flux from lambda and value arrays.", py::arg("x"),
+           py::arg("y"))
       //  .def("applyExt", &SED::applyExt)
-      .def("compute_milky_way_extinction", &SED::compute_milky_way_extinction)
+      .def("compute_milky_way_extinction", &SED::compute_milky_way_extinction,
+           "Compute the Milky Way dust extinction curve for this SED.")
       //  .def("applyExtLines", &SED::applyExtLines)
-      .def("applyOpa", &SED::applyOpa)
-      .def("get_data_vector", &SED::get_data_vector)
+      .def("get_data_vector", &SED::get_data_vector,
+           "Flux (or magnitude) and lambda arrays restricted to a range.",
+           py::arg("minl"), py::arg("maxl"), py::arg("mag"),
+           py::arg("offset") = 0.0)
       .def("readSEDBin",
-           static_cast<void (SED::*)(const string&)>(&SED::readSEDBin))
+           static_cast<void (SED::*)(const string&)>(&SED::readSEDBin),
+           "Read the SED from a binary library file.", py::arg("fname"))
       .def("writeSED",
            static_cast<void (SED::*)(const string&, const string&,
-                                     const string&)>(&SED::writeSED))
-      .def("data", [](const SED& f) {
-        int N = f.lamb_flux.size();
-        // Create a 2D array with shape (2, N) (transposed)
-        py::array_t<double> result({2, N});
-        py::buffer_info buf = result.request();
-        double* ptr = static_cast<double*>(buf.ptr);
-        for (size_t i = 0; i < N; i++) {
-          ptr[i] = f.lamb_flux[i].lamb;     // First row
-          ptr[N + i] = f.lamb_flux[i].val;  // Second row
-        }
-        return result;
-      });
+                                     const string&)>(&SED::writeSED),
+           "Write the SED to binary/physical-parameters/doc files.",
+           py::arg("binFile"), py::arg("physFile"), py::arg("docFile"))
+      .def(
+          "data",
+          [](const SED& f) {
+            int N = f.lamb_flux.size();
+            // Create a 2D array with shape (2, N) (transposed)
+            py::array_t<double> result({2, N});
+            py::buffer_info buf = result.request();
+            double* ptr = static_cast<double*>(buf.ptr);
+            for (size_t i = 0; i < N; i++) {
+              ptr[i] = f.lamb_flux[i].lamb;     // First row
+              ptr[N + i] = f.lamb_flux[i].val;  // Second row
+            }
+            return result;
+          },
+          "SED spectrum as a (2, N) array: [lambda, flux].");
   mod.attr("_emission_lines") = emission_lines;
   mod.attr("_empirical_ratio") = empirical_ratio;
   mod.attr("_empirical_ratio_ori") = empirical_ratio_ori;
@@ -258,66 +320,96 @@ PYBIND11_MODULE(_lephare, mod) {
   //     .def(py::init<>());  // Constructeur par défaut
 
   py::class_<StarSED, SED>(mod, "StarSED")
-      .def(py::init<const SED&>())
-      .def(py::init<const StarSED&>())
+      .def(py::init<const SED&>(), "Copy-construct from a base SED.")
+      .def(py::init<const StarSED&>(), "Copy constructor.")
       .def(py::init<const string, int>(), py::arg("name"),
-           py::arg("nummod") = 0);
+           py::arg("nummod") = 0, "Standard constructor.");
 
   py::class_<QSOSED, SED>(mod, "QSOSED")
-      .def(py::init<const SED&>())
-      .def(py::init<const QSOSED&>())
+      .def(py::init<const SED&>(), "Copy-construct from a base SED.")
+      .def(py::init<const QSOSED&>(), "Copy constructor.")
       .def(py::init<const string, int>(), py::arg("name"),
-           py::arg("nummod") = 0);
+           py::arg("nummod") = 0, "Standard constructor.");
 
   py::class_<GalSED, SED>(mod, "GalSED")
-      .def(py::init<const SED&>())
-      .def(py::init<const GalSED&>())
+      .def(py::init<const SED&>(), "Copy-construct from a base SED.")
+      .def(py::init<const GalSED&>(), "Copy constructor.")
       .def(py::init<const string, int>(), py::arg("name"),
-           py::arg("nummod") = 0)
+           py::arg("nummod") = 0, "Standard constructor.")
       .def(py::init<const string, double, double, string, int, int>(),
            py::arg("name"), py::arg("tau"), py::arg("age"), py::arg("format"),
-           py::arg("nummod"), py::arg("idAge"))
-      .def_readonly("tau", &GalSED::tau)
-      .def_readonly("d4000", &GalSED::d4000)
-      .def_readonly("zmet", &GalSED::zmet)
-      .def("compute_luminosities", &GalSED::compute_luminosities)
-      .def("add_neb_cont", &GalSED::add_neb_cont)
-      .def("generateEmEmpUV", &GalSED::generateEmEmpUV)
-      .def("generateEmEmpSFR", &GalSED::generateEmEmpSFR)
-      .def("generateEmPhys", &GalSED::generateEmPhys)
-      .def("generateEmSpectra", &GalSED::generateEmSpectra)
-      .def("sumEmLines", &GalSED::sumEmLines)
-      .def("kcorrec", &GalSED::kcorrec)
-      .def("rescaleEmLines", &GalSED::rescaleEmLines)
-      .def("zdepEmLines", &GalSED::zdepEmLines)
-      .def("calc_ph", &GalSED::calc_ph);
+           py::arg("nummod"), py::arg("idAge"),
+           "Constructor also setting the star-formation timescale and age.")
+      .def_readonly("tau", &GalSED::tau,
+                    "Star-formation history e-folding timescale (yr).")
+      .def_readonly("d4000", &GalSED::d4000, "4000 Angstrom break amplitude.")
+      .def_readonly("zmet", &GalSED::zmet, "Stellar metallicity.")
+      .def("compute_luminosities", &GalSED::compute_luminosities,
+           "Compute the UV/optical/NIR/IR monochromatic luminosities.")
+      .def("add_neb_cont", &GalSED::add_neb_cont,
+           "Add the nebular continuum emission from the ionizing photon flux.",
+           py::arg("qi"))
+      .def("generateEmEmpUV", &GalSED::generateEmEmpUV,
+           "Empirical emission-line recipe based on the UV magnitude.",
+           py::arg("MNUV_int"), py::arg("NUVR"))
+      .def("generateEmEmpSFR", &GalSED::generateEmEmpSFR,
+           "Empirical emission-line recipe based on the SFR.",
+           py::arg("MNUV_int"), py::arg("NUVR"))
+      .def("generateEmPhys", &GalSED::generateEmPhys,
+           "Physically-motivated emission-line recipe (photoionization).",
+           py::arg("zmet"), py::arg("qi"))
+      .def("generateEmSpectra", &GalSED::generateEmSpectra,
+           "Resample the emission lines onto a spectrum.", py::arg("nstep"))
+      .def("sumEmLines", &GalSED::sumEmLines,
+           "Add the emission-line flux to the continuum.")
+      .def("kcorrec", &GalSED::kcorrec, "Compute the k-correction.",
+           py::arg("magz0"))
+      .def("rescaleEmLines", &GalSED::rescaleEmLines,
+           "Rescale all emission-line fluxes by the fracEm factor.")
+      .def("zdepEmLines", &GalSED::zdepEmLines,
+           "Apply a redshift-dependent correction to the [OIII] doublet.",
+           py::arg("flag"))
+      .def("calc_ph", &GalSED::calc_ph,
+           "Compute the number of ionizing photons shortward of the H/He "
+           "edges.");
 
   /******** CLASS SEDLib *********/
   applySEDLibTemplate<StarSED>(mod, "StarSEDLib");
   applySEDLibTemplate<QSOSED>(mod, "QSOSEDLib");
   applySEDLibTemplate<GalSED>(mod, "GalSEDLib");
-  mod.def("_read_ages_from_file", &read_ages_from_file);
-  mod.def("_closeAge", &closeAge);
-  mod.def("readBC03", &readBC03);
-  mod.def("readPEGASE", &readPEGASE);
+  mod.def("_read_ages_from_file", &read_ages_from_file,
+          "Read the age selection bounds/list from a file.");
+  mod.def("_closeAge", &closeAge,
+          "Boolean mask of library ages matching a target age selection.");
+  mod.def("readBC03", &readBC03,
+          "Read a Bruzual & Charlot (2003) multi-age SED file.");
+  mod.def("readPEGASE", &readPEGASE, "Read a PEGASE multi-age SED file.");
 
   /******** CLASS MAG *********/
-#define MAGDEFS(c, n)                                     \
-  (py::class_<c>(mod, n)                                  \
-       .def(py::init<keymap&>(), py::arg("key_analysed")) \
-       .def(py::init<>())                                 \
-       .def("open_files", &c::open_files)                 \
-       .def("close_files", &c::close_files)               \
-       .def("print_info", &c::print_info)                 \
-       .def("read_ext", &c::read_ext)                     \
-       .def("read_B12", &c::read_B12)                     \
-       .def("set_zgrid", &c::set_zgrid)                   \
-       .def("read_SED", &c::read_SED)                     \
-       .def("write_doc", &c::write_doc)                   \
-       .def("make_maglib", &c::make_maglib)               \
-       .def("write_mag", &c::write_mag)                   \
-       .def_readonly("extAll", &c::extAll)                \
-       .def_readonly("opaAll", &c::opaAll)                \
+#define MAGDEFS(c, n)                                                          \
+  (py::class_<c>(mod, n)                                                       \
+       .def(py::init<keymap&>(), py::arg("key_analysed"))                      \
+       .def(py::init<>())                                                      \
+       .def("open_files", &c::open_files,                                      \
+            "Open the input/output streams needed for the library build.")     \
+       .def("close_files", &c::close_files, "Close all opened files.")         \
+       .def("print_info", &c::print_info,                                      \
+            "Print a summary of the run configuration.")                       \
+       .def("read_ext", &c::read_ext, "Read the extinction laws into extAll.") \
+       .def("read_B12", &c::read_B12,                                          \
+            "Read the Bethermin et al. (2012) dust emission templates.")       \
+       .def("set_zgrid", &c::set_zgrid,                                        \
+            "Set the redshift grid (dz, zmin, zmax).")                         \
+       .def("read_SED", &c::read_SED,                                          \
+            "Read the SED files and apply extinction corrections.")            \
+       .def("write_doc", &c::write_doc,                                        \
+            "Write the library documentation file.")                           \
+       .def("make_maglib", &c::make_maglib,                                    \
+            "Build the synthetic magnitude library for one SED.")              \
+       .def("write_mag", &c::write_mag,                                        \
+            "Write the computed magnitudes to the output library.")            \
+       .def_readonly("extAll", &c::extAll)                                     \
+       .def_readonly("opaAll", &c::opaAll)                                     \
        .def_readonly("allFlt", &c::allFlt))
   MAGDEFS(StarMag, "StarMag");
   MAGDEFS(QSOMag, "QSOMag");
@@ -330,26 +422,47 @@ PYBIND11_MODULE(_lephare, mod) {
   /******** FUNCTIONS IN GLOBALS.H *********/
   mod.attr("HIGH_CHI2") = HIGH_CHI2;
   mod.attr("INVALID_VAL") = INVALID_VAL;
-  mod.def("get_lephare_env", &get_lephare_env);
-  mod.def("check_first_char", &check_first_char);
-  mod.def("blackbody", &blackbody);
-  mod.def("CHECK_CONTEXT_BIT", &CHECK_CONTEXT_BIT);
-  mod.def("POW10D", &POW10D);
-  mod.def("LOG10D", &LOG10D);
-  mod.def("POW10D_SLOW", &POW10D_SLOW);
-  mod.def("POW10D_FAST", &POW10D_FAST);
-  mod.def("POW10D_FASTV", &POW10D_FASTV);
-  mod.def("POW10D_SLOWV", &POW10D_SLOWV);
-  mod.def("LOG10D_SLOW", &LOG10D_SLOW);
-  mod.def("LOG10D_FAST", &LOG10D_FAST);
-  mod.def("LOG10D_SLOWV", &LOG10D_SLOWV);
-  mod.def("LOG10D_FASTV", &LOG10D_FASTV);
-  mod.def("mag2flux", &mag2flux);
-  mod.def("flux2mag", &flux2mag);
-  mod.def("indexes_in_vec", &indexes_in_vec);
-  mod.def("fast_interpolate", &fast_interpolate);
+  mod.def("get_lephare_env", &get_lephare_env,
+          "Set/check the LEPHAREDIR and LEPHAREWORK environment variables.");
+  mod.def("check_first_char", &check_first_char,
+          "True if a line is neither blank nor a comment ('#').");
+  mod.def("blackbody", &blackbody,
+          "Blackbody spectral radiance at a temperature and wavelength.");
+  mod.def("CHECK_CONTEXT_BIT", &CHECK_CONTEXT_BIT,
+          "Whether bit n of a context bitmask is set.");
+  // POW10D/LOG10D are aliases (set by #define in globals.h) for
+  // POW10D_SLOW/LOG10D_SLOW; the exact and fast/approximate variants below
+  // are also exposed directly for benchmarking/advanced use.
+  mod.def("POW10D", &POW10D, "10**x (alias for POW10D_SLOW).");
+  mod.def("LOG10D", &LOG10D, "log10(x) (alias for LOG10D_SLOW).");
+  mod.def("POW10D_SLOW", &POW10D_SLOW, "10**x, using std::pow.");
+  mod.def("POW10D_FAST", &POW10D_FAST, "10**x, using a fast exp() identity.");
+  mod.def("POW10D_FASTV", &POW10D_FASTV, "Vectorized POW10D_FAST.");
+  mod.def("POW10D_SLOWV", &POW10D_SLOWV, "Vectorized POW10D_SLOW.");
+  mod.def("LOG10D_SLOW", &LOG10D_SLOW, "log10(x), using std::log10.");
+  // NB: LOG10D_FAST itself is the approximation; LOG10D_FASTV (below) does
+  // not currently call it, see the @bug note in globals.h.
+  mod.def("LOG10D_FAST", &LOG10D_FAST, "log10(x), fast approximation.");
+  mod.def("LOG10D_SLOWV", &LOG10D_SLOWV, "Vectorized LOG10D_SLOW.");
+  mod.def("LOG10D_FASTV", &LOG10D_FASTV,
+          "Vectorized LOG10D_SLOW (see the @bug note on this function in "
+          "globals.h: it does not currently use the fast approximation).");
+  mod.def("mag2flux", &mag2flux,
+          "Convert an AB magnitude to a flux, with an optional zero-point.",
+          py::arg("x"), py::arg("zp") = 0.0);
+  mod.def("flux2mag", &flux2mag,
+          "Convert a flux to an AB magnitude, with an optional offset.",
+          py::arg("x"), py::arg("offset") = 0.0);
+  mod.def("indexes_in_vec", &indexes_in_vec,
+          "Indices where a vector is within a tolerance of a value.",
+          py::arg("value"), py::arg("vec"), py::arg("precision"));
+  mod.def("fast_interpolate", &fast_interpolate,
+          "Linearly interpolate (x, y) at points z, with default d outside "
+          "the range.",
+          py::arg("x"), py::arg("y"), py::arg("z"), py::arg("d"));
   // return a copy to python, only for unit tests
-  mod.def("_get_opa_vector", &get_opa_vector);
+  mod.def("_get_opa_vector", &get_opa_vector,
+          "Cached extragalactic opacity curves (built on first call).");
 
   /******** FUNCTIONS IN PHOTOZ_LIB.H *********/
   py::class_<PhotoZ>(mod, "PhotoZ")
@@ -369,25 +482,47 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readwrite("reddening", &PhotoZ::reddening)
       .def_readwrite("mw_classic_extinction_values",
                      &PhotoZ::mw_classic_extinction_values)
-      .def(py::init<keymap&>())
-      .def("read_autoadapt_sources", &PhotoZ::read_autoadapt_sources)
-      .def("belong_autoadapt", &PhotoZ::belong_autoadapt)
-      .def("read_photoz_sources", &PhotoZ::read_photoz_sources)
-      .def("read_mw_ebv", &PhotoZ::read_mw_ebv)
-      .def("prep_data", static_cast<void (PhotoZ::*)(vector<onesource*>)>(
-                            &PhotoZ::prep_data))
+      .def(py::init<keymap&>(),
+           "Build a PhotoZ instance and read the mag/SED libraries.")
+      .def(
+          "read_autoadapt_sources", &PhotoZ::read_autoadapt_sources,
+          "Read the catalogue sources eligible for zero-point auto-adaptation.")
+      .def("belong_autoadapt", &PhotoZ::belong_autoadapt,
+           "Whether a source qualifies for the auto-adapt sample "
+           "(spec-z and magnitude in range).")
+      .def("read_photoz_sources", &PhotoZ::read_photoz_sources,
+           "Read every source of the input catalogue.")
+      .def("read_mw_ebv", &PhotoZ::read_mw_ebv,
+           "Set each source's Milky Way E(B-V), from a global value or a "
+           "per-source file.")
+      .def(
+          "prep_data",
+          static_cast<void (PhotoZ::*)(vector<onesource*>)>(&PhotoZ::prep_data),
+          "Prepare a list of sources for fitting.")
       .def("prep_data",
-           static_cast<void (PhotoZ::*)(onesource*)>(&PhotoZ::prep_data))
-      .def("run_autoadapt", &PhotoZ::run_autoadapt)
-      .def("run_photoz", &PhotoZ::run_photoz)
-      .def("fit", &PhotoZ::fit)
-      .def("fit_uncertainties", &PhotoZ::fit_uncertainties)
-      .def("physical_parameters", &PhotoZ::physical_parameters)
-      .def("best_template", &PhotoZ::best_template)
-      .def("write_spectrum", &PhotoZ::write_spectrum)
-      .def("write_outputs", &PhotoZ::write_outputs)
-      .def("validLib", &PhotoZ::validLib)
-      .def("compute_offsets", &PhotoZ::compute_offsets);
+           static_cast<void (PhotoZ::*)(onesource*)>(&PhotoZ::prep_data),
+           "Prepare a single source for fitting (fluxes, errors, context).")
+      .def("run_autoadapt", &PhotoZ::run_autoadapt,
+           "Derive per-band zero-point offsets from a set of spec-z sources.")
+      .def("run_photoz", &PhotoZ::run_photoz,
+           "Fit every source in the list and write the configured outputs.")
+      .def("fit", &PhotoZ::fit, "Fit a single source against the libraries.")
+      .def("fit_uncertainties", &PhotoZ::fit_uncertainties,
+           "Compute the marginalized PDFs and confidence intervals for a "
+           "fitted source.")
+      .def("physical_parameters", &PhotoZ::physical_parameters,
+           "Compute the physical parameters derived from a source's fit.")
+      .def("best_template", &PhotoZ::best_template,
+           "Spectrum of a source's best-fit template for one solution type.")
+      .def("write_spectrum", &PhotoZ::write_spectrum,
+           "Write a source's best-fit spectra to an ascii file.")
+      .def("write_outputs", &PhotoZ::write_outputs,
+           "Write the per-source outputs (catalogue, spectra, PDFs).")
+      .def("validLib", &PhotoZ::validLib,
+           "Indices of the library templates compatible with a redshift.")
+      .def(
+          "compute_offsets", &PhotoZ::compute_offsets,
+          "Determine the per-band zero-point offsets to apply before fitting.");
   // mod.def("read_lib", [](const string& libName, int ind, vector<int>
   // emMod, int babs) { 			vector<SED*> libFull; int
   // nummodpre[3]; 			string filtname; vector<double>
@@ -405,49 +540,111 @@ PYBIND11_MODULE(_lephare, mod) {
   // std::make_tuple(allFilters, Fexiste);
   // 			      }
   // );
-  mod.def("readOutKeywords", &readOutKeywords);
-  mod.def("bestFilter", &bestFilter);
-  mod.def("maxkcolor", &maxkcolor);
+  mod.def("readOutKeywords", &readOutKeywords,
+          "Parse the requested output column keywords.");
+  mod.def("bestFilter", &bestFilter,
+          "Filter(s) best matching a rest-frame reference wavelength per "
+          "redshift bin.");
+  mod.def("maxkcolor", &maxkcolor,
+          "Maximum rest-frame color allowed for the k-correction, per "
+          "redshift bin.");
 
   mod.attr("maptype") = maptype;
   py::class_<onesource>(mod, "onesource", py::dynamic_attr())
-      .def(py::init<>())
-      .def(py::init<const int, vector<double>>())
-      .def("setPriors", &onesource::setPriors)
+      .def(py::init<>(), "Default constructor.")
+      .def(py::init<const int, vector<double>>(),
+           "Build a source at a catalogue position with a redshift grid.",
+           py::arg("pos"), py::arg("gridz"))
+      .def("setPriors", &onesource::setPriors,
+           "Set the absolute magnitude prior range for the fit.",
+           py::arg("magabsB"), py::arg("magabsF"))
       .def_readonly("priorLib", &onesource::priorLib)
       //    .def("readsource", &onesource::readsource)
       .def("readsource",
            static_cast<void (onesource::*)(
                const string&, const vector<double>, const vector<double>,
-               const long, const double, const string)>(&onesource::readsource))
-      .def("set_verbosity", &onesource::set_verbosity)
+               const long, const double, const string)>(&onesource::readsource),
+           "Set the observed fluxes, errors and metadata for this source.",
+           py::arg("identifier"), py::arg("vals"), py::arg("err_vals"),
+           py::arg("context"), py::arg("z_spec"), py::arg("additional_input"))
+      .def("set_verbosity", &onesource::set_verbosity, py::arg("verbose"))
       .def("get_verbosity", &onesource::get_verbosity)
-      .def("fltUsed", &onesource::fltUsed)
-      .def("convertFlux", &onesource::convertFlux)
-      .def("convertMag", &onesource::convertMag)
-      .def("rescale_flux_errors", &onesource::rescale_flux_errors)
-      .def("keepOri", &onesource::keepOri)
-      .def("adapt_mag", &onesource::adapt_mag)
-      .def("fit", &onesource::fit)
-      .def("nzprior", &onesource::nzprior)
-      .def("mode", &onesource::mode)
-      .def("rm_discrepant", &onesource::rm_discrepant)
-      .def("generatePDF", &onesource::generatePDF)
-      .def("interp", &onesource::interp)
-      .def("uncertaintiesMin", &onesource::uncertaintiesMin)
-      .def("uncertaintiesBay", &onesource::uncertaintiesBay)
-      .def("secondpeak", &onesource::secondpeak)
-      .def("absmag", &onesource::absmag)
-      .def("limits", &onesource::limits)
-      .def("computePredAbsMag", &onesource::computePredMag)
-      .def("computePredAbsMag", &onesource::computePredAbsMag)
-      .def("computeEmFlux", &onesource::computeEmFlux)
-      .def("generatePDF_IR", &onesource::generatePDF_IR)
-      .def("write_out", &onesource::write_out)
-      .def("redden_flux", &onesource::redden_flux)
-      .def("writeSpec", &onesource::writeSpec)
-      .def("writeFullChi", &onesource::writeFullChi)
-      .def("best_spec_vec", &onesource::best_spec_vec)
+      .def("fltUsed", &onesource::fltUsed,
+           "Flag which bands are used in the fit and which are upper limits.",
+           py::arg("gbcont"), py::arg("contforb"))
+      .def("convertFlux", &onesource::convertFlux,
+           "Convert the input magnitudes/fluxes to the internal flux "
+           "convention.",
+           py::arg("catmag"), py::arg("allFilters"))
+      .def("convertMag", &onesource::convertMag,
+           "Convert fluxes to AB magnitudes and their errors.")
+      .def("rescale_flux_errors", &onesource::rescale_flux_errors,
+           "Rescale the flux errors (e.g. add a systematic floor).",
+           py::arg("min_err"), py::arg("fac_err"))
+      .def("keepOri", &onesource::keepOri,
+           "Save a copy of the fluxes/magnitudes before correction.")
+      .def("adapt_mag", &onesource::adapt_mag,
+           "Apply a per-band zero-point offset.", py::arg("a0"))
+      .def("fit", &onesource::fit,
+           "Fit the source against a SED library by chi2 minimisation.",
+           py::arg("lightLib"), py::arg("flux"), py::arg("valid"),
+           py::arg("funz0"), py::arg("bp"), py::arg("restrict"))
+      .def("nzprior", &onesource::nzprior,
+           "Compute the N(z) prior weight applied to the chi2.", py::arg("luv"),
+           py::arg("lnir"), py::arg("reds"), py::arg("bp"))
+      .def("mode", &onesource::mode,
+           "Compute the mode of the marginalized redshift PDFs.")
+      .def("rm_discrepant", &onesource::rm_discrepant,
+           "Iteratively remove discrepant bands and re-fit.",
+           py::arg("lightLib"), py::arg("flux"), py::arg("valid"),
+           py::arg("funz0"), py::arg("bp"), py::arg("thresholdChi2"),
+           py::arg("restrict"))
+      .def("generatePDF", &onesource::generatePDF,
+           "Build the marginalized redshift/physical-parameter PDFs.",
+           py::arg("lightLib"), py::arg("va"), py::arg("colAnalysis"),
+           py::arg("zfix"))
+      .def("interp", &onesource::interp,
+           "Update the fit solution (fixed redshift or parabolic refinement).",
+           py::arg("zfix"), py::arg("zintp"), py::arg("lcdm"))
+      .def("uncertaintiesMin", &onesource::uncertaintiesMin,
+           "Compute chi2-based confidence intervals around the minimum.")
+      .def("uncertaintiesBay", &onesource::uncertaintiesBay,
+           "Compute Bayesian confidence intervals from the marginalized PDFs.")
+      .def("secondpeak", &onesource::secondpeak,
+           "Detect a secondary peak in the marginalized redshift PDF.",
+           py::arg("lightLib"), py::arg("dz_win"), py::arg("min_thres"))
+      .def("absmag", &onesource::absmag,
+           "Compute the absolute magnitude(s) from the best-fit template(s).",
+           py::arg("bestFlt"), py::arg("maxkcolor"), py::arg("lcdm"),
+           py::arg("gridz"))
+      .def("limits", &onesource::limits,
+           "Compute the faint-end absolute-magnitude limit for this source.",
+           py::arg("fulllib"), py::arg("limits_zbin"), py::arg("limits_ref"),
+           py::arg("limits_sel"), py::arg("limits_cut"))
+      .def("computePredMag", &onesource::computePredMag,
+           "Compute predicted apparent magnitudes in additional filters.")
+      .def("computePredAbsMag", &onesource::computePredAbsMag,
+           "Compute predicted absolute magnitudes in additional filters.")
+      .def("computeEmFlux", &onesource::computeEmFlux,
+           "Compute the emission-line flux/EW of the best-fit template.")
+      .def("generatePDF_IR", &onesource::generatePDF_IR,
+           "Build the marginalized IR luminosity PDF from the FIR fit.")
+      .def("write_out", &onesource::write_out,
+           "Write this source's output line in the LePHARE ASCII format.",
+           py::arg("stout"), py::arg("outkeywords"))
+      .def("redden_flux", &onesource::redden_flux,
+           "Apply a per-template reddening correction to a predicted flux "
+           "array.",
+           py::arg("flux"), py::arg("reddening"))
+      .def("writeSpec", &onesource::writeSpec,
+           "Write the best-fit spectra to a per-source output file.")
+      .def("writeFullChi", &onesource::writeFullChi,
+           "Write the chi2 of every template to a per-source .chi file.",
+           py::arg("lightLib"))
+      .def("best_spec_vec", &onesource::best_spec_vec,
+           "Flux-averaged best-fit spectrum between two wavelengths.",
+           py::arg("sol"), py::arg("fulllib"), py::arg("lcdm"), py::arg("minl"),
+           py::arg("maxl"))
       .def_readwrite("spec", &onesource::spec)
       .def_readwrite("consiz", &onesource::consiz)
       .def_readwrite("mw_ebv", &onesource::mw_ebv)
@@ -458,7 +655,6 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("busul", &onesource::busul)
       .def_readonly("nbused", &onesource::nbused)
       .def_readonly("nbul", &onesource::nbul)
-      .def_readonly("dm", &onesource::dm)
       .def_readonly("zs", &onesource::zs)
       .def_readonly("ab", &onesource::ab)
       .def_readonly("abIR", &onesource::abIR)
@@ -513,28 +709,42 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("zsecExtlaw", &onesource::zsecExtlaw)
       .def_readonly("zsec", &onesource::zsec)
       .def_readonly("zsecEbv", &onesource::zsecEbv)
-      .def_readonly("zsecProb", &onesource::zsecMod)
-      .def_readonly("zsecChi2", &onesource::zsecMod)
-      .def_readonly("zsecScale", &onesource::zsecMod)
+      .def_readonly("zsecProb", &onesource::zsecProb)
+      .def_readonly("zsecChi2", &onesource::zsecChi2)
+      .def_readonly("zsecScale", &onesource::zsecScale)
       .def_readonly("zsecAge", &onesource::zsecAge);
 
   py::class_<PDF>(mod, "PDF")
-      .def(py::init<double, double, size_t>(), py::arg("min"), py::arg("max"),
-           py::arg("size"))
-      .def("normalization", &PDF::normalization)
-      .def("chi2toPDF", &PDF::chi2toPDF)
-      .def("chi2mini", &PDF::chi2mini)
-      .def("uncMin", &PDF::uncMin)
-      .def("index", &PDF::index)
-      .def("get_max", &PDF::get_max)
-      .def("get_maxid", &PDF::get_maxid)
-      .def("secondMax", &PDF::secondMax)
-      .def("size", &PDF::size)
-      .def("cumulant", &PDF::cumulant)
-      .def("levelCumu2x", &PDF::levelCumu2x)
-      .def("credible_interval", &PDF::credible_interval)
-      .def("confidence_interval", &PDF::confidence_interval)
-      .def("improve_extremum", &PDF::improve_extremum)
+      .def(py::init<double, double, size_t>(),
+           "Build a PDF on a linear grid [min, max] with size points.",
+           py::arg("min"), py::arg("max"), py::arg("size"))
+      .def("normalization", &PDF::normalization,
+           "Normalize the PDF to unit integral (trapezoidal rule).")
+      .def("chi2toPDF", &PDF::chi2toPDF,
+           "Convert the stored chi2 curve to a probability density.")
+      .def("chi2mini", &PDF::chi2mini, "Index of the chi2 minimum.")
+      .def("uncMin", &PDF::uncMin,
+           "Confidence interval bounds around the chi2 minimum.",
+           py::arg("dchi"))
+      .def("index", &PDF::index,
+           "Index of the xaxis bin closest to a given value.", py::arg("inVal"))
+      .def("get_max", &PDF::get_max, "Maximum value of the PDF.")
+      .def("get_maxid", &PDF::get_maxid, "Index of the PDF maximum.")
+      .def("secondMax", &PDF::secondMax,
+           "Find secondary peaks in the PDF, sorted by probability.",
+           py::arg("win"))
+      .def("size", &PDF::size, "Number of points on the xaxis grid.")
+      .def("cumulant", &PDF::cumulant,
+           "Un-normalized cumulative distribution of the PDF.")
+      .def("levelCumu2x", &PDF::levelCumu2x,
+           "xaxis value at a given cumulative-probability level.",
+           py::arg("xval"))
+      .def("credible_interval", &PDF::credible_interval,
+           "Bayesian credible interval around the PDF median.")
+      .def("confidence_interval", &PDF::confidence_interval,
+           "Confidence interval from the cumulative distribution.")
+      .def("improve_extremum", &PDF::improve_extremum,
+           "Refine the grid extremum by quadratic interpolation.")
       .def_readwrite("vPDF", &PDF::vPDF)
       .def_readwrite("xaxis", &PDF::xaxis)
       .def_readwrite("chi2", &PDF::chi2)
@@ -542,5 +752,6 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readwrite("secondP", &PDF::secondP)
       .def_readwrite("ind", &PDF::ind)
       .def_readwrite("secondInd", &PDF::secondInd);
-  mod.def("quadratic_extremum", &quadratic_extremum);
+  mod.def("quadratic_extremum", &quadratic_extremum,
+          "Quadratic-interpolation extremum of three (x,y) points.");
 }  // PYBIND11_MODULE
