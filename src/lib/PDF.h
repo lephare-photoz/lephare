@@ -37,9 +37,22 @@ class PDF {
   }
 
  public:
-  vector<double> vPDF;
-  vector<double> chi2, xaxis, secondX, secondP;
-  vector<int> ind, secondInd;
+  vector<double> vPDF;  ///< probability density value at each #xaxis point
+  vector<double> chi2,  ///< chi2 value at each #xaxis point (alternative
+                        ///< storage to #vPDF for the chi2 curve)
+      xaxis,            ///< linearly-sampled grid the PDF/chi2 is stored on
+      secondX,          ///< x position of each secondary peak found by
+                        ///< secondMax(), sorted from highest to smallest
+      secondP;          ///< probability of each secondary peak in #secondX
+  /// Index, in the SED library, of the best-matching (lowest chi2) template
+  /// at each #xaxis bin. Populated for the GAL/QSO redshift PDFs
+  /// (pdfmap[9]/pdfmap[10]) by onesource::generatePDF() as the fit loop
+  /// runs; not populated for the other PDF types (physical parameters,
+  /// Bayesian redshift) since secondMax()/secondInd is only used for the
+  /// GAL redshift PDF by onesource::secondpeak().
+  vector<int> ind,
+      secondInd;  ///< rank-sorted #ind value at each secondary peak found
+                  ///< by secondMax()
 
   //! Empty constructor, needed by \ref onesource constructor
   PDF() { ; }
@@ -67,6 +80,9 @@ class PDF {
    */
   double normalization();
 
+  /// Compute the cumulative distribution of #vPDF over #xaxis (trapezoidal
+  /// rule), un-normalized (starts at 0, ends at the total integral)
+  /// @return the cumulative distribution, one value per #xaxis point
   vector<double> cumulant();
 
   /*!
@@ -87,16 +103,23 @@ class PDF {
    *
    * @param inVal: input value
    * @return : return i so that pdf[i]<=inVal<pdf[i+1] if possible
-   * else return i=0 if inVal<pdf[0] or i=size-1 if inVal>pdf[size-1]
-   !*/
+   * else return i=0 if inVal<pdf[0] or i=size-1 if inVal>pdf[size-1].
+   * In other words, overflows go to boundary bins.
+   */
   size_t index(
       const double inVal) const;     ///< return the vector index where the
                                      ///< pdf vector is closest to inVal
   void secondMax(const double win);  ///< search for high peaks in The ML
                                      ///< function vs xaxis, and sort them from
                                      ///< highest to smallest peaks in ML
-  double levelCumu2x(float xval);    // find the xaxis value corresponding to a
-                                     // level in the cumulative function
+  /*! Find the #xaxis value corresponding to a given level of the normalized
+   * cumulative distribution
+   * @param xval: target cumulative-probability level, in [0,1] (or in
+   * percent, i.e. up to 100, which is converted internally)
+   * @return the interpolated #xaxis value at that cumulative level, or
+   * -99.9 if it could not be bracketed
+   */
+  double levelCumu2x(float xval);
 
   /*!
    * Improve the the grid extremum by quadratic approximation around it
@@ -111,14 +134,14 @@ class PDF {
    * and any of the other 2 points is more than 0.5 in x.
    *
    * In all these cases, the returned pair is current min and its y value.
-   !*/
+   */
   pair<double, double> improve_extremum(bool is_chi2) const;
 
   /*! Compute the confidence interval around the chi2min
    *  @param level: confidence level (value to add to the min chi2
    * to define the interval)
    * @return pair: the bounds of the interval
-  !*/
+   */
   pair<double, double> confidence_interval(float level);
 
   /*! Compute a credible interval on the PDF
@@ -128,7 +151,7 @@ class PDF {
    * side of `val`, unless the boundaries are met. In this case
    * the mass is maximised to the boundary, and the rest is allocated on
    * the other side
-  !*/
+   */
   pair<double, double> credible_interval(float level, double val);
 
   //! Get the index of the PDF max value
@@ -149,7 +172,7 @@ class PDF {
  * obtain a parabolic approximation around them
  *
  * @return (xmin, ymin): the pair of the approximate minimum
- !*/
+ */
 pair<double, double> quadratic_extremum(double x1, double x2, double x3,
                                         double y1, double y2, double y3);
 #endif

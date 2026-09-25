@@ -1,13 +1,16 @@
 # This workflow will install Python dependencies, run tests and report code coverage with a variety of Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+#
+# Coverage instrumentation (C++ via gcov/lcov, Python via coverage.py) is
+# noticeably slower than a plain test run, so it is reserved for pull
+# requests against main/rc1.0.0 rather than every push. See
+# unit-tests.yml for the fast push/PR test-only workflow.
 
 name: Unit test and code coverage
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, rc1.0.0 ]
 
 jobs:
   build:
@@ -34,20 +37,11 @@ jobs:
         sudo apt-get update
         sudo apt-get install -yy lcov
         python -m pip install --upgrade pip
-        python -m pip install .[dev]
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
     - name: Run unit tests with pytest
       run: |
-        python -m pytest -s tests --cov=lephare --cov-report=lcov
-
-    - name: Collect C++ coverage
-      run: |
-        find build -name '_bindings.cc.gcda' -delete
-        geninfo --ignore-errors gcov --debug build --keep-going --exclude '/home/runner/work/lephare/lephare/src/lib/_bindings.cc'
-        lcov --output-file coverage.cpp --capture --directory build
-        lcov --output-file coverage.cpp --extract coverage.cpp $PWD/src/"*"
-        cat coverage.lcov coverage.cpp > coverage.txt
+        $PWD/scripts/run_coverage.sh ci
 
     - name: Upload coverage report to codecov
       uses: codecov/codecov-action@v7

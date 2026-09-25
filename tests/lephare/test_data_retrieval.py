@@ -170,6 +170,7 @@ def test_download_all_files_non_default_retry(mock_download_file, data_registry_
     assert mock_download_file.call_count == len(file_names)
 
 
+@pytest.mark.filterwarnings("ignore:.*is present locally and will not be overwritten.*:UserWarning")
 def test_get_auxiliary_data(test_data_dir: str):
     """Check the file downloader works for a new filter file."""
     test_dir = os.path.abspath(os.path.dirname(__file__))
@@ -205,3 +206,40 @@ def test_get_auxiliary_data(test_data_dir: str):
         assert os.path.exists(file_path)
         os.remove(file_path)
         assert not os.path.exists(file_path)
+
+    # Check it continues with a missing file and throws a warning
+    config.update({"GAL_SED": "sed/does_not_exist.list"})
+    with pytest.warns(UserWarning) as record:
+        lp.data_retrieval.get_auxiliary_data(
+            keymap=config,
+        )
+
+    assert str(record[1].message).startswith("Could not retrieve sed list file")
+
+    # Test that a local file that differs from the remote is not itself overwritten
+    lines = [
+        "CWW_KINNEY/CWW_E_ext.sed  NotCosmos",
+    ]
+    # Use file name that exists remotely to test logic or not overwriting
+    new_list_file_name = "sed/GAL/CHARY_ELBAZ/CHARY_ELBAZ.list"
+    new_list_file_path = os.path.join(test_dir, "../data/", new_list_file_name)
+    path = Path(new_list_file_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(new_list_file_path, "w") as file:
+        file.writelines(lines)
+    config.update({"GAL_SED": new_list_file_name})
+    with pytest.warns(UserWarning) as record:
+        lp.data_retrieval.get_auxiliary_data(
+            keymap=config,
+        )
+    assert str(record[1].message).endswith("will not be overwritten.")
+    with open(new_list_file_path, "r") as f:
+        first_line = f.readline().rstrip("\n")
+    assert first_line == "CWW_KINNEY/CWW_E_ext.sed  NotCosmos"
+    # Check file added to list file exists
+    new_sed_file_path = os.path.join(test_dir, "../data/sed/GAL/CWW_KINNEY/CWW_E_ext.sed")
+    assert os.path.exists(new_sed_file_path)
+    os.remove(new_sed_file_path)
+    os.remove(new_list_file_path)
+    assert not os.path.exists(new_sed_file_path)
+    assert not os.path.exists(new_list_file_path)

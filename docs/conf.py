@@ -80,7 +80,7 @@ exhale_args = {
     "containmentFolder": "./doxygen_output/c_lib",
     "rootFileName": "library_root.rst",
     "doxygenStripFromPath": "..",
-    "rootFileTitle": "C Library API",
+    "rootFileTitle": "C++ Library API",
     "createTreeView": True,
     "exhaleExecutesDoxygen": True,
     "exhaleUseDoxyfile": True,

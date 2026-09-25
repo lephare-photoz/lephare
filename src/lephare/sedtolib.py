@@ -1,7 +1,9 @@
-import time
+#! /usr/bin/env python
+
 from contextlib import suppress
 
 from ._lephare import GalSEDLib, QSOSEDLib, StarSEDLib
+from .cli import build_cli
 from .runner import Runner
 
 __all__ = [
@@ -11,12 +13,12 @@ __all__ = [
 # List of keywords associated to setolib
 config_keys = {
     "typ": "define what kind of objects these SED belong to : GAL, QSO, or STAR",
-    "verbose": "increase onscreen verbosity",
+    "VERBOSE": "increase onscreen verbosity",
     "GAL_SED": "file listing the galaxy SEDs to be used",
     "GAL_FSCALE": "arbitrary Flux scale for galaxy templates",
     "GAL_LIB": "name of the output binary SED file for the galaxies (relative to $LEPHAREWORK/lib_bin/)",
-    "SEL_AGE": "file listing the different galaxy ages to consider",
-    "AGE_RANGE": "minimal and maximal age in year to consider",
+    "SEL_AGE": "file listing the different galaxy ages (in Gyr) to consider",
+    "AGE_RANGE": "minimal and maximal age (in yr) to consider",
     "QSO_SED": "same for QSO/AGN templates",
     "QSO_FSCALE": "same for QSO/AGN templates",
     "QSO_LIB": "same for QSO/AGN templates",
@@ -32,7 +34,7 @@ class Sedtolib(Runner):
 
     typ:
            define what kind of objects these SED belong to : GAL, QSO, or STAR
-    verbose:
+    VERBOSE:
            increase onscreen verbosity
     GAL_SED:
            file listing the galaxy SEDs to be used
@@ -41,9 +43,9 @@ class Sedtolib(Runner):
     GAL_LIB:
            name of the output binary SED file for the galaxies (relative to $ZPHOTWORK/lib_bin/)
     SEL_AGE:
-           file listing the different galaxy ages to consider
+           file listing the different galaxy ages to consider (in Gyr)
     AGE_RANGE:
-           minimal and maximal age in year to consider
+           minimal and maximal age (in yr) to consider
     QSO_SED, QSO_FSCALE, QSO_LIB, STAR_SED, STAR_LIB, STAR_FSCALE :
            same for QSO/AGN and STAR SED types
     """
@@ -55,7 +57,8 @@ class Sedtolib(Runner):
             self.parser.usage = doc
         self.__doc__ = doc + "\n"  # + inspect.getdoc(Sedtolib)
 
-    def __init__(self, config_file=None, config_keymap=None, **kwargs):
+    def __init__(self, config_file="", config_keymap=None, **kwargs):
+        self.name = "Sedtolib"
         super().__init__(config_keys, config_file, config_keymap, **kwargs)
 
     def run(self, **kwargs):
@@ -65,20 +68,18 @@ class Sedtolib(Runner):
         """
 
         super().run(**kwargs)
-
         if self.typ[0] == "G":
-            sed_library = GalSEDLib(self.keymap, self.config, self.typ)
+            sed_library = GalSEDLib(self.keymap, self.config_file, self.typ)
         elif self.typ[0] == "Q":
-            sed_library = QSOSEDLib(self.keymap, self.config, self.typ)
+            sed_library = QSOSEDLib(self.keymap, self.config_file, self.typ)
         elif self.typ[0] == "S":
-            sed_library = StarSEDLib(self.keymap, self.config, self.typ)
+            sed_library = StarSEDLib(self.keymap, self.config_file, self.typ)
         else:
             raise KeyError("-t arg must start with G/g Q/q or S/s for Galaxy QSO and Star respectively.")
 
         sed_library.print_info()
         sed_library.read_model_list()
         sed_library.write_SED_lib()
-        sed_library.print_time_tofile(int(time.time()))
         # we need to call the close method here because run can
         # be called within a python session that stays alive afterwards
         sed_library.close_output_files()
@@ -87,10 +88,13 @@ class Sedtolib(Runner):
         return
 
 
+# ---- CLI entry point ----
+
+cli = build_cli(Sedtolib, config_keys)
+
+
 def main():  # pragma no cover
-    runner = Sedtolib()
-    runner.run()
-    runner.end()
+    cli()
 
 
 if __name__ == "__main__":  # pragma no cover

@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 import os
 from contextlib import suppress
 
@@ -5,7 +7,8 @@ import numpy as np
 
 import lephare as lp
 
-from ._lephare import GalMag, compute_filter_extinction, ext
+from ._lephare import compute_filter_extinction, ext
+from .cli import build_cli
 from .runner import Runner
 
 __all__ = [
@@ -14,11 +17,11 @@ __all__ = [
 ]
 
 config_keys = {
-    "verbose": "increase onscreen verbosity",
+    "VERBOSE": "increase onscreen verbosity",
     "FILTER_FILE": "path to filter file on which to compute extinction,\
     output of the `filter` execution, to be found in $LEPHAREWORK/filt",
-    "EXT_CURVE": "extinction law to use, to be searched in $LEPHAREDIR/ext if relative",
-    "GAL_CURVE": "extinction curve in the galaxy, to be searched in $LEPHAREDIR/ext if relative",
+    "EXT_ATMOS_CURVE": "extinction law to use, to be searched in $LEPHAREDIR/ext if relative",
+    "EXT_MW_CURVE": "extinction curve in the galaxy, to be searched in $LEPHAREDIR/ext if relative",
     "OUTPUT": "output file name",
 }
 
@@ -27,14 +30,14 @@ class FiltExt(Runner):
     """
     The specific arguments to the Filter class are
 
-    verbose
+    VERBOSE
         increase onscreen verbosity
     FILTER_FILE
         Path to filter file on which to compute extinction, output of the
         `filter` execution, to be found in $LEPHAREWORK/filt
-    EXT_CURVE
+    EXT_ATMOS_CURVE
         Extinction law to use, to be searched in $LEPHAREDIR/ext if relative
-    GAL_CURVE
+    EXT_MW_CURVE
         Extinction curve in the galaxy, to be searched in $LEPHAREDIR/ext if relative
     OUTPUT
         Output file name
@@ -47,7 +50,7 @@ class FiltExt(Runner):
             self.parser.usage = doc
         self.__doc__ = doc + "\n"
 
-    def __init__(self, config_file=None, config_keymap=None, **kwargs):
+    def __init__(self, config_file="", config_keymap=None, **kwargs):
         super().__init__(config_keys, config_file, config_keymap, **kwargs)
 
     def run(self, **kwargs):
@@ -58,24 +61,24 @@ class FiltExt(Runner):
         keymap = self.keymap
         # Get the parameters
         filters = keymap["FILTER_FILE"].split_string("unknown", 1)[0]
-        if not os.path.isabs(filters):
+        if not os.path.isabs(filters):  # pragma no cover
             filters = os.path.join(os.environ["LEPHAREWORK"], "filt", filters)
-        atmec = keymap["EXT_CURVE"].split_string("NONE", 1)[0]
+        atmec = keymap["EXT_ATMOS_CURVE"].split_string("NONE", 1)[0]
         output = keymap["OUTPUT"].split_string("filter_extinc.dat", 1)[0]
-        galec = keymap["GAL_CURVE"].split_string("CARDELLI", 1)[0]
+        galec = keymap["EXT_MW_CURVE"].split_string("CARDELLI", 1)[0]
 
         all_filters, aint, albdav, albd = calculate_extinction_values(
             filters, atmec, galec, verbose=self.verbose
         )
 
-        if self.verbose:
+        if self.verbose:  # pragma no cover
             print("#######################################")
             print("# Computing ATMOSPHERIC AND GALACTIC EXTINCTION ")
             print("# with the following options:")
-            print(f"# Config file: {self.config}")
+            print(f"# Config file: {self.config_file}")
             print(f"# FILTER_FILE: {filters}")
-            print(f"# EXT_CURVE (Atmospheric extinction curve): {atmec}")
-            print(f"# GAL_CURVE (Galactic extinction curve: {galec}")
+            print(f"# EXT_ATMOS_CURVE (Atmospheric extinction curve): {atmec}")
+            print(f"# EXT_MW_CURVE (Galactic extinction curve: {galec}")
             print(f"# Output file: {output}")
             print("#######################################")
             print(" Filters Ext(mag/airmass) Albda/Av Albda/E(B-V) ")
@@ -87,10 +90,10 @@ class FiltExt(Runner):
             out.write("#######################################\n")
             out.write("# Computing ATMOSPHERIC AND GALACTIC EXTINCTION \n")
             out.write("# with the following options:\n")
-            out.write(f"# Config file: {self.config}\n")
+            out.write(f"# Config file: {self.config_file}\n")
             out.write(f"# FILTER_FILE: {filters}\n")
-            out.write(f"# EXT_CURVE (Atmospheric extinction curve): {atmec}\n")
-            out.write(f"# GAL_CURVE (Galactic extinction curve: {galec}\n")
+            out.write(f"# EXT_ATMOS_CURVE (Atmospheric extinction curve): {atmec}\n")
+            out.write(f"# EXT_MW_CURVE (Galactic extinction curve: {galec}\n")
             out.write(f"# Output file: {output}\n")
             out.write("#######################################\n")
             out.write(" Filters Ext(mag/airmass) Albda/Av Albda/E(B-V) \n")
@@ -119,7 +122,7 @@ def calculate_extinction_values(filters, atmec, galec, verbose=False):
     Returns
     =======
 
-    all_filters : list of lephare.GalMag
+    all_filters : list of lephare.flt
         The list of filter objects
     aint : np.array
         Atmospheric extinction in each filter (mag/airmass)
@@ -128,7 +131,7 @@ def calculate_extinction_values(filters, atmec, galec, verbose=False):
     albd : np.array
         Galactic extinction in each filter A(lbd)/E(B-V)
     """
-    all_filters = GalMag.read_flt(filters)
+    all_filters = lp.read_filters_from_file(filters)
     if atmec == "NONE":
         aint = np.full(len(all_filters), 99.0).tolist()
     else:
@@ -153,8 +156,8 @@ def calculate_extinction_values(filters, atmec, galec, verbose=False):
         rv = 3.1
         if "SMC_prevot" in galec:
             rv = 2.72
-            if "calzetti" in galec:
-                rv = 4.05
+        if "calzetti" in galec:
+            rv = 4.05
         if verbose:
             print(f"assuming Rv={rv} for this Extinction law {galec}")
         # galactic curves given in k(lbda) (=A(lbda)/E(B-V))
@@ -164,10 +167,13 @@ def calculate_extinction_values(filters, atmec, galec, verbose=False):
     return all_filters, aint, albdav, albd
 
 
-def main():  # pragma no cover
-    runner = FiltExt()
-    runner.run()
-    runner.end()
+# ---- CLI entry point ----
+
+cli = build_cli(FiltExt, config_keys)
+
+
+def main():
+    cli()
 
 
 if __name__ == "__main__":  # pragma no cover
