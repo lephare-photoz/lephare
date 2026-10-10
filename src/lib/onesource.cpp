@@ -1066,7 +1066,9 @@ void onesource::generatePDF(SEDlight& lightLib, const vector<size_t>& va,
 // 5:["AGE"] / 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] /
 // 10:["MIN_ZQ"] / 11:["BAY_ZG"] / 11:["BAY_ZQ"] look for the new
 // minimum among the threads / Galaxies
-#pragma omp critical
+// No critical section needed: each redshift index i is handled by a single
+// thread of this worksharing loop, and locChi2/locInd are complete (implicit
+// barrier at the end of the previous omp for).
           {
             if (pdfminzg.chi2[i] > locChi2[j][0][i]) {
               pdfminzg.chi2[i] = locChi2[j][0][i];
