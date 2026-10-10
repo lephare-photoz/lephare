@@ -344,14 +344,13 @@ class onesource {
    * @param lightLib: light SED library to fit against
    * @param flux: predicted flux of each library template, in each band
    * @param valid: indices, in @p lightLib, of the templates to consider
-   * @param funz0: scaling factor. flat prior in flux, or -1 to disable it
    * @param bp: [min,max] index of the bands used for the fit
    * @param restrict: if true, treat a negative predicted flux (outside the
    * SED's rest-frame wavelength coverage) as zero rather than using it as-is
    */
   void fit(SEDlight& lightLib, const vector<vector<double>>& flux,
-           const vector<size_t>& valid, const double& funz0,
-           const array<int, 2>& bp, const bool restrict);
+           const vector<size_t>& valid, const array<int, 2>& bp,
+           const bool restrict);
   /*! Fit the source against a far-infrared library, in the bands flagged by
    * fltUsedIR()
    * @param fulllib: FIR SED library to fit against
@@ -379,16 +378,14 @@ class onesource {
    * @param lightLib: light SED library to fit against
    * @param flux: predicted flux of each library template, in each band
    * @param valid: indices, in @p lightLib, of the templates to consider
-   * @param funz0: scaling factor prior, forwarded to fit()
    * @param bp: [min,max] index of the bands used for the fit
    * @param thresholdChi2: minimum chi2 improvement required to discard a
    * band
    * @param restrict: forwarded to fit(), see there
    */
   void rm_discrepant(SEDlight& lightLib, const vector<vector<double>>& flux,
-                     const vector<size_t>& valid, const double funz0,
-                     const array<int, 2> bp, double thresholdChi2,
-                     const bool restrict);
+                     const vector<size_t>& valid, const array<int, 2> bp,
+                     double thresholdChi2, const bool restrict);
 
   /*! Apply a per-template, per-band reddening correction to a predicted
    * flux array

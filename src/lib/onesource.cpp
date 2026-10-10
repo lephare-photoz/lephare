@@ -440,8 +440,8 @@ vector<vector<double>> onesource::redden_flux(
  Principal function of the code with the fitting procedure
  */
 void onesource::fit(SEDlight& lightLib, const vector<vector<double>>& flux,
-                    const vector<size_t>& va, const double& funz0,
-                    const array<int, 2>& bp, const bool restrict) {
+                    const vector<size_t>& va, const array<int, 2>& bp,
+                    const bool restrict) {
   int number_threads = 1, thread_id = 0;
   size_t imagm = ab.size();
 
@@ -532,12 +532,9 @@ void onesource::fit(SEDlight& lightLib, const vector<vector<double>>& flux,
       // Abs mag rejection
       // Abs Magnitude from model @ z=0 for rejection for galaxies and AGN
       if ((mabsGALprior && libtype == 0) || (mabsAGNprior && libtype == 1)) {
-        // predicted magnitudes within the babs filter renormalized by the
-        // scaling
-        double abs_mag;
-        abs_mag = lightLib.mag0[i] - 2.5 * log10(dmloc);
-        // specific case when the redshift is 0
-        if (reds < 1.e-10) abs_mag = abs_mag - funz0;
+        // absolute magnitude within the babs filter, renormalized by the
+        // scaling (the z=0 convention is already included in mag0)
+        double abs_mag = lightLib.mag0[i] - 2.5 * log10(dmloc);
         // Galaxy rejection
         if ((abs_mag <= priorLib[0] || abs_mag >= priorLib[1]) && libtype == 0)
           chi2loc = HIGH_CHI2;
@@ -724,9 +721,8 @@ double onesource::nzprior(const double luv, const double lnir,
 */
 void onesource::rm_discrepant(SEDlight& lightLib,
                               const vector<vector<double>>& flux,
-                              const vector<size_t>& va, const double funz0,
-                              const array<int, 2> bp, double thresholdChi2,
-                              const bool restrict) {
+                              const vector<size_t>& va, const array<int, 2> bp,
+                              double thresholdChi2, const bool restrict) {
   size_t imagm = busnorma.size();
   double newmin, improvedChi2;
   // Start with the best chi2 among the libraries
@@ -744,7 +740,7 @@ void onesource::rm_discrepant(SEDlight& lightLib,
       if (busnorma[k] == 1) {
         // Turn the filt off and redo the fit
         busnorma[k] = 0;
-        this->fit(lightLib, flux, va, funz0, bp, restrict);
+        this->fit(lightLib, flux, va, bp, restrict);
         newmin = min({chimin[0], chimin[1], chimin[2]});
         // if the chi2 has been improved, keep the best chi2, and keep the
         // disable band index
@@ -758,7 +754,7 @@ void onesource::rm_discrepant(SEDlight& lightLib,
     if (flDis >= 0) {
       // redo the fit without the disable band
       busnorma[flDis] = 0;
-      this->fit(lightLib, flux, va, funz0, bp, restrict);
+      this->fit(lightLib, flux, va, bp, restrict);
       newmin = min({chimin[0], chimin[1], chimin[2]});
       // One band has been removed in the fit
       nbused--;
@@ -1062,11 +1058,13 @@ void onesource::generatePDF(SEDlight& lightLib, const vector<size_t>& va,
 #pragma omp for
       for (int i = 0; i < dimzg; i++) {
         for (int j = 0; j < number_threads; j++) {
-// 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] /
-// 5:["AGE"] / 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] /
-// 10:["MIN_ZQ"] / 11:["BAY_ZG"] / 11:["BAY_ZQ"] look for the new
-// minimum among the threads / Galaxies
-#pragma omp critical
+          // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] /
+          // 5:["AGE"] / 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] /
+          // 10:["MIN_ZQ"] / 11:["BAY_ZG"] / 11:["BAY_ZQ"] look for the new
+          // minimum among the threads / Galaxies
+          // No critical section needed: each redshift index i is handled by a
+          // single thread of this worksharing loop, and locChi2/locInd are
+          // complete (implicit barrier at the end of the previous omp for).
           {
             if (pdfminzg.chi2[i] > locChi2[j][0][i]) {
               pdfminzg.chi2[i] = locChi2[j][0][i];
