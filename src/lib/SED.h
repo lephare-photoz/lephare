@@ -78,8 +78,10 @@ class SED {
       ssfr;     ///< Specific SFR, defined as sfr / mass
 
   double ebv,   ///< E(B-V) extinction value applied to the SED
-      mag0,     ///< z=0 magnitude in the reference band used to derive
-                ///< absolute magnitudes (see onesource::absmag)
+      mag0,     ///< absolute magnitude, for a unit normalisation, in the
+                ///< reference band (MAG_REF) used by the absolute-magnitude
+                ///< prior: z=0 magnitude of the template, minus the z=0
+                ///< distance-modulus offset when this SED is itself at z=0
       distMod;  ///< Distance modulus of the SED object.
 
   int extlawId;  ///< index of the extinction law when dust attenuation has been
