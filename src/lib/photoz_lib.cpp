@@ -454,13 +454,7 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
 
   // we need to define a zgrid singleton in case zphota ends up
   // running with only STAR templates.
-  if (gridz.size() < 2) {
-    gridz = {0.};
-    funz0 = lcdm.distMod(0.01 / 20.);
-  } else {
-    // Specific case to use for distance modulus when z=0 in the grid
-    funz0 = lcdm.distMod(gridz[1] / 20.);
-  }
+  if (gridz.size() < 2) gridz = {0.};
 
   /* Reading filters */
   allFilters = read_doc_filters(filtName);
@@ -765,6 +759,16 @@ void PhotoZ::read_lib(vector<SED*>& libFull, int& ind, int nummodpre[3],
   // and store it as a SED
   int ind0 = 0;
   vector<double> mag_z0;
+  // A template at z=0 has no distance modulus: the absolute magnitude derived
+  // from mag0 is shifted by the one of a fraction of the first redshift step.
+  // The shift is absorbed in mag0 once and for all, see below. Stars have no
+  // absolute magnitude prior, and no cosmology to rely on (see
+  // check_consistency).
+  const bool is_star = (valc[0] == 'S' || valc[0] == 's');
+  // (0.01/20 if the redshift grid has a single point)
+  const double zref = (gridz.size() > 1 ? gridz[1] : 0.01) / 20.;
+  const double distmod_z0 = is_star ? 0. : lcdm.distMod(zref);
+
   while (slibIn.tellg() < length) {
     SED* oneSED;
 
@@ -822,8 +826,11 @@ void PhotoZ::read_lib(vector<SED*>& libFull, int& ind, int nummodpre[3],
         }
         // Store the index at z=0 in the SED
         oneSED->index_z0 = ind0;
-        // Store the magnitude in the band used for the prior
+        // Store the magnitude in the band used for the prior, i.e. the
+        // absolute magnitude of the template for a unit normalisation. For a
+        // template at z=0 the distance modulus convention is included.
         oneSED->mag0 = mag_z0[babs];
+        if (oneSED->red < 1.e-10) oneSED->mag0 -= distmod_z0;
         // Recompute the kcorr because of the emission lines not included in
         // mag_gal
         oneSED->kcorrec(mag_z0);
@@ -1310,7 +1317,7 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
         // compatible redshift to zs.
         auto valid = validLib(oneObj->zs);
 
-        oneObj->fit(lightLib, flux, valid, funz0, bp, restrict_rf);
+        oneObj->fit(lightLib, flux, valid, bp, restrict_rf);
 
         n_adapt_obj++;
         // Interpolation of the predicted magnitudes, scaling at zs, checking
@@ -1970,11 +1977,11 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
     }
 
     // Core of the program: compute the chi2
-    oneObj->fit(lightLib, flux, valid, funz0, bp, restrict_rf);
+    oneObj->fit(lightLib, flux, valid, bp, restrict_rf);
 
     // Try to remove some bands to improve the chi2, only as long as the
     // chi2 is above a threshold
-    oneObj->rm_discrepant(lightLib, flux, valid, funz0, bp, thresholdChi2,
+    oneObj->rm_discrepant(lightLib, flux, valid, bp, thresholdChi2,
                           restrict_rf);
     // Generate the marginalized PDF (z+physical parameters) from the chi2
     // stored in each SED
@@ -2003,7 +2010,7 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
       // Select the index of the templates that have a redshift closest to
       // zgmed We only work on GAL solutions here
       auto validfix = validLib(oneObj->zgmed[0]);
-      oneObj->fit(lightLib, flux, validfix, funz0, bp, restrict_rf);
+      oneObj->fit(lightLib, flux, validfix, bp, restrict_rf);
 
     } else {
       oneObj->consiz = oneObj->zmin[0];
@@ -2164,11 +2171,10 @@ void PhotoZ::fit(onesource& src, const vector<double>& a0) {
     for (size_t i = 0; i < fullLib.size(); ++i) valid.push_back(i);
   }
   // Core of the program: compute the chi2
-  src.fit(lightLib, flux, valid, funz0, bp, restrict_rf);
+  src.fit(lightLib, flux, valid, bp, restrict_rf);
   // Try to remove some bands to improve the chi2, only as long as the chi2
   // is above a threshold
-  src.rm_discrepant(lightLib, flux, valid, funz0, bp, thresholdChi2,
-                    restrict_rf);
+  src.rm_discrepant(lightLib, flux, valid, bp, thresholdChi2, restrict_rf);
 
   // Correct the ab magnitude based on the last fit
   // when galametz method is on
@@ -2286,7 +2292,7 @@ void PhotoZ::physical_parameters(onesource& src) {
     // zgmed We only work on GAL solutions here
     auto valid = validLib(src.zgmed[0]);
     // Use the flux with no  MW since ab mag corrected in fit
-    src.fit(lightLib, flux_no_mw, valid, funz0, bp, restrict_rf);
+    src.fit(lightLib, flux_no_mw, valid, bp, restrict_rf);
   } else {
     src.consiz = src.zmin[0];
   }

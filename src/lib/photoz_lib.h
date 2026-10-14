@@ -24,7 +24,7 @@ class PhotoZ {
   size_t nlibext;
   array<int, 2> bp;
   long gbcont, contforb, bdscal;
-  double funz0, adzmin, adzmax, auto_thresmin, auto_thresmax, min_thres, dz_win;
+  double adzmin, adzmax, auto_thresmin, auto_thresmax, min_thres, dz_win;
   double fir_lmin, fir_cont, fir_scale;
   bool verbose, restrict_rf = false;
   array<double, 2> magabsB, magabsF, zrange, ebvrange;

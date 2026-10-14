@@ -588,7 +588,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("fit", &onesource::fit,
            "Fit the source against a SED library by chi2 minimisation.",
            py::arg("lightLib"), py::arg("flux"), py::arg("valid"),
-           py::arg("funz0"), py::arg("bp"), py::arg("restrict"))
+           py::arg("bp"), py::arg("restrict"))
       .def("nzprior", &onesource::nzprior,
            "Compute the N(z) prior weight applied to the chi2.", py::arg("luv"),
            py::arg("lnir"), py::arg("reds"), py::arg("bp"))
@@ -597,8 +597,7 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("rm_discrepant", &onesource::rm_discrepant,
            "Iteratively remove discrepant bands and re-fit.",
            py::arg("lightLib"), py::arg("flux"), py::arg("valid"),
-           py::arg("funz0"), py::arg("bp"), py::arg("thresholdChi2"),
-           py::arg("restrict"))
+           py::arg("bp"), py::arg("thresholdChi2"), py::arg("restrict"))
       .def("generatePDF", &onesource::generatePDF,
            "Build the marginalized redshift/physical-parameter PDFs.",
            py::arg("lightLib"), py::arg("va"), py::arg("colAnalysis"),
