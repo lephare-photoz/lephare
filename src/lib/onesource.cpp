@@ -1059,11 +1059,13 @@ void onesource::generatePDF(SEDlight& lightLib, const vector<size_t>& va,
 #pragma omp for
       for (int i = 0; i < dimzg; i++) {
         for (int j = 0; j < number_threads; j++) {
-// 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] /
-// 5:["AGE"] / 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] /
-// 10:["MIN_ZQ"] / 11:["BAY_ZG"] / 11:["BAY_ZQ"] look for the new
-// minimum among the threads / Galaxies
-#pragma omp critical
+          // 0:["MASS"] / 1:["SFR"] / 2:["SSFR"] / 3:["LDUST"] / 4:["LIR"] /
+          // 5:["AGE"] / 6:["COL1"] / 7:["COL2"] / 8:["MREF"]/ 9:["MIN_ZG"] /
+          // 10:["MIN_ZQ"] / 11:["BAY_ZG"] / 11:["BAY_ZQ"] look for the new
+          // minimum among the threads / Galaxies
+          // No critical section needed: each redshift index i is handled by a
+          // single thread of this worksharing loop, and locChi2/locInd are
+          // complete (implicit barrier at the end of the previous omp for).
           {
             if (pdfminzg.chi2[i] > locChi2[j][0][i]) {
               pdfminzg.chi2[i] = locChi2[j][0][i];
