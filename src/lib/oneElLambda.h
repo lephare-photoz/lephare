@@ -82,8 +82,9 @@ inline std::tuple<std::vector<double>, std::vector<double>> to_tuple(
  * Important : x is expected to be sorted in increasing order.
  * if xi is outside the range of x, 0 is returned.
  */
-double interp_linear_point(const std::vector<double>& x,
-                           const std::vector<double>& y, double xi);
+std::pair<double, size_t> interp_linear_point(const std::vector<double>& x,
+                                              const std::vector<double>& y,
+                                              double xi, size_t x_hint);
 
 /*! Interpolate a curve (x,y) at positions given by a vector
  * @param x : x-values of the curve to interpolate
@@ -95,11 +96,15 @@ double interp_linear_point(const std::vector<double>& x,
 inline std::vector<double> interp_linear_vec(const std::vector<double>& x,
                                              const std::vector<double>& y,
                                              const std::vector<double>& q) {
+  size_t x_hint = 0;
   std::vector<double> out(q.size());
   // not worth accelerating, due to OMP overhead
   // #pragma omp parallel for
-  for (long long i = 0; i < (long long)q.size(); ++i)
-    out[i] = interp_linear_point(x, y, q[i]);
+  for (long long i = 0; i < (long long)q.size(); ++i) {
+    auto [o, new_x_hint] = interp_linear_point(x, y, q[i], x_hint);
+    out[i] = o;
+    x_hint = new_x_hint;
+  }
   return out;
 }
 
