@@ -61,9 +61,24 @@ html_css_files = ["custom.css"]
 
 autoapi_type = "python"
 autoapi_dirs = ["../src"]
-autoapi_ignore = ["*/__main__.py", "*/_version.py"]
+autoapi_ignore = [
+    "*/__main__.py",
+    "*/_version.py",
+    "*/_flt.py",
+    "*/_onesource.py",
+    "*/_pdf.py",
+    "*/_photoz.py",
+]
 autoapi_add_toc_tree_entry = False
 autoapi_member_order = "bysource"
+autoapi_options = [
+    "members",
+    "undoc-members",
+    "show-inheritance",
+    "show-module-summary",
+    "special-members",
+    "imported-members",
+]
 
 html_theme = "sphinx_rtd_theme"
 
