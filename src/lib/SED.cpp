@@ -1579,8 +1579,7 @@ void SED::compute_magnitudes(const vector<flt>& filters) {
   double val;
   for (const auto& filter : filters) {
     // Derive the AB magnitudes in each filter
-    vector<double> intFlux;
-    intFlux = integrateSED(filter);
+    auto intFlux = integrateSED(filter);
     if (intFlux[3] != INVALID_VAL) {
       if (intFlux[3] > 0.0) {
         val = -2.5 * LOG10D(intFlux[3] / intFlux[1] * filter.fcorr) - 48.6 +
@@ -1599,8 +1598,7 @@ vector<double> SED::compute_fluxes(const vector<flt>& filters) {
   vector<double> result(imagm, NULL_FLUX);
   // check that the SED is defined
   for (size_t k = 0; k < imagm; k++) {
-    vector<double> intFlux;
-    intFlux = integrateSED(filters[k]);
+    auto intFlux = integrateSED(filters[k]);
     result[k] =
         (intFlux[3] == INVALID_VAL) ? INVALID_FLUX : intFlux[3] / intFlux[1];
   }
@@ -1697,15 +1695,14 @@ void SED::compute_milky_way_extinction(const ext& oneExt,
   tmp.clean();
 }
 
-vector<double> SED::integrateSED(const flt& filter) {
-  vector<double> results(6, 0.);
-
+array<double, 6> SED::integrateSED(const flt& filter) {
   // don't integrate if:
   // - the lowest lambda of the SED above the minimum lambda of the filter
   // - the highest lambda of the SED below the maximum lambda of the filter
   if (lamb_flux.front().lamb > filter.lmin() ||
       lamb_flux.back().lamb < filter.lmax()) {
-    return vector<double>(6, INVALID_VAL);
+    return array<double, 6>{INVALID_VAL, INVALID_VAL, INVALID_VAL,
+                            INVALID_VAL, INVALID_VAL, INVALID_VAL};
   }
 
   // resample to a common lambda which is the union of both lambda
@@ -1737,5 +1734,5 @@ vector<double> SED::integrateSED(const flt& filter) {
   // integral (T*c/lambda**2) dlambda
   r1 = r5 * c;
 
-  return vector<double>{r0, r1, r2, r3, r4, r5};
+  return array<double, 6>{r0, r1, r2, r3, r4, r5};
 }

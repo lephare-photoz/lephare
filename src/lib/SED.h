@@ -215,7 +215,7 @@ class SED {
    * the filter; returns INVALID_VAL if the SED does not fully cover the
    * filter bandpass
    */
-  vector<double> integrateSED(const flt& filter);
+  array<double, 6> integrateSED(const flt& filter);
 
   /*! \brief Generate a calibration SED based on the argument calib
    *

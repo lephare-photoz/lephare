@@ -60,6 +60,9 @@ std::vector<double> make_regular_grid(double lo, double hi, double dx) {
 std::vector<double> make_union_grid(const std::vector<double>& x1,
                                     const std::vector<double>& x2, double lo,
                                     double hi) {
+  /// this can maybe be replaced with set_union.
+  /// the way lo and hi are decided imply that x1 and x2 are sorted, but
+  /// set_union requires them to be unique also
   std::set<double> s;
   for (double v : x1)
     if (v >= lo && v <= hi) s.insert(v);
