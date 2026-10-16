@@ -477,6 +477,16 @@ void onesource::fit(SEDlight& lightLib, const vector<vector<double>>& flux,
   // Already check the priors
   bool mabsGALprior = (priorLib[0] < 0 && priorLib[1] < 0);
   bool mabsAGNprior = (priorLib[2] < 0 && priorLib[3] < 0);
+  // Log-free form of the absolute-magnitude rejection. With
+  // abs_mag = mag0 - 2.5*log10(dm) and dm > 0:
+  //   abs_mag <= lo  <=>  dm >= 10^(0.4*mag0) * 10^(-0.4*lo)
+  //   abs_mag >= hi  <=>  dm <= 10^(0.4*mag0) * 10^(-0.4*hi)
+  // 10^(0.4*mag0) is precomputed per template (SEDlight::smag0), the four
+  // factors below once per call. Entries [0]/[1]: galaxies, [2]/[3]: AGN.
+  const double mabs_lo_gal = std::pow(10., -0.4 * priorLib[0]);
+  const double mabs_hi_gal = std::pow(10., -0.4 * priorLib[1]);
+  const double mabs_lo_agn = std::pow(10., -0.4 * priorLib[2]);
+  const double mabs_hi_agn = std::pow(10., -0.4 * priorLib[3]);
 
 #ifdef _OPENMP
   // double start = omp_get_wtime();
@@ -532,16 +542,21 @@ void onesource::fit(SEDlight& lightLib, const vector<vector<double>>& flux,
       // Abs mag rejection
       // Abs Magnitude from model @ z=0 for rejection for galaxies and AGN
       if ((mabsGALprior && libtype == 0) || (mabsAGNprior && libtype == 1)) {
-        // predicted magnitudes within the babs filter renormalized by the
-        // scaling
-        double abs_mag;
-        abs_mag = lightLib.mag0[i] - 2.5 * log10(dmloc);
-        // Galaxy rejection
-        if ((abs_mag <= priorLib[0] || abs_mag >= priorLib[1]) && libtype == 0)
-          chi2loc = HIGH_CHI2;
-        // AGN rejection
-        if ((abs_mag <= priorLib[2] || abs_mag >= priorLib[3]) && libtype == 1)
-          chi2loc = HIGH_CHI2;
+        // Absolute magnitude in the babs filter, renormalized by the scaling
+        // (the z=0 convention is already included in mag0), tested without
+        // log10. dm == 0 is rejected (abs_mag = +inf); dm < 0, NaN or the
+        // "no normalisation" flag -999 give a NaN abs_mag and were never
+        // rejected: the dm >= 0 guard preserves that.
+        if (dmloc >= 0) {
+          const double s0 = lightLib.smag0[i];
+          if (libtype == 0) {
+            if (dmloc >= s0 * mabs_lo_gal || dmloc <= s0 * mabs_hi_gal)
+              chi2loc = HIGH_CHI2;
+          } else {
+            if (dmloc >= s0 * mabs_lo_agn || dmloc <= s0 * mabs_hi_agn)
+              chi2loc = HIGH_CHI2;
+          }
+        }
       }
       // Prior N(z)
       if (bp[0] >= 0 && libtype == 0) {

@@ -8,6 +8,7 @@
 #define SED_H  // define the keyword to be checked
 
 #include <array>
+#include <cmath>
 #include <string>
 #include <vector>
 
@@ -641,7 +642,9 @@ struct SEDlight {
       luv,                   ///< monochromatic UV luminosity (see SED::luv)
       lopt,            ///< monochromatic optical luminosity (see SED::lopt)
       lnir,            ///< monochromatic NIR luminosity (see SED::lnir)
-      mag0;            ///< z=0 reference-band magnitude (see SED::mag0)
+      mag0,            ///< z=0 reference-band magnitude (see SED::mag0)
+      smag0;           ///< 10^(0.4*mag0): scale used by the log-free
+                       ///< absolute-magnitude prior test in onesource::fit
   vector<double> ebv,  ///< E(B-V) extinction value
       lgage,           ///< log age (yr)
       lgmass,          ///< log stellar mass
@@ -666,6 +669,7 @@ struct SEDlight {
     lnir.push_back(src.lnir);
     ltir.push_back(src.ltir);
     mag0.push_back(src.mag0);
+    smag0.push_back(std::pow(10., 0.4 * src.mag0));
     ebv.push_back(src.ebv);
     extlawId.push_back(src.extlawId);
     index_z0.push_back(src.index_z0);
