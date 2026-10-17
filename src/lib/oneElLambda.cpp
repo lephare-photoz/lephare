@@ -7,16 +7,8 @@
 
 #include "oneElLambda.h"
 
-// #include <fstream>   // print output file
-#include <omp.h>
-
 #include <algorithm>
-#include <iostream>  // print standard file
-#include <set>
-#include <stdexcept>
 #include <vector>
-
-#include "globals.h"
 
 using namespace std;
 
@@ -52,49 +44,4 @@ std::vector<double> make_regular_grid(double lo, double hi, double dx) {
   for (long long i = 0; i < (long long)n; ++i) grid[i] = lo + i * dx;
   grid.back() = hi;  // ensure strict ending at hi
   return grid;
-}
-
-// --- création de la grille issue de l’union de x1 et x2 ---
-// Ca c'est le cas resample classique de lephare. C'est chatgpt
-// qui m'a sorti l'usage de std::set. Je pense que son utilisation
-// impose de ne pas paralléliser avec OMP, mais je n'ai pas creusé
-std::vector<double> make_union_grid(const std::vector<double>& x1,
-                                    const std::vector<double>& x2, double lo,
-                                    double hi) {
-  /// this can maybe be replaced with set_union.
-  /// the way lo and hi are decided imply that x1 and x2 are sorted, but
-  /// set_union requires them to be unique also
-  std::set<double> s;
-  for (double v : x1)
-    if (v >= lo && v <= hi) s.insert(v);
-  for (double v : x2)
-    if (v >= lo && v <= hi) s.insert(v);
-  return {s.begin(), s.end()};
-}
-
-std::tuple<std::vector<double>, std::vector<double>, std::vector<double>>
-common_interpolate_combined(const std::vector<double>& x1,
-                            const std::vector<double>& y1,
-                            const std::vector<double>& x2,
-                            const std::vector<double>& y2, double dx) {
-  if (x1.size() != y1.size() || x2.size() != y2.size())
-    throw std::runtime_error("x/y size mismatch");
-
-  // determine common interval
-  double lo = std::max(x1.front(), x2.front());
-  double hi = std::min(x1.back(), x2.back());
-  if (lo >= hi) return {{}, {}, {}};  // pas de recouvrement
-
-  // build the grid
-  std::vector<double> x_common;
-  if (dx > 0)
-    x_common = make_regular_grid(lo, hi, dx);
-  else
-    x_common = make_union_grid(x1, x2, lo, hi);
-
-  // interpolate
-  std::vector<double> y1_interp = interp_linear_vec(x1, y1, x_common);
-  std::vector<double> y2_interp = interp_linear_vec(x2, y2, x_common);
-
-  return {x_common, y1_interp, y2_interp};
 }

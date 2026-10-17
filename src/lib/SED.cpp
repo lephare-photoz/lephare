@@ -13,6 +13,7 @@
 #include <iomanip>   // std::set precision
 #include <iostream>  // print standard file
 #include <limits>    //std::numeric_limits
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -1695,6 +1696,71 @@ void SED::compute_milky_way_extinction(const ext& oneExt,
   tmp.clean();
 }
 
+struct DedupMergeSortedList {
+  double const* lhs;
+  double const* lhs_end;
+  double const* rhs;
+  double const* rhs_end;
+  std::optional<double> previous_val{};
+
+  DedupMergeSortedList(double const* lhs_begin, double const* lhs_end,
+                       double const* rhs_begin, double const* rhs_end)
+      : lhs(lhs_begin), lhs_end(lhs_end), rhs(rhs_begin), rhs_end(rhs_end) {}
+
+  std::optional<double> next() {
+    while (true) {
+      if (lhs == lhs_end && rhs == rhs_end) return {};
+      double candidate = 0;
+
+      if (lhs == lhs_end) {
+        candidate = *rhs;
+        rhs++;
+      } else if (rhs == rhs_end) {
+        candidate = *lhs;
+        lhs++;
+      } else {
+        double l = *lhs;
+        double r = *rhs;
+        if (l <= r) {
+          candidate = l;
+          lhs++;
+        } else {
+          candidate = r;
+          rhs++;
+        }
+      }
+
+      if (previous_val && *previous_val == candidate) continue;
+      previous_val = candidate;
+      return candidate;
+    }
+  }
+};
+
+static std::vector<double> sorted_vecs_intersection(
+    const std::vector<double>& x, const std::vector<double>& y) {
+  double lo = std::max(x.front(), y.front());
+  double hi = std::min(x.back(), y.back());
+  std::vector<double> s;
+  DedupMergeSortedList merge_iter(&*x.cbegin(), &*x.cend(), &*y.cbegin(),
+                                  &*y.cend());
+
+  while (true) {
+    auto n = merge_iter.next();
+    if (!n) break;
+    if (*n < lo) continue;
+    s.push_back(*n);
+    break;
+  }
+  while (true) {
+    auto n = merge_iter.next();
+    if (!n) break;
+    if (*n > hi) break;
+    s.push_back(*n);
+  }
+  return s;
+}
+
 array<double, 6> SED::integrateSED(const flt& filter) {
   // don't integrate if:
   // - the lowest lambda of the SED above the minimum lambda of the filter
@@ -1705,9 +1771,13 @@ array<double, 6> SED::integrateSED(const flt& filter) {
                             INVALID_VAL, INVALID_VAL, INVALID_VAL};
   }
 
-  // resample to a common lambda which is the union of both lambda
-  auto [x, newsed, newflt] =
-      restricted_resampling(lamb_flux, filter.lamb_trans, -1);
+  auto [template_l, template_v] = to_tuple(lamb_flux);
+  auto [filt_l, filt_v] = to_tuple(filter.lamb_trans);
+
+  auto x = sorted_vecs_intersection(template_l, filt_l);
+
+  std::vector<double> newsed = interp_linear_vec(template_l, template_v, x);
+  std::vector<double> newflt = interp_linear_vec(filt_l, filt_v, x);
 
   double r0 = 0, r1 = 0, r2 = 0, r3 = 0, r4 = 0, r5 = 0;
   for (size_t i = 0; i < x.size() - 1; i++) {
