@@ -285,8 +285,12 @@ Need 1 or N values
 
         photoz = PhotoZ(self.keymap)
 
-        # Compute offsets depending on the AUTO_ADAPT and APPLY_SYSSHIFT options (0 if none)
-        adapt_srcs = photoz.read_autoadapt_sources()
+        # Compute offsets depending on the AUTO_ADAPT and APPLY_SYSSHIFT options (0 if none).
+        # The auto-adapt sample is only used when AUTO_ADAPT is turned on. Building it parses
+        # the whole input catalogue (ignoring CAT_LINES) and keeps in memory a full onesource
+        # for every source with a spec-z, so we skip it otherwise.
+        autoadapt = "AUTO_ADAPT" in self.keymap and self.keymap["AUTO_ADAPT"].split_bool("NO", 1)[0]
+        adapt_srcs = photoz.read_autoadapt_sources() if autoadapt else []
         a0 = photoz.compute_offsets(adapt_srcs)
 
         fit_srcs = photoz.read_photoz_sources()

@@ -77,3 +77,19 @@ def test_run_zp_config_file(monkeypatch):
     zp = Zphota(config_file=config_file_path)
 
     run_configured_zp(zp, config_file_path)
+
+
+@pytest.mark.parametrize("autoadapt, expect_read", [("NO", False), ("YES", True)])
+def test_run_zp_reads_autoadapt_sources_only_if_requested(autoadapt, expect_read):
+    """The auto-adapt sample parses the whole catalogue and keeps a onesource per spec-z
+    source in memory: it must only be built when AUTO_ADAPT is turned on."""
+    config_file_path = os.path.join(TESTDATADIR, "examples/COSMOS.para")
+    zp = Zphota(config_file=config_file_path, AUTO_ADAPT=autoadapt)
+
+    with patch("lephare._lephare.PhotoZ.read_autoadapt_sources", return_value=[]) as mock_read_adapt:
+        with patch("lephare._lephare.PhotoZ.read_photoz_sources", return_value=[]):
+            with patch("lephare._lephare.PhotoZ.run_photoz"):
+                with patch("lephare._lephare.PhotoZ.write_outputs"):
+                    zp.run()
+
+    assert mock_read_adapt.call_count == int(expect_read)
