@@ -88,7 +88,11 @@ def process(
         one_obj = create_and_prep_source(i)
         photozlist.append(one_obj)
         # Add the source in the list only if it satisfies the autoadapt selection criteria
-        if photz.belong_autoadapt(one_obj):
+        if (
+            photz.belong_autoadapt(one_obj)
+            and ("AUTO_ADAPT" in config)
+            and config["AUTO_ADAPT"].split_bool("NO", 1)[0]
+        ):
             # Need to recreate the source to have independant objects
             adaptlist.append(create_and_prep_source(i))
 
