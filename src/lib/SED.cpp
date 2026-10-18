@@ -1742,6 +1742,8 @@ static std::vector<double> sorted_vecs_intersection(
   double lo = std::max(x.front(), y.front());
   double hi = std::min(x.back(), y.back());
   std::vector<double> s;
+  if (hi < lo) return {};
+
   DedupMergeSortedList merge_iter(&*x.cbegin(), &*x.cend(), &*y.cbegin(),
                                   &*y.cend());
 
@@ -1749,7 +1751,7 @@ static std::vector<double> sorted_vecs_intersection(
     auto n = merge_iter.next();
     if (!n) break;
     if (*n < lo) continue;
-    s.push_back(*n);
+    s.push_back(*n);  // assumes there is always an overlap
     break;
   }
   while (true) {
