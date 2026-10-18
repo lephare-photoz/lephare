@@ -115,16 +115,6 @@ inline std::vector<double> interp_linear_vec(const std::vector<double>& x,
  */
 std::vector<double> make_regular_grid(double lo, double hi, double dx);
 
-/*! Create an irregular grid based on the unions of two vectors of double
- * @param x1 : first vector
- * @param x2 : second vector
- * @param lo : start of the grid
- * @param hi : stop of the grid
- */
-std::vector<double> make_union_grid(const std::vector<double>& x1,
-                                    const std::vector<double>& x2, double lo,
-                                    double hi);
-
 /*! merge two oneElLambda vectors into a sorted one
  *
  * @param v1: first vector of oneElLambda
