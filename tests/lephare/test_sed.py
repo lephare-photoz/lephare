@@ -370,3 +370,69 @@ def test_sumspectra():
 
     newy3 = f1(x3) + f2(x3)
     assert np.allclose(newy3, y3)
+
+
+def _integrate_reference(sx, sy, fx, fy):
+    """Independent numpy implementation of SED.integrateSED."""
+    c = 2.99792458e18
+    lo, hi = max(sx[0], fx[0]), min(sx[-1], fx[-1])
+    x = np.union1d(sx, fx)
+    x = x[(x >= lo) & (x <= hi)]
+    f = np.interp(x, sx, sy, 0, 0)
+    t = np.interp(x, fx, fy, 0, 0)
+    lmean = 0.5 * (x[1:] + x[:-1])
+    tmean = 0.5 * (t[1:] + t[:-1])
+    fmean = 0.5 * (f[1:] + f[:-1])
+    tmp = tmean * np.diff(x)
+    r5 = np.sum(tmp / lmean**2)
+    return np.array(
+        [
+            tmp.sum(),
+            r5 * c,
+            np.sum(tmp * lmean),
+            np.sum(tmp * fmean),
+            np.sum(tmp * fmean * lmean),
+            r5,
+        ]
+    )
+
+
+def _make_flt(x, y):
+    f = flt(0.0, 1.0, 10)  # top-hat constructor needs lmin < lmax; curve replaced below
+    f.lamb_trans = [lp.oneElLambda(float(a), float(b)) for a, b in zip(x, y)]
+    return f
+
+
+def test_integrate_sed_matches_reference():
+    """Compare against numpy on random grids, including SED nodes that coincide
+    with filter nodes (exercises the deduplication of the merged grid)."""
+    rng = np.random.default_rng(42)
+    for _ in range(50):
+        fx = np.sort(rng.uniform(4000, 7000, rng.integers(5, 60)))
+        fy = rng.uniform(0, 1, fx.size)
+        n = rng.integers(20, 2000)
+        sx = np.unique(np.concatenate([rng.uniform(3000, 8000, n), fx[::2], [3000.0, 8000.0]]))
+        sy = rng.uniform(0, 5, sx.size)
+        sed = SED("toto", 10, "GAL")
+        sed.set_vector(sx, sy)
+        result = np.array(sed.integrateSED(_make_flt(fx, fy)))
+        assert result == pytest.approx(_integrate_reference(sx, sy, fx, fy), rel=1e-10)
+
+
+def test_integrate_sed_degenerate_filters():
+    """Filters with fewer than two distinct nodes have a zero integral (this
+    used to underflow an unsigned index and crash)."""
+    sx = np.linspace(1000, 9000, 4001)
+    sed = SED("toto", 10, "GAL")
+    sed.set_vector(sx, np.ones_like(sx))
+    for nodes in ([5000.0], [5000.0, 5000.0]):
+        result = sed.integrateSED(_make_flt(nodes, np.ones(len(nodes))))
+        assert list(result) == [0.0] * 6
+
+
+def test_integrate_sed_filter_not_covered():
+    sx = np.linspace(1000, 9000, 100)
+    sed = SED("toto", 10, "GAL")
+    sed.set_vector(sx, np.ones_like(sx))
+    result = sed.integrateSED(_make_flt([20000.0, 21000.0], [1.0, 1.0]))
+    assert list(result) == [lp.INVALID_VAL] * 6

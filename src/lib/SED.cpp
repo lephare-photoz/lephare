@@ -1744,8 +1744,9 @@ static std::vector<double> sorted_vecs_intersection(
   std::vector<double> s;
   if (hi < lo) return {};
 
-  DedupMergeSortedList merge_iter(&*x.cbegin(), &*x.cend(), &*y.cbegin(),
-                                  &*y.cend());
+  // data()/data()+size() instead of &*cend(): dereferencing end() is UB
+  DedupMergeSortedList merge_iter(x.data(), x.data() + x.size(), y.data(),
+                                  y.data() + y.size());
 
   while (true) {
     auto n = merge_iter.next();
@@ -1777,6 +1778,11 @@ array<double, 6> SED::integrateSED(const flt& filter) {
   auto [filt_l, filt_v] = to_tuple(filter.lamb_trans);
 
   auto x = sorted_vecs_intersection(template_l, filt_l);
+
+  // fewer than two nodes in the overlap: the integral over an empty (or
+  // single point) interval is 0. This also protects the x.size() - 1 below
+  // from unsigned underflow.
+  if (x.size() < 2) return array<double, 6>{0., 0., 0., 0., 0., 0.};
 
   std::vector<double> newsed = interp_linear_vec(template_l, template_v, x);
   std::vector<double> newflt = interp_linear_vec(filt_l, filt_v, x);
