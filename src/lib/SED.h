@@ -272,7 +272,7 @@ class SED {
    * redshifted (red > 0)
    * @param allFlt: filters the reduced SED must remain compatible with
    */
-  void reduce_memory(vector<flt> allFlt);
+  void reduce_memory(const vector<flt>& allFlt);
 
   /*
    * These functions are different depending on the type of SED

@@ -400,7 +400,7 @@ void SED::sumSpectra(SED addSED, const double rescal) {
 /*
   Limit the size of the data in memory
 */
-void SED::reduce_memory(vector<flt> allFlt) {
+void SED::reduce_memory(const vector<flt>& allFlt) {
   // Only in the case z>0 and lamb_flux is defined
   if ((red >= 1.e-20) && (lamb_flux.size() > 0)) {
     vector<bool> flags;
