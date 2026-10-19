@@ -1307,7 +1307,7 @@ vector<double> PhotoZ::run_autoadapt(vector<onesource*> adaptSources) {
           oneObj->correct_classic_mw(mw_classic_extinction_values,
                                      mw_global_ebv);
         } else if (!one_mw_ebv && mw_galametz) {
-          flux = oneObj->redden_flux(flux_no_mw, reddening);
+          oneObj->redden_flux_into(flux_no_mw, reddening, flux);
         }
 
         // set the prior on the redshift, abs mag, ebv, etc on the object
@@ -1973,7 +1973,7 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
 
     // Apply MW reddening first if Galametz option on
     if (!one_mw_ebv && mw_galametz) {
-      flux = oneObj->redden_flux(flux_no_mw, reddening);
+      oneObj->redden_flux_into(flux_no_mw, reddening, flux);
     }
 
     // Core of the program: compute the chi2
@@ -2156,7 +2156,7 @@ void PhotoZ::fit(onesource& src, const vector<double>& a0) {
     // Apply MW reddening first if Galametz option on
     // And not already done with global MW EBV
   } else if (!one_mw_ebv && mw_galametz) {
-    flux = src.redden_flux(flux_no_mw, reddening);
+    src.redden_flux_into(flux_no_mw, reddening, flux);
   }
 
   // set the prior on the redshift, abs mag, ebv, etc on the object
@@ -2276,7 +2276,7 @@ void PhotoZ::physical_parameters(onesource& src) {
   // with the redenning from this source (if another source with run before,
   // it could be the wrong reddening)
   if (!one_mw_ebv && mw_galametz) {
-    flux = src.redden_flux(flux_no_mw, reddening);
+    src.redden_flux_into(flux_no_mw, reddening, flux);
   }
 
   // The rest of the procedure requires that a specific choice be made for

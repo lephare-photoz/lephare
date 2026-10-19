@@ -397,6 +397,13 @@ class onesource {
       const vector<vector<double>>& flux,
       const vector<vector<double>>& reddening) const;
 
+  /*! Same as above, but writes into @p out (resized if needed) so that its
+   * storage is reused from one object to the next.
+   */
+  void redden_flux_into(const vector<vector<double>>& flux,
+                        const vector<vector<double>>& reddening,
+                        vector<vector<double>>& out) const;
+
   /*! Write output in the lephare ascii format
    * @param stout: stream object pointing to the output file
    * @param outkeywords: list of keywords to be output

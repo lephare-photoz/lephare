@@ -406,34 +406,44 @@ void onesource::rescale_flux_errors(const vector<double> min_err,
 vector<vector<double>> onesource::redden_flux(
     const vector<vector<double>>& flux,
     const vector<vector<double>>& reddening) const {
-  // Determine dimensions
-  size_t nRows = flux.size();
-  size_t nCols = flux.empty() ? 0 : flux[0].size();
-
-  // Allocate output array with same size
-  vector<vector<double>> out(nRows, vector<double>(nCols, 0.0));
-
-#ifdef _OPENMP
-#pragma omp parallel
-  {
-#pragma omp for
-#endif
-    // Apply reddening correction element-wise
-    for (size_t i = 0; i < nRows; ++i) {
-      for (size_t k = 0; k < nCols; ++k) {
-        double factor = 1.;
-        // Do the correction only when MW E(B-V) is positive
-        if (this->mw_ebv > 0)
-          factor = pow(10.0, reddening[i][k] * this->mw_ebv * 0.4);
-        // Divide to redden times to deredden
-        out[i][k] = flux[i][k] / factor;
-      }
-    }
-#ifdef _OPENMP
-  }
-#endif
-
+  vector<vector<double>> out;
+  redden_flux_into(flux, reddening, out);
   return out;
+}
+
+/*
+ In-place variant: the result is written into `out`, whose storage is reused
+ when it already has the right shape. This avoids allocating and freeing one
+ std::vector per template for every object. Results are identical to the
+ allocating variant.
+*/
+void onesource::redden_flux_into(const vector<vector<double>>& flux,
+                                 const vector<vector<double>>& reddening,
+                                 vector<vector<double>>& out) const {
+  const size_t nRows = flux.size();
+  const size_t nCols = flux.empty() ? 0 : flux[0].size();
+
+  if (out.size() != nRows) out.resize(nRows);
+  // Do the correction only when MW E(B-V) is positive
+  const bool apply = this->mw_ebv > 0;
+
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+  for (size_t i = 0; i < nRows; ++i) {
+    if (out[i].size() != nCols) out[i].resize(nCols);
+    const double* f = flux[i].data();
+    const double* r = reddening[i].data();
+    double* o = out[i].data();
+    if (apply) {
+      for (size_t k = 0; k < nCols; ++k) {
+        // Divide to redden times to deredden
+        o[k] = f[k] / pow(10.0, r[k] * this->mw_ebv * 0.4);
+      }
+    } else {
+      for (size_t k = 0; k < nCols; ++k) o[k] = f[k];
+    }
+  }
 }
 
 /*
