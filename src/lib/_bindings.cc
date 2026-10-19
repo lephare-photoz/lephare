@@ -260,7 +260,8 @@ PYBIND11_MODULE(_lephare, mod) {
            py::arg("lmin"), py::arg("lmax"), py::arg("Nsteps"),
            py::arg("calib"))
       .def("rescale", &SED::rescale, "Rescale the SED flux by a factor.")
-      .def("compute_magnitudes", &SED::compute_magnitudes,
+      .def("compute_magnitudes",
+           py::overload_cast<const vector<flt>&>(&SED::compute_magnitudes),
            "Compute synthetic magnitudes in a set of filters.")
       .def("compute_fluxes", &SED::compute_fluxes,
            "Compute synthetic fluxes in a set of filters.")
@@ -274,7 +275,9 @@ PYBIND11_MODULE(_lephare, mod) {
            "Set the SED flux from lambda and value arrays.", py::arg("x"),
            py::arg("y"))
       //  .def("applyExt", &SED::applyExt)
-      .def("compute_milky_way_extinction", &SED::compute_milky_way_extinction,
+      .def("compute_milky_way_extinction",
+           py::overload_cast<const ext&, const vector<flt>&>(
+               &SED::compute_milky_way_extinction),
            "Compute the Milky Way dust extinction curve for this SED.")
       //  .def("applyExtLines", &SED::applyExtLines)
       .def("get_data_vector", &SED::get_data_vector,

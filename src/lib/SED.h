@@ -240,6 +240,11 @@ class SED {
   void rescale(double scaleFac);
   /// compute magnitude from filters
   void compute_magnitudes(const vector<flt>& filters);
+  /// same, also returning in @p integrated_fluxes the integral of #lamb_flux
+  /// times each filter (element [3] of integrateSED), which can be handed to
+  /// compute_milky_way_extinction to avoid integrating twice
+  void compute_magnitudes(const vector<flt>& filters,
+                          vector<double>& integrated_fluxes);
   /// compute fluxed from filters
   vector<double> compute_fluxes(const vector<flt>& filters);
   /**
@@ -257,6 +262,17 @@ class SED {
    */
   void compute_milky_way_extinction(const ext& oneExt,
                                     const vector<flt>& filters);
+  /**
+   * @brief Same as above, reusing already computed unreddened integrals.
+   *
+   * @param unreddened_fluxes
+   *    Integral of the unreddened SED in each filter, as filled by
+   *    compute_magnitudes(filters, unreddened_fluxes) for this same SED.
+   *    Must have one value per filter, otherwise it is ignored.
+   */
+  void compute_milky_way_extinction(const ext& oneExt,
+                                    const vector<flt>& filters,
+                                    const vector<double>& unreddened_fluxes);
   /// Integrate #lamb_flux over its full wavelength range using the
   /// trapezoidal rule
   /// @return the integrated value
