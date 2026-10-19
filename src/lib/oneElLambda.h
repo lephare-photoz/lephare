@@ -76,48 +76,6 @@ inline std::tuple<std::vector<double>, std::vector<double>> to_tuple(
   return {std::move(lambdas), std::move(vals)};
 }
 
-/*! Interpolate a curve (x,y) at one position, starting the search at a hint
- * @param x : x-values of the curve to interpolate
- * @param y : y-values of the curve to interpolate
- * @param xi : x-value at which to interpolate
- * @param x_hint : index in x from which the search for xi starts. It must not
- * be larger than the index of the first element of x that is >= xi, which is
- * guaranteed when successive calls use non-decreasing xi and the returned hint.
- * @return: the y-value from (x,y) interpolated at xi, and the index to pass as
- * x_hint to the next call (for the next, larger or equal, xi).
- * Important : x is expected to be sorted in increasing order.
- * if xi is outside the range of x, 0 is returned.
- */
-std::pair<double, size_t> interp_linear_point(const std::vector<double>& x,
-                                              const std::vector<double>& y,
-                                              double xi, size_t x_hint);
-
-/*! Interpolate a curve (x,y) at positions given by a vector
- * @param x : x-values of the curve to interpolate
- * @param y : y-values of the curve to interpolate
- * @param q : x-values at which to interpolate
- * @return: the vector of y-values frm (x,y) interpolated at q.
- * Important : x AND q are expected to be sorted in increasing order (the
- * search position is carried from one q value to the next); this is checked
- * by an assert in debug builds only.
- */
-inline std::vector<double> interp_linear_vec(const std::vector<double>& x,
-                                             const std::vector<double>& y,
-                                             const std::vector<double>& q) {
-  assert(std::is_sorted(x.begin(), x.end()));
-  assert(std::is_sorted(q.begin(), q.end()));
-  size_t x_hint = 0;
-  std::vector<double> out(q.size());
-  // not worth accelerating, due to OMP overhead
-  // #pragma omp parallel for
-  for (long long i = 0; i < (long long)q.size(); ++i) {
-    auto [o, new_x_hint] = interp_linear_point(x, y, q[i], x_hint);
-    out[i] = o;
-    x_hint = new_x_hint;
-  }
-  return out;
-}
-
 /*! Create a regular grid of double
  * @param lo : start of the grid
  * @param hi : stop of the grid

@@ -13,7 +13,6 @@
 #include <iomanip>   // std::set precision
 #include <iostream>  // print standard file
 #include <limits>    //std::numeric_limits
-#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -1696,73 +1695,29 @@ void SED::compute_milky_way_extinction(const ext& oneExt,
   tmp.clean();
 }
 
-struct DedupMergeSortedList {
-  double const* lhs;
-  double const* lhs_end;
-  double const* rhs;
-  double const* rhs_end;
-  std::optional<double> previous_val{};
+namespace {
+/// Evaluates a piecewise linear curve at non-decreasing abscissae. The search
+/// position is carried from one call to the next, so a full sweep is O(n).
+class LinearCursor {
+  const oneElVector& c;
+  size_t idx = 0;
 
-  DedupMergeSortedList(double const* lhs_begin, double const* lhs_end,
-                       double const* rhs_begin, double const* rhs_end)
-      : lhs(lhs_begin), lhs_end(lhs_end), rhs(rhs_begin), rhs_end(rhs_end) {}
+ public:
+  explicit LinearCursor(const oneElVector& curve) : c(curve) {}
 
-  std::optional<double> next() {
-    while (true) {
-      if (lhs == lhs_end && rhs == rhs_end) return {};
-      double candidate = 0;
-
-      if (lhs == lhs_end) {
-        candidate = *rhs;
-        rhs++;
-      } else if (rhs == rhs_end) {
-        candidate = *lhs;
-        lhs++;
-      } else {
-        double l = *lhs;
-        double r = *rhs;
-        if (l <= r) {
-          candidate = l;
-          lhs++;
-        } else {
-          candidate = r;
-          rhs++;
-        }
-      }
-
-      if (previous_val && *previous_val == candidate) continue;
-      previous_val = candidate;
-      return candidate;
-    }
+  /// xi must lie in [c.front().lamb, c.back().lamb] and be >= the previous xi
+  double operator()(double xi) {
+    if (xi == c.front().lamb) return c.front().val;
+    if (xi == c.back().lamb) return c.back().val;
+    // first node with lamb >= xi (identical to std::lower_bound from idx)
+    while (c[idx].lamb < xi) ++idx;
+    const double x0 = c[idx - 1].lamb, x1 = c[idx].lamb;
+    const double y0 = c[idx - 1].val, y1 = c[idx].val;
+    const double t = (xi - x0) / (x1 - x0);
+    return y0 + t * (y1 - y0);
   }
 };
-
-static std::vector<double> sorted_vecs_intersection(
-    const std::vector<double>& x, const std::vector<double>& y) {
-  double lo = std::max(x.front(), y.front());
-  double hi = std::min(x.back(), y.back());
-  std::vector<double> s;
-  if (hi < lo) return {};
-
-  // data()/data()+size() instead of &*cend(): dereferencing end() is UB
-  DedupMergeSortedList merge_iter(x.data(), x.data() + x.size(), y.data(),
-                                  y.data() + y.size());
-
-  while (true) {
-    auto n = merge_iter.next();
-    if (!n) break;
-    if (*n < lo) continue;
-    s.push_back(*n);  // assumes there is always an overlap
-    break;
-  }
-  while (true) {
-    auto n = merge_iter.next();
-    if (!n) break;
-    if (*n > hi) break;
-    s.push_back(*n);
-  }
-  return s;
-}
+}  // namespace
 
 array<double, 6> SED::integrateSED(const flt& filter) {
   // don't integrate if:
@@ -1774,40 +1729,60 @@ array<double, 6> SED::integrateSED(const flt& filter) {
                             INVALID_VAL, INVALID_VAL, INVALID_VAL};
   }
 
-  auto [template_l, template_v] = to_tuple(lamb_flux);
-  auto [filt_l, filt_v] = to_tuple(filter.lamb_trans);
+  // Single pass over the sorted union of the SED and filter wavelengths,
+  // restricted to their intersection [lo, hi] and without duplicates. SED and
+  // filter are interpolated on the fly at each grid point, and the trapezoid
+  // contribution of each interval is accumulated: no intermediate vector is
+  // allocated. Both inputs are required to be sorted in increasing lambda.
+  const oneElVector& sed = lamb_flux;
+  const oneElVector& trans = filter.lamb_trans;
+  const double lo = std::max(sed.front().lamb, trans.front().lamb);
+  const double hi = std::min(sed.back().lamb, trans.back().lamb);
 
-  auto x = sorted_vecs_intersection(template_l, filt_l);
-
-  // fewer than two nodes in the overlap: the integral over an empty (or
-  // single point) interval is 0. This also protects the x.size() - 1 below
-  // from unsigned underflow.
-  if (x.size() < 2) return array<double, 6>{0., 0., 0., 0., 0., 0.};
-
-  std::vector<double> newsed = interp_linear_vec(template_l, template_v, x);
-  std::vector<double> newflt = interp_linear_vec(filt_l, filt_v, x);
+  LinearCursor sed_at(sed), trans_at(trans);
+  size_t i = 0, j = 0;
+  const size_t ni = sed.size(), nj = trans.size();
 
   double r0 = 0, r1 = 0, r2 = 0, r3 = 0, r4 = 0, r5 = 0;
-  for (size_t i = 0; i < x.size() - 1; i++) {
-    // lambda mean
-    double lmean = (x[i] + x[i + 1]) / 2;
-    // trans mean
-    double tmean = (newflt[i] + newflt[i + 1]) / 2;
-    // flux mean
-    double fmean = (newsed[i] + newsed[i + 1]) / 2;
-    // delta lambda
-    double dlbd = (x[i + 1] - x[i]);
-    double tmp = tmean * dlbd;
-    // integral T dlambda
-    r0 += tmp;
-    // integral (T*lambda) dlambda
-    r2 += tmp * lmean;
-    // integral (F*T) dlambda
-    r3 += tmp * fmean;
-    // integral (F*T*lambda) dlambda
-    r4 += tmp * fmean * lmean;
-    // integral (T/lambda^2) dlambda
-    r5 += tmp / pow(lmean, 2);
+  bool have_prev = false;
+  double xp = 0, tp = 0, fp = 0;  // previous grid point and its values
+  while (i < ni || j < nj) {
+    // next smallest wavelength of the merged lists
+    double x;
+    if (j == nj || (i < ni && sed[i].lamb <= trans[j].lamb))
+      x = sed[i++].lamb;
+    else
+      x = trans[j++].lamb;
+    if (x < lo) continue;
+    if (x > hi) break;
+    if (have_prev && x == xp) continue;  // same wavelength in both lists
+
+    const double tx = trans_at(x), fx = sed_at(x);
+    if (have_prev) {
+      // lambda mean
+      double lmean = (xp + x) / 2;
+      // trans mean
+      double tmean = (tp + tx) / 2;
+      // flux mean
+      double fmean = (fp + fx) / 2;
+      // delta lambda
+      double dlbd = (x - xp);
+      double tmp = tmean * dlbd;
+      // integral T dlambda
+      r0 += tmp;
+      // integral (T*lambda) dlambda
+      r2 += tmp * lmean;
+      // integral (F*T) dlambda
+      r3 += tmp * fmean;
+      // integral (F*T*lambda) dlambda
+      r4 += tmp * fmean * lmean;
+      // integral (T/lambda^2) dlambda
+      r5 += tmp / pow(lmean, 2);
+    }
+    xp = x;
+    tp = tx;
+    fp = fx;
+    have_prev = true;
   }
   // integral (T*c/lambda**2) dlambda
   r1 = r5 * c;
