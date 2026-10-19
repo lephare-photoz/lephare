@@ -9,10 +9,7 @@
 #define ONEEL_H  // define the keyword to be checked
 
 #include <algorithm>
-#include <cassert>
-#include <iostream>
 #include <tuple>
-#include <utility>
 #include <vector>
 
 using namespace std;
