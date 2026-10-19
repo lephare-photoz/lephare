@@ -261,8 +261,7 @@ double flt::lambdaEff() {
   vegSED.read(vegaFile);
   // integrate the vega spectrum over the filter considered in this instance of
   // the object Various information on the integral is stored within magVeg
-  vector<double> magVeg;
-  magVeg = vegSED.integrateSED(*this);
+  array<double, 6> magVeg = vegSED.integrateSED(*this);
 
   // int (Fvega T lambda) dLambda /  int (Fvega T) dLambda
   if (magVeg[4] > 0) leff = magVeg[4] / magVeg[3];
@@ -280,8 +279,7 @@ double flt::abcorr() {
   vegSED.read(vegaFile);
   // integrate the vega spectrum over the filter considered in this instance of
   // the object Various information on the integral is stored within magVeg
-  vector<double> magVeg;
-  magVeg = vegSED.integrateSED(*this);
+  auto magVeg = vegSED.integrateSED(*this);
 
   // int (Fvega T) dLambda /  int ( T*c/lambda^2) dLambda
   if (magVeg[3] > 0) ab = -2.5 * log10(magVeg[3] / magVeg[1]) - 48.6;
@@ -299,7 +297,7 @@ double flt::tgcorr() {
   vegSED.read(vegaFile);
   // integrate the vega spectrum over the filter considered in this instance of
   // the object Various information on the integral is stored within magVeg
-  vector<double> magVeg = vegSED.integrateSED(*this);
+  auto magVeg = vegSED.integrateSED(*this);
 
   // create an SED object based on the BD17 spectra
   SED tgSED("TG");
@@ -307,7 +305,7 @@ double flt::tgcorr() {
   tgSED.read(tgFile);
   // integrate the BD17 spectrum over the filter considered in this instance of
   // the object Various information on the integral is stored within magTG
-  vector<double> magTG = tgSED.integrateSED(*this);
+  auto magTG = tgSED.integrateSED(*this);
 
   // mtg(*) = mvega(*) + TGcor : TGcor=2.5log(Int[F(BD)TdL]/Int[F(Vega)TdL])
   // +9.50-0.03
@@ -327,8 +325,7 @@ double flt::vega() {
   SED vegSED("Vega");
   string vegaFile = lepharedir + "/vega/VegaLCB.sed";
   vegSED.read(vegaFile);
-  vector<double> magVeg;
-  magVeg = vegSED.integrateSED(*this);
+  auto magVeg = vegSED.integrateSED(*this);
 
   // int (Fvega T) dLambda /  int ( T) dLambda
   if (magVeg[3] > 0) veg = 2.5 * log10(magVeg[3] / magVeg[0]);
@@ -344,8 +341,7 @@ double flt::magsun() {
   SED sunSED("Sun");
   string sunFile = lepharedir + "/vega/SunLCB.sed";
   sunSED.read(sunFile);
-  vector<double> magSun;
-  magSun = sunSED.integrateSED(*this);
+  auto magSun = sunSED.integrateSED(*this);
 
   /*
   mo-Mo= 5log D -5 , with D=1U.A. expressed in pc :  mo-Mo= -31.572
@@ -373,7 +369,7 @@ double flt::fcorrec() {
 
   // Define the second part of the correction (Fcalib is the SED used as a
   // reference) int (T / lambda^2) dLambda /  int ( Fcalib T ) dLambda
-  vector<double> magCalib = calibSED.integrateSED(*this);
+  auto magCalib = calibSED.integrateSED(*this);
   fcorr = magCalib[5] / magCalib[3];
 
   // If calib=4 or 5, take nuFnu=cst (case calib 1) to compute lambda_eff ->
@@ -433,8 +429,7 @@ double flt::lambdaEff2() {
   // change the calibration SED
   if (calibtyp == 4 || calibtyp == 5)
     calibSED.generateCalib(lmin() - 10, lmax() + 10, 1000, 1);
-  vector<double> magCalib;
-  magCalib = calibSED.integrateSED(*this);
+  auto magCalib = calibSED.integrateSED(*this);
 
   // int (Fcalib T lambda) dLambda /  int ( Fcalib T ) dLambda
   double leff2 = magCalib[4] / magCalib[3];
