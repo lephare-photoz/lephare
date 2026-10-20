@@ -102,22 +102,3 @@ def test_make_regular_grid():
         grid = lp.make_regular_grid(0, 1, -1)
     grid = lp.make_regular_grid(0, 1, 0.1)
     assert np.allclose(np.array(grid), np.linspace(0, 1, 11))
-
-
-def test_common_interpolate_combined():
-    with pytest.raises(RuntimeError):
-        lp.common_interpolate_combined(
-            np.linspace(10, 20, 10),
-            np.linspace(10, 20, 11),
-            np.linspace(10, 20, 12),
-            np.linspace(10, 20, 12),
-            1,
-        )
-    with pytest.raises(RuntimeError):
-        lp.common_interpolate_combined(
-            np.linspace(10, 20, 10),
-            np.linspace(10, 20, 10),
-            np.linspace(10, 20, 10),
-            np.linspace(10, 20, 12),
-            1,
-        )

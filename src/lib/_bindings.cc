@@ -57,13 +57,6 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readwrite("val", &oneElLambda::val);
   mod.def("make_regular_grid", &make_regular_grid,
           "Build a regularly-spaced wavelength grid between two bounds.");
-  mod.def("make_union_grid", &make_union_grid,
-          "Build the sorted union of two wavelength grids.");
-  mod.def("common_interpolate_combined", &common_interpolate_combined,
-          "Cross-interpolate two (x,y) functions onto their combined grid.");
-  mod.def("restricted_resampling", &restricted_resampling,
-          "Cross-interpolate two oneElLambda vectors restricted to their "
-          "wavelength intersection.");
   mod.def("concatenate_and_sort", &concatenate_and_sort,
           "concatenate and sort two vector of oneElLambda objects. Sorting is "
           "in increasing lambda.");

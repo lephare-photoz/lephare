@@ -216,7 +216,7 @@ class SED {
    * the filter; returns INVALID_VAL if the SED does not fully cover the
    * filter bandpass
    */
-  vector<double> integrateSED(const flt& filter);
+  array<double, 6> integrateSED(const flt& filter);
 
   /*! \brief Generate a calibration SED based on the argument calib
    *
@@ -289,7 +289,7 @@ class SED {
    * redshifted (red > 0)
    * @param allFlt: filters the reduced SED must remain compatible with
    */
-  void reduce_memory(vector<flt> allFlt);
+  void reduce_memory(const vector<flt>& allFlt);
 
   /*
    * These functions are different depending on the type of SED
