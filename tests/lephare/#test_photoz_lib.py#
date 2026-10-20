@@ -1,6 +1,0 @@
-import pytest
-import numpy as np
-import lephare as lp
-
-def test_empty_srclist():
-    
