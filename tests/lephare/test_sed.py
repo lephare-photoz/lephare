@@ -1,0 +1,473 @@
+import os
+import tempfile
+
+import lephare as lp
+import numpy as np
+import pytest
+import scipy.integrate as sciint
+from lephare import QSOSED, SED, GalSED, StarSED, flt
+
+TESTDIR = os.path.abspath(os.path.dirname(__file__))
+TESTDATADIR = os.path.join(TESTDIR, "../data")
+
+
+def test_apply_ext():
+    onext = lp.ext("", 0)
+    x1 = np.linspace(0, 50, 20)
+    y1 = np.ones_like(x1) / 0.4
+    onext.set_vector(x1, y1)
+
+    sed = SED()
+    x2 = np.linspace(10, 20, 10)
+    y2 = x2
+
+    sed.set_vector(x2, y2)
+    sed.apply_extinction(1.0, onext)
+    res1x, res1y = sed.data()
+    print(res1x)
+    print(res1y)
+    assert np.allclose(res1y, np.array(y2) / 10.0)
+
+
+def test_generate_lines():
+    sed = lp.GalSED("", 0)
+    mnuv_int = -3
+    nuvr = 3
+    scalefac = 1
+    sed.generateEmEmpUV(mnuv_int, nuvr)
+    if nuvr < 4:
+        scalefac = 10 ** (-0.4 * mnuv_int - 6.224) / 2.85
+    vals = [ell.val for ell in sed.fac_line]
+    assert np.allclose(np.array(vals), scalefac * np.array(lp._empirical_ratio))
+    sfr = 10**50.0
+    sed.generateEmEmpSFR(sfr, nuvr)
+    if nuvr < 4:
+        scalefac = 10 ** (np.log10(sfr) + 41.27 - np.log10(4 * np.pi * 100 * 3.08568**2) - 36) / 2.85
+    vals = [ell.val for ell in sed.fac_line]
+    print(vals)
+    print(scalefac * np.array(lp._empirical_ratio))
+    assert np.allclose(np.array(vals), scalefac * np.array(lp._empirical_ratio))
+
+
+# def test_apply_ext_lines():
+#     onext = lp.ext("", 0)
+#     x1 = np.linspace(1000, 17000, 20)
+#     y1 = np.ones_like(x1) / 0.4
+#     onext.set_vector(x1, y1)
+
+#     sed = SED()
+#     x2 = np.linspace(10, 20, 10)
+#     y2 = x2
+#     sed.set_vector(x2, y2)
+#     sed.fac_line = lp._ga_total
+
+#     sed.apply_extinction_to_lines(.1, onext)
+#     res1 = sed.fac_line
+#     assert np.allclose(res1, np.array(lp._ga_total) / 10.0)
+
+
+def test_string_to_object():
+    for t in ["s", "S", "sOap", "STAR"]:
+        a = lp.SED.string_to_object(t)
+        assert a == lp.object_type.STAR
+    for t in ["g", "G", "GAGA", "GAL"]:
+        a = lp.SED.string_to_object(t)
+        assert a == lp.object_type.GAL
+    for t in ["q", "Q", "QUASI", "QSO"]:
+        a = lp.SED.string_to_object(t)
+        assert a == lp.object_type.QSO
+    with pytest.raises(ValueError):
+        _ = lp.SED.string_to_object("wrong")
+
+
+def sed_get_object_type():
+    sed = SED("dummy", 0, "GAL")
+    assert sed.get_object_type == lp.object_type.GAL
+    sed = SED("dummy", 0, "QSO")
+    assert sed.get_object_type == lp.object_type.QSO
+    sed = SED("dummy", 0, "STAR")
+    assert sed.get_object_type == lp.object_type.STAR
+
+
+def test_sed_constructors():
+    sed = SED("dummy", 10, "GAL")
+    assert sed.name == "dummy"
+    assert sed.nummod == 10
+    assert sed.is_gal()
+    sed2 = StarSED(sed)
+    assert sed2.is_star()
+    assert sed2.name == "dummy"
+    assert sed2.nummod == 10
+    sed2 = QSOSED(sed)
+    assert sed2.is_qso()
+    assert sed2.name == "dummy"
+    assert sed2.nummod == 10
+    sed2 = GalSED(sed)
+    assert sed2.is_gal()
+    assert sed2.name == "dummy"
+    assert sed2.nummod == 10
+
+
+def test_sed_fromfile():
+    sed = SED("toto", 10, "GAL")
+    sed.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
+    assert sed.size() == 4860
+    d = sed.data()
+    y = d[1]
+    sed.rescale(2.0)
+    y2 = sed.data()[1]
+    assert np.allclose(y2, 2 * y)
+
+
+def test_sed_readwrite():
+    star = StarSED("star_test")
+    star.read(os.path.join(TESTDATADIR, "sed/WDgd71.sed.ext"))
+
+    with tempfile.TemporaryDirectory() as dir_name:
+        file_path = os.path.join(dir_name, "test_star.fits")
+        star.writeSED(file_path + ".bin", file_path + ".phys", file_path + ".doc")
+
+        newsed = StarSED("newsed")
+        newsed.readSEDBin(file_path + ".bin")
+        np.testing.assert_array_equal(newsed.data()[0], star.data()[0])
+        np.testing.assert_array_equal(newsed.data()[1], star.data()[1])
+
+
+def test_emplace_back():
+    sed = SED("toto", 10, "GAL")
+    sed.emplace_back(100, 1)
+    assert sed.size() == 1
+    x, y = sed.data()
+    assert x[0] == 100
+    assert y[0] == 1
+
+
+def test_set_vector():
+    sed = SED("toto", 10, "GAL")
+    x = np.linspace(100, 500, 1000)
+    with pytest.raises(RuntimeError):
+        # not the same size
+        sed.set_vector(x, np.linspace(0, 1, 500))
+    sed.set_vector(x, np.ones_like(x))
+    assert len(x) == sed.size()
+    sedx, sedy = sed.data()
+    for yy in sedy:
+        assert yy == 1
+    # test clearing
+    sed.set_vector(x, x)
+    assert len(x) == sed.size()
+
+
+def test_integrate():
+    sed = SED()
+    x2 = np.linspace(10, 20, 10)
+    y2 = x2
+    sed.set_vector(x2, y2)
+
+    assert sed.integrate(15, 15) == 0.0
+    # extending beyond sed boundaries is not allowed
+    assert sed.integrate(9, 11) == lp.INVALID_VAL
+    assert sed.integrate(19, 21) == lp.INVALID_VAL
+    # throw error on lmin>lmax
+    with pytest.raises(RuntimeError):
+        sed.integrate(15, 11)
+    # corner cases
+    assert sed.integrate(10, 10.5) == (10.5**2 - 10**2) / 2
+    assert sed.integrate(19, 20) == (20**2 - 19**2) / 2
+    assert sed.integrate(19, 19.5) == (19.5**2 - 19**2) / 2
+
+
+def test_integration():
+    sed = SED("toto", 10, "GAL")
+    # test on a case of exact computation
+    x = np.linspace(100, 500, 101)
+    sed.set_vector(x, x)
+    for lmin, lmax in [(20, 50), (20, 150), (200, 700), (400, 800), (500, 800)]:
+        assert sed.integrate(lmin, lmax) == lp.INVALID_VAL
+
+    for lmin, lmax in [
+        (200, 300),
+        (199, 301),
+        (254, 256),
+        (100, 500),
+        (101, 102),
+    ]:
+        result = sed.integrate(lmin, lmax)
+        print(result)
+        assert result == 0.5 * (lmax**2 - lmin**2)
+
+    sed.set_vector([0], [0])
+    assert sed.integrate(0, 1) == lp.INVALID_VAL
+
+
+def test_integration2():
+    # test on a more realistic case
+    sed = SED("toto", 10, "GAL")
+    sed.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
+    x, y = sed.data()
+
+    def interp(z):
+        return np.interp(z, x, y, 0, 0)
+
+    for lmin, lmax in [(5000, 7000), (5001, 6999), (4996, 7003)]:
+        result = sed.integrate(lmin, lmax)
+        #
+        hat = flt(lmin, lmax, 100)
+        result2 = sed.integrateSED(hat)
+        #
+        v, ev = sciint.quad(interp, lmin, lmax, limit=500, epsabs=1.0e-4, epsrel=1.0e-4)
+        print(result, result2[3])
+        print(v, ev)
+        assert result == pytest.approx(v, ev)
+
+
+def test_sedproperties():
+    # test on a more realistic case
+    sed = GalSED("toto", 10)
+    sed.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
+    x, y = sed.data()
+
+    def interp(z):
+        return np.interp(z, x, y, 0, 0)
+
+    tmp = 4 * np.pi * 100 * (3.086e18) ** 2 / 2.99792458e18
+    sed.compute_luminosities()
+    # for lmin,lmax in [(2100, 2500), (5500, 6500), (21000, 23000), ]
+    res = sciint.quad(interp, 2100, 2500, limit=500, epsabs=1.0e-4, epsrel=1.0e-4)
+    assert np.log10(res[0] * 2300**2 / 400 * tmp) == pytest.approx(sed.luv, res[1])
+
+    res = sciint.quad(interp, 5500, 6500, limit=500, epsabs=1.0e-4, epsrel=1.0e-4)
+    assert np.log10(res[0] * 6000**2 / 1000 * tmp) == pytest.approx(sed.lopt, res[1])
+
+    res = sciint.quad(interp, 21000, 23000, limit=500, epsabs=1.0e-4, epsrel=1.0e-4)
+    assert np.log10(res[0] * 22000**2 / 2000 * tmp) == pytest.approx(sed.lnir, res[1])
+
+    res1 = sciint.quad(interp, 3750, 3950, limit=500, epsabs=1.0e-3, epsrel=1.0e-3)
+    res2 = sciint.quad(interp, 4050, 4250, limit=500, epsabs=1.0e-4, epsrel=1.0e-4)
+    assert res2[0] / res1[0] == pytest.approx(sed.d4000, res1[1])
+
+    assert sed.ltir == lp.INVALID_VAL
+
+    sed.read(os.path.join(TESTDATADIR, "sed/dale_1.sed"))
+    x, y = sed.data()
+    sed.compute_luminosities()
+    res = sciint.quad(interp, 80000, 1.0e6, limit=500, epsabs=1.0e-4, epsrel=1.0e-4)
+    assert np.log10(res[0] * tmp * 2.99792458e18 / 3.826e33) == pytest.approx(sed.ltir, res[1])
+
+    # Tophat filter
+    lmin = 200
+    lmax = 300
+    hat = flt(lmin, lmax, 100)
+    # flat SED ov val=1
+    x = np.linspace(100, 500, 1000)
+    sed.set_vector(x, np.ones_like(x))
+    result = sed.integrateSED(hat)
+    c = 2.99792458e18
+    true_res = [
+        lmax - lmin,
+        c * (1 / lmin - 1 / lmax),
+        0.5 * (lmax**2 - lmin**2),
+        lmax - lmin,
+        0.5 * (lmax**2 - lmin**2),
+        1 / lmin - 1 / lmax,
+    ]
+    print(result)
+    print(true_res)
+    assert np.allclose(np.array(result), np.array(true_res), 1.1e-2)
+
+
+def test_calc_ph():
+    sed = GalSED("", 0)
+    hc = 12398.42
+    x = np.linspace(0, 1500, 10000)
+    # with such a sed, calc_ph just computes the integral of lambda
+    # from 0 to the 4 edges
+    y = np.ones_like(x) * (hc * 1.6022e-12)
+    sed.set_vector(x, y)
+    assert sed.qi == [0.0, 0.0, 0.0, 0.0]
+    sed.calc_ph()
+    for i, e in enumerate([54.42, 24.59, 13.60, hc / 1108.7]):
+        print(sed.qi[i])
+        assert sed.qi[i] == pytest.approx(0.5 * (hc / e) ** 2, 1.0e-3)
+
+
+def test_compute_fluxes():
+    # compute_fluxes() had zero test coverage before this addition. Cross-check
+    # it against an independent scipy integration of the raw SED data, using
+    # the same top-hat filter trick as test_integration2.
+    sed = SED("toto", 10, "GAL")
+    sed.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
+    x, y = sed.data()
+
+    def interp(z):
+        return np.interp(z, x, y, 0, 0)
+
+    c_light = 2.99792458e18  # Angstrom/s, see globals.h
+
+    for lmin, lmax in [(5000, 7000), (5001, 6999)]:
+        hat = flt(lmin, lmax, 100)
+        # top-hat filter: T=1 over [lmin, lmax], so
+        # flux = int(F dlambda) / (c * int(dlambda/lambda^2))
+        num, _ = sciint.quad(interp, lmin, lmax, limit=500, epsabs=1.0e-4, epsrel=1.0e-4)
+        denom, _ = sciint.quad(lambda z: 1.0 / z**2, lmin, lmax, limit=500)
+        expected_flux = num / (c_light * denom)
+
+        result = sed.compute_fluxes([hat])
+        assert len(result) == 1
+        assert result[0] == pytest.approx(expected_flux, rel=1e-3)
+
+    # a filter entirely outside the SED range must return NULL_FLUX, not crash
+    # NB: globals.h's INVALID_FLUX is not exposed to python, but has the same
+    # numeric value as the exposed INVALID_VAL (-9999.0)
+    out_of_range = flt(1, 2, 10)
+    result = sed.compute_fluxes([out_of_range])
+    assert result[0] == lp.INVALID_VAL
+
+
+def test_sumspectra():
+    sed1 = GalSED("toto", 10)
+    sed1.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
+    x1, y1 = sed1.data()
+    sed2 = GalSED("toto", 11)
+    sed1.sumSpectra(sed2, 0)  # case of empty additional sed
+    newx, newy = sed1.data()
+    assert np.all(newx == x1)
+    assert np.all(newy == y1)
+    sed2.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
+    sed1.sumSpectra(sed2, 0)  # case of nul rescale factor
+    newx, newy = sed1.data()
+    assert np.all(newx == x1)
+    assert np.all(newy == y1)
+
+    # easy case : sum the same SED with a rescal factor of 2
+    # here in practice there is no interpolation and so the
+    # the input and output have the same size
+    sed1 = GalSED("toto", 10)
+    sed1.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
+    sed2 = GalSED("toto", 11)
+    sed2.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
+    sed1.sumSpectra(sed2, 2)
+    x2, y2 = sed2.data()
+    x1, y1 = sed1.data()
+    print(len(x1), len(x2))
+    assert np.allclose(np.array(y1), 3 * np.array(y2))
+
+    # harder case : different SEDs
+    sed1 = GalSED("toto", 10)
+    sed1.read(os.path.join(TESTDATADIR, "sed/o5v.sed.ext"))
+    sed2 = GalSED("toto", 11)
+    sed2.read(os.path.join(TESTDATADIR, "sed/GAL/COSMOS_SED/Ell1_A_0.sed"))
+    x2, y2 = sed2.data()
+    x1, y1 = sed1.data()
+    sed1.sumSpectra(sed2, 1)
+    x3, y3 = sed1.data()
+
+    def f1(x):
+        return np.interp(x, x1, y1, 0, 0)
+
+    def f2(x):
+        return np.interp(x, x2, y2, 0, 0)
+
+    newy3 = f1(x3) + f2(x3)
+    assert np.allclose(newy3, y3)
+
+
+def test_compute_magnitudes():
+    """SED.compute_magnitudes: valid, out-of-range and negative-flux branches."""
+    filters = lp.read_filters_from_file(os.path.join(TESTDATADIR, "filt", "LSST_FILTERS.dat"))
+    lam = np.linspace(2000.0, 12000.0, 2001)
+
+    # valid case: AB magnitude from the integrated flux of each filter
+    sed = SED("toto", 10, "GAL")
+    sed.set_vector(lam, 1e-17 * (lam / 5000.0) ** -2)
+    sed.compute_magnitudes(filters)
+    assert len(sed.mag) == len(filters)
+    for f, m in zip(filters, sed.mag):
+        int_flux = sed.integrateSED(f)
+        expected = -2.5 * np.log10(int_flux[3] / int_flux[1] * f.fcorr) - 48.6
+        assert m == pytest.approx(expected, abs=1e-10)
+        assert np.isfinite(m)
+
+    # magnitudes are appended to the existing ones
+    sed.compute_magnitudes(filters)
+    assert len(sed.mag) == 2 * len(filters)
+    assert list(sed.mag[: len(filters)]) == list(sed.mag[len(filters) :])
+
+    # SED not covering the filters: invalid magnitude
+    sed = SED("toto", 10, "GAL")
+    lam_short = np.linspace(2000.0, 2500.0, 51)
+    sed.set_vector(lam_short, np.ones_like(lam_short))
+    sed.compute_magnitudes(filters)
+    assert list(sed.mag) == [lp.INVALID_VAL] * len(filters)
+
+    # negative integrated flux: faint-limit magnitude
+    sed = SED("toto", 10, "GAL")
+    sed.set_vector(lam, -np.ones_like(lam))
+    sed.compute_magnitudes(filters)
+    assert list(sed.mag) == [1000.0] * len(filters)
+
+
+def _integrate_reference(sx, sy, fx, fy):
+    """Independent numpy implementation of SED.integrateSED."""
+    c = 2.99792458e18
+    lo, hi = max(sx[0], fx[0]), min(sx[-1], fx[-1])
+    x = np.union1d(sx, fx)
+    x = x[(x >= lo) & (x <= hi)]
+    f = np.interp(x, sx, sy, 0, 0)
+    t = np.interp(x, fx, fy, 0, 0)
+    lmean = 0.5 * (x[1:] + x[:-1])
+    tmean = 0.5 * (t[1:] + t[:-1])
+    fmean = 0.5 * (f[1:] + f[:-1])
+    tmp = tmean * np.diff(x)
+    r5 = np.sum(tmp / lmean**2)
+    return np.array(
+        [
+            tmp.sum(),
+            r5 * c,
+            np.sum(tmp * lmean),
+            np.sum(tmp * fmean),
+            np.sum(tmp * fmean * lmean),
+            r5,
+        ]
+    )
+
+
+def _make_flt(x, y):
+    f = flt(0.0, 1.0, 10)  # top-hat constructor needs lmin < lmax; curve replaced below
+    f.lamb_trans = [lp.oneElLambda(float(a), float(b)) for a, b in zip(x, y)]
+    return f
+
+
+def test_integrate_sed_matches_reference():
+    """Compare against numpy on random grids, including SED nodes that coincide
+    with filter nodes (exercises the deduplication of the merged grid)."""
+    rng = np.random.default_rng(42)
+    for _ in range(50):
+        fx = np.sort(rng.uniform(4000, 7000, rng.integers(5, 60)))
+        fy = rng.uniform(0, 1, fx.size)
+        n = rng.integers(20, 2000)
+        sx = np.unique(np.concatenate([rng.uniform(3000, 8000, n), fx[::2], [3000.0, 8000.0]]))
+        sy = rng.uniform(0, 5, sx.size)
+        sed = SED("toto", 10, "GAL")
+        sed.set_vector(sx, sy)
+        result = np.array(sed.integrateSED(_make_flt(fx, fy)))
+        assert result == pytest.approx(_integrate_reference(sx, sy, fx, fy), rel=1e-10)
+
+
+# def test_integrate_sed_degenerate_filters():
+#     """Filters with fewer than two distinct nodes have a zero integral (this
+#     used to underflow an unsigned index and crash)."""
+#     sx = np.linspace(1000, 9000, 4001)
+#     sed = SED("toto", 10, "GAL")
+#     sed.set_vector(sx, np.ones_like(sx))
+#     for nodes in ([5000.0], [5000.0, 5000.0]):
+#         result = sed.integrateSED(_make_flt(nodes, np.ones(len(nodes))))
+#         assert list(result) == [0.0] * 6
+
+
+def test_integrate_sed_filter_not_covered():
+    sx = np.linspace(1000, 9000, 100)
+    sed = SED("toto", 10, "GAL")
+    sed.set_vector(sx, np.ones_like(sx))
+    result = sed.integrateSED(_make_flt([20000.0, 21000.0], [1.0, 1.0]))
+    assert list(result) == [lp.INVALID_VAL] * 6
