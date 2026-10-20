@@ -121,7 +121,7 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   endif()
 
   if(LEPHARE_ENABLE_AVX2)
-    add_compile_options("-mavx2" "-mno-vzeroupper")
+    add_compile_options("-mavx2")
   endif()
 endif()
 
