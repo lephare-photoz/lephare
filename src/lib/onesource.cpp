@@ -471,14 +471,14 @@ void onesource::fit(SEDlight& lightLib, const vector<vector<double>>& flux,
   // Compute some quantities linked to ab and sab to save computational time in
   // the fit. invsab = busnorma / sab busnorma here ensures that all the
   // precomputed values will be 0 if busnorma=0 (aka not to be used in fit)
-  vector<double> s2n(imagm, 0.0), invsab(imagm, 0.0), invsabSq(imagm, 0.0),
+  vector<double> s2nSq(imagm, 0.0), invsab(imagm, 0.0), invsabSq(imagm, 0.0),
       abinvsabSq(imagm, 0.0);
   for (size_t i = 0; i < imagm; i++) {
     invsab[i] = busnorma[i] * 1.0 / sab[i];
   }
   for (size_t i = 0; i < imagm; i++) {
     invsabSq[i] = invsab[i] * invsab[i];
-    s2n[i] = ab[i] * invsab[i];
+    s2nSq[i] = ab[i] * invsab[i] * ab[i] * invsab[i];
   }
   for (size_t i = 0; i < imagm; i++) {
     abinvsabSq[i] = ab[i] * invsabSq[i];
@@ -500,8 +500,8 @@ void onesource::fit(SEDlight& lightLib, const vector<vector<double>>& flux,
 
 #ifdef _OPENMP
   // double start = omp_get_wtime();
-#pragma omp parallel shared(lightLib)                                   \
-    firstprivate(s2n, invsab, invsabSq, abinvsabSq, imagm, nbul, busul, \
+#pragma omp parallel shared(lightLib)                                     \
+    firstprivate(s2nSq, invsab, invsabSq, abinvsabSq, imagm, nbul, busul, \
                      priorLib, number_threads, thread_id)
   {
     // Catch the name of the local thread in the parrallelisation
@@ -515,27 +515,29 @@ void onesource::fit(SEDlight& lightLib, const vector<vector<double>>& flux,
       size_t i = va[v];
 
       // Measurement of scaling factor dm only with (fobs>flim), dchi2/ddm = 0
-      double avmago = 0., avmagt = 0.;
+      // In the same pass, accumulate sum (ab/sab)^2 over the bands used for
+      // this template, so that chi2 can be derived without a second loop:
+      //   chi2 = sum (ab/sab - dm*flux/sab)^2
+      //        = s2nsum - 2*dm*avmago + dm^2*avmagt
+      double avmago = 0., avmagt = 0., s2nsum = 0.;
       double dmloc = -999.;
       for (size_t k = 0; k < imagm; k++) {
-        // Not use negative  predicted flux (restrict RF lambda range)
-        double fluxin = flux[i][k] < 0 && restrict ? 0 : flux[i][k];
+        // Not use negative  predicted flux (restrict RF lambda range): the
+        // band is then dropped from both the normalisation and the chi2
+        const bool use = !(flux[i][k] < 0 && restrict);
+        const double fluxin = use ? flux[i][k] : 0.;
 
         avmago += fluxin * abinvsabSq[k];
         avmagt += fluxin * fluxin * invsabSq[k];
+        s2nsum += use ? s2nSq[k] : 0.;
       }
       // Normalisation
       if (avmagt > 0) dmloc = avmago / avmagt;
 
-      // Measurement of chi^2
-      double chi2loc = 0;
-      for (size_t k = 0; k < imagm; k++) {
-        // Not use negative  predicted flux (restrict RF lambda range)
-        double inter = flux[i][k] < 0 && restrict
-                           ? 0
-                           : s2n[k] - dmloc * flux[i][k] * invsab[k];
-        chi2loc += inter * inter;
-      }
+      // Measurement of chi^2. Clamp at 0 against rounding when the model fits
+      // the data exactly.
+      double chi2loc =
+          std::max(0., s2nsum + dmloc * (dmloc * avmagt - 2. * avmago));
 
       // Upper-limits. Check first if some bands have upper-limits, before
       // applying the condition
