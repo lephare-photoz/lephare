@@ -2117,9 +2117,26 @@ void PhotoZ::write_outputs(vector<onesource*> sources) {
 }
 
 vector<size_t> PhotoZ::validLib(const double& redshift, const bool& ir) {
-  double closest_red = gridz[indexz(redshift, gridz)];
-  vector<size_t> result = ir ? indexes_in_vec(closest_red, zLibIR, 1.e-10)
-                             : indexes_in_vec(closest_red, zLib, 1.e-10);
+  const size_t igrid = indexz(redshift, gridz);
+  const vector<double>& zvec = ir ? zLibIR : zLib;
+  const int which = ir ? 1 : 0;
+
+  // The selection only depends on the grid point and on the library, so scan
+  // the library once per grid point and reuse the result for the next sources
+  vector<size_t> result;
+#pragma omp critical(validlib_cache)
+  {
+    if (validCacheSize[which] != zvec.size()) {
+      validCache[which].clear();
+      validCacheSize[which] = zvec.size();
+    }
+    auto it = validCache[which].find(igrid);
+    if (it == validCache[which].end())
+      it = validCache[which]
+               .emplace(igrid, indexes_in_vec(gridz[igrid], zvec, 1.e-10))
+               .first;
+    result = it->second;
+  }
 
   return result;
 }

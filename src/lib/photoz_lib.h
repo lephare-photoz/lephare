@@ -1,6 +1,7 @@
 #ifndef PHOTOZ_LIB_H
 #define PHOTOZ_LIB_H
 
+#include <map>
 #include <string>  // use string
 #include <vector>  // manipulate vector
 
@@ -297,6 +298,15 @@ class PhotoZ {
   */
   vector<size_t> validLib(const double& redshift, const bool& ir = false);
 
+ private:
+  /// Cache of validLib(): indexes of the templates at a given redshift-grid
+  /// point, for the GAL/QSO (first) and FIR (second) libraries. Avoids scanning
+  /// the whole library for every source. Entries are valid for the library
+  /// size recorded in #validCacheSize.
+  std::map<size_t, vector<size_t>> validCache[2];
+  size_t validCacheSize[2] = {0, 0};
+
+ public:
   /*! Check that the source belon to the auto-adapt sample
    * i.e. selected magnitude and redshift range
    *
