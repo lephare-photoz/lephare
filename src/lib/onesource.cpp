@@ -509,7 +509,7 @@ void onesource::fit(SEDlight& lightLib, const vector<vector<double>>& flux,
 #endif
 
     // Compute normalisation and chi2
-#pragma omp for schedule(static, 10000)
+#pragma omp for schedule(static)
     for (size_t v = 0; v < va.size(); v++) {
       // index to be considered because of ZFIX=YES
       size_t i = va[v];
@@ -829,7 +829,7 @@ void onesource::fitIR(vector<SED*>& fulllibIR,
     thread_id = omp_get_thread_num();
 #endif
 
-#pragma omp for schedule(static, 10000)
+#pragma omp for schedule(static)
     for (size_t v = 0; v < va.size(); v++) {
       size_t i = va[v];
       SED* sed = fulllibIR[i];
