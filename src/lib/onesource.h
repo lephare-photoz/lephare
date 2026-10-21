@@ -489,7 +489,7 @@ class onesource {
   /*! Apply a per-band zero-point offset to the observed magnitudes/fluxes
    * @param a0: magnitude offset to add, one value per band
    */
-  void adapt_mag(vector<double> a0);
+  void adapt_mag(const vector<double>& a0);
   /*! Apply the "classic" Milky Way dust correction to the observed flux and
    * error, using a per-band correction coefficient (galaxy-independent)
    * @param Alamb_corr: MW dust correction coefficient, one value per band
@@ -530,7 +530,7 @@ class onesource {
    */
   void absmag(const vector<vector<int>>& bestFlt,
               const vector<vector<double>>& maxkcolor, cosmo lcdm,
-              const vector<double> gridz);
+              const vector<double>& gridz);
   /*! Write the best-fit spectra (and, if available, the FIR spectrum) of
    * this source to per-source output files
    * @param fulllib: SED library the source was fit against
@@ -552,7 +552,8 @@ class onesource {
    * @param lcdm: cosmology used to compute the magnitudes
    * @param allFltAdd: additional filters to predict magnitudes for
    */
-  void computePredMag(vector<SED*>& fulllib, cosmo lcdm, vector<flt> allFltAdd);
+  void computePredMag(vector<SED*>& fulllib, cosmo lcdm,
+                      const vector<flt>& allFltAdd);
   /*! Compute the predicted absolute magnitudes of the best-fit template(s)
    * in an arbitrary set of additional filters, filling #absmagPred
    * @param fulllib: SED library the source was fit against
@@ -560,7 +561,7 @@ class onesource {
    * @param allFltAdd: additional filters to predict magnitudes for
    */
   void computePredAbsMag(vector<SED*>& fulllib, cosmo lcdm,
-                         vector<flt> allFltAdd);
+                         const vector<flt>& allFltAdd);
   /*! Compute the emission-line flux and equivalent width of the best-fit
    * galaxy template rescaled to this source, filling #fluxEL_SED and
    * #results_emission_lines
