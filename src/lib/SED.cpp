@@ -1576,10 +1576,19 @@ void StarSED::writeMag(bool outasc, ofstream& ofsBin, ofstream& ofsDat,
    compute the magnitudes in each of the filters
 */
 void SED::compute_magnitudes(const vector<flt>& filters) {
+  vector<double> unused;
+  compute_magnitudes(filters, unused);
+}
+
+void SED::compute_magnitudes(const vector<flt>& filters,
+                             vector<double>& integrated_fluxes) {
   double val;
+  integrated_fluxes.clear();
+  integrated_fluxes.reserve(filters.size());
   for (const auto& filter : filters) {
     // Derive the AB magnitudes in each filter
     auto intFlux = integrateSED(filter);
+    integrated_fluxes.push_back(intFlux[3]);
     if (intFlux[3] != INVALID_VAL) {
       if (intFlux[3] > 0.0) {
         val = -2.5 * LOG10D(intFlux[3] / intFlux[1] * filter.fcorr) - 48.6 +
@@ -1622,6 +1631,12 @@ double interpolate(const std::vector<double>& x, const std::vector<double>& y,
 
 void SED::compute_milky_way_extinction(const ext& oneExt,
                                        const vector<flt>& filters) {
+  compute_milky_way_extinction(oneExt, filters, vector<double>());
+}
+
+void SED::compute_milky_way_extinction(
+    const ext& oneExt, const vector<flt>& filters,
+    const vector<double>& unreddened_fluxes) {
   // Temporary SED object to do the computation
   SED tmp(*this);
 
@@ -1631,9 +1646,16 @@ void SED::compute_milky_way_extinction(const ext& oneExt,
   double reference_ebv = 0.1;
 
   // Store the unreddened integrated flux for each filter.
-  for (const auto& filter : filters) {
-    auto result = tmp.integrateSED(filter);
-    tmp.milky_way_extinction.push_back(result[3]);
+  tmp.milky_way_extinction.clear();
+  if (unreddened_fluxes.size() == filters.size()) {
+    // The caller already integrated this very SED in these filters (see
+    // compute_magnitudes): reuse the values instead of integrating again.
+    tmp.milky_way_extinction = unreddened_fluxes;
+  } else {
+    for (const auto& filter : filters) {
+      auto result = tmp.integrateSED(filter);
+      tmp.milky_way_extinction.push_back(result[3]);
+    }
   }
 
   // compute the BPC for the SED using  B and V band filters

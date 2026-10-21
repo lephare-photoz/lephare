@@ -181,3 +181,30 @@ def test_rescale_flux_errors_size_mismatch_is_noop():
     src, ab, sab = _make_src_for_error_rescaling()
     src.rescale_flux_errors([0.05, 0.05], [1.0, 1.0])
     assert np.allclose(src.sab, sab)
+
+
+def test_redden_flux():
+    """redden_flux (wrapper of redden_flux_into): Galactic reddening of fluxes."""
+    flux = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
+    red = [[0.5, 1.0, 1.5], [2.0, 2.5, 3.0]]
+
+    # mw_ebv > 0: flux / 10^(0.4 * R * E(B-V))
+    src = onesource()
+    src.mw_ebv = 0.1
+    out = np.array(src.redden_flux(flux, red))
+    expected = np.array(flux) / 10 ** (0.4 * np.array(red) * 0.1)
+    assert out.shape == (2, 3)
+    assert np.allclose(out, expected, rtol=1e-12, atol=0.0)
+    # reddening can only dim the fluxes
+    assert np.all(out < np.array(flux))
+
+    # mw_ebv == 0 (no extinction): exact copy of the input
+    src.mw_ebv = 0.0
+    out = src.redden_flux(flux, red)
+    assert np.array_equal(out, flux)
+
+    # the input must not be modified
+    assert flux == [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
+
+    # empty input
+    assert len(src.redden_flux([], [])) == 0

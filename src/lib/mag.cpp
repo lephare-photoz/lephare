@@ -565,11 +565,13 @@ vector<GalSED> GalMag::make_maglib(GalSED& oneSED) {
     oneSEDInt.reduce_memory(allFlt);
     // Compute magnitude
     // Loop over the filters
-    oneSEDInt.compute_magnitudes(allFlt);
+    vector<double> integrated_fluxes;
+    oneSEDInt.compute_magnitudes(allFlt, integrated_fluxes);
 
     // Compute Milky Way extinction
     if (applyMilkyWayExtinction) {
-      oneSEDInt.compute_milky_way_extinction(milkyWayExtinction, allFlt);
+      oneSEDInt.compute_milky_way_extinction(milkyWayExtinction, allFlt,
+                                             integrated_fluxes);
     }
 
     // If z>0, no need to keep the spectra
@@ -842,11 +844,13 @@ vector<QSOSED> QSOMag::make_maglib(const QSOSED& oneSED) {
     oneSEDInt.redshift();
 
     // Compute magnitude
-    oneSEDInt.compute_magnitudes(allFlt);
+    vector<double> integrated_fluxes;
+    oneSEDInt.compute_magnitudes(allFlt, integrated_fluxes);
 
     // Compute Milky Way extinction
     if (applyMilkyWayExtinction) {
-      oneSEDInt.compute_milky_way_extinction(milkyWayExtinction, allFlt);
+      oneSEDInt.compute_milky_way_extinction(milkyWayExtinction, allFlt,
+                                             integrated_fluxes);
     }
 
     // If z>0, no need to keep the spectra
@@ -946,10 +950,12 @@ vector<StarSED> StarMag::make_maglib(const StarSED& sed) {
   StarSED newsed(sed);
   // compute magnitude for the template directly,
   // as for a star no other extinction or redshifting is applied
-  newsed.compute_magnitudes(allFlt);
+  vector<double> integrated_fluxes;
+  newsed.compute_magnitudes(allFlt, integrated_fluxes);
   // Compute Milky Way extinction
   if (applyMilkyWayExtinction) {
-    newsed.compute_milky_way_extinction(milkyWayExtinction, allFlt);
+    newsed.compute_milky_way_extinction(milkyWayExtinction, allFlt,
+                                        integrated_fluxes);
   }
   // return singleton vector in order to have the same structure as for QSO
   // and Gal
