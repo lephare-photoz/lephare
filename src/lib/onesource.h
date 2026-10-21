@@ -372,6 +372,26 @@ class onesource {
    */
   double nzprior(const double luv, const double lnir, const double reds,
                  const array<int, 2> bp);
+  /*! Part of the N(z) prior that depends on the source only (apparent
+   * magnitude and, for each of the 4 template types, the quantities that do
+   * not depend on the template redshift). Computed once per fit() call by
+   * nzprior_setup() instead of once per template.
+   */
+  struct NzPriorSetup {
+    bool has_mi = false;  ///< false if no band is available: prior is 1
+    double mi = -99.;     ///< apparent magnitude used by the prior
+    double zmax[4] = {};  ///< zot + kt*(mi-20), per type
+    double pcal[4] = {};  ///< normalisation of P(z|T,m0), per type
+    double rapp[4] = {};  ///< ft*exp(-ktf*(mi-20)), per type
+    double rappSum = 1.;  ///< sum of rapp over the types
+  };
+  /*! Compute the source-dependent part of the N(z) prior, see nzprior() */
+  NzPriorSetup nzprior_setup(const array<int, 2> bp) const;
+  /*! Evaluate the N(z) prior of one template, given the pre-computed
+   * source-dependent part. nzprior() is nzprior_eval(nzprior_setup(bp),...)
+   */
+  static double nzprior_eval(const NzPriorSetup& setup, const double luv,
+                             const double lnir, const double reds);
   /*! Iteratively remove the band contributing most to the chi2 of the
    * best-fit solution, and re-fit, as long as this improves the chi2 by more
    * than @p thresholdChi2

@@ -497,6 +497,9 @@ void onesource::fit(SEDlight& lightLib, const vector<vector<double>>& flux,
   const double mabs_hi_gal = std::pow(10., -0.4 * priorLib[1]);
   const double mabs_lo_agn = std::pow(10., -0.4 * priorLib[2]);
   const double mabs_hi_agn = std::pow(10., -0.4 * priorLib[3]);
+  // Source-dependent part of the N(z) prior, computed once for all templates
+  const bool use_nzprior = bp[0] >= 0;
+  const NzPriorSetup nzp = use_nzprior ? nzprior_setup(bp) : NzPriorSetup();
 
 #ifdef _OPENMP
   // double start = omp_get_wtime();
@@ -569,8 +572,9 @@ void onesource::fit(SEDlight& lightLib, const vector<vector<double>>& flux,
         }
       }
       // Prior N(z)
-      if (bp[0] >= 0 && libtype == 0) {
-        double pweight = nzprior(lightLib.luv[i], lightLib.lnir[i], reds, bp);
+      if (use_nzprior && libtype == 0) {
+        double pweight =
+            nzprior_eval(nzp, lightLib.luv[i], lightLib.lnir[i], reds);
         chi2loc = chi2loc - 2. * log(pweight);
       }
 
@@ -650,94 +654,86 @@ void onesource::compute_best_fit_physical_quantities(vector<SED*>& fulllib) {
 
 /*
   Use prior info on N(z) as a function of magnitude (Iband) and of the type.
+  The part depending only on the source is computed in nzprior_setup(), once
+  per fit; the part depending on the template in nzprior_eval().
 */
-double onesource::nzprior(const double luv, const double lnir,
-                          const double reds, const array<int, 2> bp) {
-  double val = 1.;
-  int mod;
-  double zot = 0., kt = 0., alpt0 = 0.;
+namespace {
+// Parameters of P(z|T,m0) for the 4 types (E/S0, Sbc, Scd, Irr)
+constexpr double nz_zot[4] = {0.45181, 0.16560, 0.21072, 0.20418};
+constexpr double nz_kt[4] = {0.13677, 0.12983, 0.14008, 0.13773};
+constexpr double nz_alpt0[4] = {3.33078, 1.42815, 1.58310, 1.34500};
+// Normalisation of the probability function
+// pcal=exp(gammln(1.0/alpt0(mod)+1.0))
+constexpr double nz_pcal0[4] = {0.89744, 0.90868, 0.89747, 0.91760};
+// P(T|m0)
+constexpr double nz_ktf[4] = {0.47165, 0.30663, 0.12715, -0.34437};
+constexpr double nz_ft[4] = {0.43199, 0.07995, 0.31162, 0.21220};
+}  // namespace
 
-  // Define the NUV-R rest-frame color corrected for dust-extinction
-  double nuvk = -2.5 * (luv - lnir);
-
+onesource::NzPriorSetup onesource::nzprior_setup(const array<int, 2> bp) const {
+  NzPriorSetup s;
   // Apparent magnitude in i band, if possible
-  double mi = -99.;
   if (busnorma[bp[0]] == 1) {
-    mi = flux2mag(ab[bp[0]]);
+    s.mi = flux2mag(ab[bp[0]]);
   } else if (busnorma[bp[1]] == 1) {
-    mi = flux2mag(ab[bp[1]]);
-  } else
-    return val;
+    s.mi = flux2mag(ab[bp[1]]);
+  } else {
+    return s;
+  }
+  s.has_mi = true;
+
+  // Quantities only needed when the prior is actually computed (I >= 20)
+  if (s.mi >= 20.) {
+    for (int mod = 0; mod < 4; mod++) {
+      s.zmax[mod] = nz_zot[mod] + nz_kt[mod] * (s.mi - 20);
+      s.rapp[mod] = nz_ft[mod] * exp(-nz_ktf[mod] * (s.mi - 20.0));
+      s.pcal[mod] =
+          pow(s.zmax[mod], nz_alpt0[mod] + 1) / nz_alpt0[mod] * nz_pcal0[mod];
+    }
+    // Ratio for each type
+    s.rappSum = nz_ft[0] * exp(-nz_ktf[0] * (s.mi - 20.0)) +
+                nz_ft[1] * exp(-nz_ktf[1] * (s.mi - 20.0)) +
+                nz_ft[2] * exp(-nz_ktf[2] * (s.mi - 20.0)) +
+                nz_ft[3] * exp(-nz_ktf[3] * (s.mi - 20.0));
+  }
+  return s;
+}
+
+double onesource::nzprior_eval(const NzPriorSetup& s, const double luv,
+                               const double lnir, const double reds) {
+  if (!s.has_mi) return 1.;
 
   // Bright case I<20, no solution above 1, don't compute the prior
-  if (mi < 20.) {
-    if (reds > 1) val = 0;
-    return val;
-  }
+  if (s.mi < 20.) return reds > 1 ? 0. : 1.;
   // Bright case I<22, no solution above 2, but compute the prior
-  if (mi < 22. && reds > 2) {
-    val = 0;
-    return val;
-  }
+  if (s.mi < 22. && reds > 2) return 0.;
 
-  // Set up the parameters to define the redshift distribution
-  if (nuvk > 4.25) {
-    // Case E/S0
-    // Color UV-K of PHOTO_230506/El_cww.sed.resample.new.resample15.inter
+  // Define the NUV-R rest-frame color corrected for dust-extinction
+  const double nuvk = -2.5 * (luv - lnir);
+
+  // Select the type: 0 E/S0, 1 Sbc, 2 Scd, 3 Irr
+  // (colors of the PHOTO_230506 El/Sbc/Scd templates)
+  int mod;
+  if (nuvk > 4.25)
     mod = 0;
-    zot = 0.45181;
-    kt = 0.13677;
-    alpt0 = 3.33078;
-  } else if (nuvk > 3.19 && nuvk < 4.25) {
-    // Case Sbc
-    // Color UV-K of PHOTO_230506/Sbc_cww.sed.resample.new.resample8.inter
+  else if (nuvk > 3.19 && nuvk < 4.25)
     mod = 1;
-    zot = 0.16560;
-    kt = 0.12983;
-    alpt0 = 1.42815;
-  } else if (nuvk > 1.9 && nuvk < 3.19) {
-    // Case Scd
-    // Color UV-K of PHOTO_230506/Scd_cww.sed.resample.new.resample7.inter
-    // -19.4878 + 21.1501
+  else if (nuvk > 1.9 && nuvk < 3.19)
     mod = 2;
-    zot = 0.21072;
-    kt = 0.14008;
-    alpt0 = 1.58310;
-  } else {
-    // Case Irr
+  else
     mod = 3;
-    zot = 0.20418;
-    kt = 0.13773;
-    alpt0 = 1.34500;
-  }
 
   // P(z|T,m0)
-  double zmax = zot + kt * (mi - 20);
-  double pz = pow(reds, alpt0) * exp(-pow((reds / zmax), alpt0));
-
-  // P(T|m0)
-  double ktf[4] = {0.47165, 0.30663, 0.12715, -0.34437};
-  double ft[4] = {0.43199, 0.07995, 0.31162, 0.21220};
-
-  // Ratio for each type
-  double rappSum =
-      ft[0] * exp(-ktf[0] * (mi - 20.0)) + ft[1] * exp(-ktf[1] * (mi - 20.0)) +
-      ft[2] * exp(-ktf[2] * (mi - 20.0)) + ft[3] * exp(-ktf[3] * (mi - 20.0));
-  double rapp = ft[mod] * exp(-ktf[mod] * (mi - 20.0));
-
-  // Normalisation of the probability function
-  // pcal=exp(gammln(1.0/alpt0(mod)+1.0))
-  double pcal;
-  if (mod == 0) pcal = 0.89744;
-  if (mod == 1) pcal = 0.90868;
-  if (mod == 2) pcal = 0.89747;
-  if (mod == 3) pcal = 0.91760;
-  pcal = pow(zmax, alpt0 + 1) / alpt0 * pcal;
+  const double alpt0 = nz_alpt0[mod];
+  const double pz = pow(reds, alpt0) * exp(-pow((reds / s.zmax[mod]), alpt0));
 
   // Final value
-  val = pz / pcal * rapp / rappSum;
+  return pz / s.pcal[mod] * s.rapp[mod] / s.rappSum;
+}
 
-  return val;
+double onesource::nzprior(const double luv, const double lnir,
+                          const double reds, const array<int, 2> bp) {
+  return nzprior_eval(nzprior_setup(bp), luv, lnir, reds);
 }
 
 /*
