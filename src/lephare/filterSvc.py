@@ -174,13 +174,10 @@ class FilterSvc:
             # ... The SVO server is sometimes unreachable.
             print(f"request {query} failed: SVO server not reachable ({type(err).__name__}).")
             return None
-        if r.status_code != 200:
-            print(f"request {query} failed: SVO server returned HTTP status {r.status_code}.")
-            return None
         try:
             dd = xml.dom.minidom.parseString(r.content)
         except xml.parsers.expat.ExpatError:
-            print("SVO server down")
+            print(f"SVO server down (HTTP status {r.status_code}, answer is not a VOTable)")
             return None
         # assert query ok
         for info in dd.getElementsByTagName("INFO"):
@@ -189,6 +186,11 @@ class FilterSvc:
                     f"QUERY_STATUS did not return OK; check the filter_id input: {SVO_URL}. "
                     f"For a list of valid filters, see {filter_id}"
                 )
+        # a failing server may answer with a well formed document (e.g. xhtml)
+        # which is not a VOTable: this is not an invalid filter_id
+        if r.status_code != 200:
+            print(f"request {query} failed: SVO server returned HTTP status {r.status_code}.")
+            return None
         # filter params: not used (yet?)
         params = dd.getElementsByTagName("PARAM")
         param_dict = {"Date": r.headers["Date"]}

@@ -76,6 +76,8 @@ class _FakeResponse:
         requests.exceptions.SSLError("ssl"),
         _FakeResponse(status_code=503, content=b"Service Unavailable"),
         _FakeResponse(status_code=200, content=b"<html>not a votable"),
+        # well formed document, but not a VOTable
+        _FakeResponse(status_code=503, content=b"<html><body>Service Unavailable</body></html>"),
     ],
 )
 def test_svo_server_unavailable(monkeypatch, failure):
@@ -88,6 +90,18 @@ def test_svo_server_unavailable(monkeypatch, failure):
 
     monkeypatch.setattr(requests, "get", fake_get)
     assert FilterSvc.from_svo(-1, "Subaru/Suprime.IB527", "AB") is None
+
+
+@pytest.mark.parametrize("status_code", [200, 400])
+def test_svo_invalid_filter_id_raises(monkeypatch, status_code):
+    """A VOTable with QUERY_STATUS other than OK is an invalid filter id, whatever the HTTP status."""
+    votable = (
+        b'<?xml version="1.0"?><VOTABLE><RESOURCE><INFO name="QUERY_STATUS" value="ERROR">'
+        b"unknown filter</INFO></RESOURCE></VOTABLE>"
+    )
+    monkeypatch.setattr(requests, "get", lambda *a, **k: _FakeResponse(status_code, votable))
+    with pytest.raises(AssertionError, match="QUERY_STATUS"):
+        FilterSvc.from_svo(-1, "Not/AFilter", "AB")
 
 
 def test_filter_base_class(test_data_dir, set_env_vars):
