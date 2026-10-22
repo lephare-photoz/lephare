@@ -89,6 +89,14 @@ void onesource::fltUsed(const long gbcont, const long contforb) {
     // reject band if error and flux lower than 0
     if (sab[k] < 0 && ab[k] < 0) bused[k] = 0;
 
+    // reject band if the flux or the error is undefined (NaN or inf), so that
+    // the fit never has to handle them. Same treatment as error=0 below.
+    if (!std::isfinite(ab[k]) || !std::isfinite(sab[k])) {
+      bused[k] = 0;
+      ab[k] = -99.9;
+      sab[k] = -99.9;
+    }
+
     // reject band if error=0. Not possible to include in the chi2
     // LCOV_EXCL_START
     if (sab[k] == 0) {
@@ -534,10 +542,11 @@ void onesource::fit(SEDlight& lightLib, const vector<vector<double>>& flux,
       // Normalisation
       if (avmagt > 0) dmloc = avmago / avmagt;
 
-      // Measurement of chi^2. Clamp at 0 against rounding when the model fits
-      // the data exactly.
-      double chi2loc =
-          std::max(0., s2nsum + dmloc * (dmloc * avmagt - 2. * avmago));
+      // Measurement of chi^2. A slightly negative value can only come from
+      // round-off when the model fits the data exactly: set it to 0. A NaN
+      // fails the test and is kept (std::max(0., NaN) would return 0).
+      double chi2loc = s2nsum + dmloc * (dmloc * avmagt - 2. * avmago);
+      if (chi2loc < 0.) chi2loc = 0.;
 
       // Upper-limits. Check first if some bands have upper-limits, before
       // applying the condition
