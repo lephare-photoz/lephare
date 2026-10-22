@@ -166,14 +166,16 @@ class FilterSvc:
         res : `lephare.flt`
             Filter in native lephare format.
         """
+        query = f"{SVO_URL}/fps.php?PhotCalID={filter_id}/{system}"
         try:
-            query = f"{SVO_URL}/fps.php?PhotCalID={filter_id}/{system}"
             r = requests.get(query, timeout=5)
-        except ConnectionRefusedError:  # pragma no cover
-            print(f"request {query} failed due to failure to connect to the server.")
+        except requests.exceptions.RequestException as err:
+            # Connection refused or reset, DNS failure, connect or read timeout,
+            # ... The SVO server is sometimes unreachable.
+            print(f"request {query} failed: SVO server not reachable ({type(err).__name__}).")
             return None
-        except requests.ConnectTimeout:  # pragma no cover
-            print("Timeout on SVO server")
+        if r.status_code != 200:
+            print(f"request {query} failed: SVO server returned HTTP status {r.status_code}.")
             return None
         try:
             dd = xml.dom.minidom.parseString(r.content)
