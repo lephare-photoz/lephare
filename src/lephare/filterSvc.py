@@ -12,9 +12,18 @@ from ._lephare import check_first_char, flt
 
 __all__ = [
     "FilterSvc",
+    "SVOUnavailableError",
 ]
 
 SVO_URL = "http://svo2.cab.inta-csic.es/theory/fps"
+
+
+class SVOUnavailableError(ConnectionError):
+    """The SVO filter service could not be reached, or gave an unusable answer.
+
+    The service is sometimes down, so callers which can do without it (tests,
+    notebooks) can catch this exception and fall back on local filters.
+    """
 
 
 class FilterSvc:
@@ -36,6 +45,12 @@ class FilterSvc:
         -------
         flt_array :  list of `lephare.flt`
             Array of wavelengths in Angstrom and filter transmissivity.
+
+        Raises
+        ------
+        SVOUnavailableError
+            If a filter is requested to the SVO ("svo:" prefix) and the server
+            cannot be reached.
         """
         config = yaml.load(open(yaml_file), Loader=yaml.BaseLoader)["filters"]  # noqa: SIM115
         if "calib" in config:
@@ -120,6 +135,11 @@ class FilterSvc:
         -------
         res : `lephare.flt`
             Filter in native lephare format.
+
+        Raises
+        ------
+        SVOUnavailableError
+            If the SVO server cannot be reached or does not give a valid answer.
         """
         res = FilterSvc.svo_request(counter, filter_id, system)
         return res
@@ -165,6 +185,13 @@ class FilterSvc:
         -------
         res : `lephare.flt`
             Filter in native lephare format.
+
+        Raises
+        ------
+        SVOUnavailableError
+            If the SVO server cannot be reached or does not give a valid answer.
+        AssertionError
+            If the SVO reports an invalid ``filter_id``.
         """
         query = f"{SVO_URL}/fps.php?PhotCalID={filter_id}/{system}"
         try:
@@ -172,13 +199,15 @@ class FilterSvc:
         except requests.exceptions.RequestException as err:
             # Connection refused or reset, DNS failure, connect or read timeout,
             # ... The SVO server is sometimes unreachable.
-            print(f"request {query} failed: SVO server not reachable ({type(err).__name__}).")
-            return None
+            raise SVOUnavailableError(
+                f"request {query} failed: SVO server not reachable ({type(err).__name__})."
+            ) from err
         try:
             dd = xml.dom.minidom.parseString(r.content)
         except xml.parsers.expat.ExpatError:
-            print(f"SVO server down (HTTP status {r.status_code}, answer is not a VOTable)")
-            return None
+            raise SVOUnavailableError(
+                f"SVO server down (HTTP status {r.status_code}, answer is not a VOTable): {query}"
+            ) from None
         # assert query ok
         for info in dd.getElementsByTagName("INFO"):
             if info.getAttribute("name") == "QUERY_STATUS" and info.getAttribute("value") != "OK":
@@ -189,8 +218,9 @@ class FilterSvc:
         # a failing server may answer with a well formed document (e.g. xhtml)
         # which is not a VOTable: this is not an invalid filter_id
         if r.status_code != 200:
-            print(f"request {query} failed: SVO server returned HTTP status {r.status_code}.")
-            return None
+            raise SVOUnavailableError(
+                f"request {query} failed: SVO server returned HTTP status {r.status_code}."
+            )
         # filter params: not used (yet?)
         params = dd.getElementsByTagName("PARAM")
         param_dict = {"Date": r.headers["Date"]}

@@ -9,7 +9,7 @@ from lephare import (
     Filter,
     flt,  # noqa: E402
 )
-from lephare.filterSvc import FilterSvc  # noqa: E402
+from lephare.filterSvc import FilterSvc, SVOUnavailableError  # noqa: E402
 
 matplotlib.use("Agg")
 
@@ -45,16 +45,13 @@ def test_filtersvc(test_data_dir, filter_file):
     assert f.width() == pytest.approx(241.9479, 1.0e-4)
     assert f.lambdaMean() == pytest.approx(5262.2831, 1.0e-4)
 
-    g = FilterSvc.from_svo(-1, "Subaru/Suprime.IB527", "AB")
-    if g is not None:
-        assert np.allclose(f.data()[1], g.data()[1])
-    else:
+    try:
+        g = FilterSvc.from_svo(-1, "Subaru/Suprime.IB527", "AB")
+    except SVOUnavailableError as err:
         # The SVO server is sometimes down: do not fail, but make it visible
-        warnings.warn(
-            "SVO filter service not tested: the server could not be reached.",
-            UserWarning,
-            stacklevel=1,
-        )
+        warnings.warn(f"SVO filter service not tested: {err}", UserWarning, stacklevel=1)
+    else:
+        assert np.allclose(f.data()[1], g.data()[1])
     # filters in COSMOS.para not available to the unit tests
     fltvec = FilterSvc.from_config(os.path.join(test_data_dir, "examples/COSMOS.para"))
     assert len(fltvec) == 2
@@ -81,7 +78,7 @@ class _FakeResponse:
     ],
 )
 def test_svo_server_unavailable(monkeypatch, failure):
-    """An unreachable or failing SVO server gives None, not an exception."""
+    """An unreachable or failing SVO server raises SVOUnavailableError."""
 
     def fake_get(*args, **kwargs):
         if isinstance(failure, Exception):
@@ -89,7 +86,8 @@ def test_svo_server_unavailable(monkeypatch, failure):
         return failure
 
     monkeypatch.setattr(requests, "get", fake_get)
-    assert FilterSvc.from_svo(-1, "Subaru/Suprime.IB527", "AB") is None
+    with pytest.raises(SVOUnavailableError):
+        FilterSvc.from_svo(-1, "Subaru/Suprime.IB527", "AB")
 
 
 @pytest.mark.parametrize("status_code", [200, 400])
