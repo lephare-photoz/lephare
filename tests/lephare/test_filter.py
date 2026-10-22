@@ -1,13 +1,15 @@
 import os
+import warnings
 
 import matplotlib
 import numpy as np
 import pytest
+import requests
 from lephare import (
     Filter,
     flt,  # noqa: E402
 )
-from lephare.filterSvc import FilterSvc  # noqa: E402
+from lephare.filterSvc import FilterSvc, SVOUnavailableError  # noqa: E402
 
 matplotlib.use("Agg")
 
@@ -43,14 +45,61 @@ def test_filtersvc(test_data_dir, filter_file):
     assert f.width() == pytest.approx(241.9479, 1.0e-4)
     assert f.lambdaMean() == pytest.approx(5262.2831, 1.0e-4)
 
-    g = FilterSvc.from_svo(-1, "Subaru/Suprime.IB527", "AB")
-    if g is not None:
-        assert np.allclose(f.data()[1], g.data()[1])
+    try:
+        g = FilterSvc.from_svo(-1, "Subaru/Suprime.IB527", "AB")
+    except SVOUnavailableError as err:
+        # The SVO server is sometimes down: do not fail, but make it visible
+        warnings.warn(f"SVO filter service not tested: {err}", UserWarning, stacklevel=1)
     else:
-        print("SVO not tested due to exception raised : server not reachable?")
+        assert np.allclose(f.data()[1], g.data()[1])
     # filters in COSMOS.para not available to the unit tests
     fltvec = FilterSvc.from_config(os.path.join(test_data_dir, "examples/COSMOS.para"))
     assert len(fltvec) == 2
+
+
+class _FakeResponse:
+    def __init__(self, status_code=200, content=b""):
+        self.status_code = status_code
+        self.content = content
+        self.headers = {}
+
+
+@pytest.mark.parametrize(
+    "failure",
+    [
+        requests.exceptions.ConnectionError("refused"),
+        requests.exceptions.ConnectTimeout("timeout"),
+        requests.exceptions.ReadTimeout("timeout"),
+        requests.exceptions.SSLError("ssl"),
+        _FakeResponse(status_code=503, content=b"Service Unavailable"),
+        _FakeResponse(status_code=200, content=b"<html>not a votable"),
+        # well formed document, but not a VOTable
+        _FakeResponse(status_code=503, content=b"<html><body>Service Unavailable</body></html>"),
+    ],
+)
+def test_svo_server_unavailable(monkeypatch, failure):
+    """An unreachable or failing SVO server raises SVOUnavailableError."""
+
+    def fake_get(*args, **kwargs):
+        if isinstance(failure, Exception):
+            raise failure
+        return failure
+
+    monkeypatch.setattr(requests, "get", fake_get)
+    with pytest.raises(SVOUnavailableError):
+        FilterSvc.from_svo(-1, "Subaru/Suprime.IB527", "AB")
+
+
+@pytest.mark.parametrize("status_code", [200, 400])
+def test_svo_invalid_filter_id_raises(monkeypatch, status_code):
+    """A VOTable with QUERY_STATUS other than OK is an invalid filter id, whatever the HTTP status."""
+    votable = (
+        b'<?xml version="1.0"?><VOTABLE><RESOURCE><INFO name="QUERY_STATUS" value="ERROR">'
+        b"unknown filter</INFO></RESOURCE></VOTABLE>"
+    )
+    monkeypatch.setattr(requests, "get", lambda *a, **k: _FakeResponse(status_code, votable))
+    with pytest.raises(AssertionError, match="QUERY_STATUS"):
+        FilterSvc.from_svo(-1, "Not/AFilter", "AB")
 
 
 def test_filter_base_class(test_data_dir, set_env_vars):
