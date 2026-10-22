@@ -237,7 +237,7 @@ void onesource::keepOri() {
 /*
  MODIFY THE OBSERVED MAGNITUDES WITH THE VALUE A0
 */
-void onesource::adapt_mag(vector<double> a0) {
+void onesource::adapt_mag(const vector<double>& a0) {
   double corr;
   // Loop over each filter
   for (size_t k = 0; k < ab.size(); k++) {
@@ -1832,7 +1832,7 @@ void onesource::secondpeak(SEDlight& lightLib, const double dz_win,
 */
 void onesource::absmag(const vector<vector<int>>& bestFlt,
                        const vector<vector<double>>& maxkcolor, cosmo lcdm,
-                       const vector<double> gridz) {
+                       const vector<double>& gridz) {
   int fobs;
   double errmagabs;
 
@@ -1841,6 +1841,9 @@ void onesource::absmag(const vector<vector<int>>& bestFlt,
   // redshift
   int indexz = 0;
   while (consiz > gridz[indexz] && indexz < int(gridz.size() - 1)) indexz++;
+
+  // distance modulus of the source, the same for all filters
+  const double distmod_obs = lcdm.distMod(consiz);
 
   // loop over all filters in which the absolute magnitude needs to be computed
   for (size_t k = 0; k < mab.size(); ++k) {
@@ -1852,7 +1855,7 @@ void onesource::absmag(const vector<vector<int>>& bestFlt,
       // Absolute magnitude: mobs + color rest-frame (ref-fobs) -  k(fobs)
       // -DM(z)
       mabs.push_back(mab[fobs] + magm0[k] - magm0[fobs] - kap[fobs] -
-                     lcdm.distMod(consiz));
+                     distmod_obs);
       // uncertainty on the mag abs: sum the apparent magnitude uncertainties +
       // maximum uncertainties on the k-correction
       errmagabs = sqrt(pow(maxkcolor[indexz][k], 2.) + pow(sab[fobs], 2.));
@@ -1954,7 +1957,7 @@ void onesource::computeEmFlux(vector<SED*>& fulllib, cosmo lcdm) {
 Compute predicted magnitude in new filters
 */
 void onesource::computePredMag(vector<SED*>& fulllib, cosmo lcdm,
-                               vector<flt> allFltAdd) {
+                               const vector<flt>& allFltAdd) {
   double val;
 
   if (indmin[0] > 0) {
@@ -1973,13 +1976,15 @@ void onesource::computePredMag(vector<SED*>& fulllib, cosmo lcdm,
     bool display_warn = SED_gal.warning_integrateSED(allFltAdd, false);
 
     magPred.clear();
+    // distance modulus of the source, the same for all filters
+    const double distmod_obs = lcdm.distMod(consiz);
     // Loop over the filters
     for (size_t itf = 0; itf < allFltAdd.size(); ++itf) {
       // Derive the AB magnitudes in each filter
       auto intFlux = SED_gal.integrateSED(allFltAdd[itf]);
       if (intFlux[3] > INVALID_FLUX) {
         if (intFlux[3] > NULL_FLUX) {
-          val = flux2mag(intFlux[3] / intFlux[1], lcdm.distMod(consiz));
+          val = flux2mag(intFlux[3] / intFlux[1], distmod_obs);
         } else
           val = HIGH_MAG;
       } else
@@ -1999,7 +2004,7 @@ void onesource::computePredMag(vector<SED*>& fulllib, cosmo lcdm,
 Compute absolute magnitudes in new filters
 */
 void onesource::computePredAbsMag(vector<SED*>& fulllib, cosmo lcdm,
-                                  vector<flt> allFltAdd) {
+                                  const vector<flt>& allFltAdd) {
   double val;
 
   if (indmin[0] > 0) {
