@@ -810,6 +810,11 @@ void onesource::fitIR(vector<SED*>& fulllibIR,
   vector<double> locChi2(number_threads, HIGH_CHI2);
   vector<int> locInd(number_threads, -1);
 
+  // Quantities identical for all templates: the distance modulus of the
+  // source and the number of bands used for the scaling
+  const double distmod_obs = lcdm.distMod(consiz);
+  const int nbusIR = accumulate(bscfir.begin(), bscfir.end(), 0);
+
   // Compute some quantities linked to ab and sab to save computational time in
   // the fit. No need to do it every step
   vector<double> s2n, invsab, invsabSq, abinvsabSq;
@@ -828,20 +833,23 @@ void onesource::fitIR(vector<SED*>& fulllibIR,
     // Catch the name of the local thread in the parrallelisation
     thread_id = omp_get_thread_num();
 #endif
+    // distMod(z) is a numerical integral: evaluate it once per distinct
+    // redshift of the templates rather than once per template
+    std::unordered_map<double, double> distmod_of_z;
 
 #pragma omp for schedule(static, 10000)
     for (size_t v = 0; v < va.size(); v++) {
       size_t i = va[v];
       SED* sed = fulllibIR[i];
-      double dmcor;
-      dmcor = pow(10., (0.4 * (lcdm.distMod(sed->red) - lcdm.distMod(consiz))));
+      auto dm_it = distmod_of_z.find(sed->red);
+      if (dm_it == distmod_of_z.end())
+        dm_it = distmod_of_z.emplace(sed->red, lcdm.distMod(sed->red)).first;
+      const double dmcor = pow(10., (0.4 * (dm_it->second - distmod_obs)));
 
       // normalization
       // Measurement of scaling factor dm only with (fobs>flim), dchi2/ddm = 0
       double avmago = 0.0, avmagt = 0.0, dmloc = -99.0;
-      int nbusIR = 0;
-      nbusIR = accumulate(bscfir.begin(), bscfir.end(), 0);
-      auto fluxes = fluxIR[i];
+      const auto& fluxes = fluxIR[i];
       for (int k = 0; k < fluxes.size(); k++) {
         double fluxin = fluxes[k];
         avmago += fluxin * dmcor * bscfir[k] * abinvsabSq[k];
