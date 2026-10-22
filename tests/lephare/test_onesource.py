@@ -100,6 +100,30 @@ def test_fltused():
     assert src.nbul == 0
 
 
+@pytest.mark.parametrize("bad", [np.nan, np.inf, -np.inf])
+@pytest.mark.parametrize("where", ["flux", "error"])
+def test_fltused_rejects_undefined_bands(bad, where):
+    """Bands with a NaN or inf flux or error are not used, like error=0."""
+    flux = [6.414e-32, 1.3182e-31, 1.6905e-31]
+    err = [1.1022e-31, 9.8579e-32, 5.8665e-32]
+    (flux if where == "flux" else err)[1] = bad
+    src = onesource(101, [0, 0.1, 1])
+    src.readsource("10", flux, err, 7, 2.1, "add")
+    src.fltUsed(-1, -1)
+    assert np.array_equal(src.busnorma, [1, 0, 1])
+    assert np.array_equal(src.busul, [0, 0, 0])
+    assert src.nbused == 2
+    assert src.nbul == 0
+    # The undefined values are replaced, as for a band with a null error
+    assert np.all(np.isfinite(src.ab))
+    assert np.all(np.isfinite(src.sab))
+    assert src.ab[1] == pytest.approx(-99.9)
+    assert src.sab[1] == pytest.approx(-99.9)
+    # The other bands are untouched
+    assert src.ab[0] == pytest.approx(flux[0])
+    assert src.sab[2] == pytest.approx(err[2])
+
+
 def test_convert_mag():
     src = onesource(101, [0, 0.1, 1])
     # upper limit in band 3 using negative error
