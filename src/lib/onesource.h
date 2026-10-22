@@ -138,6 +138,11 @@ class onesource {
   vector<double> zgmed,  ///< median of the marginalized PDF, and CI bounds
       zgmin,             ///< chi2-minimum solution, and CI bounds
       zgmode;            ///< mode of the marginalized PDF, and CI bounds
+  /// Redshift quality flag (see zflag() in PDF.h), ZFLAG_NOT_COMPUTED until
+  /// compute_zflag() has been called
+  int zflag = ZFLAG_NOT_COMPUTED;
+  /// Details (error, peak ratio, tail mass, number of peaks) of #zflag
+  ZFlagResult zflag_info;
   /// Same as zgmed/zgmin/zgmode, for the QSO/AGN library
   vector<double> zqmed,  ///< median of the marginalized PDF, and CI bounds
       zqmin,             ///< chi2-minimum solution, and CI bounds
@@ -499,6 +504,11 @@ class onesource {
   /// Compute the mode of the marginalized GAL/QSO redshift PDFs and their
   /// confidence intervals, filling #zgmode/#zqmode
   void mode();
+  /// Compute the redshift quality flag from the marginalized galaxy redshift
+  /// PDF (#pdfmap[11]), filling #zflag and #zflag_info. To be called after
+  /// generatePDF(). The statistics are centered on the PDF maximum.
+  /// @param params: parameters of the flag
+  void compute_zflag(const FlagParams& params);
   /*! Interpolate the predicted magnitudes (#magm) of the best-fit template
    * at the redshift #consiz, between the two adjacent grid points of
    * @p fulllib

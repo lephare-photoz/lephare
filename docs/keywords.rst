@@ -245,6 +245,9 @@ zphota
    * - MIN_THRES
      - 0.1[def]
      - Threshold for the detection of 2nd peak in normalised L(z) (between 0 and 1)
+   * - Z_FLAG_PAR
+     - NONE[def]
+     - Parameters of the redshift quality flag ``Z_FLAG``, as ``name=value`` pairs separated by commas, e.g. ``nb_peak=3,error=0.2`` (names: nb_peak, height, peak_dz, tail, n_window, peak_ratio, error, fwhm_level). Unspecified parameters keep their default value. The flag is computed only if ``Z_FLAG`` is in ``PARA_OUT``.
    * - SPEC_OUT
      - NO[def]  
      - Output files with Gal/Star/QSO spectra (one file per object) (if YES: can take a lot of disk space !)

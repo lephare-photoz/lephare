@@ -15,7 +15,7 @@ import os
 import numpy as np
 from astropy.table import Column, Table
 
-from ._lephare import PhotoZ, readOutKeywords
+from ._lephare import ZFLAG_DEFINITION, ZFLAG_NOT_COMPUTED, PhotoZ, readOutKeywords
 from ._utils import continueClass
 
 __all__ = [
@@ -69,9 +69,13 @@ class PhotoZ:  # noqa: F811
             outputs[key] = []
             # Loop over all sources
             for src in srclist:
-                # computing the flag on the redshit if requested
+                # the redshift quality flag is computed by the C++ code when
+                # Z_FLAG is in PARA_OUT. If this was not the case (e.g. para_out
+                # given here), compute it now with the Z_FLAG_PAR parameters.
                 if key == "Z_FLAG":
-                    outputs[key].append(src.compute_quality_flag())
+                    if src.zflag == ZFLAG_NOT_COMPUTED:
+                        src.compute_zflag(self.zflag_par)
+                    outputs[key].append(src.zflag)
                 elif is_array is False:
                     outputs[key].append(getattr(src, attr))
                 else:
@@ -83,6 +87,9 @@ class PhotoZ:  # noqa: F811
                         outputs[key].append(np.nan)
             # Add all the valiues to a table
             t.add_column(Column(name=key, dtype=typ, data=outputs[key]))
+        if "Z_FLAG" in outputs:
+            t.meta["Z_FLAG_PAR"] = self.zflag_par.to_string()
+            t.meta["Z_FLAG_DEF"] = ZFLAG_DEFINITION
         # NOW THE PDFS, IN THE SAME TABLE FOR NOW
         for typ in self.pdftype:
             arr = []

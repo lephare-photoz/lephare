@@ -1201,6 +1201,17 @@ void onesource::generatePDF_IR(vector<SED*>& fulllib) {
 Compute the mode and the associated uncertainties based on the marginalized
 error
  */
+void onesource::compute_zflag(const FlagParams& params) {
+  auto it = pdfmap.find(11);
+  if (it == pdfmap.end()) {
+    zflag = ZFLAG_INVALID;
+    zflag_info = ZFlagResult();
+    return;
+  }
+  zflag_info = it->second.quality_flag(params);
+  zflag = zflag_info.flag;
+}
+
 void onesource::mode() {
   // First element of zgmode is the mode of the marginalized PDF
   // Use the parabolic interpolation for galaxies and QSO
@@ -1310,6 +1321,7 @@ void onesource::write_out(ofstream& stout, const vector<string>& outkeywords) {
     if (outkey == "CONTEXT") stout << setw(16) << cont << " ";
     if (outkey == "NBAND_USED") stout << setw(5) << nbused << " ";
     if (outkey == "NBAND_ULIM") stout << setw(3) << nbul << " ";
+    if (outkey == "Z_FLAG") stout << setw(5) << zflag << " ";
 
     stout.setf(ios::fixed, ios::floatfield);  // Float:
     if (outkey == "ZSPEC") stout << setw(14) << setprecision(5) << zs << " ";

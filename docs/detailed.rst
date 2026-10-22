@@ -2087,6 +2087,16 @@ All the values in the output file indicated as ``_MED`` and ``_MODE`` are derive
 
 The code also searches for secondary solutions (``DZ_WIN``, ``MIN_THRES``) in the profile likelihood (but only for galaxies). The search for a secondary solution is done by imposing a minimum distance between the two peaks in the PDF (``DZ_WIN``) and a minimum value with respect to the first peak (``MIN_THRES``).
 
+**Redshift quality flag.** When ``Z_FLAG`` is requested in the output parameter file, a quality flag is computed from the marginalised galaxy redshift PDF (``BAY_ZG``). It is a sum of bits, a higher value meaning a less reliable PDF:
+
+- 1: the error (pseudo standard deviation of the PDF around its maximum) is larger than ``error`` but smaller than half of the redshift range;
+- 2: the ratio mean(PDF)/max(PDF) is larger than ``peak_ratio``;
+- 4: the probability mass outside ``n_window`` sigma around the maximum is larger than ``tail``, where sigma is the Gaussian equivalent width of the main peak, derived from its full width at ``fwhm_level`` (0.5 gives the FWHM, :math:`\sigma = {\rm FWHM}/2.355`);
+- 8: at least ``nb_peak`` peaks higher than ``height`` times the maximum and separated by at least ``peak_dz`` in redshift;
+- 16: the error is larger than half of the redshift range.
+
+A value of -99 means that the PDF is null or invalid. Peaks on the first or last sample of the redshift grid are not counted. The parameters are set with the ``Z_FLAG_PAR`` keyword, a string of comma-separated ``name=value`` pairs, e.g. ``Z_FLAG_PAR nb_peak=3,error=0.2``; the defaults are ``nb_peak=2,height=0.43,peak_dz=0.05,tail=0.23,n_window=2,peak_ratio=0.1,error=0.1,fwhm_level=0.5``. The parameters used and the version of the definition of the flag (``Z_FLAG_PAR`` line of the header of the output catalogue) are recorded in the output. The default values were set to reproduce the Python implementation described in the PR #492 and have not been recalibrated on real data: the flag should be used as a relative indicator. Version 2 of the definition replaces the least-squares Gaussian fit used for sigma in the earlier Python implementation (:meth:`lephare.PDF.compute_quality_flag`) by the width of the main peak, which is much faster and does not depend on the convergence of a fit; on a synthetic test set of 2000 PDFs the two definitions give the same flag for about 95% of the cases (all the PDFs with flag 0 in the old definition keep flag 0), the differences being concentrated on broad or multimodal PDFs.
+
 
 +----------------+---------------------+----------------+-------------------------------+
 | **Parameters** | **Type**            | **Default      | **Description**               |

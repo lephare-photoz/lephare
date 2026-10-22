@@ -31,6 +31,20 @@
 
 using namespace std;
 
+/* Whether the output parameter file requests the given keyword. Never throws:
+   an unreadable file is reported later, when the outputs are written. */
+static bool outputRequests(const string& outpara, const string& keyword) {
+  if (outpara == nonestring) return true;  // all keywords are written
+  ifstream in(outpara.c_str());
+  string line;
+  while (getline(in, line)) {
+    istringstream iss(line);
+    string tok;
+    if (iss >> tok && tok == keyword) return true;
+  }
+  return false;
+}
+
 /*
   Construct the photo-z run.
   1 - Analyse the keywords
@@ -197,6 +211,13 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
 
   // MIN_THRES threshold to trigger the detection - 0.1 by default
   min_thres = ((key_analysed["MIN_THRES"]).split_double("0.1", 1))[0];
+
+  // Z_FLAG_PAR parameters of the redshift quality flag, "name=value,..." -
+  // NONE (defaults) by default
+  want_zflag = outputRequests(outpara, "Z_FLAG");
+  // The raw value is used: the comma is part of the syntax of this keyword and
+  // not a list separator.
+  zflag_par = FlagParams::from_string(key_analysed["Z_FLAG_PAR"].value);
 
   /* Output */
 
@@ -370,6 +391,8 @@ PhotoZ::PhotoZ(keymap& key_analysed) {
   outputHeader += "# FORB_CONTEXT           : " + to_string(contforb) + '\n';
   outputHeader += "# DZ_WIN                 : " + to_string(dz_win) + '\n';
   outputHeader += "# MIN_THRES              : " + to_string(min_thres) + '\n';
+  outputHeader += "# Z_FLAG_PAR             : " + zflag_par.to_string() +
+                  " (definition " + to_string(ZFLAG_DEFINITION) + ")\n";
   outputHeader += "# MAG_ABS                : " + to_string(magabsB[0]) + ' ' +
                   to_string(magabsF[0]) + '\n';
   outputHeader += "# MAG_ABS_AGN            : " + to_string(magabsB[1]) + ' ' +
@@ -937,7 +960,7 @@ string PhotoZ::prep_header(vector<string> outkeywords) {
   // Loop over each keyword
   for (const auto& outkey : outkeywords) {
     for (const string k : {"IDENT", "CONTEXT", "NBAND_USED", "NBAND_ULIM",
-                           "ZSPEC", "STRING_INPUT"}) {
+                           "Z_FLAG", "ZSPEC", "STRING_INPUT"}) {
       if (outkey == k) {
         form += " " + k + " " + to_string(numCol);
         numCol++;
@@ -1035,7 +1058,7 @@ string PhotoZ::prep_header(vector<string> outkeywords) {
   form += "# Format topcat: \n#";
   for (const auto& outkey : outkeywords) {
     for (const string k : {"IDENT", "CONTEXT", "NBAND_USED", "NBAND_ULIM",
-                           "ZSPEC", "STRING_INPUT"}) {
+                           "Z_FLAG", "ZSPEC", "STRING_INPUT"}) {
       if (outkey == k) {
         form += " " + k + " ";
       }
@@ -1998,6 +2021,7 @@ void PhotoZ::run_photoz(vector<onesource*> sources, const vector<double>& a0) {
     // find the mode of the marginalized PDF and associated uncertainties,
     // centered on the mode
     oneObj->mode();
+    if (want_zflag) oneObj->compute_zflag(zflag_par);
     // The rest of the procedure requires that a specific choice be made for
     // the redshift of GAL solutions, to be considered for computation of
     // physical quantities, among the following choices: the spectro zs, the
@@ -2240,6 +2264,7 @@ void PhotoZ::fit_uncertainties(onesource& src) {
   // find the mode of the marginalized PDF and associated uncertainties,
   // centered on the mode
   src.mode();
+  if (want_zflag) src.compute_zflag(zflag_par);
 
   return;
 }

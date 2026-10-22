@@ -76,8 +76,12 @@ class PhotoZ {
       fullLibIR;         ///< FIR library templates (owned)
   SEDlight lightLib;     ///< lightweight (memory-reduced) copy of #fullLib used
                          ///< during the fit
-  vector<flt> allFilters;      ///< filter set the libraries were built with
-  vector<double> gridz;        ///< redshift grid of the GAL/QSO libraries
+  vector<flt> allFilters;  ///< filter set the libraries were built with
+  vector<double> gridz;    ///< redshift grid of the GAL/QSO libraries
+  /// Parameters of the redshift quality flag (keyword Z_FLAG_PAR)
+  FlagParams zflag_par;
+  /// Whether Z_FLAG is requested in the output parameters
+  bool want_zflag = false;
   vector<string> outkeywords,  ///< requested output column keywords
                                ///< (OUTPUT_PARA / CAT_OUT_PARA)
       pdftype;                 ///< requested output PDF types (PDZ_OUT)

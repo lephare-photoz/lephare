@@ -8,6 +8,7 @@
 #include "PDF.h"
 
 #include <algorithm>  // sort
+#include <cctype>
 #include <cmath>
 #include <fstream>   // print output file
 #include <iostream>  // print standard file
@@ -299,7 +300,7 @@ pair<double, double> PDF::credible_interval(float level, double val) {
   if (cumulant.back() <= 0) {
     return make_pair(xaxis.front(), xaxis.back());
   } else {
-    for (auto &c : cumulant) c /= cumulant.back();
+    for (auto& c : cumulant) c /= cumulant.back();
   }
 
   // PDF x axis is by construction uniformly sampled, thus so is the cumulant
@@ -387,7 +388,7 @@ double PDF::levelCumu2x(float level) {
   // If cumulative defined
   if (cumulant.back() > 0) {
     // Normalization
-    for (auto &c : cumulant) c /= cumulant.back();
+    for (auto& c : cumulant) c /= cumulant.back();
 
     // Iterator pointing on the item with a value for the upper-level integral
     bound_right_id = upper_bound(cumulant.begin(), cumulant.end(), level);
@@ -502,4 +503,241 @@ void PDF::secondMax(const double win) {
   possInd.clear();
 
   return;
+}
+
+/* ------------------------------------------------------------------------ */
+/*                       Redshift quality flag                               */
+/* ------------------------------------------------------------------------ */
+
+namespace {
+
+string trim_lower(const string& s, bool lower) {
+  size_t b = 0, e = s.size();
+  while (b < e && isspace(static_cast<unsigned char>(s[b]))) b++;
+  while (e > b && isspace(static_cast<unsigned char>(s[e - 1]))) e--;
+  string out = s.substr(b, e - b);
+  if (lower)
+    for (auto& c : out)
+      c = static_cast<char>(tolower(static_cast<unsigned char>(c)));
+  return out;
+}
+
+double parse_number(const string& name, const string& val) {
+  size_t pos = 0;
+  double d;
+  try {
+    d = stod(val, &pos);
+  } catch (const exception&) {
+    throw invalid_argument("Z_FLAG_PAR: cannot read a number for '" + name +
+                           "' from '" + val + "'");
+  }
+  if (pos != val.size() || !isfinite(d))
+    throw invalid_argument("Z_FLAG_PAR: cannot read a number for '" + name +
+                           "' from '" + val + "'");
+  return d;
+}
+
+void check_range(const string& name, bool ok, const string& expect) {
+  if (!ok)
+    throw invalid_argument("Z_FLAG_PAR: '" + name + "' must be " + expect);
+}
+
+}  // namespace
+
+FlagParams FlagParams::from_string(const string& str) {
+  FlagParams p;
+  const string all = trim_lower(str, true);
+  if (all.empty() || all == "none") return p;
+
+  vector<string> seen;
+  size_t start = 0;
+  while (start <= all.size()) {
+    size_t comma = all.find(',', start);
+    if (comma == string::npos) comma = all.size();
+    const string item = trim_lower(all.substr(start, comma - start), true);
+    start = comma + 1;
+    if (item.empty()) continue;
+    const size_t eq = item.find('=');
+    if (eq == string::npos)
+      throw invalid_argument("Z_FLAG_PAR: '" + item +
+                             "' is not of the form name=value");
+    const string name = trim_lower(item.substr(0, eq), true);
+    const string val = trim_lower(item.substr(eq + 1), false);
+    if (find(seen.begin(), seen.end(), name) != seen.end())
+      throw invalid_argument("Z_FLAG_PAR: '" + name + "' is given twice");
+    seen.push_back(name);
+    const double d = parse_number(name, val);
+    if (name == "nb_peak") {
+      check_range(name, d >= 1 && d == floor(d), "an integer >= 1");
+      p.nb_peak = static_cast<int>(d);
+    } else if (name == "height") {
+      check_range(name, d > 0 && d <= 1, "in ]0,1]");
+      p.height = d;
+    } else if (name == "peak_dz") {
+      check_range(name, d >= 0, ">= 0");
+      p.peak_dz = d;
+    } else if (name == "tail") {
+      check_range(name, d >= 0 && d <= 1, "in [0,1]");
+      p.tail = d;
+    } else if (name == "n_window") {
+      check_range(name, d > 0, "> 0");
+      p.n_window = d;
+    } else if (name == "peak_ratio") {
+      check_range(name, d >= 0, ">= 0");
+      p.peak_ratio = d;
+    } else if (name == "error") {
+      check_range(name, d >= 0, ">= 0");
+      p.error = d;
+    } else if (name == "fwhm_level") {
+      check_range(name, d > 0 && d < 1, "in ]0,1[");
+      p.fwhm_level = d;
+    } else {
+      throw invalid_argument(
+          "Z_FLAG_PAR: unknown parameter '" + name +
+          "'. Valid names: nb_peak, height, peak_dz, tail, n_window, "
+          "peak_ratio, error, fwhm_level");
+    }
+  }
+  return p;
+}
+
+string FlagParams::to_string() const {
+  ostringstream os;
+  os.precision(10);
+  os << "nb_peak=" << nb_peak << ",height=" << height << ",peak_dz=" << peak_dz
+     << ",tail=" << tail << ",n_window=" << n_window
+     << ",peak_ratio=" << peak_ratio << ",error=" << error
+     << ",fwhm_level=" << fwhm_level;
+  return os.str();
+}
+
+namespace {
+
+double trapezoid(const double* y, const double* x, size_t n) {
+  double s = 0.;
+  for (size_t i = 1; i < n; i++)
+    s += 0.5 * (y[i] + y[i - 1]) * (x[i] - x[i - 1]);
+  return s;
+}
+
+/* Number of local maxima of v higher than hmin and at least `distance` samples
+   apart. Same rules as scipy.signal.find_peaks(v, height=hmin,
+   distance=distance): plateaus count once (middle point), the first and last
+   samples are never peaks, and among too close peaks the highest is kept. */
+int count_peaks(const double* v, size_t n, double hmin, size_t distance) {
+  vector<size_t> peaks;
+  size_t i = 1;
+  const size_t i_max = n - 1;
+  while (i < i_max) {
+    if (v[i - 1] < v[i]) {
+      size_t ahead = i + 1;
+      while (ahead < i_max && v[ahead] == v[i]) ahead++;
+      if (v[ahead] < v[i]) {
+        const size_t mid = (i + ahead - 1) / 2;
+        if (v[mid] >= hmin) peaks.push_back(mid);
+        i = ahead;
+      }
+    }
+    i++;
+  }
+  if (distance <= 1 || peaks.size() < 2) return static_cast<int>(peaks.size());
+
+  const size_t np = peaks.size();
+  vector<size_t> order(np);
+  for (size_t k = 0; k < np; k++) order[k] = k;
+  stable_sort(order.begin(), order.end(),
+              [&](size_t a, size_t b) { return v[peaks[a]] < v[peaks[b]]; });
+  vector<char> keep(np, 1);
+  for (size_t k = np; k-- > 0;) {
+    const size_t j = order[k];
+    if (!keep[j]) continue;
+    for (size_t m = j; m-- > 0 && peaks[j] - peaks[m] < distance;) keep[m] = 0;
+    for (size_t m = j + 1; m < np && peaks[m] - peaks[j] < distance; m++)
+      keep[m] = 0;
+  }
+  int count = 0;
+  for (char c : keep) count += c;
+  return count;
+}
+
+}  // namespace
+
+ZFlagResult zflag(const double* x, const double* v, size_t n,
+                  const FlagParams& p, double estimate) {
+  ZFlagResult res;
+  if (n < 3) return res;
+
+  // The PDF must be a non negative, finite, non null function
+  double total = 0.;
+  for (size_t i = 0; i < n; i++) {
+    if (!(v[i] >= 0.) || !isfinite(v[i])) return res;
+    total += v[i];
+  }
+  const double area = trapezoid(v, x, n);
+  if (!(total > 0.) || !(area > 0.) || !isfinite(area)) return res;
+
+  vector<double> q(n), work(n);
+  for (size_t i = 0; i < n; i++) q[i] = v[i] / area;
+  const size_t imax = max_element(q.begin(), q.end()) - q.begin();
+  const double qmax = q[imax];
+  const double est = isfinite(estimate) ? estimate : x[imax];
+
+  // Pseudo standard deviation around the estimate
+  for (size_t i = 0; i < n; i++) work[i] = (x[i] - est) * (x[i] - est) * q[i];
+  const double error = sqrt(trapezoid(work.data(), x, n));
+
+  // Gaussian equivalent width from the width of the main peak at the level
+  // fwhm_level*max: for a Gaussian width = 2 sigma sqrt(2 ln(1/level))
+  const double level = p.fwhm_level * qmax;
+  double xl = x[0], xr = x[n - 1];
+  {
+    size_t i = imax;
+    while (i > 0 && q[i] >= level) i--;
+    if (q[i] < level)
+      xl = x[i] + (level - q[i]) / (q[i + 1] - q[i]) * (x[i + 1] - x[i]);
+    i = imax;
+    while (i < n - 1 && q[i] >= level) i++;
+    if (q[i] < level)
+      xr =
+          x[i - 1] + (q[i - 1] - level) / (q[i - 1] - q[i]) * (x[i] - x[i - 1]);
+  }
+  const double dx = x[1] - x[0];
+  const double sigma =
+      max(xr - xl, dx) / (2. * sqrt(2. * log(1. / p.fwhm_level)));
+
+  // Probability mass outside +- n_window sigma around the estimate
+  double tail = 0.;
+  if (sigma > dx) {
+    const double bound = p.n_window * sigma;
+    for (size_t i = 0; i < n; i++)
+      work[i] = (x[i] < est - bound || x[i] > est + bound) ? q[i] : 0.;
+    tail = trapezoid(work.data(), x, n);
+  }
+
+  // Mean to max ratio, and number of peaks
+  double mean = 0.;
+  for (size_t i = 0; i < n; i++) mean += q[i];
+  mean /= static_cast<double>(n);
+  const double ratio = mean / qmax;
+  const size_t dist =
+      max<size_t>(1, static_cast<size_t>(ceil(p.peak_dz / dx - 1.e-6)));
+  const int npeaks = count_peaks(q.data(), n, p.height * qmax, dist);
+
+  // Assemble the flag
+  const double range = x[n - 1] - x[0];
+  int flag = 0;
+  if (error > p.error && error < range / 2) flag += 1;
+  if (ratio > p.peak_ratio) flag += 2;
+  if (tail > p.tail) flag += 4;
+  if (npeaks >= p.nb_peak) flag += 8;
+  if (error >= range / 2) flag += 16;
+
+  res.flag = flag;
+  res.estimate = est;
+  res.error = error;
+  res.peak_ratio = ratio;
+  res.tail_mass = tail;
+  res.n_peaks = npeaks;
+  res.sigma = sigma;
+  return res;
 }
