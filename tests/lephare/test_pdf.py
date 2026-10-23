@@ -12,10 +12,10 @@ def test_quadratic_extremum():
     def line(x):
         return 2 * x + 1
 
+    # degenerate case : 3 points aligned, return the middle one
     x = [0, 1, 2]
     y = [line(t) for t in x]
-    with pytest.raises(ValueError):
-        xm, ym = lp.quadratic_extremum(*x, *y)
+    assert lp.quadratic_extremum(*x, *y) == (1.0, 3.0)
 
     for a in [+1, -1]:
 
