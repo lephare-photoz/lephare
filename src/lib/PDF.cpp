@@ -27,7 +27,7 @@ pair<double, double> quadratic_extremum(double x1, double x2, double x3,
   double delta = x23 * x1 * x1 + x31 * x2 * x2 + x12 * x3 * x3;
   double a = y1 * x23 + y2 * x31 + y3 * x12;
   if (a == 0. || delta == 0.) {  // possibly fragile
-    throw invalid_argument("The three points are aligned");
+    return make_pair(x2, y2);
   }
   double b = y1 * (x2 * x2 - x3 * x3) - y2 * (x1 * x1 - x3 * x3) +
              y3 * (x1 * x1 - x2 * x2);
