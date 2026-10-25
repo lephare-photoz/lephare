@@ -192,6 +192,13 @@ def plot_spectrum(filename):
         size="small",
     )
     plt.figtext(0.13, 0.8, "ID=" + id)
+    # redshifts, so that they can be read without relying on the PDF panel
+    if zspec > 0:
+        dzn = (zphot - zspec) / (1 + zspec)
+        zinfo = f"z_spec={zspec:.4f}\nz_phot={zphot:.4f}\n$\\Delta z/(1+z)$={dzn:+.4f}"
+    else:
+        zinfo = f"z_spec: none\nz_phot={zphot:.4f}"
+    plt.figtext(0.13, 0.7, zinfo, size="small", va="bottom")
     iml = 0
     # Loop over the 6 classes  GAL-1, GAL-2, GAL-FIR, GAL-STOCH, QSO, STAR
     for im in range(5, -1, -1):
@@ -233,14 +240,22 @@ def plot_spectrum(filename):
     ax2 = fig.add_axes([0.55, 0.17, 0.3, 0.25])
     poscond = np.where((zpdf[1, :] / max(zpdf[1, :]) > 0.002) | (zpdf[2, :] / max(zpdf[2, :]) > 0.002))
     zaxe = zpdf[0, poscond]
-    ax2.axis([min(zaxe[0]) - 0.1, max(zaxe[0] + 0.1), 0, 1.1])
+    zlo, zhi = min(zaxe[0]) - 0.1, max(zaxe[0] + 0.1)
+    # keep both the spec-z and the photo-z visible, even when the PDF is far from them
+    for zmark in (zspec, zphot):
+        if zmark > 0:
+            zlo, zhi = min(zlo, zmark - 0.1), max(zhi, zmark + 0.1)
+    ax2.axis([zlo, zhi, 0, 1.1])
     # Plot the PDF as the sum of all the probability at a given redshift (Bayesian)
     ax2.plot(zpdf[0, :], zpdf[1, :] / max(zpdf[1, :]), color="k", linestyle="solid", label="Bayesian")
     # Plot the PDF as the minimum chi2 converted into probability at every redshift
     ax2.plot(zpdf[0, :], zpdf[2, :] / max(zpdf[2, :]), color="k", linestyle="dashed", label="Profile")
     # Plot a vertical line with the spec-z value if it exists
     if zspec > 0:
-        ax2.plot([zspec, zspec], [0, 1.1], color="r", linestyle="solid", label="spec z")
-    ax2.plot([zphot, zphot], [0, 1.1], color="b", linestyle="solid", label="photo z")
+        # wide and semi-transparent, so that the photo-z line drawn on top of it stays visible
+        ax2.plot(
+            [zspec, zspec], [0, 1.1], color="r", linestyle="solid", linewidth=4, alpha=0.5, label="spec z"
+        )
+    ax2.plot([zphot, zphot], [0, 1.1], color="b", linestyle="solid", linewidth=1.2, label="photo z")
     ax2.legend(fontsize="10")
     ax2.set_title("PDF(z)")
