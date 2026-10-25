@@ -18,7 +18,7 @@ from scipy.integrate import trapezoid
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 
-from ._lephare import HIGH_CHI2, PDF
+from ._lephare import HIGH_CHI2, PDF, FlagParams
 from ._utils import continueClass
 
 __all__ = [
@@ -185,3 +185,106 @@ class PDF:  # noqa
             score += 16
 
         return int(score), estimate, error, peak_ratio, tail_mass, number_mod, sigma
+
+    def plot_flag_criteria(self, params=None, estimate=None, ax=None, title=None):
+        """Plot the PDF together with the criteria that build the redshift flag.
+
+        The flag is the one computed by :meth:`lephare.PDF.quality_flag` (the
+        one written in the ``Z_FLAG`` output column). The figure shows:
+
+        - the PDF, normalised to its maximum;
+        - the Gaussian of same peak height and of width ``sigma`` (the
+          width of the main peak at ``fwhm_level`` of its maximum, converted
+          to a standard deviation), used to define the core of the PDF;
+        - the estimate (by default the PDF maximum);
+        - the core, ``estimate`` +/- ``n_window`` * ``sigma``; the probability
+          mass of the PDF outside of it (shaded) is the tail mass (bit 4);
+        - the peak detection threshold ``height`` (fraction of the maximum)
+          and the peaks which are counted (bit 8), after discarding peaks
+          closer than ``peak_dz``;
+        - a text box, next to the axes, with ``error`` (bits 1 and 16), ``peak_ratio`` (bit 2),
+          the tail mass, the number of peaks, and the resulting flag, in which
+          the criteria that are triggered are marked.
+
+        Parameters
+        ----------
+        params : FlagParams or str, optional
+            Parameters of the flag, or a ``"name=value,..."`` string as for the
+            ``Z_FLAG_PAR`` keyword. Default: the default :class:`FlagParams`.
+        estimate : float, optional
+            Central value of the statistics. Default: the PDF maximum.
+        ax : matplotlib.axes.Axes, optional
+            Axes to draw on. Default: the current axes.
+        title : str, optional
+            Title of the plot.
+
+        Returns
+        -------
+        ZFlagResult
+            The flag and the quantities it is made of.
+        """
+        if params is None:
+            params = FlagParams()
+        elif isinstance(params, str):
+            params = FlagParams.from_string(params)
+        x = np.asarray(self.xaxis, dtype=float)
+        v = np.asarray(self.vPDF, dtype=float)
+        res = self.quality_flag(params) if estimate is None else self.quality_flag(params, estimate)
+        if ax is None:
+            ax = plt.gca()
+        vmax = np.max(v) if v.size else 0.0
+        if res.flag < 0 or not np.isfinite(vmax) or vmax <= 0:
+            ax.text(0.5, 0.5, f"invalid PDF (Z_FLAG={res.flag})", transform=ax.transAxes, ha="center")
+            return res
+        q = v / vmax
+        est, sigma = res.estimate, res.sigma
+        dx = x[1] - x[0]
+
+        ax.plot(x, q, color="C0", label="P(z)")
+        if sigma > 0:
+            gauss = np.exp(-0.5 * ((x - est) / sigma) ** 2)
+            ax.plot(x, gauss, "--", color="C1", label=f"Gaussian, $\\sigma$={sigma:.3g}")
+        ax.axvline(est, color="purple", ls="--", lw=1, label=f"estimate = {est:.3f}")
+        ax.axhline(params.height, color="red", lw=1, label=f"peak threshold ({params.height:g} max)")
+
+        # core and tail mass
+        lo, hi = est - params.n_window * sigma, est + params.n_window * sigma
+        ax.axvspan(lo, hi, color="gray", alpha=0.12, label=f"core $\\pm${params.n_window:g}$\\sigma$")
+        tail = (x < lo) | (x > hi)
+        ax.fill_between(x, 0, q, where=tail, color="C3", alpha=0.35, label=f"tail mass = {res.tail_mass:.3f}")
+
+        # peaks counted for bit 8 (same convention as scipy.signal.find_peaks)
+        dist = max(1, int(np.ceil(params.peak_dz / dx - 1.0e-6)))
+        peaks, _ = find_peaks(q, height=params.height, distance=dist)
+        if len(peaks):
+            ax.plot(x[peaks], q[peaks], "v", color="k", ms=7, label=f"{len(peaks)} peak(s)")
+
+        # criteria and flag
+        rng = x[-1] - x[0]
+        crit = [
+            (1, f"error = {res.error:.3f} > {params.error:g}", params.error < res.error < rng / 2),
+            (2, f"mean/max={res.peak_ratio:.3f} > {params.peak_ratio:g}", res.peak_ratio > params.peak_ratio),
+            (4, f"tail = {res.tail_mass:.3f} > {params.tail:g}", res.tail_mass > params.tail),
+            (8, f"n_peaks = {res.n_peaks} >= {params.nb_peak}", res.n_peaks >= params.nb_peak),
+            (16, f"error = {res.error:.3f} >= range/2", res.error >= rng / 2),
+        ]
+        lines = [f"Z_FLAG = {res.flag}"]
+        lines += [f"[{'x' if on else ' '}] {bit:>2}: {txt}" for bit, txt, on in crit]
+        ax.text(
+            1.02,
+            0.0,
+            "\n".join(lines),
+            transform=ax.transAxes,
+            va="bottom",
+            ha="left",
+            family="monospace",
+            fontsize=8,
+            bbox={"boxstyle": "round", "fc": "white", "alpha": 0.85},
+        )
+        ax.set_xlabel("Redshift")
+        ax.set_ylabel("P(z) / max")
+        ax.set_ylim(0, 1.08)
+        ax.legend(loc="upper left", bbox_to_anchor=(1.02, 1.0), fontsize=8)
+        if title is not None:
+            ax.set_title(title)
+        return res

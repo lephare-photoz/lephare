@@ -375,3 +375,44 @@ def test_quality_flags():
     assert pdf.number_mod() == 1
     assert pdf.tail_mass(0, n_window=6) == pytest.approx(1.0e-4, 1.0e-2)
     assert pdf.compute_quality_flag(0)[0] == 3
+
+
+def _gauss_pdf(mu, sigma, zmax=6.0, n=301):
+    pdf = lp.PDF(0, zmax, n)
+    x = np.array(pdf.xaxis)
+    pdf.setYvals(np.exp(-0.5 * ((x - mu) / sigma) ** 2))
+    return pdf
+
+
+def test_plot_flag_criteria():
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    # a narrow unimodal PDF is clean
+    pdf = _gauss_pdf(1.0, 0.05)
+    fig, ax = plt.subplots()
+    res = pdf.plot_flag_criteria(ax=ax)
+    assert res.flag == pdf.quality_flag().flag == 0
+    assert res.estimate == pytest.approx(1.0, abs=0.02)
+    assert len(ax.lines) >= 3
+    plt.close(fig)
+
+    # two well separated peaks, parameters given as a string
+    pdf = lp.PDF(0, 6.0, 301)
+    x = np.array(pdf.xaxis)
+    pdf.setYvals(np.exp(-0.5 * ((x - 1.0) / 0.05) ** 2) + 0.8 * np.exp(-0.5 * ((x - 3.0) / 0.05) ** 2))
+    fig, ax = plt.subplots()
+    res = pdf.plot_flag_criteria("nb_peak=2", ax=ax)
+    assert res.n_peaks == 2
+    assert res.flag & 8
+    assert res.flag == pdf.quality_flag(lp.FlagParams.from_string("nb_peak=2")).flag
+    plt.close(fig)
+
+    # null PDF: nothing to draw, but no exception
+    pdf = lp.PDF(0, 6.0, 301)
+    pdf.setYvals(np.zeros(301))
+    fig, ax = plt.subplots()
+    assert pdf.plot_flag_criteria(ax=ax).flag == lp.ZFLAG_INVALID
+    plt.close(fig)
