@@ -249,7 +249,8 @@ class PDF {
  * @param x1, y1, x2, y2,x3,y3: are the three points used to
  * obtain a parabolic approximation around them
  *
- * @return (xmin, ymin): the pair of the approximate minimum
+ * @return (xmin, ymin): the pair of the approximate minimum. Return (x2, y2) if
+ * the points are aligned.
  */
 pair<double, double> quadratic_extremum(double x1, double x2, double x3,
                                         double y1, double y2, double y3);
