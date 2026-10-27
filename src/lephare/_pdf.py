@@ -202,9 +202,10 @@ class PDF:  # noqa
         - the peak detection threshold ``height`` (fraction of the maximum)
           and the peaks which are counted (bit 8), after discarding peaks
           closer than ``peak_dz``;
-        - a text box, next to the axes, with ``error`` (bits 1 and 16), ``peak_ratio`` (bit 2),
-          the tail mass, the number of peaks, and the resulting flag, in which
-          the criteria that are triggered are marked.
+        - a text box, next to the axes, with the error, i.e. the pseudo standard
+          deviation of the PDF (bits 1 and 16), the ratio mean/max of the PDF
+          (bit 2), the tail mass, the number of peaks, and the resulting flag,
+          in which the criteria that are triggered are marked.
 
         Parameters
         ----------
