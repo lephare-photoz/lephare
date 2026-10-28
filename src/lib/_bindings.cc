@@ -501,6 +501,9 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("run_autoadapt", &PhotoZ::run_autoadapt,
            "Derive per-band zero-point offsets from a set of spec-z sources.")
       .def("run_photoz", &PhotoZ::run_photoz,
+           // Prevents hanging the Python interpreter during long C++
+           // computations:
+           py::call_guard<py::gil_scoped_release>(),
            "Fit every source in the list and write the configured outputs.")
       .def("fit", &PhotoZ::fit, "Fit a single source against the libraries.")
       .def("fit_uncertainties", &PhotoZ::fit_uncertainties,
