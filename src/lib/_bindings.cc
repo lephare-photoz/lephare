@@ -473,6 +473,8 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("gridz", &PhotoZ::gridz)
       .def_readonly("outkeywords", &PhotoZ::outkeywords)
       .def_readonly("outpara", &PhotoZ::outpara)
+      .def_readonly("zflag_par", &PhotoZ::zflag_par)
+      .def_readonly("want_zflag", &PhotoZ::want_zflag)
       .def_readonly("pdftype", &PhotoZ::pdftype)
       .def_readwrite("outputHeader", &PhotoZ::outputHeader)
       .def_readwrite("reddening", &PhotoZ::reddening)
@@ -549,6 +551,77 @@ PYBIND11_MODULE(_lephare, mod) {
           "redshift bin.");
 
   mod.attr("maptype") = maptype;
+  mod.attr("ZFLAG_DEFINITION") = py::int_(ZFLAG_DEFINITION);
+  mod.attr("ZFLAG_NOT_COMPUTED") = py::int_(ZFLAG_NOT_COMPUTED);
+  mod.attr("ZFLAG_INVALID") = py::int_(ZFLAG_INVALID);
+
+  py::class_<FlagParams>(mod, "FlagParams",
+                         "Parameters of the redshift quality flag (Z_FLAG).")
+      .def(py::init<>())
+      .def_static("from_string", &FlagParams::from_string,
+                  "Build from 'name=value,name=value,...' (see Z_FLAG_PAR).",
+                  py::arg("str"))
+      .def("to_string", &FlagParams::to_string)
+      .def("__repr__",
+           [](const FlagParams& p) {
+             return "FlagParams(" + p.to_string() + ")";
+           })
+      .def_readwrite("nb_peak", &FlagParams::nb_peak)
+      .def_readwrite("height", &FlagParams::height)
+      .def_readwrite("peak_dz", &FlagParams::peak_dz)
+      .def_readwrite("tail", &FlagParams::tail)
+      .def_readwrite("n_window", &FlagParams::n_window)
+      .def_readwrite("peak_ratio", &FlagParams::peak_ratio)
+      .def_readwrite("error", &FlagParams::error)
+      .def_readwrite("fwhm_level", &FlagParams::fwhm_level);
+
+  py::class_<ZFlagResult>(mod, "ZFlagResult",
+                          "Redshift quality flag and the quantities it uses.")
+      .def_readonly("flag", &ZFlagResult::flag)
+      .def_readonly("estimate", &ZFlagResult::estimate)
+      .def_readonly("error", &ZFlagResult::error)
+      .def_readonly("peak_ratio", &ZFlagResult::peak_ratio)
+      .def_readonly("tail_mass", &ZFlagResult::tail_mass)
+      .def_readonly("n_peaks", &ZFlagResult::n_peaks)
+      .def_readonly("sigma", &ZFlagResult::sigma);
+
+  mod.def(
+      "zflag",
+      [](py::array_t<double, py::array::c_style | py::array::forcecast> x,
+         py::array_t<double, py::array::c_style | py::array::forcecast> v,
+         const FlagParams& params, double estimate) {
+        if (x.ndim() != 1 || v.ndim() != 1 || x.size() != v.size())
+          throw py::value_error("x and v must be 1D arrays of equal length");
+        return zflag(x.data(), v.data(), static_cast<size_t>(x.size()), params,
+                     estimate);
+      },
+      "Quality flag of one PDF v sampled on the regular grid x.", py::arg("x"),
+      py::arg("v"), py::arg("params") = FlagParams(),
+      py::arg("estimate") = std::numeric_limits<double>::quiet_NaN());
+
+  mod.def(
+      "zflag_batch",
+      [](py::array_t<double, py::array::c_style | py::array::forcecast> x,
+         py::array_t<double, py::array::c_style | py::array::forcecast> v,
+         const FlagParams& params) {
+        if (x.ndim() != 1 || v.ndim() != 2 || v.shape(1) != x.shape(0))
+          throw py::value_error("x must be (n,) and v must be (N, n)");
+        const py::ssize_t N = v.shape(0), n = v.shape(1);
+        py::array_t<int> flags(std::vector<py::ssize_t>{N});
+        auto f = flags.mutable_data();
+        const double* xp = x.data();
+        const double* vp = v.data();
+        {
+          py::gil_scoped_release release;
+          for (py::ssize_t i = 0; i < N; i++)
+            f[i] = zflag(xp, vp + i * n, static_cast<size_t>(n), params).flag;
+        }
+        return flags;
+      },
+      "Quality flags of N PDFs: x is (n,), v is (N, n). Returns int array "
+      "(N,).",
+      py::arg("x"), py::arg("v"), py::arg("params") = FlagParams());
+
   py::class_<onesource>(mod, "onesource", py::dynamic_attr())
       .def(py::init<>(), "Default constructor.")
       .def(py::init<const int, vector<double>>(),
@@ -699,6 +772,12 @@ PYBIND11_MODULE(_lephare, mod) {
       .def_readonly("results", &onesource::results)
       .def_readonly("zgmin", &onesource::zgmin)
       .def_readonly("zgmode", &onesource::zgmode)
+      .def_readonly("zflag", &onesource::zflag)
+      .def_readonly("zflag_info", &onesource::zflag_info)
+      .def("compute_zflag", &onesource::compute_zflag,
+           "Compute the redshift quality flag from the marginalized galaxy "
+           "PDF, filling zflag and zflag_info.",
+           py::arg("params") = FlagParams())
       .def_readonly("zgmed", &onesource::zgmed)
       .def_readonly("zqmin", &onesource::zqmin)
       .def_readonly("zqmode", &onesource::zqmode)
@@ -727,6 +806,10 @@ PYBIND11_MODULE(_lephare, mod) {
       .def("index", &PDF::index,
            "Index of the xaxis bin closest to a given value.", py::arg("inVal"))
       .def("get_max", &PDF::get_max, "Maximum value of the PDF.")
+      .def("quality_flag", &PDF::quality_flag,
+           "Redshift quality flag of this PDF (ZFlagResult).",
+           py::arg("params") = FlagParams(),
+           py::arg("estimate") = std::numeric_limits<double>::quiet_NaN())
       .def("get_maxid", &PDF::get_maxid, "Index of the PDF maximum.")
       .def("secondMax", &PDF::secondMax,
            "Find secondary peaks in the PDF, sorted by probability.",

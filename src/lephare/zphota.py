@@ -45,6 +45,9 @@ config_keys = {
        to use for physical parameter computation",
     "DZ_WIN": "Window search for second peak",
     "MIN_THRES": "lower threshold for second peak",
+    "Z_FLAG_PAR": "parameters of the redshift quality flag Z_FLAG, as a string of\
+       comma separated name=value (nb_peak, height, peak_dz, tail, n_window, peak_ratio,\
+       error, fwhm_level); NONE (default) uses the default values",
     "SPEC_OUT": "output the best spectrum of each object (YES, or the name of the directory\
        to be used",
     "FIR_LIB": "dedicated far infrared synthetic magnitudes files",
@@ -172,6 +175,10 @@ to use for physical parameter computation
            Window search for second peak
     MIN_THRES:
            lower threshold for second peak
+    Z_FLAG_PAR:
+           parameters of the redshift quality flag Z_FLAG, as a string of \
+comma separated name=value (nb_peak, height, peak_dz, tail, n_window, \
+peak_ratio, error, fwhm_level); NONE (default) uses the default values
     SPEC_OUT:
            output the best spectrum of each object
     FIR_LIB:
