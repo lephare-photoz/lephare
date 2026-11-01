@@ -2,13 +2,12 @@
 
 import os
 
+import lephare as lp
 import numpy as np
 import pytest
 import scipy.signal
 from astropy.table import Table
 from scipy.integrate import trapezoid  # np.trapezoid only exists in numpy>=2
-
-import lephare as lp
 
 
 def gauss(x, mu, sig, amp=1.0):
