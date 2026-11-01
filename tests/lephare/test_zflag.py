@@ -251,3 +251,18 @@ def test_zflag_requested_only_in_table(test_data_dir, tmp_path, monkeypatch):
     table = photz.build_output_tables(photozlist, para_out=str(para))
     assert list(table.colnames)[:3] == ["IDENT", "Z_BEST", "Z_FLAG"]
     assert all(s.zflag != lp.ZFLAG_NOT_COMPUTED for s in photozlist)
+
+
+def test_save_table_fits_header(tmp_path):
+    """The Z_FLAG meta data have FITS-compatible keywords, and the long value survives."""
+    par = lp.FlagParams().to_string()
+    table = Table({"Z_FLAG": [0, 1]})
+    table.meta["Z_FLAG_PAR"] = par
+    table.meta["Z_FLAG_DEF"] = lp.ZFLAG_DEFINITION
+    filename = str(tmp_path / "table.fits")
+    lp.PhotoZ.save_table(None, table, filename)
+    assert "Z_FLAG_PAR" in table.meta  # the input table is left untouched
+    back = Table.read(filename)
+    assert back.meta["ZFLAGPAR"] == par
+    assert back.meta["ZFLAGDEF"] == lp.ZFLAG_DEFINITION
+    assert "Z_FLAG_PAR" not in back.meta
