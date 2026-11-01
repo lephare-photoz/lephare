@@ -118,4 +118,4 @@ class PhotoZ:  # noqa: F811
             for key, fitskey in FITS_META_KEYS.items():
                 if key in table.meta:
                     table.meta[fitskey] = table.meta.pop(key)
-            table.write(filename, "fits", overwrite)
+            table.write(filename, format="fits", overwrite=overwrite)

@@ -266,3 +266,13 @@ def test_save_table_fits_header(tmp_path):
     assert back.meta["ZFLAGPAR"] == par
     assert back.meta["ZFLAGDEF"] == lp.ZFLAG_DEFINITION
     assert "Z_FLAG_PAR" not in back.meta
+
+
+def test_save_table_overwrite(tmp_path):
+    """overwrite=False must refuse to replace an existing file."""
+    table = Table({"Z_FLAG": [0, 1]})
+    filename = str(tmp_path / "table.fits")
+    lp.PhotoZ.save_table(None, table, filename)
+    with pytest.raises(OSError):
+        lp.PhotoZ.save_table(None, table, filename, overwrite=False)
+    lp.PhotoZ.save_table(None, table, filename, overwrite=True)
