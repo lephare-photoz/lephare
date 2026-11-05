@@ -18,6 +18,9 @@ from astropy.table import Column, Table
 from ._lephare import ZFLAG_DEFINITION, ZFLAG_NOT_COMPUTED, PhotoZ, readOutKeywords
 from ._utils import continueClass
 
+# meta data keys that are too long for a FITS header, and their FITS name
+FITS_META_KEYS = {"Z_FLAG_PAR": "ZFLAGPAR", "Z_FLAG_DEF": "ZFLAGDEF"}
+
 __all__ = [
     "PhotoZ",
 ]
@@ -105,6 +108,14 @@ class PhotoZ:  # noqa: F811
             self.save_table(t, filename)
         return t
 
-    def save_table(self, table, filename, fmt="fits", overwrite=True):  # pragma no cover
+    def save_table(self, table, filename, fmt="fits", overwrite=True):
         if fmt == "fits":
-            table.write(filename, "fits", overwrite)
+            # FITS keywords are limited to 8 characters, and astropy can neither
+            # write nor read back a long string in a HIERARCH card (the value
+            # of Z_FLAG_PAR is about 100 characters long): the Z_FLAG meta data
+            # are written with 8-character keywords (ZFLAGPAR, ZFLAGDEF).
+            table = table.copy(copy_data=False)
+            for key, fitskey in FITS_META_KEYS.items():
+                if key in table.meta:
+                    table.meta[fitskey] = table.meta.pop(key)
+            table.write(filename, format="fits", overwrite=overwrite)

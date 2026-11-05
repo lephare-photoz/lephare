@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 import scipy.signal
 from astropy.table import Table
+from scipy.integrate import trapezoid  # np.trapezoid only exists in numpy>=2
 
 
 def gauss(x, mu, sig, amp=1.0):
@@ -161,7 +162,7 @@ def test_peak_counting_matches_scipy(zgrid):
             p = np.round(p, 1)
         if p.max() == 0:
             continue
-        q = p / np.trapezoid(p, x)
+        q = p / trapezoid(p, x)
         expected = len(scipy.signal.find_peaks(q, height=par.height * q.max(), distance=dist)[0])
         assert lp.zflag(x, p, par).n_peaks == expected
 
@@ -192,7 +193,8 @@ def test_zflag_end_to_end(test_data_dir, tmp_path, monkeypatch):
     # Output parameters: the standard ones plus Z_FLAG
     para = tmp_path / "output.para"
     with open(os.path.join(test_data_dir, "examples/output.para")) as f:
-        para.write_text(f.read() + "\nZ_FLAG\n")
+        lines = [line for line in f if line.split("#")[0].strip() != "Z_FLAG"]
+    para.write_text("".join(lines) + "\nZ_FLAG\n")
     config["PARA_OUT"] = str(para)
     config["CAT_OUT"] = str(tmp_path / "zphot.out")
     config["PDZ_OUT"] = "NONE"
@@ -229,6 +231,13 @@ def test_zflag_requested_only_in_table(test_data_dir, tmp_path, monkeypatch):
     monkeypatch.setenv("LEPHAREDIR", os.path.join(test_dir, "../data"))
     monkeypatch.setenv("LEPHAREWORK", os.path.join(test_dir, "../tmp"))
     config = lp.read_config(os.path.join(test_data_dir, "examples/COSMOS.para"))
+    # The example output.para (shipped in lephare-data) may list Z_FLAG:
+    # use a copy without it so that the test does not depend on the data version.
+    with open(os.path.join(test_data_dir, "examples/output.para")) as f:
+        lines = [line for line in f if line.split("#")[0].strip() != "Z_FLAG"]
+    noflag = tmp_path / "noflag.para"
+    noflag.write_text("".join(lines))
+    config["PARA_OUT"] = str(noflag)
     lp.prepare(config)
     input = Table.read(os.path.join(test_data_dir, "examples/COSMOS_first100specz.fits"))
     cols = [c for c in input.colnames if not c.startswith("f") or "IB527" in c or "IB679" in c]
@@ -238,7 +247,32 @@ def test_zflag_requested_only_in_table(test_data_dir, tmp_path, monkeypatch):
 
     para = tmp_path / "flag.para"
     para.write_text("IDENT\nZ_BEST\nZ_FLAG\n")
-    photz = lp.PhotoZ(config)
+    photz = lp.PhotoZ(lp.all_types_to_keymap(config))
     table = photz.build_output_tables(photozlist, para_out=str(para))
     assert list(table.colnames)[:3] == ["IDENT", "Z_BEST", "Z_FLAG"]
     assert all(s.zflag != lp.ZFLAG_NOT_COMPUTED for s in photozlist)
+
+
+def test_save_table_fits_header(tmp_path):
+    """The Z_FLAG meta data have FITS-compatible keywords, and the long value survives."""
+    par = lp.FlagParams().to_string()
+    table = Table({"Z_FLAG": [0, 1]})
+    table.meta["Z_FLAG_PAR"] = par
+    table.meta["Z_FLAG_DEF"] = lp.ZFLAG_DEFINITION
+    filename = str(tmp_path / "table.fits")
+    lp.PhotoZ.save_table(None, table, filename)
+    assert "Z_FLAG_PAR" in table.meta  # the input table is left untouched
+    back = Table.read(filename)
+    assert back.meta["ZFLAGPAR"] == par
+    assert back.meta["ZFLAGDEF"] == lp.ZFLAG_DEFINITION
+    assert "Z_FLAG_PAR" not in back.meta
+
+
+def test_save_table_overwrite(tmp_path):
+    """overwrite=False must refuse to replace an existing file."""
+    table = Table({"Z_FLAG": [0, 1]})
+    filename = str(tmp_path / "table.fits")
+    lp.PhotoZ.save_table(None, table, filename)
+    with pytest.raises(OSError):
+        lp.PhotoZ.save_table(None, table, filename, overwrite=False)
+    lp.PhotoZ.save_table(None, table, filename, overwrite=True)
