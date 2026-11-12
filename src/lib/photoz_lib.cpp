@@ -1505,26 +1505,19 @@ vector<vector<int>> bestFilter(int nbFlt, vector<double> gridz,
   Derive the k-color term (rest-frame color - k-correction) maximum, in order to
   conserve the error bars for the absolute magnitudes
 */
-vector<vector<double>> maxkcolor(vector<double> gridz, vector<SED*> fulllib,
-                                 vector<vector<int>> bestFlt) {
-  vector<vector<double>> extremeDiff, extremeDiffMin, extremeDiffMax;
+vector<vector<double>> maxkcolor(const vector<double>& gridz,
+                                 const vector<SED*>& fulllib,
+                                 const vector<vector<int>>& bestFlt) {
+  vector<vector<double>> extremeDiff;
   vector<double> extremeValMin, extremeValMax, extremeVal, di;
-  int indz;
-  double kcolor;
 
   // redshift grid/nb filt
   int imagm = bestFlt[0].size();
   int nbz = bestFlt.size();
 
   // initialize the minimum and maximum values
-  for (size_t i = 0; i < bestFlt.size(); i++) {       // Loop over all redshifts
-    for (size_t k = 0; k < bestFlt[0].size(); ++k) {  // loop over all filters
-      extremeValMin.push_back(1.e4);
-      extremeValMax.push_back(-1.e4);
-    }
-    extremeDiffMin.push_back(extremeValMin);
-    extremeDiffMax.push_back(extremeValMax);
-  }
+  vector<vector<double>> extremeDiffMin(nbz, vector<double>(imagm, 1.e4));
+  vector<vector<double>> extremeDiffMax(nbz, vector<double>(imagm, -1.e4));
 
   // Find the extreme value of k-color
   // Loop over all SEDs from the library
@@ -1538,8 +1531,7 @@ vector<vector<double>> maxkcolor(vector<double> gridz, vector<SED*> fulllib,
 #ifdef _OPENMP
 #pragma omp for
 #endif
-    for (vector<SED*>::iterator it = fulllib.begin(); it < fulllib.end();
-         ++it) {
+    for (auto it = fulllib.begin(); it < fulllib.end(); ++it) {
       // computed only for galaxies
       if ((*it)->nlib == 0) {
         // loop over the rest-frame filters to be considered
@@ -1548,13 +1540,14 @@ vector<vector<double>> maxkcolor(vector<double> gridz, vector<SED*> fulllib,
           const int indz = indexz((*it)->red, gridz);
           // index of the best filter
           const int bestf = bestFlt[indz][k];
-          // derive the k-color term at this redshift: m(ref)-m(obs)-kcorr(ref)
+          // derive the k-color term at this redshift:
+          // (m(ref)-m(obs))(z=0)-kcorr(obs)
           if (bestf >= 0) {
             const double kcolor = ((fulllib[(*it)->index_z0])->mag[k]) -
                                   ((fulllib[(*it)->index_z0])->mag[bestf]) -
                                   (*it)->kcorr[bestf];
-            if (kcolor < locMin[indz][bestf]) locMin[indz][bestf] = kcolor;
-            if (kcolor > locMax[indz][bestf]) locMax[indz][bestf] = kcolor;
+            if (kcolor < locMin[indz][k]) locMin[indz][k] = kcolor;
+            if (kcolor > locMax[indz][k]) locMax[indz][k] = kcolor;
           }
         }
       }
@@ -1589,28 +1582,21 @@ vector<vector<double>> maxkcolor(vector<double> gridz, vector<SED*> fulllib,
   Define the filters to pick (depending on the redshift) to minimize the
   k-correction + rest-frame color term in the absolute magnitude computation
 */
-void minimizekcolor(vector<double> gridz, vector<SED*> fulllib,
-                    vector<vector<int>>& bestFlt, vector<long> magabscont) {
-  vector<vector<double>> extremeDiffMin, extremeDiffMax;
+void minimizekcolor(const vector<double>& gridz, const vector<SED*>& fulllib,
+                    vector<vector<int>>& bestFlt,
+                    const vector<long>& magabscont) {
   vector<double> extremeValMin, extremeValMax, extremeVal, di;
   vector<int> possiFlt;
-  int indz;
-  double kcolor, mini;
+  double mini;
 
-  // bestFlt has been initialize at -1 before the call, with a dimention
+  // bestFlt has been initialize at -1 before the call, with a dimension
   // redshift grid/nb filt
   int imagm = bestFlt[0].size();
   int nbz = bestFlt.size();
 
   // initialize the maximum and minimum values
-  for (int i = 0; i < nbz; i++) {      // Loop over all redshifts
-    for (int k = 0; k < imagm; k++) {  // loop over all filters
-      extremeValMin.push_back(1.e4);
-      extremeValMax.push_back(-1.e4);
-    }
-    extremeDiffMin.push_back(extremeValMin);
-    extremeDiffMax.push_back(extremeValMax);
-  }
+  vector<vector<double>> extremeDiffMin(nbz, vector<double>(imagm, 1.e4));
+  vector<vector<double>> extremeDiffMax(nbz, vector<double>(imagm, -1.e4));
 
   // List of possible filters for the observed magnitudes, given the context
   for (int k = 0; k < imagm; ++k) {
@@ -1649,8 +1635,7 @@ void minimizekcolor(vector<double> gridz, vector<SED*> fulllib,
 #ifdef _OPENMP
 #pragma omp for
 #endif
-      for (vector<SED*>::iterator it = fulllib.begin(); it < fulllib.end();
-           ++it) {
+      for (auto it = fulllib.begin(); it < fulllib.end(); ++it) {
         // computed only for galaxies
         if ((*it)->nlib == 0) {
           // obtain the index of the redshift grid

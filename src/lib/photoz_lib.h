@@ -332,10 +332,12 @@ vector<vector<int>> bestFilter(int nbFlt, vector<double> gridz,
                                vector<int> bappOp, vector<double> zbmin,
                                vector<double> zbmax);
 
-vector<vector<double>> maxkcolor(vector<double> gridz, vector<SED*> fullLib,
-                                 vector<vector<int>> bestFlt);
+vector<vector<double>> maxkcolor(const vector<double>& gridz,
+                                 const vector<SED*>& fullLib,
+                                 const vector<vector<int>>& bestFlt);
 
-void minimizekcolor(vector<double> gridz, vector<SED*> fulllib,
-                    vector<vector<int>>& bestFlt, vector<long> magabscont);
+void minimizekcolor(const vector<double>& gridz, const vector<SED*>& fulllib,
+                    vector<vector<int>>& bestFlt,
+                    const vector<long>& magabscont);
 
 #endif
