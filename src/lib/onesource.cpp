@@ -1877,7 +1877,7 @@ void onesource::absmag(const vector<vector<int>>& bestFlt,
                      distmod_obs);
       // uncertainty on the mag abs: sum the apparent magnitude uncertainties +
       // maximum uncertainties on the k-correction
-      errmagabs = sqrt(pow(maxkcolor[indexz][k], 2.) + pow(sab[fobs], 2.));
+      errmagabs = sqrt(pow(maxkcolor[indexz][k], 2.) + pow(msab[fobs], 2.));
       emabs.push_back(errmagabs);
       absfilt.push_back(fobs);  // filter used for apparent magnitude
     } else {
