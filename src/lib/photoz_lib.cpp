@@ -1505,57 +1505,66 @@ vector<vector<int>> bestFilter(int nbFlt, vector<double> gridz,
   Derive the k-color term (rest-frame color - k-correction) maximum, in order to
   conserve the error bars for the absolute magnitudes
 */
-vector<vector<double>> maxkcolor(vector<double> gridz, vector<SED*> fulllib,
-                                 vector<vector<int>> bestFlt) {
-  vector<vector<double>> extremeDiff, extremeDiffMin, extremeDiffMax;
+vector<vector<double>> maxkcolor(const vector<double>& gridz,
+                                 const vector<SED*>& fulllib,
+                                 const vector<vector<int>>& bestFlt) {
+  vector<vector<double>> extremeDiff;
   vector<double> extremeValMin, extremeValMax, extremeVal, di;
-  int indz;
-  double kcolor;
+
+  // redshift grid/nb filt
+  int imagm = bestFlt[0].size();
+  int nbz = bestFlt.size();
 
   // initialize the minimum and maximum values
-  for (size_t i = 0; i < bestFlt.size(); i++) {       // Loop over all redshifts
-    for (size_t k = 0; k < bestFlt[0].size(); ++k) {  // loop over all filters
-      extremeValMin.push_back(1.e4);
-      extremeValMax.push_back(-1.e4);
-    }
-    extremeDiffMin.push_back(extremeValMin);
-    extremeDiffMax.push_back(extremeValMax);
-  }
+  vector<vector<double>> extremeDiffMin(nbz, vector<double>(imagm, 1.e4));
+  vector<vector<double>> extremeDiffMax(nbz, vector<double>(imagm, -1.e4));
 
   // Find the extreme value of k-color
   // Loop over all SEDs from the library
   // parrallellize the loop
 #ifdef _OPENMP
-#pragma omp parallel private(indz, kcolor)
+#pragma omp parallel
+#endif
   {
+    vector<vector<double>> locMin(nbz, vector<double>(imagm, 1.e4));
+    vector<vector<double>> locMax(nbz, vector<double>(imagm, -1.e4));
+#ifdef _OPENMP
 #pragma omp for
 #endif
-    for (vector<SED*>::iterator it = fulllib.begin(); it < fulllib.end();
-         ++it) {
+    for (auto it = fulllib.begin(); it < fulllib.end(); ++it) {
       // computed only for galaxies
       if ((*it)->nlib == 0) {
         // loop over the rest-frame filters to be considered
         for (size_t k = 0; k < bestFlt[0].size(); ++k) {
           // obtain the index of the redshift grid
-          indz = indexz((*it)->red, gridz);
-          // derive the k-color term at this redshift: m(ref)-m(obs)-kcorr(ref)
-          if (bestFlt[indz][k] >= 0) {
-            kcolor = ((fulllib[(*it)->index_z0])->mag[k]) -
-                     ((fulllib[(*it)->index_z0])->mag[bestFlt[indz][k]]) -
-                     (*it)->kcorr[bestFlt[indz][k]];
-            // kcolor= (*it)->mag[k] - (*it)->mag[bestFlt[indz][k]] -
-            // (*it)->kcorr[k]; Store it if the value is maximum or minimum
-            if (extremeDiffMin[indz][k] > kcolor)
-              extremeDiffMin[indz][k] = kcolor;
-            if (extremeDiffMax[indz][k] < kcolor)
-              extremeDiffMax[indz][k] = kcolor;
+          const int indz = indexz((*it)->red, gridz);
+          // index of the best filter
+          const int bestf = bestFlt[indz][k];
+          // derive the k-color term at this redshift:
+          // (m(ref)-m(obs))(z=0)-kcorr(obs)
+          if (bestf >= 0) {
+            const double kcolor = ((fulllib[(*it)->index_z0])->mag[k]) -
+                                  ((fulllib[(*it)->index_z0])->mag[bestf]) -
+                                  (*it)->kcorr[bestf];
+            if (kcolor < locMin[indz][k]) locMin[indz][k] = kcolor;
+            if (kcolor > locMax[indz][k]) locMax[indz][k] = kcolor;
           }
         }
       }
     }
+
 #ifdef _OPENMP
-  }
+#pragma omp critical
 #endif
+    // kcolor= (*it)->mag[k] - (*it)->mag[bestFlt[indz][k]] -
+    // (*it)->kcorr[k]; Store it if the value is maximum or minimum
+    for (int i = 0; i < nbz; i++) {
+      for (int k = 0; k < imagm; k++) {
+        extremeDiffMin[i][k] = min(extremeDiffMin[i][k], locMin[i][k]);
+        extremeDiffMax[i][k] = max(extremeDiffMax[i][k], locMax[i][k]);
+      }
+    }
+  }
 
   // Do the difference of the extreme values
   for (size_t i = 0; i < bestFlt.size(); i++) {  // Loop over all redshift
@@ -1573,28 +1582,21 @@ vector<vector<double>> maxkcolor(vector<double> gridz, vector<SED*> fulllib,
   Define the filters to pick (depending on the redshift) to minimize the
   k-correction + rest-frame color term in the absolute magnitude computation
 */
-void minimizekcolor(vector<double> gridz, vector<SED*> fulllib,
-                    vector<vector<int>>& bestFlt, vector<long> magabscont) {
-  vector<vector<double>> extremeDiffMin, extremeDiffMax;
+void minimizekcolor(const vector<double>& gridz, const vector<SED*>& fulllib,
+                    vector<vector<int>>& bestFlt,
+                    const vector<long>& magabscont) {
   vector<double> extremeValMin, extremeValMax, extremeVal, di;
   vector<int> possiFlt;
-  int indz;
-  double kcolor, mini;
+  double mini;
 
-  // bestFlt has been initialize at -1 before the call, with a dimention
+  // bestFlt has been initialize at -1 before the call, with a dimension
   // redshift grid/nb filt
   int imagm = bestFlt[0].size();
   int nbz = bestFlt.size();
 
   // initialize the maximum and minimum values
-  for (int i = 0; i < nbz; i++) {      // Loop over all redshifts
-    for (int k = 0; k < imagm; k++) {  // loop over all filters
-      extremeValMin.push_back(1.e4);
-      extremeValMax.push_back(-1.e4);
-    }
-    extremeDiffMin.push_back(extremeValMin);
-    extremeDiffMax.push_back(extremeValMax);
-  }
+  vector<vector<double>> extremeDiffMin(nbz, vector<double>(imagm, 1.e4));
+  vector<vector<double>> extremeDiffMax(nbz, vector<double>(imagm, -1.e4));
 
   // List of possible filters for the observed magnitudes, given the context
   for (int k = 0; k < imagm; ++k) {
@@ -1625,36 +1627,43 @@ void minimizekcolor(vector<double> gridz, vector<SED*> fulllib,
     // Loop over all SEDs from the library
     // parrallellize the loop
 #ifdef _OPENMP
-#pragma omp parallel private(indz)
+#pragma omp parallel
+#endif
     {
+      vector<vector<double>> locMin(nbz, vector<double>(imagm, 1.e4));
+      vector<vector<double>> locMax(nbz, vector<double>(imagm, -1.e4));
+#ifdef _OPENMP
 #pragma omp for
 #endif
-      for (vector<SED*>::iterator it = fulllib.begin(); it < fulllib.end();
-           ++it) {
+      for (auto it = fulllib.begin(); it < fulllib.end(); ++it) {
         // computed only for galaxies
         if ((*it)->nlib == 0) {
           // obtain the index of the redshift grid
-          indz = indexz((*it)->red, gridz);
+          const int indz = indexz((*it)->red, gridz);
 
           // loop over the possible filters for the apparent magnitudes
           for (int l = 0; l < nbPossi; ++l) {
             // derive the k-color term at this redshift:
             // (m(ref)-m(obs))(z=0)-kcorr(obs)
-            kcolor = ((fulllib[(*it)->index_z0])->mag[r]) -
-                     ((fulllib[(*it)->index_z0])->mag[possiFlt[l]]) -
-                     (*it)->kcorr[possiFlt[l]];
-
-            // Store it if the value is maximum or minimum
-            if (extremeDiffMin[indz][possiFlt[l]] > kcolor)
-              extremeDiffMin[indz][possiFlt[l]] = kcolor;
-            if (extremeDiffMax[indz][possiFlt[l]] < kcolor)
-              extremeDiffMax[indz][possiFlt[l]] = kcolor;
+            const int possif = possiFlt[l];
+            const double kcolor = ((fulllib[(*it)->index_z0])->mag[r]) -
+                                  ((fulllib[(*it)->index_z0])->mag[possif]) -
+                                  (*it)->kcorr[possif];
+            if (kcolor < locMin[indz][possif]) locMin[indz][possif] = kcolor;
+            if (kcolor > locMax[indz][possif]) locMax[indz][possif] = kcolor;
           }
         }
       }
 #ifdef _OPENMP
-    }
+#pragma omp critical
 #endif
+      for (int i = 0; i < nbz; i++) {
+        for (int k = 0; k < imagm; k++) {
+          extremeDiffMin[i][k] = min(extremeDiffMin[i][k], locMin[i][k]);
+          extremeDiffMax[i][k] = max(extremeDiffMax[i][k], locMax[i][k]);
+        }
+      }
+    }
 
     // Do the difference between the extreme values
     for (int i = 0; i < nbz; i++) {  // Loop over all redshifts

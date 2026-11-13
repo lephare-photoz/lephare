@@ -174,6 +174,7 @@ void onesource::convertFlux(const string& catmag,
                             const vector<flt> allFilters) {
   size_t imagm = allFilters.size();
   // If both magnitude and error are negative, flux/err are invalid
+  // It is possible to have a negative error for upper-limits
   for (size_t k = 0; k < allFilters.size(); k++) {
     if (ab[k] < 0 && sab[k] < 0) {
       ab[k] = INVALID_FLUX;
@@ -1870,14 +1871,14 @@ void onesource::absmag(const vector<vector<int>>& bestFlt,
     fobs = bestFlt[indexz][k];
 
     // If good filter defined and uncertainty in the filter not to high
-    if (fobs >= 0 && msab[fobs] <= 0.3 && msab[fobs] >= 0) {
+    if (fobs >= 0 && msab[fobs] <= 0.3 && busnorma[fobs] == 1) {
       // Absolute magnitude: mobs + color rest-frame (ref-fobs) -  k(fobs)
       // -DM(z)
       mabs.push_back(mab[fobs] + magm0[k] - magm0[fobs] - kap[fobs] -
                      distmod_obs);
       // uncertainty on the mag abs: sum the apparent magnitude uncertainties +
       // maximum uncertainties on the k-correction
-      errmagabs = sqrt(pow(maxkcolor[indexz][k], 2.) + pow(sab[fobs], 2.));
+      errmagabs = sqrt(pow(maxkcolor[indexz][k], 2.) + pow(msab[fobs], 2.));
       emabs.push_back(errmagabs);
       absfilt.push_back(fobs);  // filter used for apparent magnitude
     } else {
