@@ -10,7 +10,7 @@ name: Unit test and code coverage
 
 on:
   pull_request:
-    branches: [ main, rc1.0.0 ]
+    branches: [ main ]
 
 jobs:
   build:
