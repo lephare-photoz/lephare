@@ -10,6 +10,9 @@ on:
 
 jobs:
   build:
+    # Skip the pull_request run when the branch lives in this repo: the push
+    # event already tested the same commit. PRs from forks still run here.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     name: Python ${{ matrix.python-version }} (OMP_NUM_THREADS=${{ matrix.omp-threads }})
     runs-on: ubuntu-latest
     strategy:
