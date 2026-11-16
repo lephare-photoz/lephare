@@ -7,15 +7,16 @@ ROOT_DIR="$(pwd)"
 echo "===== Coverage mode: ${MODE} ====="
 
 echo "===== Cleaning old artifacts ====="
-rm -f coverage*.info coverage.txt coverage.lcov
+rm -f coverage*.info coverage.txt coverage.lcov coverage.cpp
 rm -rf cov_html
 rm -rf build
 
 echo "===== Building with C++ coverage enabled ====="
 export INCLUDE_COVERAGE=1
-LEPHARE_ENABLE_AVX2=0 && \
-    LEPHARE_NATIVE_OPT=0 &&\
-    pip install -qq .[dev]
+# Must be exported (or prefixed on the same command) for pip's build to see them
+export LEPHARE_ENABLE_AVX2=0
+export LEPHARE_NATIVE_OPT=0
+pip install -qq .[dev]
 
 echo "===== Running Python tests (Python coverage) ====="
 pytest -s tests \
@@ -24,27 +25,30 @@ pytest -s tests \
 
 #find build -name '_bindings.cc.gcda' -delete
 
-echo "===== Running geninfo ====="
-geninfo --filter range \
-	--ignore-errors gcov,gcov \
-	--ignore-errors mismatch \
-	--debug build \
-	--keep-going
+# Errors tolerated by lcov 2.x. 'inconsistent' is needed with GCC >= 14/15,
+# whose gcov output trips lcov's consistency checks (mostly in libstdc++ headers).
+# Repeating a category also suppresses its warning message.
+LCOV_IGNORE=(--ignore-errors gcov,gcov
+             --ignore-errors mismatch
+             --ignore-errors inconsistent,inconsistent)
 
 echo "===== Capturing C++ coverage ====="
 lcov --filter range \
-     --ignore-errors gcov,gcov \
-     --ignore-errors mismatch \
+     "${LCOV_IGNORE[@]}" \
      --keep-going \
+     --exclude '/usr/*' \
      --output-file coverage.cpp \
      --capture \
      --directory build
 
-lcov --output-file coverage.cpp \
+lcov "${LCOV_IGNORE[@]}" \
+     --ignore-errors unused \
+     --output-file coverage.cpp \
      --remove coverage.cpp '*_bindings.cc'
 
-lcov --output-file coverage.cpp \
-     --extract coverage.cpp $PWD/src/"*"
+lcov "${LCOV_IGNORE[@]}" \
+     --output-file coverage.cpp \
+     --extract coverage.cpp "${ROOT_DIR}/src/*"
 
 echo "===== Merging Python + C++ coverage ====="
 cat coverage.lcov coverage.cpp > coverage.txt
@@ -54,11 +58,11 @@ cat coverage.lcov coverage.cpp > coverage.txt
 #      --output-file coverage.txt
 
 echo "===== Coverage summary ====="
-lcov --summary coverage.txt
+lcov "${LCOV_IGNORE[@]}" --summary coverage.txt
 
 if [[ "${MODE}" == "local" ]]; then
   echo "===== Generating HTML report ====="
-  genhtml coverage.txt -o cov_html
+  genhtml "${LCOV_IGNORE[@]}" coverage.txt -o cov_html
   echo "HTML report in ./cov_html/index.html"
 else
   echo "===== CI mode: skipping HTML generation ====="
