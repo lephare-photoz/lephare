@@ -4,6 +4,7 @@ import platform
 import re
 import subprocess
 import sys
+import sysconfig
 
 from packaging.version import Version
 from setuptools import Extension, setup
@@ -13,10 +14,17 @@ here = pathlib.Path(__file__).parent.resolve()
 # Get the long description from the README file
 long_description = (here / "README.md").read_text(encoding="utf-8")
 
+EXTENSION_CFG = {"define_macros": []}
+if sys.version_info >= (3, 12):
+    EXTENSION_CFG["py_limited_api"] = True
+    EXTENSION_CFG["define_macros"].append(
+        ("Py_LIMITED_API", 0x030C0000 if sys.version_info < (3, 15) else 0x030F0000)  # PY_VERSION_HEX
+    )
+
 
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=""):
-        Extension.__init__(self, name, sources=[])
+        Extension.__init__(self, name, sources=[], **EXTENSION_CFG)
         self.sourcedir = os.path.abspath(sourcedir)
 
 
@@ -44,6 +52,8 @@ class CMakeBuild(build_ext):
             "-DCMAKE_INSTALL_PREFIX=${CMAKE_SOURCE_DIR}",
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + extdir,
             "-DPYTHON_EXECUTABLE=" + sys.executable,
+            "-DPYBIND11_STABLE_ABI=ON",
+            "-DPYBIND11_ABI3T=ON",
         ]
 
         cfg = "Debug" if self.debug else "Release"
@@ -70,6 +80,10 @@ class CMakeBuild(build_ext):
         print()  # Add an empty line for cleaner output
 
 
+SETUPTOOLS_OPTIONS = {}
+if sys.version_info >= (3, 12):
+    SETUPTOOLS_OPTIONS["bdist_wheel"] = {"py_limited_api": "cp312" if sys.version_info < (3, 15) else "cp315"}
+
 setup(
     name="lephare",
     url="https://lephare.readthedocs.io/en/latest/",
@@ -83,4 +97,5 @@ setup(
     zip_safe=False,
     python_requires=">=3.9",
     extras_require={"test": "pytest"},
+    options=SETUPTOOLS_OPTIONS,
 )

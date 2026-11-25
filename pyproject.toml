@@ -136,3 +136,6 @@ exclude = ["examples/*", "setup.py"]
 
 [tool.coverage.run]
 omit=["src/lephare/_version.py"]
+
+[tool.cibuildwheel]
+build = ["cp310*", "cp311*", "cp312*", "cp315*"]
