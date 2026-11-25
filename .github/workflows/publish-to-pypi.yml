@@ -1,168 +1,86 @@
-# This workflow will upload a Python Package using Twine when a release is created
-# For more information see: https://github.com/pypa/gh-action-pypi-publish#trusted-publishing
-
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-name: Upload Python Package
+name: build
 
 on:
   workflow_dispatch:
+    inputs:
+      publish_to_pypi:
+        description: publish to PyPI
+        type: boolean
+        required: false
+        default: false
+  pull_request:
   release:
-    types: [published]
+    types:
+      - released
 
-permissions:
-  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
 
 jobs:
-  build_wheels_linux:
-    name: Build wheels on ${{ matrix.os }}-${{ matrix.python_version }}
-    runs-on: ${{ matrix.os }}
+  wheels:
     strategy:
       matrix:
-        os: [ubuntu-24.04]
-        python: [310, 311, 312, 313, 314]
-        include:
-          - python: 310
-            python_version: "3.10"
-          - python: 311
-            python_version: "3.11"
-          - python: 312
-            python_version: "3.12"
-          - python: 313
-            python_version: "3.13"
-          - python: 314
-            python_version: "3.14"
+        runs-on:
+          - ubuntu-latest
+          - ubuntu-26.04-arm
+          - macos-latest
+    runs-on: ${{ matrix.runs-on }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          submodules: recursive
-      - name: Build wheels
-        uses: pypa/cibuildwheel@v4.3.5
+          persist-credentials: false
+          submodules: "true"
+      - name: cache C++ build objects
+        uses: hendrikmuhs/ccache-action@f09c25b45002a07be2955cbe52e8cee55643f89d # v1.2.24
+      - uses: pypa/cibuildwheel@b9e566a2b284570af229f6c2a33673410d0389a3 # v4.3.4
+        with:
+          package-dir: ./
+          output-dir: dist/
         env:
-          CIBUILDWHEEL: 1
-          CIBW_ENVIRONMENT_LINUX: PYTHON_VERSION_REQUIRED=${{ matrix.python_version }}
-          CIBW_BUILD: cp${{ matrix.python }}-manylinux_x86_64
-          CIBW_ARCHS: all
-          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
-          CIBW_MANYLINUX_I686_IMAGE: manylinux2014
           CIBW_BUILD_VERBOSITY: 3
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: cibw-wheels-${{ matrix.os }}-${{ matrix.python }}
-          path: wheelhouse/*.whl
-
-  build_wheels_macos_x86:
-    name: Build wheels on macos-15-intel-${{ matrix.python_version }}
-    runs-on: macos-15-intel
-    strategy:
-      matrix:
-        python: [310, 311, 312, 313, 314]
-        include:
-          - python: 310
-            python_version: "3.10"
-          - python: 311
-            python_version: "3.11"
-          - python: 312
-            python_version: "3.12"
-          - python: 313
-            python_version: "3.13"
-          - python: 314
-            python_version: "3.14"
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          submodules: recursive
-      - name: Build wheels
-        uses: pypa/cibuildwheel@v4.3.5
-        env:
-          CIBUILDWHEEL: 1
-          CIBW_BEFORE_ALL_MACOS: brew install llvm libomp
-          CIBW_ENVIRONMENT_MACOS: PYTHON_VERSION_REQUIRED=${{ matrix.python_version }} MACOSX_DEPLOYMENT_TARGET="14.0" PATH="$(brew --prefix llvm)/bin:$PATH" CFLAGS="-I /usr/local/include -I/usr/local/opt/llvm/include" CXXFLAGS="-I /usr/local/include -I/usr/local/opt/llvm/include -I/opt/homebrew/opt/libomp/include -I/opt/homebrew/opt/llvm/include -I/usr/local/opt/libomp/include" LDFLAGS="-L/usr/local/opt/libomp/lib -L/opt/homebrew/opt/libomp/lib -L /usr/local/lib -L/usr/local/opt/llvm/lib"
-          CIBW_BUILD: cp${{ matrix.python }}-macosx_x86_64
-          CIBW_ARCHS: all
-          CIBW_BUILD_VERBOSITY: 3
-      - uses: actions/upload-artifact@v7
-        with:
-          name: cibw-wheels-macos-intel-${{ matrix.python }}
-          path: wheelhouse/*.whl
-
-  build_wheels_macos_arm64:
-    name: Build wheels on macos-14-${{ matrix.python_version }}
-    runs-on: macos-14
-    strategy:
-      matrix:
-        python: [310, 311, 312, 313, 314]
-        include:
-          - python: 310
-            python_version: "3.10"
-          - python: 311
-            python_version: "3.11"
-          - python: 312
-            python_version: "3.12"
-          - python: 313
-            python_version: "3.13"
-          - python: 314
-            python_version: "3.14"
-    steps:
-      - name: Checkout LePhare
-        uses: actions/checkout@v7
-        with:
-          submodules: recursive
-      - name: Build wheels
-        uses: pypa/cibuildwheel@v4.3.5
-        env:
-          CIBUILDWHEEL: 1
-          CIBW_BEFORE_ALL_MACOS: brew install llvm libomp
-          CIBW_ENVIRONMENT_MACOS: PYTHON_VERSION_REQUIRED=${{ matrix.python_version }} MACOSX_DEPLOYMENT_TARGET="14.0" PATH="$(brew --prefix llvm)/bin:$PATH" CFLAGS="-I /usr/local/include -I/usr/local/opt/llvm/include" CXXFLAGS="-I /usr/local/include -I/usr/local/opt/llvm/include -I/opt/homebrew/opt/libomp/include -I/opt/homebrew/opt/llvm/include -I/usr/local/opt/libomp/include" LDFLAGS="-L/usr/local/opt/libomp/lib -L/opt/homebrew/opt/libomp/lib -L /usr/local/lib -L/usr/local/opt/llvm/lib"
-          CIBW_BUILD: cp${{ matrix.python }}-macosx_arm64
-          CIBW_ARCHS: all
-          CIBW_BUILD_VERBOSITY: 3
-
-      - name: Upload wheels
-        uses: actions/upload-artifact@v7
-        with:
-          name: cibw-wheels-macos-arm64-${{ matrix.python }}
-          path: wheelhouse/*.whl
-
-
-  build_sdist:
-    name: Make SDist
+          name: dist-${{ runner.os }}-${{ runner.arch }}
+          path: ./dist/
+  sdist:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v7
-      with:
-        fetch-depth: 0  # Optional, use if you use setuptools_scm
-        submodules: recursive  # Optional, use if you have submodules
-
-    - name: Build SDist
-      run: pipx run build --sdist
-
-    - name: Upload SDist
-      uses: actions/upload-artifact@v7
-      with:
-        name: cibw-sdist
-        path: dist/*.tar.gz
-
-  upload_pypi:
-    name: Upload to pypi
-    needs: [build_wheels_linux, build_wheels_macos_x86, build_wheels_macos_arm64, build_sdist]
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          submodules: "true"
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3"
+      - run: pip install build
+      - run: python -m build --sdist --outdir ./dist
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist-src
+          path: ./dist/
+  publish:
+    if: ((github.event_name == 'release') && (github.event.action == 'released')) || inputs.publish_to_pypi
+    needs: [wheels, sdist]
     runs-on: ubuntu-latest
-    environment:
-      name: pypi
     permissions:
       id-token: write
-
+      attestations: write
+    # To add required reviewers before deployment,
+    # edit the protection rules in GitHub Settings:
+    # Settings > Environments > pypi > Add required reviewers
+    environment:
+      name: pypi
+      url: https://pypi.org/p/lephare
     steps:
-      - name: Download distribution files
-        uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          # unpacks all CIBW artifacts into dist/
-          pattern: cibw-*
-          path: dist
+          pattern: dist*
+          path: dist/
           merge-multiple: true
-
-      - name: Upload to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+      # To upload to PyPI without a token, add this workflow file as a Trusted Publisher in the project settings on the PyPI website
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          packages-dir: "./dist"
