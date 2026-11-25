@@ -1,5 +1,4 @@
 import os
-import pathlib
 import platform
 import re
 import subprocess
@@ -8,11 +7,6 @@ import sys
 from packaging.version import Version
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
-
-here = pathlib.Path(__file__).parent.resolve()
-# Get the long description from the README file
-long_description = (here / "README.md").read_text(encoding="utf-8")
-
 
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=""):
@@ -71,16 +65,8 @@ class CMakeBuild(build_ext):
 
 
 setup(
-    name="lephare",
-    url="https://lephare.readthedocs.io/en/latest/",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
     # add extension module
     ext_modules=[CMakeExtension("lephare._lephare")],
-    include_package_data=True,
     # add custom build_ext command
     cmdclass=dict(build_ext=CMakeBuild),
-    zip_safe=False,
-    python_requires=">=3.9",
-    extras_require={"test": "pytest"},
 )

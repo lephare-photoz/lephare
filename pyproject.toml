@@ -1,6 +1,6 @@
 [project]
 name = "lephare"
-license = {file = "LICENSE"}
+license-files = ["LICENSE"]
 readme = "README.md"
 description = "LEPHARE photometric redshift estimator"
 authors = [
@@ -41,6 +41,7 @@ zphota = "lephare.zphota:main"
 
 [project.urls]
 "Source Code" = "https://github.com/lephare-photoz/lephare"
+Documentation = "https://lephare.readthedocs.io"
 
 # On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
 [project.optional-dependencies]
@@ -55,6 +56,7 @@ dev = [
     "breathe", # Used to generate documentation
     "exhale", # Used to generate documentation
 ]
+test = ["pytest"]
 
 [build-system]
 requires = [
@@ -65,11 +67,15 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools_scm]
-write_to = "src/lephare/_version.py"
+version_file = "src/lephare/_version.py"
 
 [tool.pytest.ini_options]
 testpaths = [
