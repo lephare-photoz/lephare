@@ -28,11 +28,19 @@ if(DEFINED ENV{PYTHON_VERSION_REQUIRED})
   find_package(
     Python3 $ENV{PYTHON_VERSION_REQUIRED}
     EXACT
-    COMPONENTS Development.Module Interpreter
+    COMPONENTS Development.Module Development.SABIModule Interpreter
+    
+    REQUIRED
+  )
+  find_package(
+    Python3 $ENV{PYTHON_VERSION_REQUIRED}
+    EXACT
+    COMPONENTS Development.SABIModule Development.SABIModule Interpreter
     REQUIRED
   )
 else()
   find_package(Python3 COMPONENTS Development.Module Interpreter REQUIRED)
+  find_package(Python3 COMPONENTS Development.SABIModule Interpreter REQUIRED)
 endif()
 
 message(STATUS "Python version: ${Python3_VERSION}")
